@@ -32,11 +32,25 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (am_master, assets, hop_dong_v4, nan_thoi_luong, nhap_media,
-               pipeline, thoi_gian, van_ban)
+from . import (am_master, assets, hop_dong_v4, nan_cho_vua, nan_thoi_luong,
+               nhap_media, pipeline, thoi_gian, van_ban)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
+
+#: Tran KY THUAT cua `ffmpeg atempo` cho MOT lan goi tren doan tieng, ⛔ KHONG
+#: phai mot chinh sach san pham (do la `thoi_gian.TRAN_TANG_TOC`, chot 26/09:
+#: "vuot tran thoai mai" — khong con la cong).
+#:
+#: 🔑 Qua tran nay thuat toan WSOLA cua `atempo` khong con giu duoc dang song
+#:    tot, cho ra TIENG RAC chu ⛔ khong phai "tieng nhanh" — khac han cai gia
+#:    cua viec vuot `TRAN_TANG_TOC` (giong hoi meo nhung van nghe duoc loi).
+#:    `am_master.py` da co tran cung `[0,5; 100]` cho MOT lan goi khong chain,
+#:    nhung 100 chi la tran "khong crash"; 2.0 la tran "con nghe duoc" theo tai
+#:    lieu bo loc `atempo` cua ffmpeg. `he_so_co_gian` o day luon >= 1.0
+#:    (`nan_cho_vua.co_gian_du_khong`: he_so = giay/khe, chi tinh khi giay >
+#:    khe), nen chi can MOT tran tren — khong can `max()` cho bien duoi.
+TRAN_KY_THUAT_ATEMPO = 2.0
 
 
 class ThieuDauVao(ThieuNguon):
@@ -129,7 +143,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if ctx is not None and getattr(ctx, "progress", None):
         ctx.progress(50, _t('Đang trộn bản phối'))
 
-    khoa_master, do_duoc, vt_master, he_so_da_kep = _dung_ban_phoi(
+    khoa_master, do_duoc, vt_master = _dung_ban_phoi(
         db, kho, run, ke_hoach=ke_hoach, ban_ke=ban_ke, tong_giay=tong_giay,
         van_tay_ke_hoach=vt, ctx=ctx)
     phan.append({"staging_key": khoa_master, "kind": "audio", "duoi": "wav",
@@ -143,10 +157,6 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    se lam moi bao cao van hanh noi rang "da kiem cho noi" trong khi khong
     #    cho noi nao ton tai. Giai doan 2 khai chung (`ke_cat.tom_tat`).
     tom_tat = {**thoi_gian.tom_tat(ke_hoach), "master": do_duoc}
-    # ⛔ Chi ghi khoa nay khi CO kep (N-55) — mot danh sach rong luon co mat se
-    #    lam moi bao cao cu (chua tung kep) khac bao cao moi mot cach vo nghia.
-    if he_so_da_kep:
-        tom_tat["he_so_co_gian_da_kep"] = he_so_da_kep
     return {"phan": phan, "tom_tat": tom_tat}
 
 
@@ -154,8 +164,8 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
                    tong_giay: float, van_tay_ke_hoach: str, ctx=None):
     """Tron nen + cac doan tieng theo ke hoach.
 
-    Tra `(khoa, do_duoc, van_tay, da_kep)` — `da_kep` (N-55) liet ke moi doan
-    ma `he_so_co_gian` bi kep xuong tran thiet ke truoc khi vao `atempo`."""
+    Tra `(khoa, do_duoc, van_tay)` — `do_duoc["he_so_toc_da_ap"]` liet ke moi
+    he so tang toc THAT SU da ap cho tung doan (task 4, chot 26/09)."""
     import tempfile
 
     from . import features
@@ -172,44 +182,42 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     #    ay 2-4 lan — nghe thanh tieng vang, ⛔ khong nem, ⛔ khong log. Ham ay chi
     #    tra ve nhung dong SO HUU mot tep (`nan_thoi_luong.la_dong_theo_sau`).
     khoa_theo_ma = nan_thoi_luong.tep_theo_ma(ban_ke)
-    # 🔴 **N-55 (25/09): `he_so_co_gian` cua mot doan `CAN_SUA` co the vuot xa
-    #    tran thiet ke.** `nan_cho_vua.ket_luan()` GHI he so THAT SU CAN cho
-    #    doan `CAN_SUA` — dung y, do la con so vong sua (`sua_chua`, chay khi
-    #    `LTT_ASV_QC_AI=1`) doc de biet can rut gon bao nhieu. ⛔ Nhung
-    #    `LTT_ASV_QC_AI` TAT theo mac dinh (quyet dinh gia,
-    #    `giai_doan_qc_ai.py`), nen KHONG lan chay nao chac chan di qua vong
-    #    sua truoc khi toi day. Mot he so vuot ca tran cung `atempo`
-    #    (`am_master.py`: `[0,5; 100]` MOT lan goi, KHONG chain) lam
-    #    `timing_align` chet cung ca lan chay — vi mot doan CHUA duoc sua.
+    # 🔑 **Tran la CANH BAO, ⛔ khong phai mot cong (chu du an chot 26/09).**
+    #    Truoc day `he_so_co_gian` cua mot doan `CAN_SUA` (vuot
+    #    `thoi_gian.TRAN_TANG_TOC`, thuong vi `LTT_ASV_QC_AI` tat theo mac
+    #    dinh nen khong lan chay nao qua vong sua truoc khi toi day) bi KEP ve
+    #    tran THIET KE — mot doan tran qua trai bi dat SAI CHO trong im lang.
+    #    Nay: ap DUNG he so can, chi GHI CANH BAO (log.warning) khi vuot tran
+    #    thiet ke, va DEM moi he so THAT SU da ap vao `he_so_toc_da_ap` (danh
+    #    sach float, ra trong `do_duoc` — giai doan nay tra ve trong outputs)
+    #    de ai doc bao cao van hanh thay duoc: cai gia (giong hoi meo) khach
+    #    nghe duoc va ⛔ khong giau.
     #
-    # ⭐ Kep o TRAN THIET KE (`thoi_gian.TRAN_TANG_TOC`, khong phai tran cung
-    #    ky thuat cua `atempo`): vuot tran thiet ke la am thanh da bat dau
-    #    mat chat luong nghe duoc theo dung tai lieu tham khao (`thoi_gian.py`
-    #    §doc). ⛔ **KHONG im lang**: ghi log CANH BAO + kep vao
-    #    `tom_tat.he_so_co_gian_da_kep` (giai doan nay tra ve trong outputs)
-    #    de ai doc bao cao van hanh thay duoc — mot doan bi kep se ra tieng
-    #    LECH thoi luong ke hoach thay vi lam CHET ca lan chay, va dau vet o
-    #    lai trong so cai.
+    # ⭐ Van con MOT tran, nhung la tran KY THUAT cua `atempo`
+    #    (`TRAN_KY_THUAT_ATEMPO` = 2.0, dinh nghia o dau tep nay) — qua tran do
+    #    la TIENG RAC chu khong con la "tieng nhanh". `he_so_co_gian` luon
+    #    >= 1.0 o day nen chi can mot tran TREN, ⛔ khong can `max()`.
     he_so_theo_ma: dict[str, float] = {}
-    da_kep: list[dict] = []
+    he_so_toc_da_ap: list[float] = []
     for d in (ban_ke.get("doan") or []):
         # ⛔ Dong DI THEO mang cung `he_so_co_gian` voi dong dau (mot tep, mot
-        #    lan `atempo`) — kep no lan thu hai chi in canh bao trung lap.
+        #    lan `atempo`) — dem no lan thu hai chi lam sai lech thong ke.
         if nan_thoi_luong.la_dong_theo_sau(d):
             continue
         ma = str(d["ma"])
         h = float(d.get("he_so_co_gian") or 1.0)
-        h_kep = max(1.0 / thoi_gian.TRAN_TANG_TOC,
-                   min(thoi_gian.TRAN_TANG_TOC, h))
-        if abs(h_kep - h) > 1e-6:
+        h_ap = min(TRAN_KY_THUAT_ATEMPO, h)
+        if h_ap != h:
             log.warning(
-                "asv timing_align: doan %s co he_so_co_gian=%.4f vuot tran "
-                "thiet ke %.2f (CAN_SUA chua duoc vong sua xu ly - QC_AI co "
-                "the dang tat) - kep xuong %.4f de lan chay khong chet",
-                ma, h, thoi_gian.TRAN_TANG_TOC, h_kep)
-            da_kep.append({"ma": ma, "he_so_can": round(h, 4),
-                           "he_so_da_kep": round(h_kep, 4)})
-        he_so_theo_ma[ma] = h_kep
+                "asv timing_align: doan %s co he_so_co_gian=%.4f vuot tran KY "
+                "THUAT cua atempo %.2f - ap %.4f de tranh tieng rac",
+                ma, h, TRAN_KY_THUAT_ATEMPO, h_ap)
+        he_so_toc_da_ap.append(float(h_ap))
+        if h_ap > nan_cho_vua.tran_co_gian():
+            log.warning(
+                "timing_align: doan %s tang toc %.3f vuot tran %.3f",
+                ma, h_ap, nan_cho_vua.tran_co_gian())
+        he_so_theo_ma[ma] = h_ap
 
     # ⛔ Loai cac `ma` DI THEO bang mot truong TUONG MINH (`nhom_theo_ma`), ⛔ KHONG
     #    bang "vang mat khoi `khoa_theo_ma`": hai chuyen khac han nhau va chi mot
@@ -275,6 +283,9 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
         #    phoi (`fade_ap_dung`), va mot lan cat khong ghi lai la mot lan lang le.
         fv, fr = am_master.fade_ap_dung(am, tong_giay_ra)
         do_duoc["am_thanh"] = {**am, "fade_vao": fv, "fade_ra": fr}
+        # 🔑 Task 4 (chot 26/09): moi he so tang toc THAT SU da ap, ⛔ khong
+        #    con bi kep im lang — xem chu thich o vong lap phia tren.
+        do_duoc["he_so_toc_da_ap"] = he_so_toc_da_ap
 
         khoa = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
                                    stage=pipeline.TIMING_ALIGN, van_tay=vt,
@@ -282,4 +293,4 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
         with open(dich, "rb") as f:
             kho.put(khoa, f, content_type="audio/wav")
 
-    return khoa, do_duoc, vt, da_kep
+    return khoa, do_duoc, vt
