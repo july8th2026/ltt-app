@@ -929,3 +929,137 @@ def test_doi_loi_nhac_thi_PHAI_tang_PHIEN_BAN_LONG_TIENG():
     """⛔ Thiếu bước này, lượt chạy mới dùng lại bản lồng tiếng của lời nhắc CŨ."""
     from apps.auto_scan_video import long_tieng
     assert long_tieng.PHIEN_BAN_LONG_TIENG >= 3
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Task 11 — ho_so_dich phai di qua CUA TRA TIEN (`ai.goi_tinh_tien`)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class _RunGia:
+    """Chỉ ba trường mà `goi_tinh_tien` + cửa chặn đọc. ⛔ Không cần CSDL."""
+
+    def __init__(self, credit_held: int) -> None:
+        self.id = 1
+        self.owner_id = 1
+        self.credit_held = credit_held
+
+
+def _cac_goi_thuoc_tinh(mo_dun) -> list[ast.Call]:
+    cay = ast.parse(inspect.getsource(mo_dun))
+    return [n for n in ast.walk(cay)
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)]
+
+
+def test_ho_so_dich_KHONG_goi_ai_goi_truc_tiep_ma_qua_goi_tinh_tien():
+    """🔴 `ai.py:806` khai `goi_tinh_tien` là **đường trả tiền DUY NHẤT**.
+
+    Bản đầu của `ho_so_dich` gọi `ai.goi(...)` trực tiếp, và
+    `giai_doan_noi_dung` gọi nó **vô điều kiện trên mọi lượt `content_process`
+    thật** ⇒ (a) khách hết ngân sách vẫn phát sinh một lời gọi thật ~16 giây;
+    (b) chi phí model ⛔ không bao giờ vào `su_dung`, nên báo cáo margin và
+    `quyet_toan` lệch đúng một lời gọi mỗi video.
+
+    ⭐ Phép kiểm này neo vào CHỖ GỌI (AST), ⛔ không vào văn bản mã nguồn: chuỗi
+       `"goi_tinh_tien"` nằm trong một docstring cũng làm xanh một phép đo dựa
+       trên `in ma`, còn một `ast.Call` thì không.
+    """
+    from apps.auto_scan_video import ho_so_dich
+
+    cac = _cac_goi_thuoc_tinh(ho_so_dich)
+    truc_tiep = [c for c in cac
+                 if c.func.attr == "goi"
+                 and isinstance(c.func.value, ast.Name) and c.func.value.id == "ai"]
+    assert not truc_tiep, (
+        "`ho_so_dich` còn gọi `ai.goi(...)` trực tiếp — một lời gọi model ngoài "
+        "cửa trả tiền là một bút toán không có người làm chứng")
+
+    qua_cua = [c for c in cac if c.func.attr == "goi_tinh_tien"]
+    assert len(qua_cua) == 1, (
+        "mong ĐÚNG một lời gọi `goi_tinh_tien` (hồ sơ là câu hỏi TOÀN CỤC của "
+        "cả video), thấy %d" % len(qua_cua))
+
+    # `item_key` la KHOA SO CAI: `UNIQUE(run_id, ma_dispatch)` nen thieu no thi
+    # ⛔ khong con menh de "mot video = dung mot dong so".
+    khoa = {k.arg for k in qua_cua[0].keywords if k.arg}
+    assert "item_key" in khoa, (
+        "`goi_tinh_tien` được gọi mà ⛔ không khai `item_key` — khoá sổ cái")
+    assert "stage" in khoa, "thiếu `stage`, dòng sổ ⛔ không thuộc giai đoạn nào"
+
+
+def test_ho_so_dich_MOT_video_dung_MOT_dong_so_cai():
+    """`item_key` là HẰNG SỐ ⇒ `ma_dispatch` của cả lượt chạy là DUY NHẤT.
+
+    ⚠️ Lượt nối tiếp (sau lát cắt) gọi lại `giai_doan_noi_dung.chay` từ đầu, và
+    nó gọi `ho_so_dich.dung` **vô điều kiện** — một `item_key` mang số lô hay số
+    lần thử sẽ biến hai lần hỏi **cùng một** câu thành hai dòng tính tiền.
+    """
+    from apps.auto_scan_video import ho_so_dich
+
+    assert isinstance(ho_so_dich.ITEM_KEY, str) and ho_so_dich.ITEM_KEY
+    # ⛔ Khong duoc mang dinh dang: mot khoa co `{` la mot khoa theo don vi.
+    assert "{" not in ho_so_dich.ITEM_KEY and "%" not in ho_so_dich.ITEM_KEY
+
+    (goi,) = [c for c in _cac_goi_thuoc_tinh(ho_so_dich)
+              if c.func.attr == "goi_tinh_tien"]
+    (kw,) = [k for k in goi.keywords if k.arg == "item_key"]
+    assert isinstance(kw.value, ast.Name) and kw.value.id == "ITEM_KEY", (
+        "`item_key` phải là hằng số `ITEM_KEY` của mô-đun, ⛔ không phải một "
+        "biểu thức dựng tại chỗ")
+
+
+def test_ho_so_dich_CUA_CHAN_ngan_sach_KHONG_bi_nuot_thanh_ho_so_rong(monkeypatch):
+    """🔴 Hành vi: hết ngân sách là trạng thái **khách phải biết**.
+
+    ⚠️ Hai ca hỏng KHÁC loại: model trả rác ⇒ hồ sơ rỗng đi tiếp; cửa chặn vì
+    hết ngân sách ⇒ NÉM. Bài này cũng khẳng định cửa chặn **trước khi** model
+    được gọi — tức ⛔ không phát sinh lời gọi thật ~16 giây nào.
+    """
+    from apps.auto_scan_video import ai, features, ho_so_dich
+
+    def cua_dong(db, run, them):
+        raise features.AsvError("Chi phi thuc te se vuot muc da giu")
+
+    def khong_duoc_goi(*a, **k):
+        raise AssertionError("model bị gọi DÙ cửa đã chặn — cửa chạy sai thứ tự")
+
+    monkeypatch.setattr(features, "kiem_tran_chi", cua_dong)
+    monkeypatch.setattr(ai, "goi", khong_duoc_goi)
+
+    with pytest.raises(features.AsvError):
+        ho_so_dich.dung(None, _RunGia(0),
+                        {"doan": [{"ma": "seg_0001", "chu": "你好"}]})
+
+
+def test_ho_so_dich_model_tra_RAC_van_tra_ho_so_RONG(monkeypatch):
+    """⛔ Vế còn lại: hồ sơ làm bản dịch TỐT HƠN, ⛔ không phải thứ nó cần để CHẠY.
+
+    Nếu bản sửa *"đừng nuốt cửa chặn"* biến thành *"đừng nuốt gì cả"*, một model
+    trả rác sẽ làm chết cả lượt chạy — đúng điều nguyên tắc này tồn tại để ngăn.
+    """
+    from apps.auto_scan_video import ai, features, ho_so_dich
+
+    monkeypatch.setattr(features, "kiem_tran_chi", lambda db, run, them: None)
+    monkeypatch.setattr(ai, "goi", lambda *a, **k: {"noi_dung": "khong phai JSON"})
+
+    ra = ho_so_dich.dung(None, _RunGia(999),
+                         {"doan": [{"ma": "seg_0001", "chu": "你好"}]})
+    assert set(ra) == set(ho_so_dich.KHOA)
+    assert ra["bang_dai_tu"] == {} and ra["the_loai"] == ""
+
+
+def test_ho_so_dich_CUA_chay_that_su_vi_uoc_credit_KHAC_khong():
+    """⚠️ `goi_tinh_tien` bỏ qua cửa khi `uoc_credit` là 0 (`ai.py:835`).
+
+    ⇒ Một cửa không chạy là một cửa không tồn tại. Đây là lý do `UOC_CREDIT`
+    tồn tại, và nó ⛔ không phải một bảng giá thứ hai.
+    """
+    from apps.auto_scan_video import ho_so_dich
+
+    assert int(ho_so_dich.UOC_CREDIT) > 0
+
+    (goi,) = [c for c in _cac_goi_thuoc_tinh(ho_so_dich)
+              if c.func.attr == "goi_tinh_tien"]
+    kw = {k.arg for k in goi.keywords if k.arg}
+    assert "uoc_credit" in kw, (
+        "⛔ không khai `uoc_credit` ⇒ mặc định 0 ⇒ `cua_chan_truoc_khi_tieu` "
+        "KHÔNG BAO GIỜ chạy, và hại (a) vẫn còn nguyên")

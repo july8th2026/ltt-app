@@ -241,7 +241,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # ⚠️ Ho so nay CHUA duoc noi vao loi nhac (`long_tieng.loi_nhac`) — do la
     #    viec cua buoc noi tiep theo (chua lam trong task nay). O day chi
     #    dung ho so va ghi no vao `tom_tat` de co bang chung no da chay.
-    ho_so = ho_so_dich.dung(db, goc, ctx=ctx)
+    ho_so = ho_so_dich.dung(db, run, goc, ctx=ctx)
 
     vt = long_tieng.van_tay_long_tieng(
         checksum_ban_ghi=checksum, van_tay_ban=van_tay_ban,
