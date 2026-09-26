@@ -323,3 +323,17 @@ def test_buoc_0_5_GHI_giay_TUNG_VONG_vao_outputs(
     # ⭐ Va no truy van duoc: dem luot doc dang le phai goi may B.
     assert sum(1 for d in luot if d["nen_viet_lai"]) > 0
     assert dem["n"] > 0, "chua vong nan nao chay"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  E. NAC CUU CUOI (Task 8) — con lech sau tang toc PHAI duoc GHI LAI
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_doan_con_lech_sau_tang_toc_phai_duoc_GHI_LAI():
+    """(c) chấp nhận thì phải NÓI RA. Một đoạn lệch bị bỏ im lặng là thứ tệ nhất."""
+    import inspect
+    from apps.auto_scan_video import giai_doan_thoi_gian
+
+    ma = inspect.getsource(giai_doan_thoi_gian)
+    assert "so_doan_lech_cuoi" in ma
+    assert "giay_lech_cuoi" in ma
