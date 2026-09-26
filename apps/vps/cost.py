@@ -38,7 +38,19 @@ CHU_KY_NGAY = 30
 
 @dataclass(frozen=True)
 class Plan:
-    """Một gói bán. Bất biến: đổi giá là thêm gói mới, không sửa gói đang bán.
+    """Một gói bán.
+
+    ## Sửa gói đang bán tại chỗ: chỉ khi đếm được AI đang thuê nó
+
+    Luật mặc định vẫn là **đổi giá thì thêm gói mới**, vì `billing` tính lại tiền
+    từ catalog ở **mỗi chu kỳ** (`credit_thang(may.plan_id, …)`), chứ ⛔ không chốt
+    giá lúc mua. Sửa tại chỗ nghĩa là **đổi giá của người đang thuê** ở lần gia
+    hạn kế — và họ ⛔ không được hỏi.
+
+    26/09/2026 sửa tại chỗ (Nhỏ 1×2 GB/149k → 2×4 GB/159k, Vừa 179k → 209k) vì
+    đã **đếm**: `SELECT user_id FROM vps_instance WHERE vong_doi='hoat_dong'` trả
+    đúng MỘT người, và người đó là chủ dự án — chính người yêu cầu đổi.
+    ⭐ Đếm trước, sửa sau. Có khách thật rồi thì quay về luật mặc định.
 
     Việc "gói này chạy được bản nào" **không** khai ở đây. Nó suy ra từ số thật
     trong `os_images.hop_le()`: so `plan.ram_mb` với `img.ram_mb_toi_thieu`, và
@@ -90,14 +102,21 @@ PLANS: tuple[Plan, ...] = (
     Plan(
         id="vps-nho",
         ten=N_("VPS Nhỏ"),
-        vcpu=1,
-        ram_mb=2048,
+        # 26/09/2026: từ 1 vCPU / 2 GB lên 2 vCPU / 4 GB, giá 149k → 159k.
+        #
+        # 2 GB đủ theo **yêu cầu tối thiểu của Microsoft** cho bản Core — và
+        # chủ dự án dùng thật rồi báo lại: Server 2016 trên cấu hình đó
+        # **nặng đến mức không dùng được**. ⭐ "đủ tối thiểu để cài được"
+        # ⛔ không phải "đủ để dùng được" — `os_images` chỉ gác được vế
+        # đầu, và vế sau chỉ lộ ra khi có người ngồi trước máy.
+        vcpu=2,
+        ram_mb=4096,
         disk_gb=40,
         bang_thong_gb=100,
-        gia_thang_vnd=149_000,
-        mo_ta=N_("Chạy được Windows Server 2016 hoặc 2022 bản Core (không có giao "
-                 "diện đồ hoạ). Hợp khi bạn chỉ cần một máy chạy phần mềm hoặc "
-                 "script nền."),
+        gia_thang_vnd=159_000,
+        mo_ta=N_("Chạy được mọi bản trong danh mục, kể cả bản có giao diện đồ "
+                 "hoạ. Đĩa 40 GB — vừa đủ cho Windows và vài phần mềm, chưa dư "
+                 "để chứa dữ liệu lớn."),
     ),
     Plan(
         id="vps-vua",
@@ -106,10 +125,16 @@ PLANS: tuple[Plan, ...] = (
         ram_mb=4096,
         disk_gb=60,
         bang_thong_gb=150,
-        gia_thang_vnd=179_000,
-        mo_ta=N_("Chạy được mọi bản trong danh mục: Server 2016 và 2022 có giao "
-                 "diện, hoặc Windows 10 LTSC. Đây là gói phần lớn người dùng nên "
-                 "chọn."),
+        # 26/09/2026: 179k → 209k, cùng lúc gói Nhỏ lên 2 vCPU / 4 GB.
+        gia_thang_vnd=209_000,
+        # ⚠️ Gói này **không còn** mở thêm bản Windows nào so với gói Nhỏ —
+        # từ 26/09 cả hai cùng 2 vCPU / 4 GB, nên mọi bản trong danh mục đều
+        # chạy được ở gói Nhỏ. Thứ nó bán là **đĩa và băng thông**, và mô tả
+        # phải nói đúng thế — câu cũ ("chạy được mọi bản…") nay vừa sai
+        # vừa mời khách trả thêm tiền cho một thứ họ đã có.
+        mo_ta=N_("Cùng CPU và RAM với gói Nhỏ, nhưng đĩa 60 GB và băng thông 150 "
+                 "GB mỗi chu kỳ. Chọn nó khi bạn cần chỗ chứa dữ liệu chứ không "
+                 "phải thêm sức tính."),
         nen_chon=True,
     ),
     Plan(

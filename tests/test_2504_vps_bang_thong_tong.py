@@ -69,7 +69,7 @@ def test_gia_ban_giu_nguyen_bang_thong_ha_theo_OVH():
     han_muc = {p.id: p.bang_thong_gb for p in PLANS}
     gia = {p.id: p.gia_thang_vnd for p in PLANS}
     assert han_muc == {"vps-nho": 100, "vps-vua": 150, "vps-lon": 250}
-    assert gia == {"vps-nho": 149_000, "vps-vua": 179_000, "vps-lon": 329_000}
+    assert gia == {"vps-nho": 159_000, "vps-vua": 209_000, "vps-lon": 329_000}
 
 
 def test_dieu_khoan_noi_ro_ham_theo_tong_truoc_han_muc_rieng():

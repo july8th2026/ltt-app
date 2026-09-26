@@ -259,11 +259,18 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
     của chính mình, và khách trả tiền cho một máy không bao giờ khởi động nổi.
     """
     monkeypatch.setenv("LTT_VPS", "1")
-    # Đúng trạng thái node ngày 2026-08-22: 8 máy, VM100 chiếm 7,9 GB.
+    # Dựa trên trạng thái node 2026-08-22 (8 máy chủ nhà), nhưng RAM còn lại
+    # phải nằm GIỮA gói nhỏ nhất và gói to nhất, nếu không thì ⛔ không quan
+    # sát được điều bài này đo.
+    #
+    # 🔴 26/09/2026: bản cũ để lại đúng 2 GB vì lúc đó gói nhỏ nhất là 2 GB.
+    #    Gói nhỏ lên 4 GB thì **mọi gói đều hết chỗ**, thẻ "hết chỗ" ⛔ không
+    #    còn gói nào để chỉ sang, và bài này đỏ vì **fixture**, ⛔ không phải vì
+    #    mã hỏng. ⭐ Nghĩa là con số ở đây phải suỷ từ catalog, ⛔ đừng viết cứng.
+    RAM_NODE_GB, SO_MAY_CHU_NHA = 43, 8
     day = [{"vmid": 100 + i, "maxmem": 4 * 1024 ** 3, "maxdisk": 80 * 1024 ** 3}
-           for i in range(8)]
-    day[0]["maxmem"] = 8 * 1024 ** 3
-    _gia_lap_proxmox(monkeypatch, ram_gb=43, dia_gb=475, vms=day,
+           for i in range(SO_MAY_CHU_NHA)]
+    _gia_lap_proxmox(monkeypatch, ram_gb=RAM_NODE_GB, dia_gb=475, vms=day,
                      dia_dung_gb=174)
     # Phep kiem nay chi ve RAM. Tu R24 (17/09) trang tinh con cho CA IPv4 va cong
     # vao; o day cho hai gioi han ay du thua de RAM la rao duy nhat. Gioi han
@@ -299,7 +306,18 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
         # chỗ, nên thẻ hết chỗ bắt buộc phải chỉ sang nó.
         assert "Còn chỗ:" in r.text, (
             "the 'het cho' khong chi sang goi con lai")
-        assert r.text.count('action="/vps/tao"') == 1
+        # ⛔ Đừng viết cứng "đúng 1 gói còn chỗ": con số ấy là **hệ quả** của
+        # bảng giá ngày viết bài, ⛔ không phải luật. Đổi gói Nhỏ từ 2 GB lên
+        # 4 GB (26/09/2026) làm nó đỏ trong khi **mã vẫn đúng**.
+        #
+        # ⭐ Luật W1 là: *còn ít nhất một gói mua được, và ⛔ không phải tất cả* —
+        #    trạng thái **pha trộn** chính là thứ làm thẻ "hết chỗ" có chỗ để chỉ sang.
+        #    Viết như vậy thì bài vẫn đỏ khi fixture thôi sinh ra trạng thái ấy.
+        from apps.vps import cost
+        so_thue = r.text.count('action="/vps/tao"')
+        assert 1 <= so_thue < len(cost.PLANS), (
+            f"fixture khong con sinh ra trang thai PHA TRON: {so_thue} goi mua "
+            f"duoc tren tong {len(cost.PLANS)}")
     finally:
         client.close()
 
@@ -313,10 +331,28 @@ def test_to_hop_khong_boot_duoc_bi_tu_choi_TRUOC_khi_thu_tien(moi_truong,
     mục làm nó vẫn ĐỎ-hoá-xanh nhầm chỗ: lỗi trả về thành "khong co he dieu hanh
     'win11'" — vẫn là một lời từ chối, nhưng từ chối vì **mã OS không tồn tại**,
     không phải vì phép kiểm cấu hình. Nó sẽ xanh kể cả khi `hop_le()` bị gỡ hẳn.
-    Nên nay dùng một tổ hợp CÓ THẬT nhưng không đủ RAM."""
+    Nên nay dùng một tổ hợp CÓ THẬT nhưng không đủ RAM.
+
+    🔴 26/09/2026: gói Nhỏ lên 2 vCPU / 4 GB ⇒ **không còn tổ hợp thật nào sai**
+       (mọi gói ≥ 4 GB, mọi bản OS cần ≤ 4 GB). Bài này liền đỏ — nhưng vì
+       *catalog*, ⛔ không phải vì cửa hỏng. Nếu lúc ấy xoá bài đi thì cửa
+       `hop_le` trong `routes.tao_may` mất hẳn người canh.
+
+    ⭐ Nên tiêm một bản OS GIẢ đòi nhiều RAM hơn mọi gói. Nó vẫn tránh đúng cái
+       bẫy ghi ở trên: mã OS **có phân giải được** (đăng ký vào cả `OS_IMAGES`
+       lẫn `_THEO_ID`), nên lời từ chối chỉ có thể đến từ nhánh RAM."""
     monkeypatch.setenv("LTT_VPS", "1")
     _gia_lap_proxmox(monkeypatch)
     user_id = _tao_khach(moi_truong)
+
+    import dataclasses
+
+    from apps.vps import os_images as _oi
+    nang = dataclasses.replace(_oi.lay_os("winsrv2022-gui"),
+                               id="thu-ram-qua-to", ram_mb_toi_thieu=999_999)
+    monkeypatch.setattr(_oi, "OS_IMAGES", _oi.OS_IMAGES + (nang,))
+    monkeypatch.setattr(_oi, "_THEO_ID", dict(_oi._THEO_ID, **{nang.id: nang}))
+    assert _oi.lay_os(nang.id) is not None, "ma OS phai phan giai duoc"
 
     client = _client()
     try:
@@ -325,9 +361,9 @@ def test_to_hop_khong_boot_duoc_bi_tu_choi_TRUOC_khi_thu_tien(moi_truong,
         token = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
         r = client.post("/vps/tao", data={
             "csrf_token": token, "plan_id": "vps-nho",
-            "os_id": "winsrv2022-gui", "vung": "sgp", "dia_them_gb": 0})
+            "os_id": nang.id, "vung": "sgp", "dia_them_gb": 0})
         assert r.status_code == 303
-        assert "RAM" in r.headers["location"]
+        assert "RAM" in r.headers["location"], r.headers["location"]
     finally:
         client.close()
 
@@ -454,8 +490,10 @@ def test_tao_may_thanh_cong_GIU_CHO_credit_va_NOP_JOB_chu_khong_cham_proxmox(
         # 🔴 23/09: tien GIU CHO, chua thu. Do 22/09 cho thay thu-truoc-lam-sau
         # bien moi job hong thanh mot vong "thu 1.490 -> hoan 1.490 -> xoa may"
         # cho mot may chua tung ton tai. Xem `billing.mo_chu_ky`.
-        assert credit.so_da_giu(db, job.id) == 1790, "phai GIU CHO du so tien"
-        assert credit.so_du(db, user_id) == 10_000 - 1790, "giu cho van khoa so du"
+        from apps.vps import cost
+        gia = cost.credit_thang("vps-vua")
+        assert credit.so_da_giu(db, job.id) == gia, "phai GIU CHO du so tien"
+        assert credit.so_du(db, user_id) == 10_000 - gia, "giu cho van khoa so du"
         assert may.paid_until is None, (
             "chu ky chi duoc mo khi may len that — `jobs._quyet_toan`")
         loai = {e.loai for e in db.query(VpsEvent).filter_by(instance_id=may.id)}
@@ -577,7 +615,11 @@ def test_khach_DA_DANG_NHAP_thay_bieu_mau_chu_khong_thay_loi_moi_dang_nhap(
         # được tới Proxmox nên `suc_chua` là None, và fail-closed đúng nghĩa là
         # không dựng biểu mẫu. `test_khong_doc_duoc_suc_chua_thi_KHONG_cho_tao_may`
         # mới là chỗ chốt điều đó. Ở đây chỉ chốt: bảng giá vẫn hiện.
-        assert "149.000" in r.text
+        # Giá đọc từ catalog, ⛔ không chép lại: một bản chép trong test là
+        # một bản sẽ lệch — và nó đã lệch thật ngày 26/09/2026 (149k → 159k).
+        from apps.vps import cost
+        gia_nho = f"{cost.lay_plan('vps-nho').gia_thang_vnd:,}".replace(",", ".")
+        assert gia_nho in r.text, f"trang khong hien gia goi Nho ({gia_nho})"
     finally:
         client.close()
 
