@@ -318,6 +318,21 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.ltt_voice.nghe_thu", "duong_cho_trang"),
         ("apps.ltt_voice.nghe_thu", "duong_cho_app_khac"),
     },
+
+    # ── PROMPT AI giao anh tham chieu sang taovideo (spec pha 1, N-1/N-2) ──
+    #
+    # ⭐ Gioi han canh o DUNG MOT module `apps.taovideo.refs` — khong import
+    #    `apps.taovideo.routes`/`jobs`. `refs.py` la lop chuan hoa THUAN
+    #    (khong goi job, khong doc CSDL cua taovideo), nen dung no khong keo
+    #    theo trang thai hay hanh vi cua taovideo — chi dung mot phep bien
+    #    doi du lieu da do (R-2, docs spec pha 1).
+    ("prompt_ai_ommi", "taovideo"): {
+        ("apps.taovideo.refs", "normalize_image"),
+        ("apps.taovideo.refs", "image_to_inline"),
+        ("apps.taovideo.refs", "image_role"),
+        ("apps.taovideo.refs", "VALID_IMAGE_ROLES"),
+        ("apps.taovideo.refs", "MAX_INLINE_BYTES"),
+    },
 }
 
 
