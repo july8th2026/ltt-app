@@ -935,6 +935,40 @@ def dem_profile_mat_tin_hieu(db) -> int:
         if so_lan_mat_tin_hieu(profile))
 
 
+def lech_cau_hinh_goi(plan, that: dict) -> dict:
+    """Máy thật có đúng `cores`/`memory` mà **gói** hứa không? Trả phần lệch.
+
+    Trả `{}` khi khớp. Trả `{"cores": (that, goi), ...}` cho từng trường lệch —
+    ⛔ không trả `True/False`: người đọc cần biết **lệch chiều nào**, vì lệch
+    xuống là khách nhận thiếu thứ đã trả tiền, còn lệch lên là ta cho không.
+
+    ## Vì sao phép so này tồn tại
+
+    `jobs._cau_hinh_may_trong` đặt `cores`/`memory` **một lần, lúc tạo máy**, và
+    ⛔ không đường nào đọc lại. Ngày 26/09/2026 gói Nhỏ đổi từ 1 vCPU/2 GB sang
+    2 vCPU/4 GB: từ giây đó sổ nói một đằng, máy chạy một nẻo, và ⛔ **không có
+    gì báo** — đúng khuôn *"hai chỗ khai cùng một điều mà không ai bắt khớp"*.
+
+    ⛔ Hàm này chỉ ĐO. Sửa thì phải tắt máy khách rồi bật lại, nên nó đi qua
+      `tools/vps_ap_cau_hinh_goi.py` với người bấm, ⛔ không nằm trong vòng bảo
+      trì. Một vòng nền tự khởi động lại máy khách là một sự cố.
+
+    `that` thiếu khoá, hoặc mang 0 (⛔ không đọc được), thì ⛔ **không** kết luận
+    là lệch: *"chưa đo được"* và *"đo được và sai"* là hai chuyện khác nhau, và
+    gộp chúng thì mọi lần Proxmox im lặng sẽ thành một báo động giả.
+    """
+    if plan is None:
+        return {}
+    ra = {}
+    for truong, mong_muon in (("cores", plan.vcpu), ("memory", plan.ram_mb)):
+        do_duoc = int(that.get(truong) or 0)
+        if do_duoc <= 0:
+            continue
+        if do_duoc != int(mong_muon):
+            ra[truong] = (do_duoc, int(mong_muon))
+    return ra
+
+
 def co_gi_de_doi_chieu(*, so_may: int, so_ip: int) -> bool:
     """Ho so nay co gi trong SO CUA TA de doi chieu khong.
 

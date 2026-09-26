@@ -1420,6 +1420,54 @@ moc_sau(i)              =  bat(i+1)                    [bien co that ke tiep]
 
 ---
 
+## 🔴 QUÉT XUYÊN LÀN — bắt buộc sau MỖI lượt gộp (thêm 26/09 vì đã vấp)
+
+**Sự cố:** sau khi gộp Task 4 và Task 6, điều phối chỉ chạy `pre-commit run
+--all-files` — **bánh cóc TĨNH** — và nó xanh **7/7** mọi lần. Nhưng **ba bài kiểm
+đỏ trên `main`** suốt thời gian đó:
+
+```
+test_2051::test_so_hoc_tran_ep_la_MOT_don_vi_moi_luot          <- Task 4 (VONG_TOI_DA 2->1)
+test_2051::test_chuoi_lat_cat_qua_hang_doi_ve_done_va_GIONG    <- Task 4
+test_4700::test_4700_bang_so_do_LAI_DUOC_tu_du_lieu_da_commit  <- Task 6 (GIAY_MOI_DAU_CAU)
+        AssertionError: so_nhom: do lai ra 122, tep ghi 126
+```
+
+🔑 **Vì sao lưới cũ ⛔ không bắt được:** `pre-commit` đo **hình dạng mã** (ruff, kết
+dòng, ranh giới import, chuỗi chưa bọc `_()`), ⛔ **không chạy một phép kiểm nào**. Và
+test **nhắm** của mỗi làn xanh **trong cô lập**, vì mỗi làn chỉ chạy tệp test của
+chính nó.
+
+⭐ Đúng bài học đã ghi trong sổ: *luật một-tệp-một-chủ ngăn xung đột **MERGE**, ⛔ không
+ngăn xung đột **NGỮ NGHĨA**.* Thứ va nhau ⛔ không phải một tệp — là **một CON SỐ** mà
+làn này đổi và test của làn khác khẳng định.
+
+### Luật thêm vào
+
+Sau **mỗi** lượt gộp vào `main`, ngoài `pre-commit run --all-files`, phải chạy **quét
+xuyên làn**: hợp của tệp test mà **mọi** làn đã chạm, cộng các tệp khẳng định hằng số
+mà làn vừa gộp đã đổi.
+
+```bash
+python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien asv-quet -- python -m pytest \
+  tests/test_2000_asv_ngon_ngu.py tests/test_2018_asv_ngan_sach_do_dai.py \
+  tests/test_2050_asv_lat_cat_120_phut.py tests/test_2051_asv_lat_cat_hang_doi.py \
+  tests/test_2062_asv_nan_thoi_luong.py tests/test_408_asv_dich_thuat.py \
+  tests/test_423_asv_giao_dien.py tests/test_429_asv_v4_dau_vao_lon.py \
+  tests/test_441_asv_v4_nan_cho_vua.py tests/test_4600_asv_san_dung_sai.py \
+  tests/test_4700_asv_gop_khe_that.py -q
+```
+
+⚠️ **Cách tìm "tệp khẳng định hằng số vừa đổi" — ⛔ đừng đoán:**
+`grep -rln "<TEN_HANG_SO>" tests/`. Một làn đổi `VONG_TOI_DA` thì phải grep
+`VONG_TOI_DA` trong `tests/` **TRƯỚC KHI** gộp, ⛔ không phải sau.
+
+⛔ **Và một bài kiểm CHÉP con số dẫn xuất từ một hằng số là một cái bẫy, ⛔ không phải
+một bài kiểm.** Thuốc: bài kiểm **ĐỌC** hằng số rồi tự tính. Sau đó đổi hằng số ⛔ không
+làm đỏ nó nữa — và đó mới là điều nó vốn muốn chốt.
+
+---
+
 ## Nghiệm thu — sau Task 1, và lại sau Task 8
 
 1. Gộp `main`, chạy `pre-commit run --all-files`.

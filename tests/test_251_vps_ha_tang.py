@@ -133,8 +133,8 @@ def test_khong_goi_nao_duoi_nguong_dia_cua_windows():
 
 
 def test_gia_quy_ra_credit_theo_ti_gia_nen_tang():
-    assert cost.credit_thang("vps-nho") == 1490       # 149.000d / 100
-    assert cost.credit_thang("vps-vua") == 1790
+    assert cost.credit_thang("vps-nho") == 1590       # 159.000d / 100
+    assert cost.credit_thang("vps-vua") == 2090
     assert cost.credit_thang("vps-lon") == 3290
 
 
@@ -152,7 +152,7 @@ def test_goi_re_nhat_phai_tra_noi_tien_IP_rieng():
 
 
 def test_dia_mua_them_cong_dung_va_chi_nhan_boi_cua_10():
-    assert cost.gia_thang_vnd("vps-vua", 20) == 179_000 + 2 * 25_000
+    assert cost.gia_thang_vnd("vps-vua", 20) == 209_000 + 2 * 25_000
     assert cost.dia_tong_gb("vps-vua", 20) == 60 + 20
     with pytest.raises(ValueError):
         cost.gia_thang_vnd("vps-vua", 7)
@@ -201,10 +201,35 @@ def test_moi_ban_ban_cho_khach_deu_chay_duoc_o_it_nhat_MOT_goi():
         assert any(os_images.hop_le(p.id, img.id)[0] for p in PLANS),             f"{img.id} khong goi nao chay duoc"
 
 
-def test_goi_nho_khong_chay_ban_co_giao_dien():
-    duoc, ly_do = os_images.hop_le("vps-nho", "winsrv2022-gui")   # 2 GB RAM
-    assert duoc is False
-    assert "RAM" in ly_do
+def test_MOI_goi_dang_ban_deu_chay_duoc_ban_co_giao_dien():
+    """26/09/2026: gói Nhỏ lên 4 GB nên **không còn** gói nào bị chặn vì RAM.
+
+    Trước đó test này chốt điều ngược lại (gói Nhỏ 2 GB ⛔ không chạy được
+    bản có giao diện). ⭐ Khi một gói đổi, test cũ ⛔ không được **xoá** — nó
+    phải đổi thành lời khai mới, nếu không thì lần sau ai hạ RAM xuống lại
+    ⛔ không có gì bắt.
+    """
+    for p in cost.PLANS:
+        duoc, ly_do = os_images.hop_le(p.id, "winsrv2022-gui")
+        assert duoc is True, f"goi {p.id} khong chay duoc ban co giao dien: {ly_do}"
+
+
+def test_hop_le_VAN_chan_khi_RAM_khong_du():
+    """Cửa chặn theo RAM phải còn sống dù hiện ⛔ không gói nào chạm nó.
+
+    Đo bằng một bản OS giả đòi nhiều RAM hơn mọi gói — ⛔ không phải bằng
+    một gói thật, vì số của gói thật sẽ đổi tiếp và koéo test trôi theo.
+    """
+    import dataclasses
+    to = dataclasses.replace(os_images.lay_os("winsrv2022-gui"),
+                             id="thu-ram-to", ram_mb_toi_thieu=999_999)
+    goc = os_images._THEO_ID
+    os_images._THEO_ID = dict(goc, **{to.id: to})
+    try:
+        duoc, ly_do = os_images.hop_le("vps-lon", to.id)
+    finally:
+        os_images._THEO_ID = goc
+    assert duoc is False and "RAM" in ly_do, ly_do
 
 
 def test_catalog_CHI_con_Windows():
@@ -349,7 +374,7 @@ def test_suc_chua_ghep_proxmox_voi_may_app_CHUA_kip_tao(db):
     g = _gateway(db)
     da_tao = _may(db, g, plan_id="vps-vua")          # 4 GB / 60 GB
     da_tao.vmid = 200
-    _may(db, g, plan_id="vps-nho")                    # 2 GB / 40 GB, chưa có vmid
+    _may(db, g, plan_id="vps-nho")                    # 4 GB / 40 GB, chưa có vmid
     db.flush()
 
     sc = provisioning.suc_chua_hien_tai(
@@ -359,8 +384,8 @@ def test_suc_chua_ghep_proxmox_voi_may_app_CHUA_kip_tao(db):
           "total": 475 * 1024 ** 3}],
         [{"vmid": 200, "maxmem": 4 * 1024 ** 3, "maxdisk": 60 * 1024 ** 3}],
     )
-    # 4 GB (Proxmox, may da tao) + 2 GB (CSDL, may chua tao) = 6 GB
-    assert sc.ram_mb_da_hua == 6 * 1024
+    # 4 GB (Proxmox, may da tao) + 4 GB (CSDL, may chua tao) = 8 GB
+    assert sc.ram_mb_da_hua == 8 * 1024
     assert sc.dia_gb_da_hua == 100
 
 
@@ -739,8 +764,8 @@ def test_thu_dung_so_credit_va_dat_han_30_ngay(db):
     m = _may(db, g, user_id=u.id, plan_id="vps-vua")
 
     now = datetime(2026, 8, 22, tzinfo=timezone.utc)
-    assert billing.thu_mot_chu_ky(db, m, now=now) == 1790
-    assert credit.so_du(db, u.id) == 5000 - 1790
+    assert billing.thu_mot_chu_ky(db, m, now=now) == 2090
+    assert credit.so_du(db, u.id) == 5000 - 2090
     assert m.paid_until == now + timedelta(days=30)
 
 
@@ -842,7 +867,7 @@ def test_nap_credit_trong_han_giu_du_lieu_thi_may_treo_duoc_mo_lai(db):
     billing.thu_phi_dinh_ky(db, now=sau)
     assert m.trang_thai == "da_tat" and m.xoa_sau is None
     assert m.paid_until == sau + timedelta(days=30)
-    assert credit.so_du(db, u.id) == 5000 - 1790
+    assert credit.so_du(db, u.id) == 5000 - 2090
     loai = [e.loai for e in db.execute(select(VpsEvent).where(
         VpsEvent.instance_id == m.id).order_by(VpsEvent.created_at)).scalars()]
     assert "go_treo" in loai

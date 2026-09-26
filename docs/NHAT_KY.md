@@ -12,6 +12,119 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-26 (chiều, sau) — Gói Nhỏ lên **2 vCPU / 4 GB**; và "cấu hình" ⛔ không phải "đang chạy"
+
+Chủ dự án dùng thật và báo lại: Windows Server 2016 trên 1 vCPU / 2 GB **nặng
+đến mức không dùng được**. 2 GB đúng là yêu cầu tối thiểu của Microsoft cho bản
+Core — nhưng ⭐ *"đủ tối thiểu để CÀI được"* ⛔ không phải *"đủ để DÙNG được"*, và
+`os_images` chỉ gác được vế đầu.
+
+| Gói | Trước | Sau |
+|---|---|---|
+| Nhỏ | 1 vCPU / 2 GB / 40 GB / **149k** | 2 vCPU / 4 GB / 40 GB / **159k** |
+| Vừa | 2 vCPU / 4 GB / 60 GB / **179k** | *(cấu hình giữ nguyên)* / **209k** |
+| Lớn | 4 vCPU / 8 GB / 80 GB / 329k | giữ nguyên |
+
+Sửa **tại chỗ** chứ ⛔ không thêm gói mới — trái luật mặc định ghi trong docstring
+`Plan` — vì đã **đếm trước**: đúng MỘT người đang thuê VPS (`akakenly.design`), và
+đó là chính chủ dự án. Docstring nay ghi lại điều kiện ấy; có khách thật rồi thì
+quay về luật mặc định. Gói Vừa nay ⛔ **không** mở thêm bản Windows nào so với gói
+Nhỏ, nên mô tả đổi theo: nó bán **đĩa và băng thông**.
+
+### 🔴 Cái bẫy của buổi này: tôi đọc SỔ rồi nói "khớp"
+
+Công cụ vừa viết đọc `GET .../qemu/<id>/config`, thấy `cores=2, memory=4096`, in
+**"khớp"**. Nhưng hai máy khách **vẫn đang chạy 1 vCPU / 2 GB**: cấu hình đã được
+đổi, mà QEMU **chốt CPU/RAM lúc tiến trình khởi động**, và hai máy đã chạy liên
+tục 25 giờ.
+
+⭐ *"Thứ tôi đang hỏi có SẴN ở chỗ tôi đang đứng không?"* Câu hỏi là **khách đang
+   được cấp bao nhiêu**; `config` trả lời một câu KHÁC — *"lần boot sau sẽ là bao
+   nhiêu"*. Hai câu chỉ trùng khi ⛔ không ai sửa gì kể từ lần bật máy.
+
+Nay báo cáo đối chiếu **cả hai** và có trạng thái thứ ba: `CHO KHOI DONG LAI`.
+Kèm hai bất biến: `0` là *không đo được* ⛔ không phải *máy có 0 vCPU*; và ⛔
+**không** được dùng `status/reboot` để áp CPU/RAM — nó khởi động lại **guest**
+trong cùng tiến trình QEMU cũ, nên máy boot lại mà vẫn giữ số cũ.
+
+### ⏳ CHƯA deploy — chờ làn ASV (chủ dự án chốt 26/09)
+
+Giá mới đang nằm trên `main` nhưng **chưa lên production** — `app.lttstudios.com`
+vẫn bán 149k/179k (bản đang chạy `dff24d4b`, dựng 15:28).
+
+Deploy xuất `git archive` HEAD cây chính, nên nó mang theo **19 commit** của mọi
+phiên. Làn Auto Scan Video **chặn**, với lý do cụ thể: Task 12 vừa dựng lại vòng
+lõi `voice_synthesis` (chạm `lat_cat` và vân tay, tức chạm đường bút toán credit)
+và **chưa chạy worker thật lần nào**; còn 4 task, 2 đang bay; và app ASV **đang
+mở cho khách**.
+
+Chủ dự án chọn **chờ** — giá mới chỉ ảnh hưởng lượt **mua mới**, mà hiện chưa có
+khách VPS nào ngoài chính chủ dự án, nên chờ gần như không mất gì.
+
+⭐ Đường *"nhánh phát hành từ `dff24d4b` + cherry-pick"* đã xét và **bỏ**, vì một
+   lý do cơ học chứ ⛔ không phải cẩn thận chung chung: `setup/2-cai-dat.ps1:81`
+   **từ chối chạy từ git worktree**, và `$VAN_CHUYEN` chép `apps/*/vendor` +
+   `yolov8n.pt` **từ `$src`** — một cây riêng ⛔ không có chúng, nên bản xuất sẽ
+   làm `upscalevideo` chết **im lặng** (EXITCODE=0, `/health/ready` 200,
+   `nghiem_thu_deploy` báo "thiếu 0" vì nó chỉ đếm `.py`).
+
+**Đo bởi:** phiên "Phục hồi VPS ngừng hoạt động", 26/09/2026. Gỡ chặn khi làn ASV
+báo xong 13/13 — lúc đó bốn commit VPS đi kèm luôn, ⛔ không cần làm gì thêm.
+
+### Lỗ hở đã vá: sổ và máy thật ⛔ không ai bắt khớp
+
+`jobs._cau_hinh_may_trong` đặt `cores`/`memory` **một lần, lúc tạo máy**; ⛔ không
+đường nào đọc lại. Từ giây bảng giá đổi, `billing` thu theo **gói** còn khách
+nhận theo **máy** — và ⛔ không cửa nào nói ra. Nay `bao_tri.lech_cau_hinh_goi`
+**đo**, `tools/vps_ap_cau_hinh_goi.py` **sửa** (chỉ khi có người bấm `--ap`). Tách
+đôi vì một vòng bảo trì tự khởi động lại máy khách là một **sự cố**, ⛔ không phải
+một lần sửa.
+
+**Đã áp cho hai máy đang sống** (chủ dự án đồng ý khởi động lại ngay): vm 204 và
+vm 208 nay chạy đúng 2 vCPU / 4096 MB, RDP mở lại sau ~90 giây.
+
+⚠️ Ghi lại một bẫy công cụ: `i18n.py trich` quét **cả cây**, kể cả sửa đổi đang dở
+của làn khác — một lượt chạy làm `.po` đổi **44.477 dòng** và `.mo` **teo 80 KB**.
+Thêm hai chuỗi thì thêm **tay** vào `.po` rồi `bien-dich`.
+
+## 2026-09-26 (chiều) — Cách ly khách-với-khách: **đo bằng gói thật**, có đối chứng
+
+Tường lửa `vmbr1` bật sáng nay mới chỉ là **cấu hình**. Hôm nay đo xem nó có thật sự
+chặn một khách mạo địa chỉ IP của khách khác không.
+
+**Kết quả** (chi tiết + lệnh chạy lại: `docs/VPS/RA_SOAT_2026-09-26.md`):
+
+| NIC | nguồn thật | nguồn mạo |
+|---|---|---|
+| `firewall=1` + `ipfilter` | 3/3 gói tới nơi | **0/3** — luật `! match-set …ipfilter… src` đếm đúng 3 gói / 252 byte |
+| `firewall=0` (đối chứng) | 3/3 | **3/3, có gói trả lời** |
+
+Đo ở **đầu nhận** (`tcpdump`), ⛔ không suy từ `ping` — gói mạo nguồn thì ⛔ không
+bao giờ có đường về, nên "ping hỏng" ⛔ không phân biệt được *bị chặn* với *không ai
+trả lời*. Đối chứng `firewall=0` là thứ biến số 0 thành một phát hiện.
+
+Ngoài IP, mỗi `tap` có `firewall=1` còn chặn **mạo MAC** (ebtables + iptables) và
+**mạo ARP** (`--arp-ip-src`). Lỗi `ipfilter` của cộng đồng (gói thỉnh thoảng lọt,
+vá netfilter 09/2025) ⛔ **không** áp: node này chạy iptables/ebtables, ⛔ không chạy
+nftables cho tường lửa (`nft list ruleset | grep -c 199` = 0).
+
+**Cách đo phải đổi giữa chừng.** Hai máy test Linux ⛔ không dựng nổi trên node này:
+i440fx treo SeaBIOS (máy khách thật là q35), SeaBIOS ⛔ không boot `scsi0` (máy khách
+thật `sata0`), `virtio_balloon` rồi `virtio_net` treo ở `vp_notify`, và khi đổi sang
+`e1000` thì ảnh `debian-13-genericcloud` **⛔ không có driver e1000** (nó chỉ mang
+virtio) — `tcpdump` trên tap bắt 0 gói trong 15 s. Thay bằng **một NIC thứ ba gắn
+nóng vào VM199 + network namespace**: `net0`/`net1` của nó đều `firewall=0` nên bật
+tuỳ chọn ở mức máy ⛔ không chạm đường router, và ⛔ không phải khởi động lại nó.
+Sau khi đo, VM199 về đúng digest rỗng cũ.
+
+⚠️ **Bẫy đo lường ghi lại:** hai guest kẹt ở `vp_notify` **đốt CPU thật** — node lên
+89 % CPU / loadavg 26,8 trong khi `/nodes/*/qemu` báo chính hai máy đó **0 %**. Tắt
+chúng: 51 %. Xoá hẳn: loadavg **0,50**. ⛔ Đừng tin cột `cpu` của một VM đang treo.
+Cũng vì thế mà nghi vấn "sáng nay bật tường lửa làm cả node quá tải" **bị số đo bác**.
+
+Đã dọn: VM 900/901, ảnh `debian-13-genericcloud` trên `local`, netns `thu`, mật khẩu
+test dùng một lần. Máy khách kiểm lại sau phép đo: ARP `REACHABLE`, cổng 3389 **MỞ**.
+
 ## 2026-09-26 — Cây chính: KHÔNG phải một tranh chấp, mà BỐN chiều độc lập
 
 **Việc 3 của kế hoạch vận hành wf-v2** (`docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md`

@@ -321,6 +321,17 @@ def test_4700_bang_so_do_LAI_DUOC_tu_du_lieu_da_commit():
     """⛔ Một bảng số chép tay là một bảng không tự biết nó đã cũ.
 
     ⇒ Chạy lại chính bộ đo trên dữ liệu đã commit và đối chiếu với tệp kết quả.
+
+    ⚠️ **`so_nhom` là một MỐC TẠM, ⛔ không phải một hằng số của tự nhiên (26/09).**
+       Sinh lại **126 → 122** sau Task 6: `Khe.giay_can()` cộng thêm thời gian ngắt
+       hơi ở dấu câu ⇒ ước lượng dài hơn ⇒ **ít khe được gộp hơn**. Hệ quả **đúng**
+       của một bản sửa đúng — nên `122` là con số mới.
+
+       ⛔ Nhưng `ngon_ngu.GIAY_MOI_DAU_CAU = 0.10` **CHƯA được đo trên giọng của
+       ta** (mượn hình từ `VideoLingo`). ⇒ *"122 đúng với `GIAY_MOI_DAU_CAU =
+       0.10`; hằng số này còn phải được `tools/asv_doi_soat.py` (Đ1/Đ2) kiểm
+       chứng, nên con số này là **mốc tạm**, ⛔ không phải một hằng số của tự
+       nhiên."* Phép kiểm dưới đây chốt rằng tệp bằng chứng **tự khai** điều đó.
     """
     import importlib.util
 
@@ -338,6 +349,17 @@ def test_4700_bang_so_do_LAI_DUOC_tu_du_lieu_da_commit():
     assert moi["ky_tu_moi_giay"]["1_truoc"]["p50"] == \
            cu["ky_tu_moi_giay"]["1_truoc"]["p50"]
     assert st.median([1.0]) == 1.0      # bộ đo dùng `statistics`, giữ import thật
+
+    # ⭐ Tệp bằng chứng phải TỰ KHAI nó dựa trên hằng số nào — ⛔ một bảng số
+    #    không nói mình đứng trên cái gì là một bảng số không ai dám bỏ đi.
+    from apps.auto_scan_video import ngon_ngu as _nn
+
+    cb = _bang_ky_tu_moi_giay()["canh_bao"]
+    assert cb["moc_tam"] is True
+    assert cb["giay_moi_dau_cau"] == _nn.GIAY_MOI_DAU_CAU, (
+        "bằng chứng khai `GIAY_MOI_DAU_CAU`=%s, sản phẩm nay dùng %s — sinh lại"
+        % (cb["giay_moi_dau_cau"], _nn.GIAY_MOI_DAU_CAU))
+    assert "asv_doi_soat" in cb["ghi_chu"]
 
 
 def test_4700_MOT_khoa_MOT_chu_so_huu_trong_bao_cao_voice():

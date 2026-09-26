@@ -199,6 +199,14 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     #    >= 1.0 o day nen chi can mot tran TREN, ⛔ khong can `max()`.
     he_so_theo_ma: dict[str, float] = {}
     he_so_toc_da_ap: list[float] = []
+    # ⭐ Nấc cứu cuối (Task 8, chốt 26/09): chủ dự án chốt thứ tự cứu là
+    #    (b) nới biên lần hai (`thoi_gian.lap_ke_hoach` đã mượn
+    #    `TY_LE_MUON_KHOANG_LANG` — xong ở đó) → (c) CHẤP NHẬN phần còn lệch,
+    #    nhưng ⛔ không được IM. Ở đây ta đang đứng đúng chỗ đã biết cả `h`
+    #    (hệ số cần) và `h_ap` (hệ số THẬT SỰ áp, kẹp ở tran ky thuat), nên đếm
+    #    ngay tại đây thay vì dựng một phép tính thứ hai ở chỗ khác.
+    so_doan_lech_cuoi = 0
+    giay_lech_cuoi = 0.0
     for d in (ban_ke.get("doan") or []):
         # ⛔ Dong DI THEO mang cung `he_so_co_gian` voi dong dau (mot tep, mot
         #    lan `atempo`) — dem no lan thu hai chi lam sai lech thong ke.
@@ -212,6 +220,17 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
                 "asv timing_align: doan %s co he_so_co_gian=%.4f vuot tran KY "
                 "THUAT cua atempo %.2f - ap %.4f de tranh tieng rac",
                 ma, h, TRAN_KY_THUAT_ATEMPO, h_ap)
+            # ⭐ `h_ap` la nac cuu (c): CHAP NHAN thay vi tran, nhung tep tieng
+            #    sau khi ap `h_ap` van DAI HON khe cua no (`h_ap < h` <=>
+            #    `giay/h_ap > khe`, vi `h = giay/khe`). Ghi lai giay THAT su
+            #    con lech, ⛔ khong chi dem so doan.
+            giay = float(d.get("giay") or 0.0)
+            khe = float(d.get("khe") or 0.0)
+            if khe > 0 and giay > 0:
+                giay_sau = giay / h_ap
+                if giay_sau > khe:
+                    so_doan_lech_cuoi += 1
+                    giay_lech_cuoi += giay_sau - khe
         he_so_toc_da_ap.append(float(h_ap))
         if h_ap > nan_cho_vua.tran_co_gian():
             log.warning(
@@ -286,6 +305,11 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
         # 🔑 Task 4 (chot 26/09): moi he so tang toc THAT SU da ap, ⛔ khong
         #    con bi kep im lang — xem chu thich o vong lap phia tren.
         do_duoc["he_so_toc_da_ap"] = he_so_toc_da_ap
+        # ⭐ Nấc (c) của chủ dự án: chấp nhận lệch, nhưng ⛔ KHÔNG im. Hai con số
+        #    này đi vào hồ sơ giai đoạn, nên "chấp nhận" là một quyết định NHÌN
+        #    THẤY ĐƯỢC chứ không phải một sự vắng mặt.
+        do_duoc["so_doan_lech_cuoi"] = int(so_doan_lech_cuoi)
+        do_duoc["giay_lech_cuoi"] = round(float(giay_lech_cuoi), 3)
 
         khoa = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
                                    stage=pipeline.TIMING_ALIGN, van_tay=vt,

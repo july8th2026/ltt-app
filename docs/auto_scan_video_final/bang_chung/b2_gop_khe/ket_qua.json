@@ -1,4 +1,10 @@
 {
+  "canh_bao": {
+    "moc_tam": true,
+    "giay_moi_dau_cau": 0.1,
+    "am_tiet_moi_giay": 3.35,
+    "ghi_chu": "so_nhom dung voi GIAY_MOI_DAU_CAU = 0.1; hang so nay con phai duoc tools/asv_doi_soat.py (D1/D2) kiem chung, nen con so nay la MOC TAM, khong phai mot hang so cua tu nhien"
+  },
   "tran": {
     "netflix_ky_tu_moi_giay": 20.0,
     "o_phu_de_ky_tu": 84,
@@ -12,28 +18,28 @@
   "phim": {
     "v1": {
       "so_khe": 83,
-      "so_nhom": 56,
-      "so_nhom_da_gop": 16,
+      "so_nhom": 52,
+      "so_nhom_da_gop": 18,
       "khong_vua_truoc": {
-        "k": 42,
+        "k": 48,
         "n": 83,
-        "ti_le": 0.506
+        "ti_le": 0.578
       },
       "khong_vua_sau": {
-        "k": 24,
-        "n": 56,
-        "ti_le": 0.429
+        "k": 25,
+        "n": 52,
+        "ti_le": 0.481
       },
       "duoi_mot_am_tiet_truoc": {
         "k": 46,
         "n": 83
       },
       "duoi_mot_am_tiet_sau": {
-        "k": 19,
-        "n": 56
+        "k": 14,
+        "n": 52
       },
       "khe_trung_vi_truoc_s": 3.062,
-      "khe_trung_vi_sau_s": 3.893,
+      "khe_trung_vi_sau_s": 4.852,
       "ky_tu_moi_giay": {
         "1_truoc": {
           "n": 83,
@@ -52,7 +58,7 @@
           "ti_le_vuot_20": 0.0
         },
         "3_phan_thuc_gop_ca_o": {
-          "n": 56,
+          "n": 52,
           "p50": 14.87,
           "p95": 16.75,
           "max": 17.87,
@@ -69,11 +75,11 @@
           "ti_le_vuot_tran_o": 0.072
         },
         "3_phan_thuc_gop_ca_o": {
-          "n": 56,
-          "ky_tu_p50": 63.0,
+          "n": 52,
+          "ky_tu_p50": 71.0,
           "ky_tu_max": 211,
-          "so_vuot_tran_o": 19,
-          "ti_le_vuot_tran_o": 0.339
+          "so_vuot_tran_o": 20,
+          "ti_le_vuot_tran_o": 0.385
         }
       }
     },
@@ -82,14 +88,14 @@
       "so_nhom": 39,
       "so_nhom_da_gop": 13,
       "khong_vua_truoc": {
-        "k": 66,
+        "k": 69,
         "n": 74,
-        "ti_le": 0.892
+        "ti_le": 0.932
       },
       "khong_vua_sau": {
-        "k": 34,
+        "k": 35,
         "n": 39,
-        "ti_le": 0.872
+        "ti_le": 0.897
       },
       "duoi_mot_am_tiet_truoc": {
         "k": 56,
@@ -149,14 +155,14 @@
       "so_nhom": 31,
       "so_nhom_da_gop": 0,
       "khong_vua_truoc": {
-        "k": 27,
+        "k": 28,
         "n": 31,
-        "ti_le": 0.871
+        "ti_le": 0.903
       },
       "khong_vua_sau": {
-        "k": 27,
+        "k": 28,
         "n": 31,
-        "ti_le": 0.871
+        "ti_le": 0.903
       },
       "duoi_mot_am_tiet_truoc": {
         "k": 17,
@@ -214,18 +220,18 @@
   },
   "tong": {
     "so_khe": 188,
-    "so_nhom": 126,
-    "so_nhom_da_gop": 29,
+    "so_nhom": 122,
+    "so_nhom_da_gop": 31,
     "khe_duoi_mot_am_tiet_s": 3.2,
     "khong_vua_truoc": {
-      "k": 135,
+      "k": 145,
       "n": 188,
-      "ti_le": 0.718
+      "ti_le": 0.771
     },
     "khong_vua_sau": {
-      "k": 85,
-      "n": 126,
-      "ti_le": 0.675
+      "k": 88,
+      "n": 122,
+      "ti_le": 0.721
     },
     "duoi_mot_am_tiet_truoc": {
       "k": 119,
@@ -233,11 +239,11 @@
       "ti_le": 0.633
     },
     "duoi_mot_am_tiet_sau": {
-      "k": 44,
-      "n": 126,
-      "ti_le": 0.349
+      "k": 39,
+      "n": 122,
+      "ti_le": 0.32
     },
-    "ti_le_khe_bi_gop": 0.33,
+    "ti_le_khe_bi_gop": 0.351,
     "ky_tu_moi_giay": {
       "1_truoc": {
         "n": 188,
@@ -256,7 +262,7 @@
         "ti_le_vuot_20": 0.0
       },
       "3_phan_thuc_gop_ca_o": {
-        "n": 126,
+        "n": 122,
         "p50": 14.83,
         "p95": 16.33,
         "max": 17.87,
@@ -273,11 +279,11 @@
         "ti_le_vuot_tran_o": 0.154
       },
       "3_phan_thuc_gop_ca_o": {
-        "n": 126,
-        "ky_tu_p50": 74.5,
+        "n": 122,
+        "ky_tu_p50": 76.5,
         "ky_tu_max": 211,
-        "so_vuot_tran_o": 54,
-        "ti_le_vuot_tran_o": 0.429
+        "so_vuot_tran_o": 55,
+        "ti_le_vuot_tran_o": 0.451
       }
     }
   }
