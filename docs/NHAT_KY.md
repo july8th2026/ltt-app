@@ -21769,8 +21769,29 @@ với hàng có bằng chứng là đúng lỗi *hai trạng thái gộp thành 
   chuỗi rỗng, khớp MỌI dòng và luôn trả về đúng số dòng. Tôi đã kết luận nhầm
   "agent phá kết dòng" vì nó. Đo kết dòng bằng Python:
   `open(p,'rb').read().count(b'\r\n')`.
-- `tools/i18n_merge_driver.py` **hỏng**: giải mã đầu ra subprocess bằng locale
-  (cp1252) thay vì UTF-8 ⇒ `UnicodeDecodeError` rồi `AttributeError: 'NoneType'`
-  khi merge `.po`. Phải giải xung đột tay. Chủ khu i18n nên vá.
+- 🔴 `tools/i18n_merge_driver.py` **hỏng** ⇒ mọi lượt merge `.po` rơi về giải
+  tay. `_git()` (`:86-88`) dùng `text=True` **không kèm `encoding=`**, nên trên
+  Windows Python giải mã theo locale (**cp1252**); `.po` là UTF-8 tiếng Việt ⇒
+  `UnicodeDecodeError` byte `0x8f`, `r.stdout` thành `None`, rồi
+  `dich.write_bytes(r.stdout.encode("utf-8"))` (`:159`) nổ tiếp.
+  **Vá:** thêm `encoding="utf-8"` vào `_git()`. Đã báo chủ khu i18n
+  (phiên VPS), ⛔ không tự sửa — khu của họ, và họ có 1141 phép nghiệm thu.
+
+- ⭐ **Giải xung đột `.po` bằng tay thì ĐỪNG chỉ xoá dòng marker.** Git dựng
+  vùng xung đột bằng cách cho marker **thế chỗ** dòng trống ngăn giữa hai mục.
+  Xoá marker mà không trả lại dòng trống ⇒ hai mục dính liền ⇒ `msgid` của mục
+  sau bị đọc như phần nối của mục trước ⇒ mục đó thành *"chưa dịch"* dù `msgstr`
+  nằm ngay bên dưới. Lượt của tôi mất **3** dấu ngăn; phiên VPS phát hiện và vá
+  ở `59d7e296`. Nội dung không mất dòng nào — mất **dấu chấm câu** của định dạng.
+
+- ⭐ **Kiểm `.po` thì phải ĐỌC `.po`, ⛔ đừng đọc `.mo`.** `msgfmt` dễ dãi hơn
+  parser PO: `.mo` vẫn dịch đúng cả ba mục hỏng, nên hỏi `gettext` thì được trả
+  lời *"ổn cả"*. Phép kiểm rẻ và ĐÚNG KÊNH:
+
+  ```
+  python -c "from babel.messages.pofile import read_po; c=read_po(open('locale/en/LC_MESSAGES/messages.po',encoding='utf-8')); print(len(c), sum(1 for m in c if m.id and not m.string))"
+  ```
+
+  (nền hiện tại: **5408 mục, 200 chưa dịch**; bánh cóc chỉ đỏ khi TĂNG.)
 - `tools/check_i18n.py` đếm cả chuỗi trong `log.info/warning` ⇒ báo tăng oan.
   Không bọc log (dịch log là nhiễu); nên thêm ngoại lệ cho `log.*`.
