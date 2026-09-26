@@ -55,9 +55,23 @@ MANIFEST = AppManifest(
     # H32.6 runtime evidence on RTX 5060 Ti: Fast peak delta 848 MB, Quality
     # x4plus 11,176 MB. Fast receives >2x headroom; Quality and the legacy lane
     # remain at the measured worst-case ceiling rounded up to 12 GB.
-    # H32.6 runtime evidence on RTX 5060 Ti: Fast peak 848 MB, Quality x4plus 11,176 MB.
-    # Fast reduced from 2000 → 1000 MB (50% reduction), Quality from 12000 → 11500 MB.
-    # This enables 4→12 concurrent fast jobs, improves GPU utilization to ~90%.
+    #
+    # ⭐ Con số này KHÔNG mua thêm job đồng thời — nó chỉ là SÀN NHẬN một job.
+    #    `platform_core/models.py:1037` đặt `UniqueConstraint("host","gpu_uuid")`
+    #    trên `GpuLease` ⇒ **một GPU một máy = tối đa MỘT lease sống = MỘT job
+    #    GPU**. `gpu_lease.py:179` loại GPU đã có lease khỏi ứng viên mà không
+    #    thèm xét `need_mb`. Hạ `need_mb` chỉ hạ ngưỡng trong `_con_cho`
+    #    (`gpu_lease.py:166`: `free - reserved >= need_mb + HEADROOM_MB`), tức
+    #    sàn 3024 → 2024 MB trống cho **một** job đang xin.
+    #
+    # ⛔ Bản cũ ghi ở đây: *"This enables 4→12 concurrent fast jobs, improves GPU
+    #    utilization to ~90%"*. SAI, và docstring của chính `GpuLease`
+    #    (`models.py:1028-1031`) đã cấm trước: *"một job một GPU, không chia sẻ …
+    #    kế toán VRAM theo hứa hẹn sẽ lệch so với thực tế rồi OOM. Muốn chia sẻ
+    #    thì đổi UNIQUE thành kế toán tổng `vram_mb`, nhưng đừng làm khi chưa đo
+    #    được là cần."* Muốn nhiều job GPU cùng lúc thì phải đổi `UNIQUE` — chứ
+    #    không phải đổi con số dưới đây.
+    #    `tests/test_4904_upscale_correction.py` khoá sự thật "đồng thời = 1".
     gpu_vram_mb={
         "upscalevideo.render": 12000,
         "upscalevideo.render.fast": 1000,   # 848 MB + 152 MB safety

@@ -52,7 +52,6 @@ def gpu_temp(gpu_uuid: str = "") -> int:
     Bản trước đọc dòng đầu nvidia-smi, tức luôn báo nhiệt GPU 0 kể cả khi job
     chạy trên GPU 1 — dùng con số đó để giảm tải là giảm nhầm card.
     """
-    from platform_core import gpu as gpu_mod
     try:
         out = subprocess.run(
             ["nvidia-smi", "--query-gpu=uuid,temperature.gpu",
@@ -83,47 +82,75 @@ def pick(preset: Preset, frame_w: int, frame_h: int, reserve_mb: int = 3000,
     nhầm card khác là chọn tile size theo dung lượng không có thật.
 
     H32.6 runtime evidence (RTX 5060 Ti):
-    - Fast (general-x4v3): 848 MB peak → budget threshold 750 MB for full threads
-    - Quality (x4plus): 11,176 MB peak → conservative budget margins
+    - Fast (general-x4v3): dinh 848 MB   -> nguong budget `est_alloc` = 1000 MB
+    - Quality (x4plus):    dinh 11.176 MB -> bien budget than trong theo dai
+
+    ⛔ Con so o day PHAI khop ma ben duoi. Ban cu ghi "750 MB" trong ca docstring
+       nay va mot chu thich cach `est_alloc = 1000` dung HAI dong — chu thich noi
+       doi chinh ham chua no (ISSUE C).
+
+    ⭐ BAT BIEN CUA MOI DAI (ke ca dai DAY, 26/09): `est_alloc_mb` la luong VRAM
+       cau hinh tra ve CAN. Neu budget khong dai tho noi luong do thi ket qua
+       PHAI dat `budget_du_cho_est=False` — ⛔ khong duoc im lang khai mot con so
+       budget khong cover. Ban truoc co dung mot san cho BON dai tren (5095/
+       7025/9314/10524) nhung dai DAY (`tile=256, est=3513`) va duong du phong
+       Fast (`est=500`) khong co san nao: budget = 0 van khai 3513/500.
     """
     total, free = query_vram(gpu_uuid)
     budget = max(0, free - reserve_mb)
     model = PRESET_MODEL[preset]
 
     if preset == Preset.fast:
-        # Fast = general-x4v3: low VRAM footprint, can afford full threading
-        # Tile selection: large frames need larger tiles to avoid border artifacts
+        # Fast = general-x4v3: ton it VRAM, du cho luong day.
+        # Tile: khung LON dung tile NHO hon (256) — tile nho giam dinh VRAM.
+        # Khung nho/vua dung 384. (Ban cu chu thich "large frames need larger
+        # tiles" — NGUOC voi ma ngay ben duoi no.)
         long_edge = max(frame_w, frame_h)
-        tile = 256 if long_edge >= 1100 else 384  # Added tile 256 for medium frames
-        threads = "4:4:4"  # Full threading when budget allows
+        tile = 256 if long_edge >= 1100 else 384
+        threads = "4:4:4"
+        # 848 MB dinh do duoc + 152 MB an toan = 1000. Khop khai bao
+        # `"upscalevideo.render.fast"` trong `manifest.gpu_vram_mb` (tra theo TEN
+        # khoa, khong theo so dong — so dong da ROT mot lan: chu thich cu ghi
+        # `manifest.py:63`, cho that la ~:77).
         est_alloc = 1000
-        
-        # VRAM budget threshold: 750 MB (not 1000) for fast preset
-        # This aligns with actual 848 MB peak measurement
+
         if budget < est_alloc:
             tile, threads, est_alloc = 200, "2:2:2", 500
         return TuneResult(model=model, tile=tile, threads=threads,
                           est_alloc_mb=est_alloc, free_mb=free, budget_mb=budget,
-                          fast_path=True)
+                          fast_path=True, budget_du_cho_est=budget >= est_alloc)
 
-    # Quality = x4plus: high VRAM footprint, conservative threading
-    # Tile selection: larger tiles for larger frames (slower but better quality)
+    # Quality = x4plus: ton nhieu VRAM, luong than trong.
+    # Tile chon theo BUDGET (khong theo kich thuoc khung): tile to = it lan ghep
+    # bien hon, nhung ton VRAM hon. ⚠️ Anh huong cua tile len DO NET la CHUA DO
+    # o day — dung khai "net hon". Moi dai khai dung `est` cua no.
     FAST_TILE, FAST_ALLOC, SAFETY = 512, 10024, 500
     if budget >= FAST_ALLOC + SAFETY:
         return TuneResult(model=model, tile=FAST_TILE, threads="1:2:2",
                           est_alloc_mb=FAST_ALLOC, free_mb=free, budget_mb=budget,
-                          fast_path=True)
+                          fast_path=True, budget_du_cho_est=True)
     if budget >= 9314:
         tile, est = 448, 9314
     elif budget >= 7025:
         tile, est = 384, 7025
-    elif budget >= 5000:
+    elif budget >= 5095:
+        # ⛔ San dai PHAI >= `est` cua chinh no. Ban cu ghi `budget >= 5000` roi
+        #    khai `est = 5095`: job co budget 5000..5094 duoc nhan vao roi khai
+        #    can nhieu hon minh duoc phep (vuot san cua chinh dai 95 MB).
         tile, est = 320, 5095
     else:
+        # Dai DAY: cau hinh nho nhat ta co so do (`tile=256` -> dinh ~3513 MB).
+        # Duoi 3513 MB budget thi KHONG con dai nao nho hon de tut ve, va tu
+        # choi job o day la mot quyet dinh SAN PHAM (khach mat tinh nang khi GPU
+        # dang bi job khac chiem) — nen ta VAN chay, nhung noi that ra rang
+        # budget khong dai tho noi `est`. `budget_du_cho_est=False` + `warning`
+        # la cho noi that do; ⛔ dung "sua" bang cach ha `est` xuong bang budget,
+        # vi `est` la luong CAN, khong phai luong DUOC PHEP.
         tile, est = 256, 3513
     warn = (f"GPU đang bận (trống {free}MiB, budget {budget}MiB). Quality (x4plus) "
             f"sẽ RẤT chậm. Nên chuyển sang Fast hoặc chạy khi GPU rảnh.")
     logger.warning("[autotune] %s", warn)
     return TuneResult(model=model, tile=tile, threads="1:2:2",
                       est_alloc_mb=est, free_mb=free, budget_mb=budget,
-                      fast_path=False, warning=warn)
+                      fast_path=False, warning=warn,
+                      budget_du_cho_est=budget >= est)
