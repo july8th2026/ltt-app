@@ -41,7 +41,7 @@ from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
 from . import (assets, giong_noi, lat_cat, nan_cho_vua, nan_thoi_luong,
-               pipeline, su_dung, thoi_gian, van_ban)
+               ngon_ngu, pipeline, su_dung, thoi_gian, van_ban)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
@@ -158,6 +158,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         k.ma: thoi_gian.ngan_sach_nan_s(k.khe_s, k.ngan_sach_s) for k in khes
     }
 
+    ngon_ngu_dich = str(tai_lieu.get("ngon_ngu_dich") or "")
     # ══ CAU DA NAN DA LUU BEN — doc TRUOC khi tieu them mot dong ════════════
     #
     # 🔴 **Truoc 26/09 cau da nan chi song trong `m["chu"]`, tuc trong BO NHO cua
@@ -200,7 +201,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     ref_b64, preset = giong_noi.giai_giong(
         db, owner_id=run.owner_id, voice_id=ma_giong,
         van_ban="\n".join(str(m.get("chu") or "") for m in muc),
-        ngon_ngu=str(tai_lieu.get("ngon_ngu_dich") or ""))
+        ngon_ngu=ngon_ngu_dich)
 
     phan: list[dict] = []
     ban_ke: list[dict] = []
@@ -220,7 +221,16 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #
     # ⭐ Hai con so nay di vao `tom_tat`, tuc vao bang chung cua MOI luot chay
     #    ve sau. "Cham" khong con la mot cam giac.
-    dong_ho = {"giay_tts": 0.0, "giay_llm_nan": 0.0, "so_doan_nan_oan": 0}
+    dong_ho = {"giay_tts": 0.0, "giay_llm_nan": 0.0, "so_doan_nan_oan": 0,
+               # ⭐ Task 25: doan ⛔ khong con chu de doc sau chuan hoa. Quyet
+               #    dinh san pham la BO QUA (khoang lang dung do dai khe), va
+               #    ca giao uoc cua quyet dinh ay la **dem duoc**: mot khach
+               #    mat mot cau thoai ⛔ khong duoc phep lang le. Xem `[F0]`.
+               "so_doan_im_lang": 0}
+    #: `ma` cua tung doan im lang — ⛔ khong chi mot con so. Mot bao cao noi
+    #: "1 doan im lang" buoc nguoi doc di tim; mot bao cao noi `seg_0002` thi
+    #: khong. Cung ly do voi `vi_sao_hong` (Task 25, Bug 2).
+    ma_im_lang: list[str] = []
 
     # 🔑 LAT CAT (`lat_cat.py`): ~2.000 doan cua 120 phut video khong vua MOT
     #    job. Don vi te nhat = (VONG_TOI_DA + 1) luot TTS + VONG_TOI_DA lan xin
@@ -513,17 +523,109 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    nan -> doc lai, tuc `VONG_TOI_DA + 1` luot TTS cho mot doan
             #    khong vua; phep do nay nay nam o `[B]` (`Khe.giay_can`), rẻ hon
             #    ba bac do lon va ⛔ khong ton mot giay GPU nao.
+            # ── [F0] BAT BIEN O BIEN — Task 25, do duoc 27/09/2026 ────────
+            #
+            # 🔴 **Vi sao khoi nay ton tai.** G17 tren phim khach that chet bon
+            #    lan (moi lan sau 3 lan thu) voi
+            #    `"Tep tieng sinh ra qua ngan (0.0s)."`. Cau do chi tay vao may
+            #    sinh tieng; loi thi o THUONG NGUON — `content_process` giao
+            #    **95/95 doan chu Trung nguyen van** voi `ngon_ngu_dich = "vi"`.
+            #    Do tren chinh bo thay the: mot cau Trung thuan va mot chuoi
+            #    RONG cho ra **cung mot tep 46 byte / 0,000 giay**.
+            #
+            # ⭐ Nen hai cau hoi phai duoc hoi O DAY, cho duy nhat biet `ma`:
+            #      (1) con chu de doc khong?          -> bo qua, DEM, GOI TEN
+            #      (2) chu con la he chu NGUON khong?  -> tu choi, GOI TEN
+            #    ⛔ Khong de mot trong hai bieu hien thanh "tep qua ngan".
+            chu_doc = giong_noi.chu_se_doc(chu, tu_dien_rieng=tu_dien or None)
+
+            # ── (2) Ban dich chua dich ⇒ that bai CUOI CUNG ────────────────
+            #
+            # ⛔ `GiongKhongHopLe` chu ⛔ khong `GiongError`: chu khong doi giua
+            #    hai lan thu, nen `TAM_THOI` bien mot loi deterministic thanh 3
+            #    luot vo ich — do duoc dung 12 luot (4 run x 3 thu) hom nay.
+            #
+            # ⚠️ Chan TRUOC khi ton mot giay GPU, cung cho voi (1): mot lan chay
+            #    ⛔ khong duoc doc xong 94 doan roi moi noi rang ban dich sai.
+            if chu_doc and ngon_ngu.chua_dich_sang(chu_doc, dich=ngon_ngu_dich):
+                # ⛔ Viet "phan tram" bang CHU, ⛔ khong ky tu `%`: mot `%` trong
+                #    msgid lam `babel` kiem theo `python-format` (ngoai
+                #    `python-brace-format`) va bao *"placeholders are
+                #    incompatible"* luc bien dich catalog — bánh cóc i18n chan
+                #    dung o day.
+                raise giong_noi.GiongKhongHopLe(_t(
+                    'Đoạn {ma}: bản dịch còn {ty} phần trăm chữ Hán — bước xử '
+                    'lý nội dung chưa dịch đoạn này sang {dich}. Không gọi máy '
+                    'sinh tiếng. Chữ: {chu}').format(
+                        ma=m["ma"],
+                        ty=int(round(100 * ngon_ngu.ty_le_chu_han(chu_doc))),
+                        dich=ngon_ngu_dich or ngon_ngu.DICH_MAC_DINH,
+                        chu=chu_doc[:80]))
+
             _t0 = time.monotonic()
-            wav, _headers = giong_noi.doc_mot_doan(
-                chu, ref_b64=ref_b64, preset=preset,
-                tu_dien_rieng=tu_dien or None)
+            if not chu_doc:
+                # ── (1) ⛔ KHONG GOI may sinh tieng voi chu rong ────────────
+                #
+                # 🔑 **QUYET DINH SAN PHAM (Task 25): BO QUA, ⛔ khong lam hong
+                #    ca luot** — va ly do nam o ca hai phia.
+                #
+                #    Lam hong ca luot = ⛔ khong ban duoc cho phim co nhac: mot
+                #    phim khach THAT **se** co doan chi nhac hay tieng on, va ASR
+                #    van sinh ra mot doan cho no. Mot san pham chet vi mot khe
+                #    khong thoai la mot san pham khong ban duoc.
+                #
+                #    Nhung bo qua IM LANG thi khach mat thoai ma ⛔ khong ai
+                #    biet. Nen cai gia cua quyet dinh nay duoc tra bang **ba**
+                #    thu, ⛔ thieu mot cai la quyet dinh khac:
+                #      · `ma` vao `ma_im_lang` -> `tom_tat` -> bao cao;
+                #      · dong `ban_ke` mang `im_lang=True` (ha nguon doc duoc);
+                #      · dong so cai mang `im_lang=True` — ⛔ khong khai mot luot
+                #        doc chua tung chay la "da giao" nhu moi luot khac.
+                #
+                # ⭐ Va "bo qua" = **mot khoang lang dung do dai khe**, ⛔ khong
+                #    phai "khong ghi gi": `thoi_gian.lap_ke_hoach` nem
+                #    `Doan {ma} chua co tieng` cho moi `ma` thieu dong `ban_ke`.
+                log.warning("doan %s khong con chu sau chuan hoa (%r) - thay "
+                            "bang khoang lang %.2fs", m["ma"], chu[:60], khe)
+                wav = giong_noi.wav_im_lang(khe)
+                # ⭐ Dem theo `ma` GOC, ⛔ khong theo luot doc bi bo qua. Mot khe
+                #    GOP im lang nghia la **moi** thanh vien cua no rong (van ban
+                #    gop la phep noi cua chung), nen khach mat `len(_thanh_vien)`
+                #    cau chu ⛔ khong phai mot cau — va con so phai tra loi CAU
+                #    HOI CUA KHACH, ⛔ khong cau hoi cua vong lap.
+                _ma_nhom = [str(x.get("ma") or "") for x in m["_thanh_vien"]]
+                dong_ho["so_doan_im_lang"] += len(_ma_nhom)
+                ma_im_lang.extend(_ma_nhom)
+            else:
+                # ⛔ Truyen `chu` GOC, ⛔ khong `chu_doc`: `doc_mot_doan` tu
+                #    chuan hoa, va dua ban da chuan hoa vao la chuan hoa HAI
+                #    LAN — mot phep chi dung neu no luy dang, va ⛔ khong ai o
+                #    day chot dieu do. `chu_doc` chi de HOI, khong de GUI.
+                wav, _headers = giong_noi.doc_mot_doan(
+                    chu, ref_b64=ref_b64, preset=preset,
+                    tu_dien_rieng=tu_dien or None)
             dong_ho["giay_tts"] += time.monotonic() - _t0
+            im_lang = not chu_doc
             # ⛔ Kiem TRUOC khi coi doan la xong (muc 8). Do tren TEP THAT,
             #    khong tin header cua may sinh tieng — cung ly do
             #    `apps/ltt_voice` doi chieu hai phia va ghi log khi lech.
             tep = thu_muc / f"{m['ma']}.wav"
             tep.write_bytes(wav)
-            giay = giong_noi.kiem_tep_tieng(str(tep))
+            # ── Mot tep khong dung duoc phai GOI TEN doan da sinh ra no ────
+            #
+            # 🔴 `kiem_tep_tieng` chi thay MOT DUONG DAN. Cau no nem —
+            #    *"Tep tieng sinh ra qua ngan (0.0s)."* — dung ve tep va vo dung
+            #    ve chan doan: no ⛔ khong noi doan nao, ⛔ khong noi chu nao, nen
+            #    no doc y het mot loi cua may sinh tieng. Mot phien da di tim sai
+            #    cho vi dung cau ay (Task 25).
+            try:
+                giay = giong_noi.kiem_tep_tieng(str(tep))
+            except giong_noi.GiongError as exc:
+                raise giong_noi.GiongError(_t(
+                    'Đoạn {ma}: {loi} Chữ gửi sang dài {n} ký tự ⇒ lỗi ở '
+                    'THƯỢNG NGUỒN của máy sinh tiếng, không ở chính nó. '
+                    'Chữ: {chu}').format(ma=m["ma"], loi=exc, n=len(chu_doc),
+                                         chu=chu_doc[:80])) from exc
             da_sinh += 1
             # ⭐ Buoc 0.5: ghi NGAY sau khi do, TRUOC moi quyet dinh — mot dong
             #    so lieu them ⛔ khong duoc doi mot quyet dinh nao.
@@ -566,6 +668,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    `giai_doan_thoi_gian.py:88-89` ⛔ khong bi pha.
             ke_moi = nan_thoi_luong.no_ban_ke(
                 {"ma": m["ma"], "khoa": khoa_ben, "chu": chu, "giay": giay,
+                 # ⭐ Task 25: ha nguon PHAI phan biet duoc mot khoang lang thay
+                 #    the voi mot ban doc that. Thieu co nay thi `qc_do_luong`
+                 #    cham WER mot khoang lang voi mot cau chu va bao "doc sai",
+                 #    va bao cao khong noi duoc khach mat cau nao.
+                 **({"im_lang": True} if im_lang else {}),
                  **_ke_nan(kq)},
                 m["_thanh_vien"])
             phan.append(phan_moi)
@@ -575,7 +682,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    `UNIQUE(run_id, ma_dispatch)` chan lan ghi thu hai neu giai doan
             #    chay lai — nen "dung mot lan" la mot rang buoc cua CSDL chu
             #    khong phai mot loi hua cua ma.
-            _ghi_so(db, run, ma=m["ma"], van_tay=vt, giay=giay, kq=kq)
+            _ghi_so(db, run, ma=m["ma"], van_tay=vt, giay=giay, kq=kq,
+                    im_lang=im_lang)
             su_dung.danh_dau_xong(db, run, stage=pipeline.VOICE_SYNTHESIS,
                                   item_key=m["ma"], fingerprint=vt,
                                   outputs={"khoa": khoa_ben, "giay": giay,
@@ -650,6 +758,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 #    ⛔ Khai `dong_ho["so_doan_nan_oan"]` ma khong XUAT o day la
                 #    dung con so ⛔ khong toi duoc `asv_doi_soat` (Loi #1, 26/09).
                 "so_doan_nan_oan": dong_ho["so_doan_nan_oan"],
+                # ⭐ Task 25 — CAI GIA cua quyet dinh "bo qua doan khong co
+                #    chu". Bo qua IM LANG thi khach mat thoai ma ⛔ khong ai
+                #    biet; hai khoa nay la thu lam no HIEN RA, va chung phai
+                #    di tiep vao bao cao nghiem thu.
+                # ⛔ Hai khoa, ⛔ khong mot: `so_...` de doi soat nhanh, danh
+                #    sach `ma` de biet KHACH MAT CAU NAO — mot con so buoc
+                #    nguoi doc di tim, va lan nao cung la mot lan di tim.
+                "so_doan_im_lang": dong_ho["so_doan_im_lang"],
+                "doan_im_lang": list(ma_im_lang),
                 "preset": str(preset or ""),
                 "ma_giong": ma_giong,
                 **nan_cho_vua.tom_tat(cac_nan, tung_luot_doc=luot_doc),
@@ -976,13 +1093,24 @@ def _nan_lo(db, run, cac: list[dict], *, luot: int = 0, lan_thu: int = 0,
     return ra
 
 
-def _ghi_so(db, run, *, ma: str, van_tay: str, giay: float, kq) -> None:
+def _ghi_so(db, run, *, ma: str, van_tay: str, giay: float, kq,
+            im_lang: bool = False) -> None:
     """Ghi MOT dong so cai cho mot doan tieng DA GIAO.
 
     ⭐ Don vi la **giay**, khong phai luot: khach tra tien cho do dai tieng noi
        duoc sinh ra, va mot doan dai gap ba lan mot doan khac thi khong the tinh
        bang nhau. `su_dung.GIAY` co san cho viec do.
+
+    ⚠️ `im_lang=True` (Task 25): doan ⛔ khong co chu, ⛔ khong mot luot may sinh
+       tieng nao chay. Dong van duoc ghi — no la **mot doan da giao** cho ha
+       nguon (co tep, co do dai) — nhung `ghi_chu` phai KHAI dieu do. Mot dong
+       giong het moi dong khac cho mot viec chua tung chay la mot so cai noi
+       doi, ngay ca khi `credit = 0` (gia PHANG, 25/09).
     """
+    ghi_chu = {"trang_thai_nan": kq.trang_thai, "so_vong": kq.so_vong}
+    if im_lang:
+        ghi_chu["im_lang"] = True
+        ghi_chu["ly_do"] = "doan khong con chu sau chuan hoa - khoang lang"
     try:
         su_dung.ghi(db, run, stage=pipeline.VOICE_SYNTHESIS, item_key=ma,
                     su_dung=su_dung.SuDung(
@@ -990,8 +1118,7 @@ def _ghi_so(db, run, *, ma: str, van_tay: str, giay: float, kq) -> None:
                         trang_thai=su_dung.DA_GIAO, don_vi=su_dung.GIAY,
                         so_luong=float(giay), credit=0,
                         ma_dispatch=f"giong:{ma}:{van_tay[:16]}",
-                        ghi_chu={"trang_thai_nan": kq.trang_thai,
-                                 "so_vong": kq.so_vong}))
+                        ghi_chu=ghi_chu))
     except su_dung.DaGhiRoi:
         # ⭐ Rang buoc `UNIQUE(run_id, ma_dispatch)` vua chan mot lan tinh tien
         #    thu hai cho cung mot doan. Do la thanh cong, khong phai loi.
