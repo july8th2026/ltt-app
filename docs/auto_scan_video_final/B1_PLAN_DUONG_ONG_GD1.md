@@ -258,3 +258,112 @@ bậc thang hay do bỏ một giai đoạn.
 2. **Trần gain của lớp "giọng nói gốc" khi khách bật** (phương án C): bao nhiêu phần
    trăm là "chỉ còn hơi thở nền"? Tôi đề nghị **≤ 20%**, ⛔ chưa đo — nó là một
    phán quyết **nghe**, không phải một con số suy ra được.
+
+
+---
+
+## §9 QUYẾT ĐỊNH — `edit_plan` xuống GĐ2, và ⛔ KHÔNG dùng model
+
+Chủ dự án giao tôi tự quyết (26/09) dựa trên logic hệ thống + tài liệu cộng đồng.
+
+### 9a. Vị trí: giữ NGUYÊN tên giai đoạn, chỉ đổi `sau=`
+
+```
+nay:  TRANSCRIBE -> EDIT_PLAN -> CONTENT_PROCESS -> ... -> RENDER -> IMAGE_FINISH
+sau:  TRANSCRIBE -> CONTENT_PROCESS -> ... -> RENDER -> EDIT_PLAN -> IMAGE_FINISH
+```
+
+⭐ **Giữ tên `edit_plan`, giữ nguyên hình dạng artifact `{ban, chi_muc}`, giữ nguyên
+người đọc `image_finish`.** Chỉ đổi `sau=(RENDER,)` và bỏ `tai_nguyen="llm_remote"`.
+
+Vì sao ⛔ **không** tạo một giai đoạn mới: một mã giai đoạn mới kéo theo hàng
+`asv_stage`, `loi.phan_loai`, bảng phân loại job, các bài kiểm đếm giai đoạn — tức
+đúng **sổ đăng ký dùng chung** mà bài học đã ghi là chỗ các làn va nhau. Đổi `sau=`
+là một dòng; thêm một mã là một phase.
+
+🔑 **Và việc chạy SAU `render` xoá một LỚP LỖI, ⛔ không chỉ đổi chỗ.** Hôm nay
+`edit_plan` làm việc trên **trục thời gian NGUỒN**, còn `ke_cat`/`image_finish` cắt
+trên **trục BẢN RA** — chính `thoi_gian.ngan_sach_doan` đã cảnh báo lớp lỗi đó:
+*"hàm này lặng lẽ **trộn hai đồng hồ**"*. Chạy sau `render` thì chỉ còn **một** đồng
+hồ, và phép đổi trục biến mất khỏi đường cắt.
+
+⚠️ **Cái giá, nói thẳng:** cắt sau khi đã lồng tiếng nghĩa là ta **trả tiền tiếng cho
+phần sẽ bị bỏ**. Trần cắt là **5%** ⇒ phần mất **≤ 5%** chi phí tiếng. Đó là cái giá
+**đúng** của kiến trúc hai giai đoạn mà chủ dự án đã chốt (GĐ1 = xong toàn bộ tiếng,
+ra MP4 **full độ dài**; GĐ2 = việc hình trên MP4 đã xong). ⇒ Nhận, và ghi lại.
+
+### 9b. ⛔ KHÔNG dùng model ở GĐ2 — năm căn cứ
+
+Hôm nay `edit_plan` gọi **VLM** (`DOC_CANH`, `SO_LAN_DOC_CANH = 2`, `LO_DOC_CANH = 2`)
+để hỏi mỗi cảnh *"cảnh này có gì, ai đang nói, **có quan trọng không**"*
+(`hieu_canh.py` đầu tệp). Đó là một phán quyết **ngữ nghĩa**.
+
+Nhưng tiêu chí chủ dự án đặt cho B0 là: *"cắt cảnh khu vực **không có lời thoại**,
+**chất lượng đoạn kém**, ⛔ không quá 5%"*. Rã ra:
+
+| tiêu chí | cần model? | đo bằng gì |
+|---|---|---|
+| **không có lời thoại** | ⛔ KHÔNG | số học trên bản chép lời đã có mốc: cảnh ⛔ không giao đoạn thoại nào. **Chính xác**, ⛔ không phải ước lượng |
+| **ranh giới cảnh** | ⛔ KHÔNG | **đã dùng** PySceneDetect `ContentDetector` (BSD-3-Clause), `canh.py:41-45`, đã benchmark |
+| **tối đen / cháy sáng** | ⛔ KHÔNG | `ffmpeg blackdetect` — ffmpeg đã là phụ thuộc bắt buộc |
+| **đứng hình** | ⛔ KHÔNG | `ffmpeg freezedetect` |
+| **mờ / mất nét** | ⛔ KHÔNG | phương sai Laplacian qua OpenCV (đã có sẵn vì PySceneDetect dùng) |
+| *"cảnh này nhàm / không quan trọng"* | ✅ CẦN VLM | ⛔ **không ai đặt hàng tiêu chí này** |
+
+**Năm căn cứ:**
+
+1. **Tiêu chí đã đặt ⛔ không đòi phán quyết ngữ nghĩa.** Trả tiền cho VLM để trả lời
+   câu mà số học trả lời được là mua sự **bất định**.
+2. **Trần 5% biến việc này thành LAN CAN, ⛔ không phải biên tập.** Video 190 s ⇒ ngân
+   sách **9,5 giây**. Một phán quyết *"cảnh nào hay hơn"* trên 9,5 giây ⛔ không đáng
+   một chuỗi VLM có sổ cái riêng, checkpoint theo cảnh và hai lượt đọc lại.
+3. **Tất định thắng khôn, vì cắt là thao tác KHÔNG ĐẢO ĐƯỢC trên bản giao khách.** Một
+   phép đo tất định cho cùng video luôn cắt **cùng một chỗ**; VLM thì ⛔ không — và
+   khách chạy lại cùng video sẽ nhận **bản khác**. Nó cũng phá vân tay và bộ đệm.
+4. **Giữ nguyên luật đang có của `image_finish`** (⛔ *"không gọi model"*) ⇒ ⛔ không
+   phải sửa một luật kiến trúc, và ⛔ không thêm tranh chấp suất `llm_remote` (đang là
+   **MỘT** suất cho cả máy).
+5. **Cộng đồng chọn đường ⛔ không-model cho đúng việc này.** Hai dự án lồng tiếng đã
+   tra (`open-dubbing` 435★ Apache-2.0, `VideoLingo` 18,5k★ Apache-2.0) ⛔ **không**
+   dùng VLM để quyết cắt cảnh. Và kho ta **đã** chọn PySceneDetect bằng benchmark cho
+   ranh giới cảnh — nguyên tắc này đã được áp một lần ở đây rồi.
+
+⚠️ **Cái mất, nói thẳng:** mất khả năng nói *"cảnh này nhàm"*. Tính năng đó ⛔ chưa ai
+đặt hàng; và nếu sau này cần, **thêm** một nấc VLM **tuỳ chọn** dễ hơn nhiều so với
+**gỡ** nó ra khỏi đường mặc định.
+
+⛔ **KHÔNG xoá `hieu_canh.py`.** Nó còn phục vụ `HO_SO_NOI_DUNG` (hồ sơ nội dung toàn
+cục) mà đường chọn giọng cần — `giai_doan_noi_dung` ghi rõ hồ sơ đó lấy bằng chứng từ
+`audio_prepare` + `transcribe`, tức ⛔ **không phụ thuộc** nhánh đọc cảnh. Chỉ **nhánh
+đọc cảnh để quyết cắt** thôi việc.
+
+### 9c. Bỏ preset ra khỏi đường mặc định
+
+Giai đoạn này ⛔ **không chạy** khi preset là giữ hình — ⛔ không phải *"chạy rồi không
+làm gì"* như hôm nay (hôm nay nó vẫn **giữ suất LLM** rồi ⛔ không gọi model, §1).
+
+---
+
+## §10 QUYẾT ĐỊNH — gain mặc định của lớp "giọng nói gốc"
+
+🔴 **Khuyết điểm tìm được khi tra:** `tach_tieng.LOP_MAC_DINH` đặt `giong_gain = 1.0`
+= **0 dB**. Tức khách vừa tick *"giữ giọng nói gốc"* là giọng gốc trở lại **âm lượng
+đầy**, đối đầu trực diện với giọng lồng tiếng Việt. Nhãn **có** cảnh báo sẽ chồng,
+nhưng giá trị mặc định làm nó **tệ nhất có thể**.
+
+Chủ dự án chốt **-10 dB**. Thang trượt là **biên độ tuyến tính**, ⛔ không phải dB
+(`tach_tieng.py:115`), nên:
+
+```
+-10 dB  =  10^(-10/20)  =  0,316  ->  31,6 %
+```
+
+⚠️ Thanh trượt có `step="5"` nên **31,6 % ⛔ không nằm trên lưới**. Hai đường:
+
+| đường | giá trị | dB thật | đổi giao diện? |
+|---|---|---|---|
+| **(i) — chọn** | `giong_gain = 0.30` | **-10,46 dB** | ⛔ không |
+| (ii) | `giong_gain = 0.32` + `step="1"` | -9,90 dB | có |
+
+⇒ Chọn **(i)**: lệch **0,46 dB** so với yêu cầu — dưới ngưỡng nghe ra được, và ⛔
+không phải đụng giao diện. Muốn đúng -10 dB thì đường (ii).
