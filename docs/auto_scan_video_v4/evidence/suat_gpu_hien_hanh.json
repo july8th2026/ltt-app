@@ -1,14 +1,14 @@
 {
   "schema": "asv.v4.suat_gpu.1",
-  "ghi_luc": "2026-09-04T14:27:24",
+  "ghi_luc": "2026-09-27T01:20:04",
   "may": {
     "os": "Windows-10-10.0.19045-SP0",
     "python": "3.13.12",
     "loi_vat_ly": 10,
     "loi_logic": 20,
-    "ram_gib": 31.9,
+    "ram_gib": 63.9,
     "ffmpeg": "ffmpeg.EXE",
-    "torch": "2.11.0+cpu cuda=False"
+    "torch": "2.11.0+cu128 cuda=True"
   },
   "nguon_giay": 32.189,
   "nguong_tach_suat": {
@@ -17,72 +17,66 @@
   },
   "do": {
     "demucs_mot_minh": {
-      "giay": 20.74,
-      "so_mau": 38,
+      "giay": 17.74,
+      "so_mau": 33,
       "nhip_s": 0.5,
-      "cpu_dinh": 49.0,
-      "cpu_tb": 34.6,
-      "ram_trong_thap_nhat_mb": 11168.7,
+      "cpu_dinh": 36.9,
+      "cpu_tb": 26.3,
+      "ram_trong_thap_nhat_mb": 34962.0,
       "vram_dinh_mb": [
-        12298,
-        815
+        1497
       ],
       "nen": {
-        "cpu_nen": 12.9,
-        "ram_trong_mb_nen": 12625.8,
+        "cpu_nen": 4.7,
+        "ram_trong_mb_nen": 36513.0,
         "vram_mb_nen": [
-          12298,
-          802
+          1496
         ]
       }
     },
     "asr_mot_minh": {
-      "giay": 42.79,
-      "so_mau": 80,
+      "giay": 24.99,
+      "so_mau": 47,
       "nhip_s": 0.5,
-      "cpu_dinh": 46.5,
-      "cpu_tb": 33.2,
-      "ram_trong_thap_nhat_mb": 9550.8,
+      "cpu_dinh": 35.2,
+      "cpu_tb": 27.8,
+      "ram_trong_thap_nhat_mb": 35975.7,
       "vram_dinh_mb": [
-        12298,
-        866
+        1497
       ],
       "nen": {
-        "cpu_nen": 12.5,
-        "ram_trong_mb_nen": 12634.4,
+        "cpu_nen": 8.1,
+        "ram_trong_mb_nen": 36516.6,
         "vram_mb_nen": [
-          12298,
-          806
+          1497
         ]
       }
     },
     "cung_luc": {
-      "giay_tuong": 42.43,
+      "giay_tuong": 31.96,
       "giay_tung_cai": {
-        "demucs": 31.84,
-        "asr": 42.43
+        "demucs": 24.72,
+        "asr": 31.96
       },
-      "so_mau": 77,
+      "so_mau": 59,
       "nhip_s": 0.5,
-      "cpu_dinh": 78.6,
-      "cpu_tb": 54.8,
-      "ram_trong_thap_nhat_mb": 9089.5,
+      "cpu_dinh": 82.5,
+      "cpu_tb": 44.6,
+      "ram_trong_thap_nhat_mb": 34566.5,
       "vram_dinh_mb": [
-        12298,
-        867
+        1497
       ],
       "nen": {
-        "cpu_nen": 13.9,
-        "ram_trong_mb_nen": 10884.6,
+        "cpu_nen": 5.7,
+        "ram_trong_mb_nen": 36563.4,
         "vram_mb_nen": [
-          12298,
-          799
+          1497
         ]
       }
     }
   },
-  "lan_luot_giay": 63.53,
-  "thong_luong_tang": 1.5,
+  "lan_luot_giay": 42.73,
+  "thong_luong_tang": 1.34,
   "dat_nguong_tach_suat": false,
   "chua_do_duoc": "VRAM khi hai model cung tren mot card — cay nay la torch+cpu (V4-R05), nen ca hai deu chay tren CPU"
 }
