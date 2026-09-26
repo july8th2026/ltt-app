@@ -176,3 +176,25 @@ def test_thao_tac_NAN_khai_muc_suy_nghi_THAP():
 def test_ai_goi_TRUYEN_muc_nghi_cua_thao_tac_xuong_dieu_phoi():
     ma = inspect.getsource(ai.goi)
     assert "reasoning_effort" in ma and "thao_tac.muc_nghi" in ma
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §5  `thoi_gian.ngan_sach_nan_s` — MOT nguon cho ngan sach BAC THANG NAN
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ngan_sach_nan_khong_co_khoang_lang_thi_BANG_khe():
+    from apps.auto_scan_video.thoi_gian import ngan_sach_nan_s
+    assert ngan_sach_nan_s(3.0, 3.0) == 3.0
+
+
+def test_ngan_sach_nan_muon_DUNG_ty_le_da_khai():
+    from apps.auto_scan_video import thoi_gian as tg
+    # khe 3,0 s · toi moc sau 4,0 s => khoang lang 1,0 s
+    ra = tg.ngan_sach_nan_s(3.0, 4.0)
+    assert abs(ra - (3.0 + 1.0 * tg.TY_LE_MUON_KHOANG_LANG)) < 1e-9
+
+
+def test_ngan_sach_nan_KHONG_BAO_GIO_nho_hon_khe():
+    """Du lieu hong (`moc_sau` < `ket`) khong duoc lam ngan sach teo lai."""
+    from apps.auto_scan_video.thoi_gian import ngan_sach_nan_s
+    assert ngan_sach_nan_s(3.0, 1.0) == 3.0

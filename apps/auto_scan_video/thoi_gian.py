@@ -116,6 +116,32 @@ def ngan_sach_doan(moc_ms: list[int], i: int, tong_ms: int) -> int:
     return max(0, int(tong_ms) - bat)
 
 
+def ngan_sach_nan_s(khe_s: float, ngan_sach_s: float) -> float:
+    """Ngân sách mà **bậc thang nắn** được phép dùng cho một đoạn, tính bằng giây.
+
+    🔴 **Vì sao hàm này tồn tại (26/09/2026).** `giai_doan_giong.py:211` hỏi
+       `nan_cho_vua.khe_cua(m)` = `ket - bat`, tức **⛔ không có khoảng lặng**, rồi
+       lấy con số đó làm **cửa tiêu tiền** (`nen_viet_lai` → gọi LLM 16 giây).
+       Nhưng cửa **thực thi** (`lap_ke_hoach` ở `timing_align`) lại mượn tới
+       `TY_LE_MUON_KHOANG_LANG` của khoảng lặng. ⇒ Một đoạn chỉ cần mượn 0,3 giây
+       **miễn phí** vẫn phải trả **2 lời gọi LLM + 3 lượt TTS**.
+
+    ⭐ Và chính `nan_thoi_luong.Khe.ngan_sach_s` đã viết ra lời buộc tội:
+       *"⛔ Lấy `ket - bat` là vứt hết khoảng lặng, tức vứt phần lớn ngân sách."*
+
+    ⛔ **Không** sửa `khe_cua` để nó tự cộng khoảng lặng: `khe_cua` đang trả lời
+       ĐÚNG câu hỏi của nó (*"khe của đoạn này rộng bao nhiêu"*). Sai là **câu được
+       hỏi** ở cửa tiêu tiền, ⛔ không phải câu trả lời.
+
+    ⚠️ Tỉ lệ mượn lấy từ `TY_LE_MUON_KHOANG_LANG` — **cùng** hằng số mà
+       `lap_ke_hoach` dùng. ⛔ Không gõ lại `0.7`: hai bản sao của một chính sách là
+       thứ kho này đã trả giá.
+    """
+    khe_s = max(0.0, float(khe_s))
+    ngan_sach_s = max(khe_s, float(ngan_sach_s))
+    return khe_s + (ngan_sach_s - khe_s) * TY_LE_MUON_KHOANG_LANG
+
+
 def _tang_toc_can(dai_ms: int, ngan_sach_ms: int) -> float:
     if dai_ms <= 0 or ngan_sach_ms <= 0:
         return 1.0
