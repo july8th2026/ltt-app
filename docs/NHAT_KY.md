@@ -12,7 +12,7 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
-## 2026-09-26 — PROMPT AI pha 1 xong, va mot chieu THU NAM cua tranh chap index
+## 2026-09-26 (tối) — PROMPT AI pha 1 xong, va mot chieu THU NAM cua tranh chap index
 
 **Pha 1 cua `docs/superpowers/plans/2026-09-26-prompt-ai-pha1-cho-noi-dung.md`
 da xong**: 9 Task, 4 lan (M1, A, B1), 45 phep kiem xanh trong mot tien trinh
@@ -64,6 +64,118 @@ mot index; `git add` tuong minh KHONG du, vi `git commit` bo qua danh sach vua a
 **Da chon KHONG viet lai lich su**: nhanh chua push, nhung `reset --soft` mot
 commit chua tep cua ca hai chu la thao tac kho dao tren thay doi nhieu chu
 (luat 7). Noi dung dung va da kiem; `89373211` chua Task 7 + Task 8 cua lan B1.
+## 2026-09-26 (chiều, sau) — Gói Nhỏ lên **2 vCPU / 4 GB**; và "cấu hình" ⛔ không phải "đang chạy"
+
+Chủ dự án dùng thật và báo lại: Windows Server 2016 trên 1 vCPU / 2 GB **nặng
+đến mức không dùng được**. 2 GB đúng là yêu cầu tối thiểu của Microsoft cho bản
+Core — nhưng ⭐ *"đủ tối thiểu để CÀI được"* ⛔ không phải *"đủ để DÙNG được"*, và
+`os_images` chỉ gác được vế đầu.
+
+| Gói | Trước | Sau |
+|---|---|---|
+| Nhỏ | 1 vCPU / 2 GB / 40 GB / **149k** | 2 vCPU / 4 GB / 40 GB / **159k** |
+| Vừa | 2 vCPU / 4 GB / 60 GB / **179k** | *(cấu hình giữ nguyên)* / **209k** |
+| Lớn | 4 vCPU / 8 GB / 80 GB / 329k | giữ nguyên |
+
+Sửa **tại chỗ** chứ ⛔ không thêm gói mới — trái luật mặc định ghi trong docstring
+`Plan` — vì đã **đếm trước**: đúng MỘT người đang thuê VPS (`akakenly.design`), và
+đó là chính chủ dự án. Docstring nay ghi lại điều kiện ấy; có khách thật rồi thì
+quay về luật mặc định. Gói Vừa nay ⛔ **không** mở thêm bản Windows nào so với gói
+Nhỏ, nên mô tả đổi theo: nó bán **đĩa và băng thông**.
+
+### 🔴 Cái bẫy của buổi này: tôi đọc SỔ rồi nói "khớp"
+
+Công cụ vừa viết đọc `GET .../qemu/<id>/config`, thấy `cores=2, memory=4096`, in
+**"khớp"**. Nhưng hai máy khách **vẫn đang chạy 1 vCPU / 2 GB**: cấu hình đã được
+đổi, mà QEMU **chốt CPU/RAM lúc tiến trình khởi động**, và hai máy đã chạy liên
+tục 25 giờ.
+
+⭐ *"Thứ tôi đang hỏi có SẴN ở chỗ tôi đang đứng không?"* Câu hỏi là **khách đang
+   được cấp bao nhiêu**; `config` trả lời một câu KHÁC — *"lần boot sau sẽ là bao
+   nhiêu"*. Hai câu chỉ trùng khi ⛔ không ai sửa gì kể từ lần bật máy.
+
+Nay báo cáo đối chiếu **cả hai** và có trạng thái thứ ba: `CHO KHOI DONG LAI`.
+Kèm hai bất biến: `0` là *không đo được* ⛔ không phải *máy có 0 vCPU*; và ⛔
+**không** được dùng `status/reboot` để áp CPU/RAM — nó khởi động lại **guest**
+trong cùng tiến trình QEMU cũ, nên máy boot lại mà vẫn giữ số cũ.
+
+### ⏳ CHƯA deploy — chờ làn ASV (chủ dự án chốt 26/09)
+
+Giá mới đang nằm trên `main` nhưng **chưa lên production** — `app.lttstudios.com`
+vẫn bán 149k/179k (bản đang chạy `dff24d4b`, dựng 15:28).
+
+Deploy xuất `git archive` HEAD cây chính, nên nó mang theo **19 commit** của mọi
+phiên. Làn Auto Scan Video **chặn**, với lý do cụ thể: Task 12 vừa dựng lại vòng
+lõi `voice_synthesis` (chạm `lat_cat` và vân tay, tức chạm đường bút toán credit)
+và **chưa chạy worker thật lần nào**; còn 4 task, 2 đang bay; và app ASV **đang
+mở cho khách**.
+
+Chủ dự án chọn **chờ** — giá mới chỉ ảnh hưởng lượt **mua mới**, mà hiện chưa có
+khách VPS nào ngoài chính chủ dự án, nên chờ gần như không mất gì.
+
+⭐ Đường *"nhánh phát hành từ `dff24d4b` + cherry-pick"* đã xét và **bỏ**, vì một
+   lý do cơ học chứ ⛔ không phải cẩn thận chung chung: `setup/2-cai-dat.ps1:81`
+   **từ chối chạy từ git worktree**, và `$VAN_CHUYEN` chép `apps/*/vendor` +
+   `yolov8n.pt` **từ `$src`** — một cây riêng ⛔ không có chúng, nên bản xuất sẽ
+   làm `upscalevideo` chết **im lặng** (EXITCODE=0, `/health/ready` 200,
+   `nghiem_thu_deploy` báo "thiếu 0" vì nó chỉ đếm `.py`).
+
+**Đo bởi:** phiên "Phục hồi VPS ngừng hoạt động", 26/09/2026. Gỡ chặn khi làn ASV
+báo xong 13/13 — lúc đó bốn commit VPS đi kèm luôn, ⛔ không cần làm gì thêm.
+
+### Lỗ hở đã vá: sổ và máy thật ⛔ không ai bắt khớp
+
+`jobs._cau_hinh_may_trong` đặt `cores`/`memory` **một lần, lúc tạo máy**; ⛔ không
+đường nào đọc lại. Từ giây bảng giá đổi, `billing` thu theo **gói** còn khách
+nhận theo **máy** — và ⛔ không cửa nào nói ra. Nay `bao_tri.lech_cau_hinh_goi`
+**đo**, `tools/vps_ap_cau_hinh_goi.py` **sửa** (chỉ khi có người bấm `--ap`). Tách
+đôi vì một vòng bảo trì tự khởi động lại máy khách là một **sự cố**, ⛔ không phải
+một lần sửa.
+
+**Đã áp cho hai máy đang sống** (chủ dự án đồng ý khởi động lại ngay): vm 204 và
+vm 208 nay chạy đúng 2 vCPU / 4096 MB, RDP mở lại sau ~90 giây.
+
+⚠️ Ghi lại một bẫy công cụ: `i18n.py trich` quét **cả cây**, kể cả sửa đổi đang dở
+của làn khác — một lượt chạy làm `.po` đổi **44.477 dòng** và `.mo` **teo 80 KB**.
+Thêm hai chuỗi thì thêm **tay** vào `.po` rồi `bien-dich`.
+
+## 2026-09-26 (chiều) — Cách ly khách-với-khách: **đo bằng gói thật**, có đối chứng
+
+Tường lửa `vmbr1` bật sáng nay mới chỉ là **cấu hình**. Hôm nay đo xem nó có thật sự
+chặn một khách mạo địa chỉ IP của khách khác không.
+
+**Kết quả** (chi tiết + lệnh chạy lại: `docs/VPS/RA_SOAT_2026-09-26.md`):
+
+| NIC | nguồn thật | nguồn mạo |
+|---|---|---|
+| `firewall=1` + `ipfilter` | 3/3 gói tới nơi | **0/3** — luật `! match-set …ipfilter… src` đếm đúng 3 gói / 252 byte |
+| `firewall=0` (đối chứng) | 3/3 | **3/3, có gói trả lời** |
+
+Đo ở **đầu nhận** (`tcpdump`), ⛔ không suy từ `ping` — gói mạo nguồn thì ⛔ không
+bao giờ có đường về, nên "ping hỏng" ⛔ không phân biệt được *bị chặn* với *không ai
+trả lời*. Đối chứng `firewall=0` là thứ biến số 0 thành một phát hiện.
+
+Ngoài IP, mỗi `tap` có `firewall=1` còn chặn **mạo MAC** (ebtables + iptables) và
+**mạo ARP** (`--arp-ip-src`). Lỗi `ipfilter` của cộng đồng (gói thỉnh thoảng lọt,
+vá netfilter 09/2025) ⛔ **không** áp: node này chạy iptables/ebtables, ⛔ không chạy
+nftables cho tường lửa (`nft list ruleset | grep -c 199` = 0).
+
+**Cách đo phải đổi giữa chừng.** Hai máy test Linux ⛔ không dựng nổi trên node này:
+i440fx treo SeaBIOS (máy khách thật là q35), SeaBIOS ⛔ không boot `scsi0` (máy khách
+thật `sata0`), `virtio_balloon` rồi `virtio_net` treo ở `vp_notify`, và khi đổi sang
+`e1000` thì ảnh `debian-13-genericcloud` **⛔ không có driver e1000** (nó chỉ mang
+virtio) — `tcpdump` trên tap bắt 0 gói trong 15 s. Thay bằng **một NIC thứ ba gắn
+nóng vào VM199 + network namespace**: `net0`/`net1` của nó đều `firewall=0` nên bật
+tuỳ chọn ở mức máy ⛔ không chạm đường router, và ⛔ không phải khởi động lại nó.
+Sau khi đo, VM199 về đúng digest rỗng cũ.
+
+⚠️ **Bẫy đo lường ghi lại:** hai guest kẹt ở `vp_notify` **đốt CPU thật** — node lên
+89 % CPU / loadavg 26,8 trong khi `/nodes/*/qemu` báo chính hai máy đó **0 %**. Tắt
+chúng: 51 %. Xoá hẳn: loadavg **0,50**. ⛔ Đừng tin cột `cpu` của một VM đang treo.
+Cũng vì thế mà nghi vấn "sáng nay bật tường lửa làm cả node quá tải" **bị số đo bác**.
+
+Đã dọn: VM 900/901, ảnh `debian-13-genericcloud` trên `local`, netns `thu`, mật khẩu
+test dùng một lần. Máy khách kiểm lại sau phép đo: ARP `REACHABLE`, cổng 3389 **MỞ**.
 
 ## 2026-09-26 — Cây chính: KHÔNG phải một tranh chấp, mà BỐN chiều độc lập
 
@@ -21647,3 +21759,91 @@ xanh khi commit; dòng "chưa" bên trên viết lúc chưa commit — coi như 
   nợ đỏ của phiên V4 cho chính phiên đó trả, theo §10.4 — lỗi khu người thì
   nhắn chủ khu, không tự sửa). Gộp lại khi chủ khu đã thêm 23 msgid vào
   `locale/en/LC_MESSAGES/messages.po`.
+
+## 2026-09-26 — Upscale V2: dọn 13 tính năng GIẢ, gộp `main` (`0be80075`)
+
+Phiên correction: **không thêm tính năng**, chỉ khép lại lớp "tính năng chỉ
+đúng trên giấy" mà đợt nâng cấp trước để lại. Kiểm bằng **mã + runtime**, ⛔ không
+tin `docs/UPSCALE_V2/*`. Toàn văn: `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`.
+
+**Ba cái nặng nhất**
+
+- **"4→12 concurrent" là SAI; đồng thời GPU thật = 1.** `UniqueConstraint(
+  "host","gpu_uuid")` (`platform_core/models.py`) khoá cứng. ⭐ Và docstring của
+  chính `GpuLease` đã **cấm trước**: *"kế toán VRAM theo hứa hẹn sẽ lệch so với
+  thực tế rồi OOM… đừng làm khi chưa đo được là cần"*. Lời khai sai nằm ở **9
+  chỗ** mã + docs; đã gỡ tại chỗ (giữ câu gốc + dấu ⛔ SAI + bằng chứng).
+- **Quality gate không "vô hại":** gọi `ffprobe` cho PSNR/SSIM/VMAF (ba đại
+  lượng chỉ `ffmpeg` tính được), không có video tham chiếu, truyền khoá R2 như
+  đường dẫn local, `.read()` cả MP4 vào RAM cho PIL ⇒ **luôn** fail, dán cảnh
+  báo giả lên **mọi** job khách và trả egress R2 cho không. Thay bằng cổng KỸ
+  THUẬT chạy trên tệp LOCAL trước upload.
+- **ISSUE L (mới, chưa vá):** `job_runner._het_gio` dùng `os._exit(3)` ⇒ bỏ qua
+  `finally` ⇒ rò thư mục temp cỡ GB + **tiến trình engine mồ côi giữ GPU**.
+  Ngoài phạm vi app; đã ghi vào `09_FINAL_ARCHITECTURE.md`.
+
+**Đo được trên máy này (26/09)**
+
+- `h264_qsv`/`hevc_qsv`/`h264_amf`/`hevc_amf`: `ffmpeg -encoders` **liệt kê đủ**
+  nhưng **cả bốn chết lúc chạy**. ⇒ một bản LIỆT KÊ năng lực ⛔ không phải một
+  phép DÒ năng lực. Bỏ QSV/AMF khỏi app; `hevc_nvenc` thì dò thật.
+- PNG sau upscale ≈ **17×** PNG nguồn (0,4 MB → 6,8 MB/khung, quan sát từ job
+  thật của bot). Số thật đầu tiên về gánh I/O.
+
+**Nghiệm thu**
+
+- test nhắm cụm `app:upscalevideo` (10 tệp) qua khoá máy ⇒ **200 passed**.
+- `test_4904` (86 phép, AST/behavior) — agent tự **tiêm lỗi 11 lần**, mỗi lần
+  làm đỏ đúng phép tương ứng.
+- ⭐ `test_4905`: cổng kỹ thuật chạy trên **tệp thật** (tự sinh bằng `testsrc`,
+  ⛔ không phụ thuộc `Desktop\TEST VIDEO`) — 5/5, gồm tỉ lệ **lẻ** 836×576 →
+  1568×1080 và ca **xin h264 nhận hevc** bị bắt ở runtime. Tiêm lỗi (tắt phép
+  kiểm codec) ⇒ đỏ đúng chỗ. Lý do cần: `test_4904` mock `probe_video` nên
+  **chưa từng** chạm phép toán tỉ lệ/làm tròn thật, mà cổng này có quyền **đánh
+  đỏ job khách**.
+- Gộp `main`: xung đột duy nhất `messages.po` (thuần thêm-vs-thêm, giữ cả hai,
+  `.mo` **sinh lại** chứ không merge nhị phân). `pre-commit run --all-files`
+  **7/7 Passed** trên `0be80075`.
+
+**🔴 CHƯA ĐO — và sẽ không đoán.** Không một số hiệu năng trước/sau nào chạy
+được: GPU máy A bão hoà vì **hai dịch vụ production** cùng card —
+`D:\BOT GEMINI\...\realesrgan-ncnn-vulkan.exe` (`compute_1` ~100 %) và
+`C:\LTTPlatform\vieneu-venv\...\voice_sidecar_main.py` (`cuda`). Bộ đo
+`tools/bench_upscale.py` đã dựng xong + `--dry-run` chạy được; mọi ô trong
+`06_*`/`08_*` ghi `CHƯA ĐO`, các ô không có mẫu ghi `KHÔNG CÓ MẪU` (bộ test chỉ
+có 4 clip ~576p ngang CFR — ⛔ không có portrait/VFR/nguồn 1080+).
+⇒ `10_FINAL_SCORECARD.md` **từ chối** in một con số "Overall": trộn hàng CHƯA ĐO
+với hàng có bằng chứng là đúng lỗi *hai trạng thái gộp thành một giá trị*.
+
+**Bẫy công cụ gặp trong phiên (ghi để phiên sau khỏi mất giờ)**
+
+- ⛔ `grep -c $'\r'` trong Git Bash ở máy này **không** hiểu `$'\r'` — nó thành
+  chuỗi rỗng, khớp MỌI dòng và luôn trả về đúng số dòng. Tôi đã kết luận nhầm
+  "agent phá kết dòng" vì nó. Đo kết dòng bằng Python:
+  `open(p,'rb').read().count(b'\r\n')`.
+- 🔴 `tools/i18n_merge_driver.py` **hỏng** ⇒ mọi lượt merge `.po` rơi về giải
+  tay. `_git()` (`:86-88`) dùng `text=True` **không kèm `encoding=`**, nên trên
+  Windows Python giải mã theo locale (**cp1252**); `.po` là UTF-8 tiếng Việt ⇒
+  `UnicodeDecodeError` byte `0x8f`, `r.stdout` thành `None`, rồi
+  `dich.write_bytes(r.stdout.encode("utf-8"))` (`:159`) nổ tiếp.
+  **Vá:** thêm `encoding="utf-8"` vào `_git()`. Đã báo chủ khu i18n
+  (phiên VPS), ⛔ không tự sửa — khu của họ, và họ có 1141 phép nghiệm thu.
+
+- ⭐ **Giải xung đột `.po` bằng tay thì ĐỪNG chỉ xoá dòng marker.** Git dựng
+  vùng xung đột bằng cách cho marker **thế chỗ** dòng trống ngăn giữa hai mục.
+  Xoá marker mà không trả lại dòng trống ⇒ hai mục dính liền ⇒ `msgid` của mục
+  sau bị đọc như phần nối của mục trước ⇒ mục đó thành *"chưa dịch"* dù `msgstr`
+  nằm ngay bên dưới. Lượt của tôi mất **3** dấu ngăn; phiên VPS phát hiện và vá
+  ở `59d7e296`. Nội dung không mất dòng nào — mất **dấu chấm câu** của định dạng.
+
+- ⭐ **Kiểm `.po` thì phải ĐỌC `.po`, ⛔ đừng đọc `.mo`.** `msgfmt` dễ dãi hơn
+  parser PO: `.mo` vẫn dịch đúng cả ba mục hỏng, nên hỏi `gettext` thì được trả
+  lời *"ổn cả"*. Phép kiểm rẻ và ĐÚNG KÊNH:
+
+  ```
+  python -c "from babel.messages.pofile import read_po; c=read_po(open('locale/en/LC_MESSAGES/messages.po',encoding='utf-8')); print(len(c), sum(1 for m in c if m.id and not m.string))"
+  ```
+
+  (nền hiện tại: **5408 mục, 200 chưa dịch**; bánh cóc chỉ đỏ khi TĂNG.)
+- `tools/check_i18n.py` đếm cả chuỗi trong `log.info/warning` ⇒ báo tăng oan.
+  Không bọc log (dịch log là nhiễu); nên thêm ngoại lệ cho `log.*`.

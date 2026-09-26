@@ -10,6 +10,7 @@ Di trú từ BOT GEMINI `video_upscale/adapters/ffmpeg_adapter.py`. Định vị
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import json
 import logging
 import os
@@ -45,7 +46,7 @@ def _run(cmd: list, timeout: int = 3600, cancel_check=None,
         if cancel_check():
             proc.kill()
             proc.communicate()
-            raise ProcessingCancelled("Job đã được hủy.")
+            raise ProcessingCancelled(_t("Job đã được hủy."))
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             proc.kill()
@@ -64,7 +65,8 @@ def probe_video(path: str, cancel_check=None, env: dict | None = None) -> dict:
               "-show_format", "-show_streams", path], timeout=60,
              cancel_check=cancel_check, env=env)
     if r.returncode != 0:
-        raise RuntimeError(f"ffprobe lỗi: {r.stderr.decode(errors='replace')[:300]}")
+        raise RuntimeError(_t("ffprobe lỗi: {0}")
+                          .format(r.stderr.decode(errors='replace')[:300]))
     data = json.loads(r.stdout.decode(errors="replace"))
 
     def _rate(s: str) -> float:
@@ -147,7 +149,8 @@ def extract_frames(src: str, out_dir: str, cfr_fps=None, max_seconds=None,
     r = _run(cmd, cancel_check=cancel_check, env=env)
     n = sum(1 for f in os.scandir(out_dir) if f.name.endswith(".png"))
     if r.returncode != 0 or n == 0:
-        raise RuntimeError(f"Tách frame thất bại (rc={r.returncode}, n={n})")
+        raise RuntimeError(_t("Tách frame thất bại (rc={0}, n={1})")
+                          .format(r.returncode, n))
     return n
 
 
@@ -175,8 +178,8 @@ def stabilize_video(src: str, out_path: str, max_seconds=None,
                        transform_name, "-f", "null", "-"]
     first = _run(detect, cancel_check=cancel_check, cwd=workdir, env=env)
     if first.returncode != 0:
-        raise RuntimeError("Phân tích chống rung thất bại: " +
-                           first.stderr.decode(errors="replace")[-300:])
+        raise RuntimeError(_t("Phân tích chống rung thất bại: {0}")
+                          .format(first.stderr.decode(errors="replace")[-300:]))
     transform = common + ["-vf", "vidstabtransform=input=" + transform_name +
                           ":smoothing=10:optzoom=1", "-an", "-c:v", "libx264",
                           "-preset", "veryfast", "-crf", "18", "-pix_fmt",
@@ -189,17 +192,43 @@ def stabilize_video(src: str, out_path: str, max_seconds=None,
         except OSError:
             pass
     if second.returncode != 0 or not os.path.isfile(out_path):
-        raise RuntimeError("Chống rung thất bại: " +
-                           second.stderr.decode(errors="replace")[-300:])
+        raise RuntimeError(_t("Chống rung thất bại: {0}")
+                          .format(second.stderr.decode(errors="replace")[-300:]))
 
 
 def _venc_args(encoder: str) -> list:
+    """Tham số `-c:v` cho encoder. Phải hiểu MỌI tên `_resolve_encoder` trả về.
+
+    ⚠️ Bất biến: `jobs._resolve_encoder` và hàm này là một chỗ nối. Thêm một
+    encoder ở đó mà không thêm ở đây thì nó **rơi âm thầm** — đúng cái đã xảy ra
+    với QSV/AMF (ISSUE I). `tests/test_4904_upscale_correction.py` khoá
+    bất biến ấy lại.
+
+    ⛔ Không thêm nhánh QSV/AMF. Đo 2026-09-26 trên máy production này:
+    `ffmpeg -encoders` **liệt kê** `h264_qsv`/`hevc_qsv`/`h264_amf`/`hevc_amf`,
+    nhưng cả bốn **chết lúc chạy** ("Nothing was written into output file") trên
+    một encode thử 256x256 — trong khi `h264_nvenc`/`hevc_nvenc`/`libx264`/
+    `libx265` đều cho đúng luồng. Vì vậy app này hỗ trợ **NVENC + CPU**, và một
+    bản LIỆT KÊ năng lực ⛔ không bao giờ được coi là một phép DÒ năng lực.
+    """
     if encoder in ("h264_nvenc", "hevc_nvenc"):
         args = ["-c:v", encoder, "-preset", "p5", "-cq", "19", "-pix_fmt", "yuv420p"]
         if encoder == "hevc_nvenc":
             args += ["-tag:v", "hvc1"]
         return args
-    # CPU fallback
+    if encoder == "libx265":
+        # HEVC trên CPU — CHỈ cho đường ngoại tuyến/benchmark; `jobs` không
+        # định tuyến job khách vào đây (xem `jobs._resolve_encoder`).
+        # `-crf 20` là mức mặc định ta chọn; ⚠️ CHƯA ĐO tương quan chất lượng/cỡ
+        # tệp giữa nó và `libx264 -crf 18` trên nguồn của app này, nên đừng khai
+        # một tỉ lệ nào. `hvc1` để QuickTime/Safari mở được.
+        return ["-c:v", "libx265", "-preset", "medium", "-crf", "20",
+                "-pix_fmt", "yuv420p", "-tag:v", "hvc1"]
+    if encoder != "libx264":
+        raise ValueError(
+            f"_venc_args không biết encoder {encoder!r}. Thêm nhánh ở đây HOẶC "
+            f"đừng trả nó từ jobs._resolve_encoder — im lặng rơi về libx264 là "
+            f"cách hợp đồng codec nói dối khách (ISSUE I).")
     return ["-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p"]
 
 
@@ -218,7 +247,8 @@ def encode_full(frames_dir: str, src_for_audio: str, out_path: str, fps_str: str
     cmd += [out_path]
     r = _run(cmd, cancel_check=cancel_check, env=env)
     if r.returncode != 0 or not os.path.isfile(out_path):
-        raise RuntimeError(f"Encode lỗi: {r.stderr.decode(errors='replace')[-400:]}")
+        raise RuntimeError(_t("Encode lỗi: {0}")
+                          .format(r.stderr.decode(errors='replace')[-400:]))
     info = probe_video(out_path, cancel_check=cancel_check, env=env)
     return info["w"], info["h"]
 
@@ -233,7 +263,8 @@ def encode_segment(frames_dir: str, out_path: str, fps_str: str, target_h: int,
            + _venc_args(encoder) + [out_path])
     r = _run(cmd, cancel_check=cancel_check, env=env)
     if r.returncode != 0 or not os.path.isfile(out_path):
-        raise RuntimeError(f"Encode segment lỗi: {r.stderr.decode(errors='replace')[-300:]}")
+        raise RuntimeError(_t("Encode segment lỗi: {0}")
+                          .format(r.stderr.decode(errors='replace')[-300:]))
 
 
 def concat_and_mux(seg_paths: list, src_for_audio: str, out_path: str,
@@ -258,6 +289,7 @@ def concat_and_mux(seg_paths: list, src_for_audio: str, out_path: str,
     except OSError:
         pass
     if r.returncode != 0 or not os.path.isfile(out_path):
-        raise RuntimeError(f"Concat/mux lỗi: {r.stderr.decode(errors='replace')[-300:]}")
+        raise RuntimeError(_t("Concat/mux lỗi: {0}")
+                          .format(r.stderr.decode(errors='replace')[-300:]))
     info = probe_video(out_path, cancel_check=cancel_check, env=env)
     return info["w"], info["h"]

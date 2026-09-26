@@ -18,7 +18,10 @@
 
 **Total Critical Issues:** 7  
 **Fixable Effort:** ~5 hours  
-**Expected Speedup:** 2-5x throughput increase
+**Expected Speedup:** ⛔ SAI — "2-5x throughput increase" phần lớn dựa trên giả
+định tăng số job Fast đồng thời; `GpuLease.UniqueConstraint("host","gpu_uuid")`
+(`platform_core/models.py:1037`) khoá đồng thời GPU = **1**, not 12 (ISSUE A).
+Phần đến từ Disk I/O/NVENC gate/checkpoint là CHƯA ĐO, không phải đã disprove.
 
 ---
 
@@ -60,12 +63,12 @@ Manifest VRAM requirements were copied from old H32 benchmark without re-measure
 |---------------|-------|
 | Fast job requests 2,000 MB | Holds entire card via exclusive lease |
 | Actual usage 848 MB | Wastes 1,152 MB that could run other jobs |
-| Max concurrent fast | ~4 jobs (3200 MB reservation / 2000 MB each) |
-| Should support | ~12 jobs (8 GB usable / 848 MB each) |
+| Max concurrent fast | ⛔ SAI — "~4 jobs" giả định kế toán VRAM cộng dồn; `exclusive=True` (`gpu_lease.py:201-203`) giữ TRỌN card cho một lease, not 4 |
+| Should support | ⛔ SAI — "~12 jobs"; `UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng thời = **1**, not 12 (ISSUE A) |
 
 **Business Impact:**
 - User experiences job queue delays unnecessarily
-- Production capacity underutilized by 66%
+- ⛔ SAI — "Production capacity underutilized by 66%" tính từ (12-4)/12, cả hai số đều SAI (ISSUE A); thật ra đồng thời luôn là 1, không có "capacity" nào bị bỏ phí theo cách này
 - Higher cost per job due to queue wait time
 
 ### Fix
@@ -100,7 +103,11 @@ gpu_vram_mb = {
 - Revert to `2000` if OOM events occur
 
 **Acceptance:**
-- Max fast concurrent jobs increases from 4 → 12
+- ⛔ SAI — "Max fast concurrent jobs increases from 4 → 12" giả định kế toán VRAM
+  cộng dồn; `GpuLease.UniqueConstraint("host","gpu_uuid")` (`models.py:1037`)
+  khoá đồng thời GPU = **1**, not 12, bất kể `gpu_vram_mb` (ISSUE A,
+  `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`). Hạ `gpu_vram_mb.fast` chỉ
+  đổi sàn nhận MỘT job (ISSUE B), không mua thêm job đồng thời.
 - No regression in fast job success rate
 - No new OOM errors
 
@@ -147,7 +154,7 @@ FFmpeg `-vf fps=` filter outputs individual PNG files. Each frame = separate fil
 | Solution | Effort | Speed Gain | Risk |
 |----------|--------|------------|------|
 | **1. Direct FFmpeg encode** | Low | ⭐⭐⭐ Eliminate PNG step | May lose FPS precision |
-| **2. WebP intermediate** | Medium | ⭐⭐ 30% smaller files | Decode overhead |
+| **2. WebP intermediate** | Medium | ⭐⭐ 30% smaller files (ước lượng, CHƯA ĐO) | Decode overhead |
 | **3. RAM buffer** | Medium | ⭐⭐⭐ Zero disk I/O | Memory hungry |
 | **4. Batch PNG** | Medium | ⭐⭐ Fewer files | Complex |
 
@@ -215,13 +222,19 @@ def _resolve_encoder(codec: Codec) -> str:
 
 | GPU Type | Current Encoder | Speed | Quality |
 |----------|-----------------|-------|---------|
-| NVIDIA (NVENC) | h264_nvenc | Fast (~2x) | Good |
+| NVIDIA (NVENC) | h264_nvenc | Fast (~2x, ước lượng CHƯA ĐO) | Good |
 | **Intel (QSV)** | libx264 | **Very Slow (CPU)** | Good |
 | **AMD (AMF)** | libx264 | **Very Slow (CPU)** | Good |
 
 **Performance Impact:**
-- Intel i9-10900K with QuickSync: 10x slower than NVENC
-- Same 5min video: 5min (NVENC) vs 50min (CPU)
+- Intel i9-10900K with QuickSync: ⚠️ CHƯA ĐO khi viết — "10x slower than NVENC"
+  chưa có phép đo dẫn nguồn tại thời điểm đó. Cập nhật 2026-09-26: KHÔNG còn cần
+  đo, vì `h264_qsv`/`hevc_qsv`/`h264_amf`/`hevc_amf` được MEASURED FAIL hoàn
+  toàn ở runtime trên máy này ("Nothing was written into output file" trên một
+  lượt encode thử 256×256), dù `ffmpeg -encoders` liệt kê chúng — không có
+  "chậm hơn" để so, vì QSV/AMF không chạy được (⛔ SAI nếu đọc là "QSV chạy,
+  chỉ chậm"). Xem `docs/UPSCALE_V2_CORRECTION/05_ENCODER_TRUTH.md`.
+- Same 5min video: 5min (NVENC) vs 50min (CPU) — ước lượng, CHƯA ĐO
 
 ### Root Cause
 
@@ -256,11 +269,15 @@ def _resolve_encoder(codec: Codec) -> str:
 3. Compare NVENC vs QSV vs CPU encode time
 4. Compare quality
 
-**Acceptance:**
+**Acceptance:** ⛔ SAI — cả đề xuất này không thực thi được. MEASURED 2026-09-26:
+`h264_qsv`, `hevc_qsv`, `h264_amf`, `hevc_amf` đều FAIL hoàn toàn ở runtime trên
+máy này ("Nothing was written into output file" trên một lượt encode thử
+256×256), dù `ffmpeg -encoders` liệt kê chúng. Chốt sản phẩm: app chỉ hỗ trợ
+NVENC+CPU — xem `docs/UPSCALE_V2_CORRECTION/05_ENCODER_TRUTH.md`.
 - Intel jobs use QSV instead of CPU
 - AMD jobs use AMF instead of CPU
 - Quality unchanged
-- Speedup: 5-10x on QSV/AMF
+- Speedup: 5-10x on QSV/AMF — ⛔ SAI, not applicable: QSV/AMF không chạy được, không có "speedup" nào để thu
 
 ---
 
@@ -373,6 +390,8 @@ def resume_if_partial(job_id):
 
 ### Impact
 
+⚠️ Bảng dưới là ước lượng, CHƯA ĐO trên bộ video test thật.
+
 | Resolution | Source FPS | Output FPS | CPU Cost | 5min Runtime |
 |------------|------------|------------|----------|--------------|
 | 720p | 30 → 60 | 60 | ~100ms/frame | 300-500s |
@@ -389,13 +408,19 @@ minterpolate is a CPU-only filter. No GPU acceleration.
 
 **RIFE (Real-Time Intermediate Flow Estimation)** with NCNN-Vulkan is significantly faster and better quality:
 
-| Feature | minterpolate | RIFE-NCNN-Vulkan |
+⛔ SAI toàn hàng "RIFE-NCNN-Vulkan" — RIFE KHÔNG BAO GIỜ được cài đặt: chỉ còn
+lại `# TODO` chết ở `ff.py:138-140` (`# filters.append("rife=0")  # Uncomment
+when RIFE binary available`). Đường chạy thật vẫn luôn là `minterpolate` CPU.
+"~10ms/frame", "Better", "30 min effort" là ƯỚC LƯỢNG cho một thứ chưa từng
+được xây, not a result.
+
+| Feature | minterpolate | RIFE-NCNN-Vulkan (⛔ SAI — chưa cài đặt, chỉ là đề xuất) |
 |---------|--------------|------------------|
 | Engine | minterpolate filter | RIFE + NCNN |
 | GPU Support | ❌ CPU only | ✅ Vulkan/CUDA |
-| Speed | 100ms-400ms/frame | ~10ms/frame |
-| Quality | Good | Better |
-| Integration | Already there | 30 min effort |
+| Speed | 100ms-400ms/frame | ~10ms/frame (ước lượng, chưa cài đặt) |
+| Quality | Good | Better (ước lượng, chưa cài đặt) |
+| Integration | Already there | 30 min effort (ước lượng) |
 
 ### Fix
 
@@ -413,8 +438,9 @@ ffmpeg -y -i input.mp4 -vf "rife=0" output.mp4
 
 **Estimated effort:** 30 minutes
 
-**Acceptance:**
-- Smooth motion 2x speedup
+**Acceptance:** RIFE chưa từng được cài đặt (`ff.py:138-140`, chỉ `# TODO` chết);
+đường chạy thật vẫn là `minterpolate` CPU.
+- Smooth motion 2x speedup — ⛔ SAI, not applicable: RIFE chưa cài đặt, không có "speedup" nào để thu
 - Lower CPU utilization
 - Better temporal quality
 
@@ -499,7 +525,13 @@ Each job spawns NCNN subprocess, model loads from disk.
 
 ### Impact
 
-**Cold start latency:** ~1-3 seconds per job
+**Cold start latency:** ~1-3 seconds per job (ước lượng, CHƯA ĐO)
+
+⚠️ Bảng dưới là ước lượng, CHƯA ĐO. Cập nhật 2026-09-26: warmup được vá để ghim
+đúng GPU (`gpu_index`+`env`), nhưng bản thân warmup KHÔNG giữ model trong VRAM
+(tiến trình con thoát hẳn trước job thật) — lợi ích thật giới hạn ở cache tệp
+OS/shader driver, không phải "cold start" biến mất như ngụ ý ở đây. Xem
+`docs/UPSCALE_V2_CORRECTION/07_CORRECTION_PLAN.md` mục D/E/F.
 
 | Job Queue Depth | Cold Start Overhead |
 |-----------------|---------------------|
@@ -542,16 +574,18 @@ def run_upscale(model):
 
 | # | Bottleneck | Priority | Effort | Impact | ROI |
 |---|------------|----------|--------|--------|-----|
-| 1 | VRAM Over-allocation | P0 | 15 min | 3x more concurrent jobs | ⭐⭐⭐⭐⭐ |
-| 2 | PNG Disk I/O | P1 | 1-2 hours | 2-3x faster extraction | ⭐⭐⭐⭐ |
-| 3 | NVENC Gate | P1 | 15 min | 10x faster encode on QSV/AMD | ⭐⭐⭐⭐ |
-| 4 | No Checkpoint | P1 | 4 hours | Zero waste on job crashes | ⭐⭐⭐⭐ |
-| 5 | Smooth Motion CPU | P1 | 30 min | 5-10x faster motion interp | ⭐⭐⭐ |
-| 6 | Single GPU Exclusive | P1 | 2-3 hours | Better job parallelization | ⭐⭐⭐ |
-| 7 | No Model Warmup | P2 | 1.5 hours | Reduce cold start | ⭐⭐ |
+| 1 | VRAM Over-allocation | P0 | 15 min | ⛔ SAI — "3x more concurrent jobs": `UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng thời = 1, not 12 (ISSUE A) | ⭐⭐⭐⭐⭐ |
+| 2 | PNG Disk I/O | P1 | 1-2 hours | 2-3x faster extraction (ước lượng, CHƯA ĐO — chưa triển khai) | ⭐⭐⭐⭐ |
+| 3 | NVENC Gate | P1 | 15 min | ⛔ SAI — "10x faster encode on QSV/AMD": MEASURED 2026-09-26, QSV/AMF FAIL hoàn toàn ở runtime trên máy này; không có "faster" nào vì không chạy được (`docs/UPSCALE_V2_CORRECTION/05_ENCODER_TRUTH.md`) | ⭐⭐⭐⭐ |
+| 4 | No Checkpoint | P1 | 4 hours | Zero waste on job crashes (ước lượng — checkpoint thật vẫn chỉ ghi sổ, không resume; xem ISSUE G) | ⭐⭐⭐⭐ |
+| 5 | Smooth Motion CPU | P1 | 30 min | ⛔ SAI — "5-10x faster motion interp": RIFE chưa từng cài đặt (`ff.py:138-140`), đường chạy thật vẫn `minterpolate` CPU (ISSUE K) | ⭐⭐⭐ |
+| 6 | Single GPU Exclusive | P1 | 2-3 hours | Better job parallelization (nghĩa là xen kẽ job kế tiếp giữa các đợt release/acquire theo batch — KHÔNG phải chạy đồng thời; đồng thời GPU vẫn luôn là 1) | ⭐⭐⭐ |
+| 7 | No Model Warmup | P2 | 1.5 hours | Reduce cold start (ước lượng — warmup không giữ model trong VRAM, lợi ích thật giới hạn; ISSUE D/E) | ⭐⭐ |
 
 **Total Implementation Effort:** ~10 hours  
-**Expected Throughput Gain:** 2-5x
+**Expected Throughput Gain:** ⛔ SAI — "2-5x" phần lớn dựa trên giả định tăng
+đồng thời GPU (hàng 1, 3, 5 ở trên đều SAI); phần còn lại (PNG I/O, checkpoint,
+warmup) là CHƯA ĐO, không phải đã chứng minh.
 
 ---
 
@@ -563,7 +597,10 @@ def run_upscale(model):
 2. **NVENC Gate** (15 min)
 3. **Smooth Motion RIFE** (30 min)
 
-**Phase 1 Impact:** 5x speedup, minimal effort
+**Phase 1 Impact:** ⛔ SAI — "5x speedup" cộng dồn từ VRAM Over-allocation
+(SAI, ISSUE A) + NVENC Gate (SAI — QSV/AMF fail hoàn toàn, MEASURED 2026-09-26)
++ Smooth Motion RIFE (SAI — chưa cài đặt, ISSUE K). Cả ba nguồn của con số này
+đều SAI hoặc không thực thi được.
 
 ### Phase 2: Infrastructure (2 days)
 

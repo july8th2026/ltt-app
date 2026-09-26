@@ -17,7 +17,10 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 
 **Current Score:** 507/1000 (C+)
 **Target Score:** 850/1000 (A)
-**Improvement:** +343 points (+68%)
+**Improvement:** ⛔ SAI — "+343 points (+68%)" là lời TỰ CHẤM, cộng dồn từ các
+hàng "GPU Utilization"/"Speed" dựa trên đồng thời GPU 4→12 (không tồn tại,
+ISSUE A, `models.py:1037`) và RIFE (chưa cài đặt, ISSUE K). Xem
+`docs/UPSCALE_V2_CORRECTION/10_FINAL_SCORECARD.md` cho bản chấm lại.
 
 ---
 
@@ -53,16 +56,20 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 
 **A: 85/100** (target Phase 4 complete)
 
-| Category | Score | Improvement |
+⛔ SAI trên diện rộng — điểm số dưới đây là lời TỰ CHẤM của phiên đã viết ra
+chúng, không phải phép đo. Xem `docs/UPSCALE_V2_CORRECTION/10_FINAL_SCORECARD.md`
+cho bản chấm lại có `file:line` cho từng dòng và `CHƯA ĐO` ở mọi ô hiệu năng.
+
+| Category | Score (bản cũ, tự chấm) | Improvement |
 |----------|-------|-------------|
 | Architecture | 9/10 | Optimized VRAM, checkpoint, warmup |
-| GPU Utilization | 9/10 | Shared GPU, 12x concurrent fast |
-| Speed | 9/10 | RIFE 5-10x, optimized PNG I/O |
+| GPU Utilization | 9/10 | ⛔ SAI — "Shared GPU, 12x concurrent fast": `GpuLease.UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng thời GPU = **1**, not 12 (ISSUE A) |
+| Speed | 9/10 | ⛔ SAI — "RIFE 5-10x": RIFE KHÔNG được cài đặt, chỉ là `# TODO` chết ở `ff.py:138-140`; đường chạy thật vẫn là `minterpolate` CPU (ISSUE K) |
 | AI Quality | 8/10 | Same models, no quality loss |
 | Temporal Quality | 2/10 | DEFER until BasicVSR++ spike |
-| Reliability | 9/10 | Stage-based checkpoint, resume |
-| Resume/Recovery | 9/10 | Full stage recovery |
-| Scheduler | 9/10 | Optimized concurrency, chunked |
+| Reliability | 9/10 | ⛔ SAI — "Stage-based checkpoint, resume": checkpoint chỉ GHI SỔ, không ai đọc để bỏ qua việc (ISSUE G) |
+| Resume/Recovery | 9/10 | ⛔ SAI — "Full stage recovery": `load_checkpoint`/`get_job_checkpoints` không có caller nào; resume KHÔNG tồn tại (ISSUE G) |
+| Scheduler | 9/10 | ⛔ SAI — "Optimized concurrency": không có concurrency nào để tối ưu, đồng thời GPU luôn là 1 (ISSUE A) |
 | Storage | 8/10 | Same, minor I/O improvements |
 | Credit | 8/10 | Same, better monitoring |
 | API | 8/10 | Enhanced progress, ETA |
@@ -73,7 +80,10 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 
 **Overall:** 85/100
 
-**Improvement:** +34.3 points (+68%)
+**Improvement:** ⛔ SAI — "+34.3 points (+68%)" là lời TỰ CHẤM, cùng nguồn với
+dòng "+343 points" ở Executive Summary — cộng dồn từ đồng thời GPU không tồn
+tại (ISSUE A) và RIFE chưa cài đặt (ISSUE K). Xem
+`docs/UPSCALE_V2_CORRECTION/10_FINAL_SCORECARD.md`.
 
 ---
 
@@ -83,7 +93,7 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 
 | # | Bottleneck | Severity | Impact |
 |---|------------|----------|--------|
-| 1 | **VRAM Over-allocation** | P0 | Blocks concurrent jobs |
+| 1 | **VRAM Over-allocation** | P0 | ⛔ SAI — "Blocks concurrent jobs" ngụ ý hạ VRAM mở concurrent jobs; `UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) chặn điều đó bất kể VRAM (ISSUE A) |
 | 2 | **PNG Disk I/O** | P1 | Slow frame extraction |
 | 3 | **NVENC Gate Too Strict** | P1 | CPU fallback |
 | 4 | **No Checkpoint** | P1 | Long jobs fail entirely |
@@ -99,10 +109,10 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 
 | Scenario | Before | After | Improvement |
 |----------|--------|-------|-------------|
-| Fast 1080p (5min) | 5-10 min | 2-4 min | -60-70% |
-| Quality 1080p (5min) | 15-30 min | 8-15 min | -50% |
-| Smooth Motion (5min) | 5-10 min | 0.5-1 min | -90% |
-| Total 5min Video | ~30 min | ~12 min | -60% |
+| Fast 1080p (5min) | 5-10 min | 2-4 min | -60-70% (CHƯA ĐO) |
+| Quality 1080p (5min) | 15-30 min | 8-15 min | -50% (CHƯA ĐO) |
+| Smooth Motion (5min) | 5-10 min | 0.5-1 min | ⛔ SAI — "-90%" giả định RIFE; RIFE chưa cài đặt (`ff.py:138-140`, ISSUE K) |
+| Total 5min Video | ~30 min | ~12 min | -60% (CHƯA ĐO) |
 
 **Note:** Benchmarks chưa chạy, đây là projection từ analysis.
 
@@ -110,16 +120,16 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 
 ### 1. Q: GPU utilization thay đổi thế nào?
 
-**A: 75% → 90%**
+**A: 75% → 90%** — CHƯA ĐO (không có benchmark trước/sau nào chạy)
 
 | Metric | Before | After |
 |--------|--------|-------|
-| GPU Util (Fast) | 50-60% | 75-80% |
-| GPU Util (Quality) | 60-70% | 85-90% |
-| Concurrent Fast Jobs | 4 | 12 |
-| GPU Idle Time | 25-50% | 10-25% |
+| GPU Util (Fast) | 50-60% | 75-80% (CHƯA ĐO) |
+| GPU Util (Quality) | 60-70% | 85-90% (CHƯA ĐO) |
+| Concurrent Fast Jobs | 4 | ⛔ SAI — "12": `UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng thời = 1, not 12 (ISSUE A) |
+| GPU Idle Time | 25-50% | 10-25% (CHƯA ĐO) |
 
-**Impact:** 3x more concurrent fast jobs, better throughput.
+**Impact:** ⛔ SAI — "3x more concurrent fast jobs" không tồn tại (ISSUE A); "better throughput" CHƯA ĐO.
 
 ---
 
@@ -132,7 +142,8 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 | Fast | 848 MB | 2,000 MB | 1,000 MB |
 | Quality | 11,176 MB | 12,000 MB | 11,500 MB |
 
-**Improvement:** 50% less VRAM requested, 3x more concurrent jobs.
+**Improvement:** 50% less VRAM requested (đúng, số học từ giá trị đã đo); ⛔ SAI
+— "3x more concurrent jobs" không tồn tại, đồng thời GPU luôn là 1 (ISSUE A).
 
 ---
 
@@ -156,10 +167,12 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 
 **A: `realesrgan-x4plus`**
 
-**Rationale:**
-- ✅ Best quality in Real-ESRGAN family
+**Rationale:** ⚠️ sửa lời — "best" không có dataset/script đối chứng nào dẫn nguồn
+trong `06_MODEL_BENCHMARK.md`; gọi đúng hơn là **model đang dùng cho Quality
+preset** (`realesrgan-x4plus`), không phải khẳng định "tốt nhất":
+- PSNR/SSIM ở `06_MODEL_BENCHMARK.md` — CHƯA ĐO lại, chưa rõ ảnh tham chiếu/quy trình đo
 - ✅ Suitable for clean/bicubic content
-- ✅ PSNR 30.26 dB (bicubic)
+- PSNR 30.26 dB (bicubic) — theo `06_MODEL_BENCHMARK.md`, chưa tái đo trong đợt sửa này
 - ⚠️ High VRAM (11.2 GB)
 - ⚠️ Slow (0.7 fps)
 
@@ -179,7 +192,7 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 **Thread configuration:**
 | Preset | Before | After |
 |--------|--------|-------|
-| Fast (budget≥1000) | 4:4:4 | 4:4:4 (threshold: 750 MB) |
+| Fast (budget≥1000) | 4:4:4 | 4:4:4 (⛔ SAI — "threshold: 750 MB"; ngưỡng thật đang chạy là 1000 MB, `autotune.py:99,103`, ISSUE C) |
 | Fast (budget<1000) | 2:2:2 | 2:2:2 |
 | Quality | 1:2:2 | 1:2:2 |
 
@@ -187,21 +200,26 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 
 ### 1. Q: Concurrency cuối là gì?
 
-**A: Production limits**
+**A: Production limits** — ⛔ SAI toàn mục. `GpuLease.UniqueConstraint(
+"host","gpu_uuid")` (`platform_core/models.py:1037`) khoá đồng thời GPU = **1**
+cho MỌI preset (ISSUE A). Không có "4", "8", hay "12" concurrent nào tồn tại.
 
-| Preset | Before | After |
+| Preset | Before | After (bản cũ, SAI) |
 |--------|--------|-------|
 | Fast | 4 (theoretical) | 8 (production) |
 | Quality | 1 | 1 |
 | Mixed | N/A | 8 total |
 
-**Theoretical max:** 12 fast concurrent (with 1000 MB VRAM each on 16GB GPU)
+**Theoretical max:** ⛔ SAI — "12 fast concurrent" không tồn tại vì `exclusive=True`
+(`gpu_lease.py:201-203`) giữ TRỌN card cho một lease bất kể `vram_mb`, not 12.
 
 ---
 
 ### 1. Q: Smooth Motion dùng engine gì?
 
-**A: RIFE-NCNN-Vulkan (Phase 2)**
+**A: RIFE-NCNN-Vulkan (Phase 2)** — ⛔ SAI, chưa từng xảy ra: RIFE KHÔNG BAO GIỜ
+được cài đặt (chỉ `# TODO` chết ở `ff.py:138-140`); đường chạy thật NGÀY HÔM NAY
+(2026-09-26) vẫn là `minterpolate` CPU, giống hệt "Before" dưới đây (ISSUE K).
 
 **Before:**
 - Engine: FFmpeg minterpolate
@@ -209,15 +227,16 @@ Audit deep toàn bộ Upscale Video hiện tại, chuẩn hóa hệ thống cho 
 - CPU Cost: 80-100%
 - Speed: 50-200ms/frame
 
-**After:**
+**After (bản cũ, SAI — chưa từng xây, xem trên):**
 - Engine: RIFE-NCNN-Vulkan
 - GPU Support: ✅ Vulkan
 - CPU Cost: <30%
 - Speed: ~10ms/frame
 
-**Improvement:** 5-10x faster, better quality, GPU offload.
+**Improvement:** ⛔ SAI — "5-10x faster" không có gì để so vì RIFE chưa cài đặt.
 
-**Status:** ⏸️ Phase 2 — Vendor after Phase 1 complete.
+**Status:** ⏸️ Phase 2 — Vendor after Phase 1 complete. (Vẫn PENDING tại
+2026-09-26 — xem `docs/UPSCALE_V2_CORRECTION/07_CORRECTION_PLAN.md` mục K.)
 
 ---
 
@@ -548,7 +567,9 @@ This mission achieved **comprehensive audit coverage** of Upscale Video:
 
 **Total Evidence Generated:** 13 reports, 50+ pages  
 **Total Estimated Effort:** 30 hours of implementation  
-**Expected Improvement:** 68% score increase, 60% runtime reduction
+**Expected Improvement:** ⛔ SAI — "68% score increase" là lời TỰ CHẤM (xem
+Executive Summary ở trên, ISSUE A/K); "60% runtime reduction" CHƯA ĐO (không
+benchmark trước/sau nào chạy, xem mục "Đã cải thiện runtime bao nhiêu %?" ở trên).
 
 **Key Achievement:** Moved from "optimizing benchmark giả tạo" to "evidence-based optimization" with measurable targets.
 

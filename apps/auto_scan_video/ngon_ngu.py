@@ -88,6 +88,21 @@ DON_VI_DO_DAI = {VI: "am tiet", EN: "tu"}
 #:    Xem `docs/auto_scan_video_final/L_DO_GIONG.md`.
 NHIP: dict[str, float] = {VI: 3.35, EN: 3.63}
 
+#: Giay cong them cho MOI dau cau — cho nguoi doc ngat hoi.
+#:
+#: 🔑 Muon hinh tu `VideoLingo` (`core/tts_backend/estimate_duration.py`,
+#:    Apache-2.0): bo uoc luong cua ho cong **0,1 s cho moi dau cau** len tren
+#:    phep `am tiet x hang so`. Truoc 26/09 bo uoc luong cua ta chi co `am tiet
+#:    / NHIP`, tuc coi mot cau 3 menh de doc lien mot hoi — va do la mot lech
+#:    **MOT CHIEU** (luon doan NGAN), tuc loai lech te nhat o mot nguong.
+#:
+#: ⚠️ CHUA do tren giong cua ta. `tools/asv_doi_soat.py` (Đ2 `ti_le_doan_ngan`)
+#:    la phep do phai chinh lai con so nay; ⛔ dung coi `0.10` la da chot.
+GIAY_MOI_DAU_CAU = 0.10
+
+#: Dau cau tinh la mot cho ngat hoi.
+DAU_NGAT = ",.!?;:…"
+
 #: Nham THAP hon khe mot chut, va **mot con so cho ca hai pha**.
 #:
 #: ⭐ Vua khit la vua **du** de mot dao dong nho cua may sinh tieng lam cau tran

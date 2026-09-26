@@ -234,13 +234,24 @@ def test_tom_tat_KHONG_co_tham_so_moi_van_hop_le():
 def test_buoc_0_5_GHI_giay_TUNG_VONG_vao_outputs(
         tmp_path, monkeypatch,
         db, kho_tam, asr_gia, dich_gia, giong_gia):  # noqa: F811
-    """⭐ Nghiem thu 5 — mot luot gia co HAI vong nan.
+    """⭐ Nghiem thu 5 — MOI LUOT DOC mot ban ghi trong `outputs`.
 
-    May sinh tieng luon tra ve 9 giay cho khe ~0,8 giay, nen moi doan chay het
-    bac thang: **3 luot doc** (vong 0, 1, 2) va `so_vong = VONG_TOI_DA`.
+    May sinh tieng luon tra ve 9 giay cho khe ~0,8 giay, nen moi doan deu bi
+    phan quyet "khong vua" va deu di qua cua tieu tien.
 
-    🔴 Menh de that o day: giay cua vong 0 va vong 1 **truy van duoc tu
+    🔴 Menh de that o day: giay DO DUOC cua tung luot doc **truy van duoc tu
        `asv_stage.outputs`**, khong phai chi nam trong mot dong log.
+
+    ⚠️ **Doi 26/09 (Task 12) — bai nay tung chot SO LUOT, nay chot SU TON TAI
+       CUA BAN GHI.** Truoc do bac thang nan nam TRONG vong TTS, nen mot doan
+       khong vua co `VONG_TOI_DA + 1` luot doc va bai nay doi
+       `nhieu_vong` ⛔ khong rong. Task 12 dao thu tu: phep do nay la
+       `Khe.giay_can` (uoc luong, ⛔ khong ton GPU) chay TRUOC, roi TTS chi chay
+       **MOT luot** — nen "mot doan co > 1 luot doc" la dieu ta **co y bo**, va
+       mot bai kiem doi no la mot banh coc chot dung cai da bi xoa.
+       ⇒ Menh de con lai, va no la menh de that su cua buoc 0.5: **moi luot doc
+          co dung mot ban ghi `ban_ghi_luot_doc` trong `outputs`**, mang `giay`
+          DO DUOC va `khe` cua chinh luot ay, ⛔ khong mang loi thoai cua khach.
     """
     import json
 
@@ -253,12 +264,16 @@ def test_buoc_0_5_GHI_giay_TUNG_VONG_vao_outputs(
 
     def gia_nan(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
                 ctx=None, temperature=None, luoc_do=None):
+        goi = json.loads(messages[-1]["content"])
         if thao_tac is ai.RUT_NGAN_CHO_VUA:
             dem["n"] += 1
-            than = {"doan": {"chu": "cau ngan hon lan %d" % dem["n"]}}
+            # ⭐ Hinh dang LO (26/09): mot doi tuong PHANG, khoa la ma doan —
+            #    dung thu `nan_cho_vua.loi_nhac_nan_lo` dan model tra ve. Mot ban
+            #    gia sai hinh dang se lam bai nay do duong SUY GIAM (thieu ma ->
+            #    giu cau goc) thay vi duong nan that, ma ⛔ khong noi ra.
+            than = {ma: "cau ngan hon lan %d" % dem["n"] for ma in goi}
             return {"noi_dung": json.dumps(than, ensure_ascii=False),
                     "su_dung": None}
-        goi = json.loads(messages[-1]["content"])
         than = {"doan": {
             str(d["ma"]): {"chu": "loi thoai cua %s" % d["ma"],
                            "cam_xuc": long_tieng.CAM_XUC[0],
@@ -285,16 +300,21 @@ def test_buoc_0_5_GHI_giay_TUNG_VONG_vao_outputs(
     for d in luot:
         theo_ma.setdefault(d["ma"], []).append(d)
 
-    nhieu_vong = {k: v for k, v in theo_ma.items() if len(v) > 1}
-    assert nhieu_vong, (
-        "khong doan nao co hon mot luot doc — mau thu khong do duoc buoc 0.5 "
-        "(da goi viet lai %d lan)" % dem["n"])
+    # ⭐ MOT ban ghi cho MOI luot doc — va `so_luot_doc` cua bao cao la nguoi
+    #    lam chung doc lap: hai con so nay dem cung mot thu tu hai cho khac
+    #    nhau, nen chung lech la co mot luot doc khong duoc ghi.
+    assert int(tt.get("so_luot_doc") or 0) == len(luot), (
+        "so_luot_doc=%s nhung chi co %d ban ghi — mot luot doc khong duoc ghi"
+        % (tt.get("so_luot_doc"), len(luot)))
 
-    for ma, cac in nhieu_vong.items():
+    for ma, cac in theo_ma.items():
         vongs = sorted(d["vong"] for d in cac)
-        assert vongs == list(range(len(cac))), (ma, vongs)
-        assert len(cac) == nan.VONG_TOI_DA + 1, (
-            "tieng luon 9 giay ma doan %s chi doc %d lan" % (ma, len(cac)))
+        # ⚠️ `vong` = so vong NAN da chay TRUOC luot doc nay. Sau Task 12 mot
+        #    doan da nan co dung MOT luot doc va luot ay mang `vong = 1` — ban cu
+        #    doi `[0, 1, ...]` lien tuc vi nan nam TRONG vong TTS. Bat bien con
+        #    lai: cac gia tri PHAN BIET, tang dan, va ⛔ khong vuot `VONG_TOI_DA`.
+        assert vongs == sorted(set(vongs)), (ma, vongs)
+        assert 0 <= vongs[0] and vongs[-1] <= nan.VONG_TOI_DA, (ma, vongs)
         for d in cac:
             assert d["giay"] > 0, "ban ghi khong mang giay DO DUOC"
             assert d["khe"] > 0
@@ -303,3 +323,78 @@ def test_buoc_0_5_GHI_giay_TUNG_VONG_vao_outputs(
     # ⭐ Va no truy van duoc: dem luot doc dang le phai goi may B.
     assert sum(1 for d in luot if d["nen_viet_lai"]) > 0
     assert dem["n"] > 0, "chua vong nan nao chay"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  E. NAC CUU CUOI (Task 8) — con lech sau tang toc PHAI duoc GHI LAI
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_doan_con_lech_sau_tang_toc_phai_duoc_GHI_LAI():
+    """(c) chấp nhận thì phải NÓI RA. Một đoạn lệch bị bỏ im lặng là thứ tệ nhất.
+
+    ⚠️ Task 16 (R4): đây là lưới PHỤ — chỉ soi TÊN KHOÁ còn tồn tại trong mã
+    nguồn, ⛔ không gọi hàm nên không bắt được ai âm thầm ghi `0`/hằng số giả
+    mà vẫn giữ đúng tên. Lưới CHÍNH là hành vi thật của hàm THUẦN
+    `dem_lech_cuoi`, xem `test_dem_lech_cuoi_*` bên dưới.
+    """
+    import inspect
+    from apps.auto_scan_video import giai_doan_thoi_gian
+
+    ma = inspect.getsource(giai_doan_thoi_gian)
+    assert "so_doan_lech_cuoi" in ma
+    assert "giay_lech_cuoi" in ma
+
+
+def test_dem_lech_cuoi_KHONG_doan_nao_lech_tra_khong():
+    """Khong doan nao bi kep (h_ap == h_can) -> (0, 0.0), du giay > khe."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import dem_lech_cuoi
+
+    doan = [{"ma": "1", "giay": 3.0, "khe": 2.0, "he_so_co_gian": 1.5}]
+    he_so_theo_ma = {"1": 1.5}  # khong bi kep: h_ap == he_so_co_gian
+    assert dem_lech_cuoi(doan, he_so_theo_ma) == (0, 0.0)
+
+
+def test_dem_lech_cuoi_hai_doan_lech_dem_dung_ca_so_luong_va_giay():
+    """Hai doan bi kep ve tran ky thuat -> dem dung SO doan va TONG giay lech."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import dem_lech_cuoi
+
+    doan = [
+        # can h=3.0 (giay/khe = 6.0/2.0) nhung bi kep con 2.0 -> giay_sau=3.0 > khe=2.0
+        {"ma": "1", "giay": 6.0, "khe": 2.0, "he_so_co_gian": 3.0},
+        # can h=4.0 (giay/khe = 8.0/2.0) nhung bi kep con 2.0 -> giay_sau=4.0 > khe=2.0
+        {"ma": "2", "giay": 8.0, "khe": 2.0, "he_so_co_gian": 4.0},
+    ]
+    he_so_theo_ma = {"1": 2.0, "2": 2.0}
+    so_doan, giay_lech = dem_lech_cuoi(doan, he_so_theo_ma)
+    assert so_doan == 2
+    assert giay_lech == pytest.approx((3.0 - 2.0) + (4.0 - 2.0))
+
+
+def test_dem_lech_cuoi_doan_vua_dung_khe_KHONG_tinh_la_lech_bien():
+    """Doan bi kep nhung sau khi ap h_ap, giay_sau VUA BANG khe -> khong dem (bien)."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import dem_lech_cuoi
+
+    # giay=4.0, khe=2.0 -> can h=2.0, dung bang tran ky thuat nen h_ap == h
+    # (khong bi kep) -> giay_sau = 4.0/2.0 = 2.0 = khe, dung bien, khong lech.
+    doan = [{"ma": "1", "giay": 4.0, "khe": 2.0, "he_so_co_gian": 2.0}]
+    he_so_theo_ma = {"1": 2.0}
+    assert dem_lech_cuoi(doan, he_so_theo_ma) == (0, 0.0)
+
+
+def test_dem_lech_cuoi_khong_kep_van_khong_lech_du_sai_so_lam_tron_dau_phay_dong():
+    """Doan KHONG bi kep (h_ap == he_so_co_gian) van phai tra (0, 0.0), du phep
+    chia lai `giay/h_ap` co the lech `khe` vai phan-trieu-ty giay vi sai so lam
+    tron IEEE-754 (hai lan chia khac nhau tren cung so). Day la ca THAT: voi
+    `giay=39.443985390643014, khe=31.184951350854007` thi `h = giay/khe` khong
+    bi kep, nhung `giay/h` tinh lai LON HON `khe` dung `3.55e-15`. Neu ai xoa
+    guard `if h_ap == h: continue` thi bai nay DO."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import dem_lech_cuoi, he_so_ap
+
+    giay, khe = 39.443985390643014, 31.184951350854007
+    h = giay / khe
+    assert h != khe  # phep chia lai (giay / h) > khe mot chut do lam tron
+    assert giay / h > khe
+    h_ap = he_so_ap(h, tran_ky_thuat=2.0)
+    assert h_ap == h, "gia thiet cua ca nay: khong bi kep"
+    doan = [{"ma": "1", "giay": giay, "khe": khe, "he_so_co_gian": h}]
+    assert dem_lech_cuoi(doan, {"1": h_ap}) == (0, 0.0)
