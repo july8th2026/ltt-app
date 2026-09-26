@@ -432,3 +432,54 @@ def test_noi_rong_slug_KHONG_lam_hong_slug_hop_le_cu():
     # Va nhung thu VAN phai bi tu choi — noi rong khong phai mo toang.
     for xau in ("", "-abc", "_abc", "ABC", "a/b", "a.b", "a b", "a" * 65):
         assert not _SLUG.fullmatch(xau), xau
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4  `_duong_doc_duoc` an toan o BIEN (N-58 + N-59)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class _KhoGiaR2:
+    """Kho kieu R2: ⛔ KHONG co dia, nen `local_path` luon None."""
+
+    def __init__(self, noi_dung: dict[str, bytes]):
+        self._nd = noi_dung
+
+    def local_path(self, key: str):
+        return None
+
+    def open(self, key: str):
+        import io
+        return io.BytesIO(self._nd[key])
+
+
+def test_duong_doc_duoc_TU_TAO_thu_muc_chua_ton_tai(tmp_path):
+    """🔴 N-58: 3/3 luot production chet `Errno 2` vi thu muc con chua duoc tao."""
+    from apps.auto_scan_video.giai_doan_media import _duong_doc_duoc
+
+    kho = _KhoGiaR2({"a/b/seg.wav": b"RIFFxxxx"})
+    chua_co = tmp_path / "t0_seg_0001"
+    assert not chua_co.exists()
+
+    duong = _duong_doc_duoc(kho, "a/b/seg.wav", chua_co)
+
+    from pathlib import Path as _P
+    assert _P(duong).is_file()
+    assert _P(duong).read_bytes() == b"RIFFxxxx"
+
+
+def test_hai_khoa_vao_cung_thu_muc_KHONG_duoc_dung_mot_tep(tmp_path):
+    """🔴 N-59: `giai_doan_qc.py:130-131` tai hai khoa vao CUNG mot thu muc.
+
+    Ten tep co dinh ⇒ luot sau ghi de luot truoc ⇒ QC so ban ra voi CHINH NO.
+    Loi IM LANG: ⛔ khong nem, chi lam mot phep do khong the truot.
+    """
+    from apps.auto_scan_video.giai_doan_media import _duong_doc_duoc
+
+    kho = _KhoGiaR2({"ra/master.mp4": b"BAN-RA", "nguon/goc.mp4": b"NGUON"})
+    d1 = _duong_doc_duoc(kho, "ra/master.mp4", tmp_path)
+    d2 = _duong_doc_duoc(kho, "nguon/goc.mp4", tmp_path)
+
+    assert d1 != d2, "hai khoa khac nhau ra cung mot duong"
+    from pathlib import Path as _P
+    assert _P(d1).read_bytes() == b"BAN-RA"
+    assert _P(d2).read_bytes() == b"NGUON"
