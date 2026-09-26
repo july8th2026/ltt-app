@@ -49,7 +49,6 @@ from apps.auto_scan_video.giai_doan_ban_bien_tap import ThieuChiMuc
 from apps.auto_scan_video.hieu_canh import HieuCanhError
 from apps.auto_scan_video.rang_giong import ChuaRangError, RangGiongError
 from apps.auto_scan_video.ngon_ngu import NgonNguError
-from apps.auto_scan_video.nguon_loi import KhongCoNguon
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
@@ -148,6 +147,15 @@ BANG = {
     ThieuDoan: loi.NGUOI_DUNG,
     # ⭐ Khac hai lop tren: model tra ve mot cau viet lai khong doc duoc la mot
     #    truot ngau nhien, khong phai mot loi hop dong. Lan sau thuong duoc.
+    #
+    # 🔴 **26/09/2026 (Task 22) — NGHIA doi, hang KHONG doi.** Nguoi nem cu
+    #    (`doc_nan`: *"model tra ve mot cau viet lai khong doc duoc"*) da bi xoa
+    #    cung `loi_nhac_nan`; nguoi nem CON LAI la chan o BIEN cua
+    #    `loi_nhac_nan_lo` (*chi RUT NGAN*) — mot vi pham hop dong TAT DINH.
+    #    ⇒ `TAM_THOI` gio chi la LUOI CUOI: `giai_doan_giong._nan_lo` bat ngay
+    #    tai cho va giu cau goc, nen ⛔ khong duong chay nao voi toi hang nay.
+    #    Giu nguyen co y — doi hanh vi cho mot ca khong the xay ra la them mot
+    #    mon no khac. Lap luan day du + dieu kien sua lai: `loi.py` §nan cho vua.
     NanError: loi.TAM_THOI,
     # ⭐ TAM_THOI — thua mot cuoc dua khong phai mot loi. `XungDotDonVi` nghia
     #    la mot tien trinh khac vua ghi dong don vi viec nay giua chung: du lieu
@@ -236,8 +244,10 @@ BANG = {
     RangGiongError: loi.NGUOI_DUNG,
     #: Cap ngon ngu ngoai hop dong (22/09) — chay lai hong y het.
     NgonNguError: loi.NGUOI_DUNG,
-    #: Ep mot nguon loi ma video khong co (23/09) — chay lai hong y het.
-    KhongCoNguon: loi.NGUOI_DUNG,
+    #: ⛔ `KhongCoNguon` DA XOA 26/09 (Task 21). No la "khach EP mot nguon loi
+    #:    ma video khong co no", va tu 26/09 khong con nguon nao de EP: MOT duong
+    #:    duy nhat voice->voice. ⛔ Dung them lai mot hang cho mot lop khong ton
+    #:    tai — `test_moi_lop_trong_BANG_la_mot_lop_CO_THAT` se do.
     ChuaRangError: loi.NGUOI_DUNG,
     #: ⭐ `CanhError` la `TAM_THOI`: gan nhu luon la mot lan ffmpeg khong
     #:    chay duoc. No cung dung cho "chi muc sai hinh dang" — thu lai vo
@@ -248,6 +258,11 @@ BANG = {
     #: 🔴 Cho de xep nham nhat trong bang. `HieuCanhError` nghia la model
     #:    DA CHAY, DA tinh tien, va tra ve phan hoi sai luoc do. Thu lai la
     #:    **tra tien lan hai cho mot canh da tra tien**.
+    #:
+    #: ⚠️ 26/09 (Task 22): nguoi nem ⛔ khong con la `doc_hieu_canh` (da xoa cung
+    #:    duong VLM cua `edit_plan`) ma la `doc_ho_so` — duong HO SO NOI DUNG,
+    #:    con song. Lap luan tren ⛔ khong doi: van la mot luot model DA tra tien
+    #:    tra ve sai luoc do.
     #:
     #: ⚠️ Khac han `ai.LuocDoSai` (TAM_THOI): o do phep doc JSON that bai o
     #:    tang VAN CHUYEN, truoc khi ta biet noi dung co nghia gi. O day ta
@@ -397,6 +412,18 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         #    ngay tren: loi nghiep vu o tang route, khong bao gio bay ra tu
         #    than mot giai doan job nen khong bao gio toi `job_runner`/`retry`.
         "PhienChuaSan",
+        # 🔑 `HoSoDichLoi` (ho_so_dich.py, Task 11 pha 15): nem trong `_doc()` khi
+        #    model tra ve JSON khong doc duoc/hong/sai hinh dang, nhung `dung()` —
+        #    NGUOI GOI DUY NHAT cua `_doc()` — bat no bang chinh `except Exception`
+        #    boc quanh CA loi goi model lan phep doc, roi tra ve mot ho so RONG.
+        #    Cung khuon voi `PhienChuaSan` ngay tren: mot lop chi song trong MOT
+        #    loi goi, khong bao gio bay ra khoi ham dung no, nen khong bao gio toi
+        #    `job_runner`/`retry` de phan loai thu-lai-duoc co nghia. ⛔ Khac voi
+        #    `AiMoHo`/`DichMoHo` (MO_HO): do la mat ket noi SAU khi da goi that,
+        #    con day la JSON khong doc duoc CUA MOT loi goi da tra loi — khong co
+        #    cau hoi "da tinh tien chua" o day, chi co "co dung duoc khong", va
+        #    `dung()` da tu tra loi bang ho so rong.
+        "HoSoDichLoi",
         # 🔑 Chi song trong TIEN TRINH CON demucs. Chot an toan cua pha 13 nem no
         #    khi mot phep kiem cham toi model that; production khong bao gio co
         #    `PYTEST_CURRENT_TEST` nen no khong the len toi bien cua nen tang.

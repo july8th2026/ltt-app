@@ -83,9 +83,15 @@ def test_ngan_sach_NHAM_THAP_hon_khe_va_he_so_o_MOT_cho():
     """`HE_SO_MUC_TIEU` la nguon duy nhat — `nan_cho_vua` khong go lai 0,92."""
     assert 0.8 <= nn.HE_SO_MUC_TIEU < 1.0
     assert nn.ngan_sach_do_dai(10.0, "vi") < round(10.0 * nn.NHIP["vi"])
-    ma = inspect.getsource(nan_cho_vua.loi_nhac_nan)
+    # ⚠️ **26/09 (Task 22) — DUONG doi, Y DINH giu.** `loi_nhac_nan` da bi xoa;
+    #    loi nhac NAN con lai la `loi_nhac_nan_lo`. Va pham vi ROI RA: chot tren
+    #    CA MODULE thay vi mot ham, vi mon no dung la mot ban lo **khong he doc**
+    #    `HE_SO_MUC_TIEU` — mot phep kiem nham vao MOT ten ham khong bat duoc
+    #    dieu do (ho `banh-coc-do-cach-go`).
+    ma = inspect.getsource(nan_cho_vua.loi_nhac_nan_lo)
     assert "ngon_ngu.HE_SO_MUC_TIEU" in ma
-    assert "* 0.92" not in ma and "*0.92" not in ma
+    ca_module = inspect.getsource(nan_cho_vua)
+    assert "* 0.92" not in ca_module and "*0.92" not in ca_module
 
 
 def test_ngan_sach_tu_choi_dich_ngoai_hop_dong():
@@ -129,13 +135,23 @@ def test_loi_nhac_VIET_DAU_mang_tran_dem_duoc_cho_TUNG_doan():
 
 
 def test_loi_nhac_NAN_mang_CUNG_tran_voi_pha_viet_dau():
-    """Hai pha nham hai dich khac nhau tren cung mot khe thi vong hai khong hoi tu."""
+    """Hai pha nham hai dich khac nhau tren cung mot khe thi vong hai khong hoi tu.
+
+    🔴 **26/09 (Task 22) — DUONG doi, Y DINH giu, va bai nay DA DO khi doi.**
+
+       Bai cu do `loi_nhac_nan` (mot doan mot luot). Task 12 (`96e27cff`) chuyen
+       `giai_doan_giong` sang `loi_nhac_nan_lo`, va ban lo ⛔ **khong mang
+       `do_dai_toi_da` lan `muc_tieu_giay`** — tuc bat bien nay bi bo roi im lang
+       trong khi bai kiem van xanh vi no do **ham cu**, thu khong con ai goi.
+       Day dung la hinh dang `doc-thu-dai-dien-thay-vi-doc-thu-that`.
+    """
     khe = 13.818
-    he_thong, nguoi_dung = _than(nan_cho_vua.loi_nhac_nan(
-        {"ma": "a", "goc": "x"}, chu_hien_tai="y", giay_do_duoc=18.0, khe=khe))
+    he_thong, nguoi_dung = _than(nan_cho_vua.loi_nhac_nan_lo(
+        [{"ma": "a", "chu": "y", "giay_doc": 18.0, "khe": khe}]))
     assert "do_dai_toi_da" in he_thong
-    assert nguoi_dung["do_dai_toi_da"] == nn.ngan_sach_do_dai(khe, "vi")
-    assert nguoi_dung["muc_tieu_giay"] == round(khe * nn.HE_SO_MUC_TIEU, 2)
+    muc = nguoi_dung["a"]
+    assert muc["do_dai_toi_da"] == nn.ngan_sach_do_dai(khe, "vi")
+    assert muc["muc_tieu_giay"] == round(khe * nn.HE_SO_MUC_TIEU, 2)
 
 
 def test_loi_nhac_en_KHONG_mang_don_vi_tieng_Viet():
@@ -331,7 +347,14 @@ def test_vong_nan_toi_da_la_MOT():
 
 
 def test_he_so_toc_KHONG_bi_kep_ve_tran():
-    """Chủ dự án chốt: vượt trần thoải mái. Trần còn là CẢNH BÁO, ⛔ không phải cổng."""
+    """Chủ dự án chốt: vượt trần thoải mái. Trần còn là CẢNH BÁO, ⛔ không phải cổng.
+
+    ⚠️ Task 16 (R4): đây là lưới PHỤ — kiểm cách VIẾT mã (không gọi cả `min`
+    lẫn `max` trong CÙNG module), ⛔ không gọi hàm nên không bắt được ai viết
+    lại phép kẹp bằng `sorted()`, `.clip()`, hay `if/else` mà vẫn né được cả
+    hai tên gọi. Lưới CHÍNH là hành vi thật của hàm THUẦN `he_so_ap`, xem
+    `test_he_so_ap_*` bên dưới.
+    """
     import ast
     import inspect
     from apps.auto_scan_video import giai_doan_thoi_gian
@@ -343,6 +366,28 @@ def test_he_so_toc_KHONG_bi_kep_ve_tran():
                if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     assert "min" not in ten_goi or "max" not in ten_goi, (
         "van con phep kep he_so_co_gian ve [1/tran, tran]")
+
+
+def test_he_so_ap_duoi_tran_ky_thuat_KHONG_bi_kep_ve_tran_chinh_sach():
+    """h=1.10 < TRAN_TANG_TOC(1.15) va < tran ky thuat -> tra dung 1.10."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import he_so_ap
+
+    assert he_so_ap(1.10, tran_ky_thuat=2.0) == pytest.approx(1.10)
+
+
+def test_he_so_ap_vuot_tran_CHINH_SACH_van_di_qua_khong_bi_kep():
+    """h=1.50 vuot TRAN_TANG_TOC(1.15, chinh sach san pham) nhung duoi tran ky
+    thuat -> chu du an chot: van tra dung 1.50, KHONG bi kep ve 1.15."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import he_so_ap
+
+    assert he_so_ap(1.50, tran_ky_thuat=2.0) == pytest.approx(1.50)
+
+
+def test_he_so_ap_vuot_tran_KY_THUAT_bi_chan_dung_gia_tri_tran():
+    """h=3.00 vuot ca tran ky thuat cua atempo (2.0) -> CHAN cung dung 2.0."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import he_so_ap
+
+    assert he_so_ap(3.00, tran_ky_thuat=2.0) == pytest.approx(2.0)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -375,3 +420,345 @@ def test_giai_doan_giong_KHONG_con_vong_while_quanh_TTS():
                  if isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute)}
         assert "doc_mot_doan" not in trong, (
             "TTS van nam trong mot vong `while` — bac thang chua duoc dao")
+# ══════════════════════════════════════════════════════════════════════════════
+#  §8  Task 19 — BA lo TIEN THAT cua vong loi `voice_synthesis` (soat R2, 26/09)
+#
+#  Vong nay vua duoc dung lai (Task 12: uoc luong TRUOC, nan theo LO, TTS MOT
+#  luot) va CHUA chay that lan nao. Ba lo, ba phep kiem HANH VI:
+#
+#    CHAN 1  doan tran bi nan LAI o MOI lat cat        -> hoa don ×12
+#    CHAN 2  `[E]` ⛔ khong nhuong duoc, va luot nan da tieu bi `rollback`
+#    CHAN 3  chay lai giai doan lam MAT mot dong so cai (`ma_dispatch` trung)
+#
+#  ⭐ Ba bai duoi day **chay ca `giai_doan_giong.chay`** tren mot CSDL that voi
+#     may sinh tieng gia + `ai.goi` gia + dong ho gia, nen chung do dung dai
+#     luong phai do: **bao nhieu loi goi nan**, **cho nao nhuong**, **so cai co
+#     bao nhieu dong**. ⛔ Khong bai nao doc chuoi trong ma — hai lo trong ngay
+#     26/09 lot qua chinh vi phep kiem chi kham pha hinh dang.
+# ══════════════════════════════════════════════════════════════════════════════
+# ruff: noqa: F811 — fixture nhap tu `test_402` roi nhan lai lam tham so; ca bo
+#   test ASV lam the, day khong phai dinh nghia trung.
+
+from tests.test_402_asv_mach_doc_gia import db, kho_tam    # noqa: E402, F401
+
+#: Khe 1 giay cho mot cau 10 am tiet: `Khe.giay_can` ~ 3,3 s ⇒ MOI doan tran.
+CHU_DAI = "mot hai ba bon nam sau bay tam chin muoi."
+#: Cau model tra ve: 1 am tiet ⇒ vua khe, va ⛔ khong bao gio tran lan hai.
+CHU_NAN = "ngan."
+#: Dong ho gia "ton" bao nhieu giay cho MOI loi goi nan. Ngan sach lat la
+#: 0,85 × 5.400 = 4.590 s va du phong mot don vi la 1.980 s, nen lo thu ba
+#: (troi 3.000 s) la lo dau tien phai nhuong.
+GIAY_MOI_LO_NAN = 1500.0
+
+
+class _DongHo:
+    def __init__(self, t=1000.0):
+        self.t = float(t)
+
+    def __call__(self) -> float:
+        return self.t
+
+
+def _tai_lieu(so_doan: int) -> dict:
+    """Ban long tieng: `so_doan` doan lien nhau, MOI doan tran khe cua no.
+
+    ⛔ Cau ket bang dau cham nen `nan_thoi_luong.con_tiep` = False ⇒ `gop_khe`
+       ⛔ khong gop: mot `ma` = mot khe = mot luot doc, de con so dem duoc.
+    """
+    return {
+        "schema": 1, "ngon_ngu_goc": "zh", "ngon_ngu_dich": "vi",
+        "ma_giong": "mau:gia",
+        "muc": [{"ma": f"seg_{k + 1:04d}", "goc": f"yuan {k}", "chu": CHU_DAI,
+                 "bat": float(k), "ket": float(k) + 1.0}
+                for k in range(so_doan)],
+    }
+
+
+@pytest.fixture()
+def vong_giong(db, kho_tam, monkeypatch, tmp_path):     # noqa: F811
+    """Vong lõi `voice_synthesis` voi may sinh tieng gia + `ai.goi` gia.
+
+    Tra ve `phong` — mot vat mang:
+      `phong.dat(so_doan)`         dung run + ban long tieng
+      `phong.chay_theo_luot()`     dong vai hang doi: moi vong = MOT job
+      `phong.nan`                  `[(item_key, [ma...])]` cua tung loi goi nan
+      `phong.tts`                  `[chu]` cua tung luot TTS
+      `phong.moi_luot`             `[(so loi goi nan, so luot TTS)]` tung job
+      `phong.dh`                   dong ho gia
+    """
+    from apps.auto_scan_video import (ai, features, giai_doan_giong as gd,
+                                      giong_noi, lat_cat, pipeline)
+    from tests.conftest import bao_dam_user
+
+    dh = _DongHo()
+    monkeypatch.setattr(lat_cat, "dong_ho", dh)
+
+    class Phong:
+        def __init__(self):
+            self.dh = dh
+            self.nan: list = []
+            self.tts: list = []
+            # ⭐ MOT nhat ky cho ca ba loai su kien — thu tu giua chung la thu
+            #    duy nhat tra loi duoc "so cai co ben truoc khi mat luot khong".
+            self.su_kien: list = []
+            self.moi_luot: list = []
+            self.tts_hong = False
+            self.run = None
+            self.tai_lieu: dict = {}
+
+        def dat(self, so_doan: int, *, owner="uNan"):
+            bao_dam_user(db, owner)
+            self.run = features.tao_run(
+                db, owner_id=owner, source_key="khong-dung",
+                settings={"giong_id": "Minh Đức", "timing_mode": "fit_original"},
+                uoc_luong_credit=0)
+            db.commit()
+            self.tai_lieu = _tai_lieu(so_doan)
+            monkeypatch.setattr(gd, "_doc_ban_dich",
+                                lambda db_, kho_, run_: self.tai_lieu)
+            return self.run
+
+        def giai_doan(self):
+            return features.giai_doan_theo_ten(db, self.run.id,
+                                               pipeline.VOICE_SYNTHESIS)
+
+        def chay_mot_luot(self):
+            """MOT job. Nem lai bat cu gi giai doan nem (ke ca `TiepNoi`)."""
+            from platform_core.storage import get_storage
+            from apps.auto_scan_video.tables import AsvRun
+
+            n0, t0 = len(self.nan), len(self.tts)
+            lat_cat.bat_dau_luot()
+            try:
+                db.expire_all()
+                return gd.chay(db, get_storage(), run=db.get(AsvRun, self.run.id))
+            finally:
+                self.moi_luot.append((len(self.nan) - n0, len(self.tts) - t0))
+                lat_cat.ket_thuc_luot()
+
+        def chay_theo_luot(self, *, toi_da=90):
+            """Dong vai hang doi: nhuong -> ghi con tro -> nop job ke tiep."""
+            for _ in range(toi_da):
+                try:
+                    return self.chay_mot_luot()
+                except lat_cat.TiepNoi as tn:
+                    # ⛔ `thi_hanh` ROLLBACK truoc khi ghi con tro — day la cho
+                    #    mot luot nan chua `commit` bien mat khoi so cai.
+                    db.rollback()
+                    lat_cat.ghi_tiep_noi(db, self.giai_doan(), tn)
+                    db.commit()
+            raise AssertionError(f"khong xong sau {toi_da} luot")
+
+    phong = Phong()
+
+    # ── may sinh tieng gia ────────────────────────────────────────────────
+    monkeypatch.setattr(giong_noi, "san_sang", lambda: True)
+    monkeypatch.setattr(giong_noi, "giai_giong",
+                        lambda db_, **kw: (None, "bac"))
+
+    def doc_mot_doan(chu, **_):
+        if phong.tts_hong:
+            raise giong_noi.GiongError("may sinh tieng gia: hong co y")
+        phong.tts.append(chu)
+        phong.su_kien.append("tts")
+        return b"WAVGIA", {}
+
+    monkeypatch.setattr(giong_noi, "doc_mot_doan", doc_mot_doan)
+    # ⭐ 0,5 s < khe 1,0 s ⇒ moi doan la `VUA`; phep kiem nay do SO LOI GOI, ⛔
+    #    khong do phan quyet nan.
+    monkeypatch.setattr(giong_noi, "kiem_tep_tieng", lambda duong: 0.5)
+
+    # ── `ai.goi` gia: `goi_tinh_tien` (cua tinh tien THAT) van chay ────────
+    def goi(db_, thao_tac, messages, **kw):
+        bang = json.loads(messages[-1]["content"])
+        mas = sorted(bang)
+        phong.nan.append(mas)
+        phong.su_kien.append("nan")
+        dh.t += GIAY_MOI_LO_NAN
+        return {"noi_dung": json.dumps({m: CHU_NAN for m in mas}),
+                "provider": "gia", "model": "gia", "su_dung": None,
+                "finish_reason": "stop", "suy_nghi": ""}
+
+    monkeypatch.setattr(ai, "goi", goi)
+    return phong
+
+
+def _dong_nan(db, run) -> list:
+    """Cac dong SO CAI cua luot nan (⛔ khong phai cua doan tieng)."""
+    from apps.auto_scan_video import pipeline, su_dung
+
+    return [d for d in su_dung.cac_dong(db, run, stage=pipeline.VOICE_SYNTHESIS)
+            if str(d.item_key).startswith("nan_lo:")]
+
+
+# ── CHAN 1 ───────────────────────────────────────────────────────────────────
+
+def test_CHAN1_doan_da_nan_KHONG_bi_nan_lai_o_lat_cat_sau(db, kho_tam,
+                                                          vong_giong):  # noqa: F811
+    """🔴 CHAN 1 — hoa don ×12.
+
+    `[A]` chi danh dau `da_tra_tien` cho doan DA DOC (`i0 < lc.vi_tri`), nen
+    `doan_tran` cua MOI lat cat = moi doan tran CHUA doc, va `[E]` nan LAI ca
+    danh sach ay — moi lan mot dong so cai THAT (`item_key` mang `luot`).
+
+    Do cua nguoi soat: video 120 phut ~1.200 doan tran ⇒ ~700 loi goi thay vi 60.
+    Bai nay dung 60 doan / 3 lo va khang dinh **moi `ma` chi duoc xin DUNG MOT
+    lan tren ca lan chay**, bat ke bao nhieu lat cat.
+    """
+    phong = vong_giong
+    phong.dat(60)
+    ra = phong.chay_theo_luot()
+
+    assert len(phong.tts) == 60, "phai doc du 60 doan"
+    assert len(phong.moi_luot) >= 2, (
+        "phep kiem nay chi co nghia khi giai doan CO nhuong: %s" % phong.moi_luot)
+
+    dem: dict = {}
+    for mas in phong.nan:
+        for m in mas:
+            dem[m] = dem.get(m, 0) + 1
+    thua = {m: n for m, n in dem.items() if n > 1}
+    assert not thua, (
+        "da xin nan LAI %d/%d doan (vd %s) — cau da nan khong duoc luu ben, nen "
+        "moi lat cat nan lai ca danh sach"
+        % (len(thua), len(dem), sorted(thua.items())[:3]))
+    assert len(phong.nan) == 3, (
+        "60 doan tran = 3 lo (20/lo) ⇒ DUNG 3 loi goi; da goi %d"
+        % len(phong.nan))
+    # ⭐ Va ban ra dung: moi doan duoc doc bang CAU DA NAN, ⛔ khong phai cau goc.
+    assert set(phong.tts) == {CHU_NAN}
+    assert ra["tom_tat"]["so_doan_moi_sinh"] == 60
+
+
+def test_CHAN1_luot_nan_duoc_COMMIT_truoc_luot_TTS_dau_tien(db, kho_tam,
+                                                            vong_giong):  # noqa: F811
+    """🔴 CHAN 2, nua DO BEN: `db.commit()` dau tien von nam SAU ca `[E]`.
+
+    `ai.goi_tinh_tien` ghi so cai trong giao dich cua NGUOI GOI (`su_dung.ghi`
+    chi `flush`, ⛔ khong mo giao dich rieng). Nen bat cu duong ra nao TRUOC doan
+    tieng dau tien — `lat_cat.TiepNoi`, hay mot loi cua may sinh tieng — di qua
+    `thi_hanh` -> `db.rollback()` va **ca luot nan da tieu bien mat khoi so cai**:
+    tien mat, so trong.
+
+    ⚠️ **Vi sao bai nay do THU TU SU KIEN chu ⛔ khong do `db.rollback()`.** Bo
+       test chay tren SQLite, va `su_dung.ghi`/`mo_don_vi` cam dong `INSERT`
+       trong `db.begin_nested()` (SAVEPOINT). Voi driver `pysqlite`, mot SAVEPOINT
+       mo khi chua co giao dich ngoai chay o che do autocommit — nen dong so cai
+       SONG SOT qua `db.rollback()` **tren SQLite**, va mot bai do `rollback` se
+       XANH ngay ca khi loi con nguyen (da thu: no xanh tren ma CHUA sua). Do la
+       `pysqlite` cua may thu, ⛔ khong phai PostgreSQL cua production.
+       ⇒ Do dai luong ⛔ KHONG phu thuoc engine: **co mot `commit` nam giua luot
+       nan va luot TTS dau tien hay khong**. Mot `commit` sau lo la du de dong so
+       cai ben, vi `su_dung.ghi` da `flush` no vao chinh phien nay.
+    """
+    phong = vong_giong
+    run = phong.dat(5)
+
+    goc = db.commit
+
+    def commit():
+        phong.su_kien.append("commit")
+        return goc()
+
+    db.commit = commit
+    try:
+        phong.chay_theo_luot()
+    finally:
+        db.commit = goc
+
+    assert len(phong.nan) == 1, "5 doan tran = 1 lo, da goi %d" % len(phong.nan)
+    assert phong.su_kien[0] == "nan", phong.su_kien[:4]
+    i_tts = phong.su_kien.index("tts")
+    assert "commit" in phong.su_kien[:i_tts], (
+        "⛔ KHONG co `commit` nao giua luot nan va luot TTS dau tien (%s) — mot "
+        "`TiepNoi` hay mot loi cua may sinh tieng o day lam ca luot nan DA TRA "
+        "TIEN bien mat khoi so cai" % phong.su_kien[:i_tts + 1])
+    # ⭐ Va so cai THAT co dong cua luot nan ay (⛔ khong chi "da commit gi do").
+    assert len(_dong_nan(db, run)) == 1
+
+
+# ── CHAN 2 ───────────────────────────────────────────────────────────────────
+
+def test_CHAN2_khoi_nan_NHUONG_duoc_giua_cac_lo(db, kho_tam,
+                                                vong_giong):  # noqa: F811
+    """🔴 CHAN 2, nua NHUONG: ⛔ khong mot `lc.kiem()` nao trong `[E]`.
+
+    Voi `LAN_XIN_NAN_LO = 3`, 200 lo xau nhat la ~10.600 s tren mot ngan sach
+    lat 4.590 s ⇒ `job_runner._het_gio` ban `os._exit(3)` va `retry=False`: lan
+    chay hong HAN. Va `nen_nhuong` doi `da_lam >= 1`, nen `[E]` ⛔ khong nhuong
+    duoc ngay ca khi co `kiem` — mot lo nan phai DEM la mot don vi.
+
+    ⭐ Phep do: luot DAU phai ket thuc voi **loi goi nan > 0 va luot TTS = 0**.
+       Do la chu ky chi co the xay ra khi `[E]` nhuong giua cac lo: neu `[E]`
+       chay het roi moi toi `[F]`, luot dau luon doc it nhat mot doan (`kiem`
+       dau tien cua `[F]` co `da_lam == 0` nen ⛔ khong the nhuong).
+    """
+    phong = vong_giong
+    phong.dat(60)
+    phong.chay_theo_luot()
+
+    nan_dau, tts_dau = phong.moi_luot[0]
+    assert nan_dau > 0 and tts_dau == 0, (
+        "luot dau: %d loi goi nan / %d luot TTS — `[E]` khong nhuong giua cac "
+        "lo, no chay het roi moi de `[F]` nhuong (moi_luot=%s)"
+        % (nan_dau, tts_dau, phong.moi_luot))
+    # ⛔ Va nhuong xong thi con tro ⛔ KHONG duoc nhich: chua doan nao duoc doc.
+    assert nan_dau == 2, (
+        "1.500 s/lo tren ngan sach 4.590 s - du phong 1.980 s ⇒ DUNG hai lo "
+        "vua luot dau; da lam %d" % nan_dau)
+
+
+# ── CHAN 3 ───────────────────────────────────────────────────────────────────
+
+def test_CHAN3_hai_ATTEMPT_cho_HAI_ma_dispatch_khac_nhau(db, kho_tam,
+                                                         vong_giong):  # noqa: F811
+    """🔴 CHAN 3 — chay lai giai doan lam MAT mot dong so cai.
+
+    `item_key = f"nan_lo:{luot}:{so_lo}:{lan}"` va `UNIQUE(run_id, ma_dispatch)`
+    ⛔ KHONG gom `attempt`. `features._dat_lai_giai_doan` xoa `outputs` ⇒ con tro
+    lat cat mat ⇒ `lc.luot` ve 0, nen lan chay sau sinh **dung `ma_dispatch`
+    cu**: `su_dung.ghi` nem `DaGhiRoi`, `goi_tinh_tien` chi `log.info`, va cac
+    loi goi may B THAT cua lan chay do bien mat khoi so cai.
+
+    ⚠️ Ta xoa ban ghi `chu_da_nan` giua hai lan chay — do la chinh canh ma rang
+       buoc nay phai song sot: mot lo da goi may B ma `commit` chua kip landing
+       (bi giet giua `goi_tinh_tien` va `db.commit()`) se duoc XIN LAI o lan chay
+       sau, va lan xin lai ay la tien THAT.
+    """
+    from apps.auto_scan_video import (features, giai_doan_giong as gd,
+                                      giong_noi, pipeline)
+
+    phong = vong_giong
+    run = phong.dat(5)
+    phong.tts_hong = True
+
+    def _mot_lan(lan_thu: int) -> None:
+        gdoan = phong.giai_doan()
+        gdoan.attempt = int(lan_thu)
+        db.commit()
+        with pytest.raises(giong_noi.GiongError):
+            phong.chay_mot_luot()
+        db.rollback()
+        # Mo phong "bi giet truoc khi `commit` cua lo landing": ban ghi cau da
+        # nan khong con, nen lan chay sau PHAI xin lai — va phai ghi so duoc.
+        # ⛔ `getattr` co mac dinh: bai nay phai do duoc CA tren ban ma chua co
+        #    `KHOA_CHU_NAN` — neu khong no do vi `AttributeError` (mot loi HINH
+        #    DANG) chu khong vi `ma_dispatch` trung (loi THAT dang do).
+        khoa = getattr(gd, "KHOA_CHU_NAN", "chu_da_nan")
+        for it in features.cac_don_vi(db, run.id, pipeline.VOICE_SYNTHESIS):
+            if khoa in (it.outputs or {}):
+                it.outputs = {k: v for k, v in (it.outputs or {}).items()
+                              if k != khoa}
+        db.commit()
+
+    _mot_lan(1)
+    _mot_lan(2)
+
+    assert len(phong.nan) == 2, "phai co DUNG hai luot xin (mot moi attempt)"
+    dong = _dong_nan(db, run)
+    ma = sorted(str(d.ma_dispatch) for d in dong)
+    assert len(dong) == 2 and len(set(ma)) == 2, (
+        "hai `attempt` khac nhau cho ra %d dong so cai (%s) — `ma_dispatch` "
+        "trung, nen mot luot goi may B DA TRA TIEN bien mat khoi so cai" % (
+            len(dong), ma))
+    assert any(":a1:" in x for x in ma) and any(":a2:" in x for x in ma), ma

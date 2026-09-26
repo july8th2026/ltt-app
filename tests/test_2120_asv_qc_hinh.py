@@ -131,7 +131,8 @@ def test_chuan_dat_nhan_dien_duoc_cac_hinh_dang_DA_DO(tho, ra):
 @pytest.mark.parametrize("tho", ["co le", "0.5", "", None, "maybe", 0.5, [], {}])
 def test_chuan_dat_KHONG_nuot_rac(tho):
     """⛔ Chuan hoa NHAN DIEN, khong DOAN. Mot gia tri la ra `None` ⇒ nguoi goi
-    nem — dung nguyen tac voi `hieu_canh.chuan_de_xuat` (`"bu"` -> `""`)."""
+    nem. (Nguyen tac nay tung co ban sinh doi `hieu_canh.chuan_de_xuat` —
+    `"bu"` -> `""` — da xoa 26/09 cung `doc_hieu_canh`, Task 22.)"""
     assert qc_ai.chuan_dat(tho) is None
 
 
@@ -140,8 +141,17 @@ def test_chuan_dat_dung_DUNG_ham_bo_dau_cua_hieu_canh():
     va nhanh lech la nhanh it duoc chay nhat."""
     assert "hieu_canh" in inspect.getsource(qc_ai.chuan_dat)
     assert "chuan_ma" in inspect.getsource(qc_ai.chuan_dat)
-    # Va `chuan_de_xuat` cung phai di qua no (mot nguon).
-    assert "chuan_ma(" in inspect.getsource(hc.chuan_de_xuat)
+    # ⚠️ 26/09 (Task 22): nguoi dung THU HAI (`hieu_canh.chuan_de_xuat`) da bi
+    #    xoa cung `doc_hieu_canh`, nen chi con MOT nguoi dung — va luat "khong
+    #    ban sao thu hai cua phep bo dau" doi thanh mot cau MANH hon: ⛔ khong
+    #    tep nao cua ASV duoc tu bo dau NFD ngoai `hieu_canh.chuan_ma`.
+    import pathlib
+
+    goc = pathlib.Path(hc.__file__).parent
+    xau = [t.name for t in sorted(goc.glob("*.py"))
+           if t.name != "hieu_canh.py"
+           and "unicodedata.normalize" in t.read_text(encoding="utf-8")]
+    assert xau == [], f"ban sao thu hai cua phep bo dau: {xau}"
 
 
 def test_doc_hinh_nhan_CA_KET_QUA_chu_khong_phai_noi_dung():
@@ -316,70 +326,54 @@ def test_VONG_SUA_CO_TRAN_nen_mot_cho_noi_KHONG_SUA_DUOC_se_DUNG(monkeypatch):
     assert ke.sang_dict()["con_vong"] is False
 
 
-def test_vong_sua_MUOI_van_tay_canh_nen_lan_hoi_lai_la_mot_cau_hoi_KHAC():
-    """🔴 M-07 cua duong GIONG, ap cho duong HINH: cung van tay = cung khoa =
-    cung ket qua cache. Khong muoi thi "xem lai canh nay" tra ve **dung phan
-    doan vua bi bao la sai** — mot hoa don khong co san pham."""
-    a = hc.van_tay_canh("c1", "x", 2, 0.65, bat=1.0, ket=2.0)
-    b = hc.van_tay_canh("c1", "x", 2, 0.65, bat=1.0, ket=2.0,
-                        muoi="xem_lai1:cat giua dong tac")
-    assert a != b
-    # Va loi nhac phai MANG bang chung do, khong chi doi van tay.
-    m = hc.loi_nhac_canh("c1", "x", 2, phan_hoi_qc="cat giua dong tac")
-    assert "cat giua dong tac" in m[0]["content"]
-    assert "VONG SUA" in m[0]["content"]
-    # ⛔ Bang chung, khong phai LENH: khong duoc bao model "hay giu canh nay".
-    assert "can nhac LAI" in m[0]["content"]
-    assert "giu nguyen de xuat cu" in m[0]["content"]
-
-
-def test_khong_co_phan_hoi_qc_thi_loi_nhac_KHONG_DOI():
-    """⚠️ Duong binh thuong (khong vong sua) phai giu nguyen van tay VA loi
-    nhac cu — neu khong, moi lan chay deu mat cache mot cach im lang."""
-    assert (hc.loi_nhac_canh("c1", "x", 2)
-            == hc.loi_nhac_canh("c1", "x", 2, phan_hoi_qc=""))
-    assert (hc.van_tay_canh("c1", "x", 2, 0.65, bat=1.0, ket=2.0)
-            == hc.van_tay_canh("c1", "x", 2, 0.65, bat=1.0, ket=2.0, muoi=""))
-
-
 # ══════════════════════════════════════════════════════════════════════════════
-#  §5. F-10 — van tay canh khoa theo `[bat, ket]`, khong theo `ma_canh`
+#  §5. F-10 — AI la nguoi doc CON LAI cua `hieu_canh`
+#
+#  🔴 **26/09/2026 (Task 22) — HAI bai F-10 o day DA BI XOA cung doi tuong do.**
+#
+#     Chung chot rang `van_tay_canh` khoa theo `[bat, ket]` chu khong theo
+#     `ma_canh` (doi bo tach canh ⇒ `canh_0003` mang moc khac ⇒ van tay phai
+#     doi), va rang moc duoc lam tron mili giay. `van_tay_canh` da bi XOA: Task
+#     10 (`defba7b2`) thay VLM bang phep do TAT DINH o `edit_plan`, nen ⛔ khong
+#     con diem chot theo CANH nao de khoa.
+#
+#  ⭐ **Cai gia: KHONG mat do phu cua rui ro F-10, vi rui ro ay khong con ton
+#     tai.** F-10 la *"cache tra ve phan doan VLM ve MOT DOAN PHIM KHAC"*; ⛔
+#     khong con phan doan VLM nao duoc cache theo canh. `test_2121` chot
+#     `edit_plan` ⛔ khong phat mot luot goi VLM nao — do la doi chung o TANG
+#     TREN, manh hon mot bai kiem ve hinh dang cua mot khoa cache.
+#
+#  ⚠️ Cai CON LAI dang gac: hang F-10 trong `LOI_TONG.md` da duoc dan nhan
+#     "doi tuong do da bi xoa 26/09", va bai duy nhat con o §5 nay chot **ai la
+#     nguoi doc con lai cua `hieu_canh`** — thu duy nhat co the vo hieu no.
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_F10_doi_bo_TACH_CANH_lam_van_tay_DOI():
-    """🔴 F-10. `canh_0003` la mot SO THU TU, khong phai mot danh tinh.
+def test_nguoi_doc_CON_LAI_cua_hieu_canh_la_duong_HO_SO():
+    """🔴 **26/09/2026 — nguoi goi VLM cua `edit_plan` DA THOI VIEC** (B1 §9b).
 
-    Doi bo tach (lane `ky-thuat`: `select=gt(scene,0.4)` -> `ContentDetector(35)`)
-    sinh ra mot `canh_0003` o **mot khoang thoi gian khac han**, va ba truong
-    con lai deu co the trung: `ngu_canh` rong (canh khong thoai), `so_khung` co
-    dinh moi canh, `nguong` la hang so chinh sach.
+    `edit_plan` ⛔ khong con goi VLM. Task 22 xoa luon bon ham gui/doc/bam cua
+    duong do (`loi_nhac_canh`, `doc_hieu_canh`, `ngu_canh_cho_canh`,
+    `van_tay_canh`), nhung `hieu_canh.py` van SONG — `HO_SO_NOI_DUNG` (duong
+    chon giong) doc `loi_nhac_ho_so`/`doc_ho_so`, va `giai_doan_ban_bien_tap`
+    doc `hc.GIU`/`hc.BO` + kieu `HieuCanh`.
 
-    ⇒ Diem chot cu khop, va lan chay dung mot phan doan VLM ve MOT DOAN PHIM
-      KHAC. Khong loi nao bao.
+    ⇒ Y dinh cu (*"mot ban va khong co nguoi di tren duong thi khong sua gi"*)
+      duoc giu bang cach chot **ai la nguoi di tren duong hom nay**, thay vi chot
+      mot nguoi goi da khong con.
     """
-    cu = hc.van_tay_canh("canh_0003", "", 2, 0.65, bat=20.0, ket=30.0)
-    moi = hc.van_tay_canh("canh_0003", "", 2, 0.65, bat=24.5, ket=31.2)
-    assert cu != moi, "van tay khong doi khi moc canh doi — F-10 quay lai"
-    # Cung ma, cung moc => van la cung mot canh (cache van phai khop).
-    assert cu == hc.van_tay_canh("canh_0003", "", 2, 0.65, bat=20.0, ket=30.0)
-
-
-def test_F10_moc_lam_tron_mili_giay_de_cache_KHONG_truot_vo_co():
-    """⛔ Moc canh la so thuc tu PySceneDetect; hai lan tinh co the lech o chu
-    so thu 15. Mot van tay nhay theo nhieu dau cham dong la mot cache khong bao
-    gio khop — tuc hoi (va tra tien) lai moi luot lat cat."""
-    assert (hc.van_tay_canh("c1", "", 2, 0.65, bat=20.0, ket=30.0)
-            == hc.van_tay_canh("c1", "", 2, 0.65, bat=20.0000001,
-                               ket=29.9999999))
-
-
-def test_nguoi_goi_THAT_truyen_moc_canh_vao_van_tay():
-    """Mot ban va khong co nguoi di tren duong thi khong sua gi."""
     from apps.auto_scan_video import giai_doan_ban_bien_tap as gd
+    from apps.auto_scan_video import ho_so_noi_dung
 
-    ma = inspect.getsource(gd._doc_cac_canh)
-    assert "bat=c.bat" in ma and "ket=c.ket" in ma
-    assert "muoi=" in ma
+    assert not hasattr(gd, "_doc_cac_canh"), (
+        "edit_plan lai goi VLM — xem test_2025 §5")
+    # `HO_SO_NOI_DUNG` la nguoi doc CON LAI cua `hieu_canh`.
+    assert "loi_nhac_ho_so" in inspect.getsource(ho_so_noi_dung)
+    # ⛔ Va bon ham cua duong VLM da xoa ⛔ khong duoc quay lai im lang: mot ban
+    #    khai lai chung ma khong co nguoi goi la dung mon no `test_453` gac.
+    assert not hasattr(hc, "van_tay_canh")
+    assert not hasattr(hc, "loi_nhac_canh")
+    assert not hasattr(hc, "doc_hieu_canh")
+    assert not hasattr(hc, "ngu_canh_cho_canh")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -387,11 +381,18 @@ def test_nguoi_goi_THAT_truyen_moc_canh_vao_van_tay():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def test_rut_khung_chi_co_MOT_ban_sao():
-    """⛔ `edit_plan` va `qc_ai` deu rut khung. Hai doan ma se lech nhau ve tran
-    thoi gian va ve cach bo mot khung hong."""
+    """⛔ Hai doan ma rut khung se lech nhau ve tran thoi gian va ve cach bo mot
+    khung hong.
+
+    ⭐ **26/09/2026:** `edit_plan` ⛔ khong con rut khung nao (no do bang
+       `blackdetect`/`freezedetect` tren ca tep), nen nguoi goi CON LAI la
+       `qc_ai`. Y dinh giu nguyen: chi MOT ban sao, va tran thoi gian doc tu MOT
+       nguon — chot chinh dieu do, ⛔ khong chot mot nguoi goi da khong con.
+    """
     from apps.auto_scan_video import giai_doan_ban_bien_tap as gd
 
-    assert "canh_mod.rut_khung(" in inspect.getsource(gd._rut_khung)
     assert "canh_mod.rut_khung(" in inspect.getsource(gdqa._soat_hinh)
-    # Va tran thoi gian doc tu MOT nguon.
-    assert gd.CHO_RUT_KHUNG_S is canh_mod.CHO_RUT_KHUNG_S
+    assert not hasattr(gd, "_rut_khung"), (
+        "edit_plan rut khung lai — hai ban sao se lech nhau")
+    # Tran thoi gian van la MOT hang so, o dung mot cho.
+    assert canh_mod.CHO_RUT_KHUNG_S > 0

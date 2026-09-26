@@ -271,11 +271,19 @@ def do_mot_phim(duong: str) -> dict:
        nhieu"*, khong noi *"ASR sai bao nhieu"*; phep do nay **khong tach duoc**
        phan nao thuoc ve ai.
 
-    Cach do: chay `transcribe` HAI lan tren cung mot phim —
-    `nguon_loi=asr` (duong do) va `nguon_loi=ocr` (chan ly nen) — roi so.
+    ⛔ **Cach do CU khong con lam duoc (26/09, Task 21).** No la: chay `transcribe`
+       HAI lan tren cung mot phim — `nguon_loi=asr` (duong do) va `nguon_loi=ocr`
+       (chan ly nen) — roi so. Duong `ocr` DA BO, nen ⛔ khong con cach sinh chan
+       ly nen hardsub cho mot phim BAT KY.
 
-    ⚠️ CHUA NOI vao khuon `chay_mot_buoc`: xem `B1_CHEP_LOI.md` §4. Ham nay hien
-       tra ve mot ban ghi RONG kem `ly_do`, ⛔ khong tra ve mot con so gia.
+    ⭐ Cong B1 thi KHONG bi anh huong: `chinh_xac_cho_ngat` doc chan ly nen DA
+       DONG BANG (`tools/do_luong.py:CHAN_LY_NEN_PHAN_DOAN` ->
+       `docs/auto_scan_video_final/l_ocr_gt_v2.json`), khong sinh no.
+
+    ⚠️ CHUA NOI vao khuon `chay_mot_buoc`: xem `B1_CHEP_LOI.md`. Ham nay hien tra
+       ve mot ban ghi RONG kem `ly_do`, ⛔ khong tra ve mot con so gia — nen viec
+       bo cach do tren ⛔ khong lam ham nay mat gi. Muon do mot phim MOI thi can
+       mot BAN CHEP TAY cho phim do; do la viec chua ai lam.
     """
     ten = Path(duong).stem
     for xau, vi_sao in PHIM_LOAI.items():

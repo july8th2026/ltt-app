@@ -265,7 +265,7 @@ def duong_render_cua(run) -> dict:
 
     ⭐ **Bien dieu khien la PRESET.** `che_do_render.che_do_cho` nhan **dung mot**
        tham so — `preset` — va co phep kiem chot chu ky do. Cac co bien tap
-       (`vung_che`, `lop_phu`, `logo`, `phu_de_cung`, `bien_tap`) bi `ban_dung.kiem`
+       (`vung_che`, `lop_phu`, `logo`, `phu_de` dot hinh, `bien_tap`) bi `ban_dung.kiem`
        tu choi tren duong `SAO_CHEP`, tuc chung chi song o `smart_localize`, **noi
        da ma hoa lai san** ⇒ chung ⛔ khong day luot nao sang duong dat.
 
@@ -622,7 +622,7 @@ def bang_chung_chat_luong(db, run) -> dict | None:
 
        `so_canh_hong`/`do_phu_bang_chung` (lan `fix-toc-do`), bao cao QC
        (`qc.tom_tat`), trang thai tung bo do (`giai_doan_qc_do_luong`) va nguon
-       loi thoai THAT (`nguon_loi.dinh_tuyen`) deu nam trong `asv_stage.outputs`
+       loi thoai THAT (`giai_doan_chep_loi` ghi `dinh_tuyen`) deu nam trong `asv_stage.outputs`
        — tuc trong CSDL, doc duoc, va chi doc duoc boi mot nguoi mo CSDL ra.
 
        Hau qua do duoc o luot nen v3: `smart_localize` giao mot video **khong
@@ -639,17 +639,20 @@ def bang_chung_chat_luong(db, run) -> dict | None:
 
     ra: dict = {}
 
-    # ── Loi thoai goc lay tu dau (lan `ocr`) ────────────────────────────────
+    # ── Loi thoai goc lay tu dau ───────────────────────────────────────
     #
-    # ⭐ Day la cho o `Nguon loi thoai` cua Studio VE DICH: khach ep mot nguon,
-    #    va day la cho ho doc xem nguon nao thuc su da duoc dung.
+    # ⭐ Truong nay GIU sau khi o chon nguon bi RUT (Task 21, 26/09), va no doi
+    #    vai: truoc kia no doi chieu voi thu KHACH EP; nay no la PROVENANCE —
+    #    *"lan chay nay lay loi tu dau"* — va no phai tra loi duoc CA cho nhung
+    #    lan chay 22–26/09 da di duong `ocr`/`embedded`.
     dt = dict(_outputs(db, run, pipeline.TRANSCRIBE).get("dinh_tuyen") or {})
     ma_nguon = str(dt.get("nguon_loi") or "")
     if ma_nguon:
         ra["nguon_loi"] = {
             "ma": ma_nguon,
-            # ⛔ `NHAN_NGUON_THAT`, khong `NHAN_CHE_DO`: `auto` la mot loi khai
-            #    luc nop, khong bao gio la mot ket qua. Xem `nguon_loi.py`.
+            # ⚠️ Ma NGOAI bang (vd. `ocr` cua mot lan chay cu) in nguyen MA.
+            #    ⛔ Khong bia mot nhan tieng Viet cho mot duong khong con ton
+            #    tai — lam vay la noi voi khach rang duong do van chay duoc.
             "nhan": nguon_loi_mod.NHAN_NGUON_THAT.get(ma_nguon, ma_nguon),
         }
 

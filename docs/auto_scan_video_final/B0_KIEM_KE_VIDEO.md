@@ -7,6 +7,13 @@ auto_scan_video/canh.py` (PySceneDetect `ContentDetector`, ngưỡng 35). Bốn 
 `C:\Users\Thang Tuong\Desktop\TEST VIDEO`. Lệnh demucs/OCR/cắt cảnh đều đi qua
 `chay_nang.py --phien asvf-b0`, mỗi lượt nhả khoá ngay khi tính xong.
 
+⛔ **26/09 (Task 21): cột *“có hardsub không”* được đo bằng một ĐƯỜNG ĐÃ BỊ.**
+`nguon_loi.dinh_tuyen` + RapidOCR không còn — sản phẩm đóng trên **MỘT** đường
+voice → voice (`B1_PLAN_DUONG_ONG_GD1.md` §11). ⭐ Con số ở đây vẫn đúng về **bản
+thân bốn phim** (98,8–100 % hardsub Hán), và chính nó là **bằng chứng cho
+quyết định bỏ**: với `auto` thì **cả bốn** đi đường phụ mà ⛔ không ai định.
+⚠️ Chỉ ⛔ đừng chạy lại lệnh ở đây — nó trỏ vào mã đã xóa.
+
 | phim | dài | có tiếng nói | F0 trung vị | % khung có chữ | % chữ Hán | `dinh_tuyen` chọn | số cảnh | phụ đề nhúng |
 |---|---|---|---|---|---|---|---|---|
 | món ăn (廉价的牛肠…) | 4:25 (265,0s) | **CÓ** | 160,0 Hz | 95,0% | 100,0% | `ocr` | 125 | không |

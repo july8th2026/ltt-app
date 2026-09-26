@@ -113,6 +113,11 @@ DAU_NGAT = ",.!?;:…"
 #:
 #: 🔴 Truoc 23/09 con so nay go tay trong `nan_cho_vua.loi_nhac_nan` va pha VIET
 #:    DAU khong he co no. Hai pha nham hai dich khac nhau tren cung mot khe.
+#:
+#: ⚠️ 26/09 (Task 22): `loi_nhac_nan` da bi xoa; nguoi doc con so nay o pha NAN
+#:    la `nan_cho_vua.loi_nhac_nan_lo` (loi nhac theo LO). Ban lo do **tung
+#:    khong** mang `muc_tieu_giay` — tuc mon no cu quay lai im lang tu 26/09 —
+#:    va Task 22 dat no lai vao dung cho.
 HE_SO_MUC_TIEU = 0.92
 
 #: Cum tu dien vao LOI NHAC (van ASCII khong dau nhu moi loi nhac cua ASV).
