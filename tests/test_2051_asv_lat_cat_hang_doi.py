@@ -23,10 +23,57 @@ from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
 SO_DOAN = 6
 
+GIAY = {"chuyen_loi_thoai": 142.0, "doc_canh": 200.0, "tts": 100.0}
+
+
+def _du_phong_giong() -> float:
+    """Du phong MOT don vi cua `voice_synthesis` — MOT cho khai, ⛔ khong chep.
+
+    🔴 **Vi sao ham nay ton tai (26/09).** `TRAN_EP["voice_synthesis"]` truoc day
+       la hang `3600` go tay, va con so ay duoc chon cho `VONG_TOI_DA = 2`. Khi
+       Task 4 ha `VONG_TOI_DA` xuong `1`, du phong mot don vi teo lai va bat dang
+       thuc *"tran KHONG chua noi don vi thu hai"* vo — bai kiem do voi
+       `assert (100.0 + 1980.0) > 3060.0`, ⛔ khong vi mot loi nao trong san pham.
+
+    ⭐ Thuoc la **DOC thay vi CHEP**: cong thuc o day phai la cung mot bieu thuc
+       ma `giai_doan_giong.chay` truyen cho `lat_cat.mo`, nen doi `VONG_TOI_DA`
+       ⛔ khong bao gio lam do bai kiem nay nua.
+    """
+    from apps.auto_scan_video import (ai, giai_doan_giong as gg, lat_cat,
+                                      nan_cho_vua)
+
+    return ((nan_cho_vua.VONG_TOI_DA + 1) * gg._timeout_tts()
+            + nan_cho_vua.VONG_TOI_DA
+            * lat_cat.timeout_goi_ai(ai.RUT_NGAN_CHO_VUA)
+            + lat_cat.DU_PHONG_NGOAI_GOI_S)
+
+
+def _tran_ep_giong() -> float:
+    """Tran thoi gian ep cho MOT luot `voice_synthesis`.
+
+    Hai bat dang thuc phai dong thoi dung (xem
+    `test_so_hoc_tran_ep_la_MOT_don_vi_moi_luot`):
+
+        d < HE_SO_TRAN * tran        (mot don vi te nhat con VUA)
+        HE_SO_TRAN * tran < mot + d  (don vi THU HAI thi KHONG vua)
+
+    ⇒ `tran` nam trong khoang mo `(d / HE_SO_TRAN, (mot + d) / HE_SO_TRAN)`. Lay
+      **diem giua** de khong bam vao hai dau — mot gia tri sat bien la mot bai
+      kiem se do vi mot thay doi lam tron.
+    """
+    from apps.auto_scan_video import lat_cat
+
+    return (_du_phong_giong() + GIAY["tts"] / 2) / lat_cat.HE_SO_TRAN
+
+
 #: Tran ep nho: moi giai doan nhuong sau DUNG mot don vi (xem so hoc trong
 #: `test_so_hoc_tran_ep_la_MOT_don_vi_moi_luot`).
-TRAN_EP = {"content_process": 500, "edit_plan": 500, "voice_synthesis": 3600}
-GIAY = {"chuyen_loi_thoai": 142.0, "doc_canh": 200.0, "tts": 100.0}
+#:
+#: ⚠️ `voice_synthesis` TINH RA tu cac hang so cua san pham, ⛔ khong go tay —
+#:    xem `_du_phong_giong`. Hai so con lai van go tay vi du phong cua chung
+#:    ⛔ khong phu thuoc hang so nao dang doi.
+TRAN_EP = {"content_process": 500, "edit_plan": 500,
+           "voice_synthesis": _tran_ep_giong()}
 
 
 class DongHoGia:
@@ -142,22 +189,29 @@ def _ban_ra(db, run) -> dict:
 
 def test_so_hoc_tran_ep_la_MOT_don_vi_moi_luot():
     """Tu kiem cau hinh phep kiem: moi tran ep phai (1) chua vua mot don vi te
-    nhat — neu khong `lat_cat.mo` hong — va (2) KHONG chua noi don vi thu hai."""
-    from apps.auto_scan_video import (ai, giai_doan_giong as gg, lat_cat,
-                                      nan_cho_vua)
+    nhat — neu khong `lat_cat.mo` hong — va (2) KHONG chua noi don vi thu hai.
+
+    ⚠️ **Tu 26/09 con so cua `voice_synthesis` duoc TINH RA, ⛔ khong chep.** Ban
+       cu go `3600` — mot gia tri dan xuat tu `VONG_TOI_DA = 2` — nen Task 4 (ha
+       xuong `1`) lam bai nay do o `assert (100.0 + 1980.0) > 3060.0` ma san pham
+       ⛔ khong he sai. Xem `_du_phong_giong` / `_tran_ep_giong`.
+    """
+    from apps.auto_scan_video import ai, lat_cat
 
     du = {
-        "content_process": lat_cat.timeout_goi_ai(ai.CHUYEN_LOI_THOAI),
-        "edit_plan": 1 * 120 + lat_cat.timeout_goi_ai(ai.DOC_CANH),
-        "voice_synthesis": ((nan_cho_vua.VONG_TOI_DA + 1) * gg._timeout_tts()
-                            + nan_cho_vua.VONG_TOI_DA
-                            * lat_cat.timeout_goi_ai(ai.RUT_NGAN_CHO_VUA)),
+        "content_process": (lat_cat.timeout_goi_ai(ai.CHUYEN_LOI_THOAI)
+                            + lat_cat.DU_PHONG_NGOAI_GOI_S),
+        "edit_plan": (1 * 120 + lat_cat.timeout_goi_ai(ai.DOC_CANH)
+                      + lat_cat.DU_PHONG_NGOAI_GOI_S),
+        # ⭐ CUNG bieu thuc ma `TRAN_EP` dung — mot cho khai, nen hai ben ⛔ khong
+        #    the lech nhau.
+        "voice_synthesis": _du_phong_giong(),
     }
     mot = {"content_process": GIAY["chuyen_loi_thoai"], "edit_plan": GIAY["doc_canh"],
            "voice_synthesis": GIAY["tts"]}
     for ten, tran in TRAN_EP.items():
         ngan = lat_cat.HE_SO_TRAN * tran
-        d = du[ten] + lat_cat.DU_PHONG_NGOAI_GOI_S
+        d = du[ten]
         assert d < ngan, ten
         assert mot[ten] + d > ngan, ten
 
