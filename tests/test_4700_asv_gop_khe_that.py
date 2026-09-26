@@ -432,3 +432,70 @@ def test_4700_THIEU_tep_tieng_van_NEM_chu_KHONG_bi_gop_che_mat():
     # cửa "thiếu tệp tiếng" vẫn còn nguyên ở cả hai chỗ
     assert "chua co tep tieng" in inspect.getsource(giai_doan_thoi_gian)
     assert "không có tệp tiếng" in inspect.getsource(ban_dung)
+
+
+def _nap_doi_soat():
+    """Khuon dung o kho nay (xem `test_1235`): them `tools/` vao `sys.path`."""
+    import sys
+    goc = pathlib.Path(__file__).resolve().parents[1] / "tools"
+    if str(goc) not in sys.path:
+        sys.path.insert(0, str(goc))
+    import asv_doi_soat
+    return asv_doi_soat
+
+
+def test_4700_chan_doan_phan_biet_CHUA_CHAY_TOI_voi_DUNG_CU_HONG():
+    """🔴 Mot bang toan `None` ⛔ KHONG duoc phep im lang ve LY DO.
+
+    `tools/asv_doi_soat.py` tung tra `None` cho **moi** phep do vi no doc mot khoa
+    ⛔ khong ton tai (`gd["tom_tat"]`) — mot dung cu do **im lang khong do gi** ma
+    van xanh. Va thu lam no song lau la: `None` cua ca **do trong** ⛔ khong phan
+    biet duoc voi `None` cua *"luot chay chua toi giai doan ay"*.
+
+    ⇒ `chan_doan` tach BA trang thai, va chi MOT trong ba la LOI:
+      - `thieu_giai_doan` / `chua_xong:*` ⇒ **binh thuong**, chi la chua toi;
+      - `thieu_khoa:*` ⇒ **LOI**, o phia GHI hoac o bang `KHOA_CAN`.
+
+    ⭐ Bai nay do ca BON ve, ke ca ve XANH (du khoa ⇒ rong): thieu ve doi chung ay
+       thi mot ban `chan_doan` luon bao loi cung se xanh — va bao dong gia lam
+       nguoi ta TAT canh bao.
+    """
+    ds = _nap_doi_soat()
+    can = ds.KHOA_CAN["voice_synthesis"]
+    du = {k: 1 for k in can}
+
+    # 1. Khong co dong giai doan ⇒ chua chay toi, ⛔ KHONG phai loi.
+    assert ds.chan_doan({}, {"voice_synthesis": None})["voice_synthesis"] == (
+        ds.THIEU_GIAI_DOAN)
+
+    # 2. Co dong ma chua xong ⇒ cung chua phai loi, va phai MANG trang thai that
+    #    (⛔ khong gop thanh mot chu "chua xong" tron).
+    ra = ds.chan_doan({"voice_synthesis": {}},
+                      {"voice_synthesis": "failed_terminal"})
+    assert ra["voice_synthesis"] == ds.CHUA_XONG + ":failed_terminal"
+
+    # 3. DA XONG ma thieu khoa ⇒ LOI, va phai GOI TEN dung khoa thieu.
+    thieu = dict(du)
+    thieu.pop(can[0])
+    ra = ds.chan_doan({"voice_synthesis": thieu}, {"voice_synthesis": "succeeded"})
+    assert ra["voice_synthesis"] == ds.THIEU_KHOA + ":" + can[0]
+
+    # 4. Doi chung: DA XONG va du khoa ⇒ rong.
+    ra = ds.chan_doan({"voice_synthesis": du}, {"voice_synthesis": "succeeded"})
+    assert ra["voice_synthesis"] == ""
+
+
+def test_4700_chan_doan_doi_HAI_nguon_vi_outputs_da_lam_phang_None():
+    """⚠️ `outputs_tung_giai_doan` doi `None` thanh `{}`, nen SAU no thi *"chua co
+       giai doan"* va *"xong voi outputs rong"* la CUNG MOT THU.
+
+    Do la ly do `trang_thai_tung_giai_doan` ton tai nhu mot ham RIENG. Neu
+    `chan_doan` chi nhan mot nguon (outputs) thi ca 1 va ca 2 cua bai tren
+    ⛔ khong the phan biet duoc — nen so tham so o day la mot **rang buoc**,
+    ⛔ khong phai mot chi tiet hinh thuc.
+    """
+    import inspect
+    ds = _nap_doi_soat()
+    assert callable(ds.trang_thai_tung_giai_doan)
+    tham = list(inspect.signature(ds.chan_doan).parameters)
+    assert len(tham) == 2, "chan_doan phai nhan hai nguon, dang nhan " + str(tham)
