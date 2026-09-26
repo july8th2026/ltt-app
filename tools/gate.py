@@ -798,6 +798,16 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # ⭐ Buoc nay in thang `cd <thu muc> && npm ci`.
         Step("phu thuoc npm da cai",
              [sys.executable, "tools/check_phu_thuoc_npm.py"], ROOT),
+        # Worktree nam TRONG kho. Them 26/09/2026 sau HAI lan: `.codex/worktrees`
+        # (phai loai tay trong ruff.toml) va `LTTGateBaseline68cde0` (lam
+        # `find . -name "*.py"` nhay 4778 -> 7241, moi moc ruff DUNG GAP DOI, va
+        # chan commit cua MOI phien).
+        # ⭐ Luat do duoc, khong phai luat ta tuong: worktree trong kho chi thoi
+        #    banh coc neu no KHONG gitignored — voi cong cu ton trong gitignore.
+        #    Cong cu QUET HE TEP (scan_source_secrets) thi thoi kieu gi cung
+        #    duoc, tru khi loai tuong minh. => Doi CA HAI ve.
+        Step("worktree trong kho",
+             [sys.executable, "tools/check_worktree_trong_kho.py"], ROOT),
         # Ky tu dieu khien vo hinh trong tai lieu. `test_61` da quet dai nay tu
         # lau va van quet — buoc nay KHONG thay no, no bit hai lo khac:
         #   - pham vi: `test_61` dung `glob("*.md")` KHONG de quy, nen no phu 43

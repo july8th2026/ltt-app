@@ -117,7 +117,6 @@ def _thieu(d: str, npm: str) -> list[str]:
 
 
 def main() -> int:
-    _stdout_utf8()
     npm = shutil.which("npm") or shutil.which("npm.cmd")
     if npm is None:
         print("npm khong co tren PATH — bo qua phep kiem nay.")
@@ -171,4 +170,9 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # ⭐ Tac dung phu thuoc ve DIEM VAO, khong ve `main()`: mot bai test
+    #    goi `main()` truc tiep se bi doi `sys.stdout`, va pytest dong
+    #    buffer => `ValueError: I/O operation on closed file`. Da can
+    #    that o CA HAI tep nay, o hai tang khac nhau (import, roi main).
+    _stdout_utf8()
     raise SystemExit(main())
