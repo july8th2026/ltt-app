@@ -731,6 +731,85 @@ def test_doi_soat_moi_khoa_doc_deu_CO_AI_GHI_vao_outputs():
         "tai. No ghi: %s" % (thieu, sorted(bg)))
 
 
+def _khoa_tom_tat_that_su_ghi() -> dict[str, set[str]]:
+    """`{ten_giai_doan: khoa `tom_tat` THAT SU tới `outputs`}`.
+
+    ⭐ Cùng một nguồn với chiều thuận: dict tại chỗ `return` + khoá của `**` lấy
+       bằng cách GỌI THẬT hàm sinh nó. ⛔ Không bịa một danh sách thứ hai.
+    """
+    from apps.auto_scan_video import (giai_doan_giong, giai_doan_thoi_gian,
+                                      nan_cho_vua, thoi_gian)
+
+    return {
+        "voice_synthesis": (_khoa_chuoi(_dict_tom_tat_tai_return(giai_doan_giong))
+                            | set(nan_cho_vua.tom_tat([], tung_luot_doc=[]))),
+        "timing_align": (_khoa_chuoi(_dict_tom_tat_tai_return(giai_doan_thoi_gian))
+                         | set(thoi_gian.tom_tat({"doan": []}))),
+    }
+
+
+def test_doi_soat_moi_khoa_DA_GHI_deu_co_NGUOI_QUYET_doc_hay_KHONG():
+    """🔴 **Chiều NGƯỢC của bánh cóc** — chiều đã để `so_doan_nan_oan` lọt.
+
+    Bài ngay trên hỏi *"khoá công cụ ĐỌC → có ai GHI không"*. Chiều ấy bắt được
+    N-5b, nhưng nó ⛔ mù tuyệt đối với chiều này: `giai_doan_giong` **đã xuất**
+    `so_doan_nan_oan` vào `tom_tat`, mà `asv_doi_soat` ⛔ không liệt kê và ⛔
+    không đọc nó ⇒ Đ4 **vô hình với người vận hành** dù con số nằm sẵn trong
+    `asv_stage.outputs`. Không phép đo nào bắt được, vì ⛔ không có gì để đếm.
+
+    ⇒ Từ đây một khoá mới phải vào `KHOA_CAN` **hoặc** `KHOA_BO_QUA_CO_Y`; ⛔
+      không có đường thứ ba để nó im lặng.
+    """
+    from tools import asv_doi_soat as cc
+
+    for ten, ghi in _khoa_tom_tat_that_su_ghi().items():
+        biet = set(cc.KHOA_CAN[ten]) | set(cc.KHOA_BO_QUA_CO_Y[ten])
+        chua_quyet = sorted(ghi - biet)
+        assert not chua_quyet, (
+            "giai doan %s ghi %s vao `tom_tat` ma `asv_doi_soat` ⛔ khong DOC "
+            "va cung ⛔ khong khai la co y bo qua — dung cai lo da lam Đ4 vo "
+            "hinh. Them vao `KHOA_CAN` hoac `KHOA_BO_QUA_CO_Y`."
+            % (ten, chua_quyet))
+
+
+def test_doi_soat_KHOA_BO_QUA_khong_chua_khoa_MA_KHONG_AI_GHI():
+    """⚠️ Danh sách bỏ qua cũng mắc được **chính** con bọ N-5b.
+
+    Một tên ma trong `KHOA_BO_QUA_CO_Y` nghĩa là: *"đã có người nhìn và quyết
+    không đọc"* — về một khoá ⛔ không tồn tại. Nó làm bài trên yếu đi mà ⛔
+    không ai thấy, và nó che đúng trường hợp đổi tên khoá.
+    """
+    from tools import asv_doi_soat as cc
+
+    ghi_theo_gd = _khoa_tom_tat_that_su_ghi()
+    for ten, bo_qua in cc.KHOA_BO_QUA_CO_Y.items():
+        ma = sorted(set(bo_qua) - ghi_theo_gd[ten])
+        assert not ma, (
+            "`KHOA_BO_QUA_CO_Y[%r]` khai %s ma ⛔ KHONG AI ghi chung — ten ma "
+            "hoac khoa da doi ten" % (ten, ma))
+        trung = sorted(set(bo_qua) & set(cc.KHOA_CAN[ten]))
+        assert not trung, (
+            "%s vua DOC vua 'co y bo qua' (%s) — hai bang noi hai dieu trai "
+            "nguoc" % (ten, trung))
+
+
+def test_doi_soat_D4_so_doan_nan_oan_NAY_do_duoc():
+    """🔴 Docstring cũ của `asv_doi_soat` nói *"Đ4 hiện chưa đo được"* — nay SAI.
+
+    ⛔ Không đủ nếu khoá chỉ có mặt trong `KHOA_CAN`: `doi_soat()` phải THẬT SỰ
+    trả con số ra, vì `main()` chỉ in những gì `doi_soat()` trả về.
+    """
+    from tools.asv_doi_soat import doi_soat
+
+    ra = doi_soat({"voice_synthesis": {"so_doan_nan_oan": 3}})
+    assert ra["so_doan_nan_oan"] == 3
+    # ⭐ `0` = do duoc va khong doan nao; `None` = giai doan chua chay. Gop hai
+    #    thu do vao mot gia tri la mat dung kha nang phan biet tep ay giu.
+    assert doi_soat({"voice_synthesis": {"so_doan_nan_oan": 0}}
+                    )["so_doan_nan_oan"] == 0
+    assert doi_soat({})["so_doan_nan_oan"] is None
+
+
 def test_doi_soat_khoa_MASTER_dung_cho_ma_ghi_no():
     """`KHOA_TRONG_MASTER` phải khớp `do_duoc[...] = ` của `giai_doan_thoi_gian`.
 
