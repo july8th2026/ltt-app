@@ -187,6 +187,15 @@ class ThaoTac:
 
 
 DICH_THUAT = ThaoTac("dich_thuat", False, ("doan",), pha="14")
+#: 🔑 **HO_SO_DICH — Task 11, mot lan cho CA video (pha 15).**
+#:
+#:    `dich_mot_lo`/`long_tieng` la VO TRANG THAI: moi lo chi thay `{ma: chu}`
+#:    cua chinh no. Mot phim 74 doan di 4 lo => 4 lan quyet lai quan he nhan
+#:    vat, doc lap nhau — tieng Viet ma hoa quan he vao dai tu, nen nguoi xem
+#:    nghe thay no doi giua video (`ong` -> `cau` -> `ban`). Xem
+#:    `apps/auto_scan_video/ho_so_dich.py`.
+HO_SO_DICH = ThaoTac("ho_so_dich", False, ("the_loai", "bang_dai_tu"), pha="15",
+                     muc_nghi="low")
 #: 🔴 **Truoc pha 27 truong bat buoc o day la `("canh",)`, va no mo ta mot hinh
 #:    dang phan hoi ma khong ai bao gio yeu cau.**
 #:
@@ -271,7 +280,7 @@ QC_NGU_NGHIA = ThaoTac("qc_ngu_nghia", False, ("doan",), pha="19")
 QC_HINH = ThaoTac("qc_hinh", True, ("dat", "do_tin"), pha="19")
 
 THAO_TAC: tuple[ThaoTac, ...] = (
-    DICH_THUAT, DOC_CANH, HO_SO_NOI_DUNG, CHUYEN_LOI_THOAI,
+    DICH_THUAT, HO_SO_DICH, DOC_CANH, HO_SO_NOI_DUNG, CHUYEN_LOI_THOAI,
     RUT_NGAN_CHO_VUA, QC_NGU_NGHIA, QC_HINH)
 
 THEO_MA = {t.ma: t for t in THAO_TAC}
