@@ -21707,3 +21707,70 @@ xanh khi commit; dòng "chưa" bên trên viết lúc chưa commit — coi như 
   nợ đỏ của phiên V4 cho chính phiên đó trả, theo §10.4 — lỗi khu người thì
   nhắn chủ khu, không tự sửa). Gộp lại khi chủ khu đã thêm 23 msgid vào
   `locale/en/LC_MESSAGES/messages.po`.
+
+## 2026-09-26 — Upscale V2: dọn 13 tính năng GIẢ, gộp `main` (`0be80075`)
+
+Phiên correction: **không thêm tính năng**, chỉ khép lại lớp "tính năng chỉ
+đúng trên giấy" mà đợt nâng cấp trước để lại. Kiểm bằng **mã + runtime**, ⛔ không
+tin `docs/UPSCALE_V2/*`. Toàn văn: `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`.
+
+**Ba cái nặng nhất**
+
+- **"4→12 concurrent" là SAI; đồng thời GPU thật = 1.** `UniqueConstraint(
+  "host","gpu_uuid")` (`platform_core/models.py`) khoá cứng. ⭐ Và docstring của
+  chính `GpuLease` đã **cấm trước**: *"kế toán VRAM theo hứa hẹn sẽ lệch so với
+  thực tế rồi OOM… đừng làm khi chưa đo được là cần"*. Lời khai sai nằm ở **9
+  chỗ** mã + docs; đã gỡ tại chỗ (giữ câu gốc + dấu ⛔ SAI + bằng chứng).
+- **Quality gate không "vô hại":** gọi `ffprobe` cho PSNR/SSIM/VMAF (ba đại
+  lượng chỉ `ffmpeg` tính được), không có video tham chiếu, truyền khoá R2 như
+  đường dẫn local, `.read()` cả MP4 vào RAM cho PIL ⇒ **luôn** fail, dán cảnh
+  báo giả lên **mọi** job khách và trả egress R2 cho không. Thay bằng cổng KỸ
+  THUẬT chạy trên tệp LOCAL trước upload.
+- **ISSUE L (mới, chưa vá):** `job_runner._het_gio` dùng `os._exit(3)` ⇒ bỏ qua
+  `finally` ⇒ rò thư mục temp cỡ GB + **tiến trình engine mồ côi giữ GPU**.
+  Ngoài phạm vi app; đã ghi vào `09_FINAL_ARCHITECTURE.md`.
+
+**Đo được trên máy này (26/09)**
+
+- `h264_qsv`/`hevc_qsv`/`h264_amf`/`hevc_amf`: `ffmpeg -encoders` **liệt kê đủ**
+  nhưng **cả bốn chết lúc chạy**. ⇒ một bản LIỆT KÊ năng lực ⛔ không phải một
+  phép DÒ năng lực. Bỏ QSV/AMF khỏi app; `hevc_nvenc` thì dò thật.
+- PNG sau upscale ≈ **17×** PNG nguồn (0,4 MB → 6,8 MB/khung, quan sát từ job
+  thật của bot). Số thật đầu tiên về gánh I/O.
+
+**Nghiệm thu**
+
+- test nhắm cụm `app:upscalevideo` (10 tệp) qua khoá máy ⇒ **200 passed**.
+- `test_4904` (86 phép, AST/behavior) — agent tự **tiêm lỗi 11 lần**, mỗi lần
+  làm đỏ đúng phép tương ứng.
+- ⭐ `test_4905`: cổng kỹ thuật chạy trên **tệp thật** (tự sinh bằng `testsrc`,
+  ⛔ không phụ thuộc `Desktop\TEST VIDEO`) — 5/5, gồm tỉ lệ **lẻ** 836×576 →
+  1568×1080 và ca **xin h264 nhận hevc** bị bắt ở runtime. Tiêm lỗi (tắt phép
+  kiểm codec) ⇒ đỏ đúng chỗ. Lý do cần: `test_4904` mock `probe_video` nên
+  **chưa từng** chạm phép toán tỉ lệ/làm tròn thật, mà cổng này có quyền **đánh
+  đỏ job khách**.
+- Gộp `main`: xung đột duy nhất `messages.po` (thuần thêm-vs-thêm, giữ cả hai,
+  `.mo` **sinh lại** chứ không merge nhị phân). `pre-commit run --all-files`
+  **7/7 Passed** trên `0be80075`.
+
+**🔴 CHƯA ĐO — và sẽ không đoán.** Không một số hiệu năng trước/sau nào chạy
+được: GPU máy A bão hoà vì **hai dịch vụ production** cùng card —
+`D:\BOT GEMINI\...\realesrgan-ncnn-vulkan.exe` (`compute_1` ~100 %) và
+`C:\LTTPlatform\vieneu-venv\...\voice_sidecar_main.py` (`cuda`). Bộ đo
+`tools/bench_upscale.py` đã dựng xong + `--dry-run` chạy được; mọi ô trong
+`06_*`/`08_*` ghi `CHƯA ĐO`, các ô không có mẫu ghi `KHÔNG CÓ MẪU` (bộ test chỉ
+có 4 clip ~576p ngang CFR — ⛔ không có portrait/VFR/nguồn 1080+).
+⇒ `10_FINAL_SCORECARD.md` **từ chối** in một con số "Overall": trộn hàng CHƯA ĐO
+với hàng có bằng chứng là đúng lỗi *hai trạng thái gộp thành một giá trị*.
+
+**Bẫy công cụ gặp trong phiên (ghi để phiên sau khỏi mất giờ)**
+
+- ⛔ `grep -c $'\r'` trong Git Bash ở máy này **không** hiểu `$'\r'` — nó thành
+  chuỗi rỗng, khớp MỌI dòng và luôn trả về đúng số dòng. Tôi đã kết luận nhầm
+  "agent phá kết dòng" vì nó. Đo kết dòng bằng Python:
+  `open(p,'rb').read().count(b'\r\n')`.
+- `tools/i18n_merge_driver.py` **hỏng**: giải mã đầu ra subprocess bằng locale
+  (cp1252) thay vì UTF-8 ⇒ `UnicodeDecodeError` rồi `AttributeError: 'NoneType'`
+  khi merge `.po`. Phải giải xung đột tay. Chủ khu i18n nên vá.
+- `tools/check_i18n.py` đếm cả chuỗi trong `log.info/warning` ⇒ báo tăng oan.
+  Không bọc log (dịch log là nhiễu); nên thêm ngoại lệ cho `log.*`.
