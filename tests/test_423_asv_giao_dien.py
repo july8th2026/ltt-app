@@ -10,6 +10,7 @@ FFmpeg / CUDA / Sheets / duong dan noi bo.*
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 
@@ -509,3 +510,27 @@ def test_data_lan_theo_danh_muc__den_duoc_tan_template(moi_truong):
     assert 'data-lan="en"' in o.group(1), (
         "option thieu `data-lan` dung: `giong.js` doc \"\" la *chua ro lan* "
         "va se KHONG an giong lech lan")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §O  Gain mac dinh cua lop "giong noi GOC" (Task 9, lan D, 26/09/2026)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# ⛔ Phep kiem nay KHONG dung fixture `moi_truong` — no chi import mot hang so,
+#    khong can CSDL. Dung fixture o day se bat no dung Postgres va chay
+#    `drop_all`, dat gap tram lan ma khong do them gi.
+
+
+def test_gain_mac_dinh_cua_giong_GOC_la_mot_phan_ba():
+    """🔴 Trước 26/09 mặc định là 1.0 = 0 dB: khách vừa tick "giữ giọng nói gốc"
+    là giọng gốc trở lại ÂM LƯỢNG ĐẦY, đối đầu trực diện với giọng Việt.
+
+    Chủ dự án chốt −10 dB. Thang trượt là biên độ TUYẾN TÍNH (⛔ không phải dB) và
+    `step="5"`, nên 31,6 % ⛔ không nằm trên lưới ⇒ 0.30 = −10,46 dB.
+    """
+    from apps.auto_scan_video.tach_tieng import LOP_MAC_DINH
+
+    assert LOP_MAC_DINH["giong_gain"] == 0.30
+    assert LOP_MAC_DINH["giong_bat"] is False
+    db = 20 * math.log10(LOP_MAC_DINH["giong_gain"])
+    assert -11.0 < db < -9.0, f"{db:.2f} dB ngoai dai 9-10 dB chu du an muon"
