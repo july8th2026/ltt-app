@@ -228,3 +228,29 @@ def test_ngan_sach_nan_KHONG_BAO_GIO_nho_hon_khe():
     """Du lieu hong (`moc_sau` < `ket`) khong duoc lam ngan sach teo lai."""
     from apps.auto_scan_video.thoi_gian import ngan_sach_nan_s
     assert ngan_sach_nan_s(3.0, 1.0) == 3.0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §6  Task 4 — VONG_TOI_DA 2 -> 1, tran tang toc thanh CANH BAO (chot 26/09)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_vong_nan_toi_da_la_MOT():
+    """VideoLingo (18,5k★) đã bỏ vòng rút gọn thứ hai; chú thích của chính ta
+    cũng nói "vòng thứ hai thường không cần đến"."""
+    from apps.auto_scan_video import nan_cho_vua
+    assert nan_cho_vua.VONG_TOI_DA == 1
+
+
+def test_he_so_toc_KHONG_bi_kep_ve_tran():
+    """Chủ dự án chốt: vượt trần thoải mái. Trần còn là CẢNH BÁO, ⛔ không phải cổng."""
+    import ast
+    import inspect
+    from apps.auto_scan_video import giai_doan_thoi_gian
+
+    ma = inspect.getsource(giai_doan_thoi_gian)
+    assert "he_so_toc_da_ap" in ma, "chua ghi lai he so da ap"
+    cay = ast.parse(ma)
+    ten_goi = {n.func.id for n in ast.walk(cay)
+               if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "min" not in ten_goi or "max" not in ten_goi, (
+        "van con phep kep he_so_co_gian ve [1/tran, tran]")
