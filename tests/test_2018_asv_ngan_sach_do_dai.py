@@ -630,3 +630,34 @@ def test_CHAN1_luot_nan_duoc_COMMIT_truoc_luot_TTS_dau_tien(db, kho_tam,
         "TIEN bien mat khoi so cai" % phong.su_kien[:i_tts + 1])
     # ⭐ Va so cai THAT co dong cua luot nan ay (⛔ khong chi "da commit gi do").
     assert len(_dong_nan(db, run)) == 1
+
+
+# ── CHAN 2 ───────────────────────────────────────────────────────────────────
+
+def test_CHAN2_khoi_nan_NHUONG_duoc_giua_cac_lo(db, kho_tam,
+                                                vong_giong):  # noqa: F811
+    """🔴 CHAN 2, nua NHUONG: ⛔ khong mot `lc.kiem()` nao trong `[E]`.
+
+    Voi `LAN_XIN_NAN_LO = 3`, 200 lo xau nhat la ~10.600 s tren mot ngan sach
+    lat 4.590 s ⇒ `job_runner._het_gio` ban `os._exit(3)` va `retry=False`: lan
+    chay hong HAN. Va `nen_nhuong` doi `da_lam >= 1`, nen `[E]` ⛔ khong nhuong
+    duoc ngay ca khi co `kiem` — mot lo nan phai DEM la mot don vi.
+
+    ⭐ Phep do: luot DAU phai ket thuc voi **loi goi nan > 0 va luot TTS = 0**.
+       Do la chu ky chi co the xay ra khi `[E]` nhuong giua cac lo: neu `[E]`
+       chay het roi moi toi `[F]`, luot dau luon doc it nhat mot doan (`kiem`
+       dau tien cua `[F]` co `da_lam == 0` nen ⛔ khong the nhuong).
+    """
+    phong = vong_giong
+    phong.dat(60)
+    phong.chay_theo_luot()
+
+    nan_dau, tts_dau = phong.moi_luot[0]
+    assert nan_dau > 0 and tts_dau == 0, (
+        "luot dau: %d loi goi nan / %d luot TTS — `[E]` khong nhuong giua cac "
+        "lo, no chay het roi moi de `[F]` nhuong (moi_luot=%s)"
+        % (nan_dau, tts_dau, phong.moi_luot))
+    # ⛔ Va nhuong xong thi con tro ⛔ KHONG duoc nhich: chua doan nao duoc doc.
+    assert nan_dau == 2, (
+        "1.500 s/lo tren ngan sach 4.590 s - du phong 1.980 s ⇒ DUNG hai lo "
+        "vua luot dau; da lam %d" % nan_dau)

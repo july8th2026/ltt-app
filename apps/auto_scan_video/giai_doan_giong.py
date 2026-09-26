@@ -341,6 +341,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
            nay von nam SAU ca `[E]`, trong `[F]`. Nen mot `TiepNoi` hay mot loi
            bat ky truoc doan tieng dau tien di qua `thi_hanh` -> `db.rollback()`
            va **ca luot nan da tieu bien mat khoi so cai**: tien mat, so trong.
+
+        ⭐ `lc.xong_mot()`: mot lo nan LA mot don vi viec da xong va da ben, nen
+           dem no la dem dung. Va no la dieu kien de `lc.nen_nhuong()` (`da_lam
+           >= 1`) co the dung — thieu no thi `[E]` ⛔ khong nhuong duoc lo nao.
         """
         for ma, moi in chu_lo.items():
             m = theo_ma.get(ma)
@@ -355,10 +359,21 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             m["chu"] = str(moi)
             so_vong_theo_ma[ma] = 1
         db.commit()
+        lc.xong_mot()
 
     if doan_tran:
         _t0 = time.monotonic()
-        _nan_lo(db, run, doan_tran, luot=lc.luot, ctx=ctx, sau_lo=_chot_lo)
+        # ⭐ `truoc_lo` = `lc.kiem` TRUOC moi lo, tuc `[E]` NHUONG DUOC. `vi_tri`
+        #    giu NGUYEN (`lc.vi_tri`): chua doan nao duoc doc o luot nay, nen con
+        #    tro ⛔ khong duoc nhich — tien do cua `[E]` nam o `chu_da_nan` da
+        #    commit, ⛔ khong o con tro.
+        # ⚠️ `du_phong_s` cua lat la du phong cua mot don vi TTS (1.980 s do
+        #    26/09), con mot lo nan xau nhat la `LAN_XIN_NAN_LO x
+        #    timeout_goi_ai` = 360 s. Nhuong theo con so LON hon la nhuong SOM
+        #    hon can — giu ve phia an toan, cung lap luan voi chu thich
+        #    `du_phong_s` o `lat_cat.mo` ngay tren.
+        _nan_lo(db, run, doan_tran, luot=lc.luot, ctx=ctx,
+                truoc_lo=lambda: lc.kiem(vi_tri=lc.vi_tri), sau_lo=_chot_lo)
         dong_ho["giay_llm_nan"] += time.monotonic() - _t0
 
     with tempfile.TemporaryDirectory(prefix="asv-voice-") as tam:
@@ -825,7 +840,7 @@ LAN_XIN_NAN_LO = 3
 
 
 def _nan_lo(db, run, cac: list[dict], *, luot: int = 0, ctx=None,
-            sau_lo=None) -> dict[str, str]:
+            truoc_lo=None, sau_lo=None) -> dict[str, str]:
     """Xin model viet lai NHIEU doan trong 1..N loi goi. Tra ve `{ma: chu moi}`.
 
     🔑 **Ke nhiem cua `_viet_lai` (bo 26/09).** Ban cu xin MOT doan mot loi goi
@@ -872,6 +887,13 @@ def _nan_lo(db, run, cac: list[dict], *, luot: int = 0, ctx=None,
     ra: dict[str, str] = {}
     for so_lo, lo in enumerate(
             dich_thuat.chia_lo(cac, moi_lo=dich_thuat.DOAN_MOI_LO), start=1):
+        # ⭐ **Cua nhuong, va no phai o DAY — TRUOC khi tieu lo nay.** Truoc
+        #    26/09 khoi `[E]` ⛔ khong co mot `lc.kiem()` nao: 200 lo xau nhat la
+        #    ~10.600 s tren mot ngan sach lat 4.590 s, nen `job_runner._het_gio`
+        #    ban `os._exit(3)` giua chung voi `retry=False` — lan chay hong HAN,
+        #    va (truoc `sau_lo`) ca luot nan da tieu bi `rollback` theo.
+        if truoc_lo is not None:
+            truoc_lo()
         can = {str(d["ma"]) for d in lo}
         con = list(lo)
         for lan in range(LAN_XIN_NAN_LO):
