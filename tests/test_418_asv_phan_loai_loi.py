@@ -397,6 +397,18 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         #    ngay tren: loi nghiep vu o tang route, khong bao gio bay ra tu
         #    than mot giai doan job nen khong bao gio toi `job_runner`/`retry`.
         "PhienChuaSan",
+        # 🔑 `HoSoDichLoi` (ho_so_dich.py, Task 11 pha 15): nem trong `_doc()` khi
+        #    model tra ve JSON khong doc duoc/hong/sai hinh dang, nhung `dung()` —
+        #    NGUOI GOI DUY NHAT cua `_doc()` — bat no bang chinh `except Exception`
+        #    boc quanh CA loi goi model lan phep doc, roi tra ve mot ho so RONG.
+        #    Cung khuon voi `PhienChuaSan` ngay tren: mot lop chi song trong MOT
+        #    loi goi, khong bao gio bay ra khoi ham dung no, nen khong bao gio toi
+        #    `job_runner`/`retry` de phan loai thu-lai-duoc co nghia. ⛔ Khac voi
+        #    `AiMoHo`/`DichMoHo` (MO_HO): do la mat ket noi SAU khi da goi that,
+        #    con day la JSON khong doc duoc CUA MOT loi goi da tra loi — khong co
+        #    cau hoi "da tinh tien chua" o day, chi co "co dung duoc khong", va
+        #    `dung()` da tu tra loi bang ho so rong.
+        "HoSoDichLoi",
         # 🔑 Chi song trong TIEN TRINH CON demucs. Chot an toan cua pha 13 nem no
         #    khi mot phep kiem cham toi model that; production khong bao gio co
         #    `PYTEST_CURRENT_TEST` nen no khong the len toi bien cua nen tang.
