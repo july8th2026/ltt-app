@@ -1086,27 +1086,34 @@ def test_ho_so_dich_MOT_video_dung_MOT_dong_so_cai():
         "biểu thức dựng tại chỗ")
 
 
-def test_ho_so_dich_CUA_CHAN_ngan_sach_KHONG_bi_nuot_thanh_ho_so_rong(monkeypatch):
-    """🔴 Hành vi: hết ngân sách là trạng thái **khách phải biết**.
+def test_ho_so_dich_AsvError_KHONG_bi_nuot_thanh_ho_so_rong(monkeypatch):
+    """🔴 Hai ca hỏng KHÁC loại, và gộp chúng là mất một trạng thái khách phải biết.
 
-    ⚠️ Hai ca hỏng KHÁC loại: model trả rác ⇒ hồ sơ rỗng đi tiếp; cửa chặn vì
-    hết ngân sách ⇒ NÉM. Bài này cũng khẳng định cửa chặn **trước khi** model
-    được gọi — tức ⛔ không phát sinh lời gọi thật ~16 giây nào.
+    - model trả **rác** ⇒ hồ sơ rỗng, đi tiếp (hồ sơ làm bản dịch TỐT HƠN, ⛔ không
+      phải thứ nó cần để CHẠY);
+    - một **`features.AsvError`** ⇒ **NÉM**. Đó là họ lỗi chính sách của app (hết
+      ngân sách, vượt trần chi) — thứ ⛔ không được biến thành "hồ sơ rỗng" rồi im.
+
+    ⚠️ **Bản trước của bài này (26/09 sáng) đạt tới tính chất trên bằng cách
+       monkeypatch `features.kiem_tran_chi`** — tức đi qua **cửa chặn** của
+       `goi_tinh_tien`. Nhưng chủ dự án chốt **PHƯƠNG ÁN B: chỉ đo, ⛔ không trang bị
+       cửa** ⇒ `uoc_credit` ⛔ không được truyền ⇒ `cua_chan_truoc_khi_tieu` **⛔ không
+       bao giờ được gọi** ⇒ bản trước đo **một ca không thể xảy ra**.
+
+    ⭐ Nên bài này giữ **nguyên tính chất**, chỉ đổi **đường tới nó**: `AsvError` ném
+       từ bất cứ đâu trong `goi_tinh_tien` đều phải bay lên. Tính chất ⛔ không phụ
+       thuộc việc cửa có được trang bị hay không — và đó là lý do nó đáng giữ.
     """
     from apps.auto_scan_video import ai, features, ho_so_dich
 
-    def cua_dong(db, run, them):
+    def nem_chinh_sach(*a, **k):
         raise features.AsvError("Chi phi thuc te se vuot muc da giu")
 
-    def khong_duoc_goi(*a, **k):
-        raise AssertionError("model bị gọi DÙ cửa đã chặn — cửa chạy sai thứ tự")
-
-    monkeypatch.setattr(features, "kiem_tran_chi", cua_dong)
-    monkeypatch.setattr(ai, "goi", khong_duoc_goi)
+    monkeypatch.setattr(ai, "goi_tinh_tien", nem_chinh_sach)
 
     with pytest.raises(features.AsvError):
         ho_so_dich.dung(None, _RunGia(0),
-                        {"doan": [{"ma": "seg_0001", "chu": "你好"}]})
+                        {"doan": [{"ma": "seg_0001", "chu": "\u4f60\u597d"}]})
 
 
 def test_ho_so_dich_model_tra_RAC_van_tra_ho_so_RONG(monkeypatch):
@@ -1126,19 +1133,38 @@ def test_ho_so_dich_model_tra_RAC_van_tra_ho_so_RONG(monkeypatch):
     assert ra["bang_dai_tu"] == {} and ra["the_loai"] == ""
 
 
-def test_ho_so_dich_CUA_chay_that_su_vi_uoc_credit_KHAC_khong():
-    """⚠️ `goi_tinh_tien` bỏ qua cửa khi `uoc_credit` là 0 (`ai.py:835`).
+def test_ho_so_dich_KHONG_trang_bi_cua_chan__phuong_an_B():
+    """🔑 **Chủ dự án chốt PHƯƠNG ÁN B (26/09): CHỈ ĐO, ⛔ không bật cửa chặn.**
 
-    ⇒ Một cửa không chạy là một cửa không tồn tại. Đây là lý do `UOC_CREDIT`
-    tồn tại, và nó ⛔ không phải một bảng giá thứ hai.
+    `ai.goi_tinh_tien` làm **hai** việc, và ta chỉ muốn **một**:
+      (1) **cửa chặn** margin — chỉ chạy khi `uoc_credit` khác 0 (`ai.py:835`);
+      (2) **sổ cái** — luôn chạy.
+    ⇒ Đi qua `goi_tinh_tien` để có (2), và ⛔ **không** trang bị (1).
+
+    ⚠️ Bài này chốt chiều **NGƯỢC** với bản trước nó, và đó là **có chủ ý**. Bản
+       trước khẳng định `uoc_credit > 0` *"để cửa thật sự chạy"*. Nhưng đo ra: **cả
+       SÁU** lời gọi LLM của app đều ⛔ không truyền `uoc_credit` ⇒ bật cho **một**
+       chỗ là tạo một cửa mà ⛔ không ai đoán được nó ở đâu — **tệ hơn** cả việc
+       ⛔ không có cửa nào.
+
+    ⭐ Lý do của chủ dự án: *"Giá chỉ để tượng trưng. Sau này khi hoàn thiện hệ thống
+       và vận hành, tôi sẽ tự đề xuất con số sau."* Một cửa chặn ⛔ **không có ngưỡng
+       đo được** là một cửa sẽ bị **tắt sau lần báo động giả đầu tiên**.
+
+    ⇒ Dụng cụ thay cửa: `giay_llm_nan` · `giay_tts` · `so_doan_nan_oan`, đọc bằng
+      `tools/asv_doi_soat.py`. Chúng **thấy** lượt nào lỗ mà ⛔ không làm khách gặp lỗi.
+
+    ⛔ Bài này ⛔ **không** nói *"đừng bao giờ có cửa"* — nó nói *"khi bật thì bật
+       ĐỒNG THỜI cả sáu, kèm một ngưỡng ĐÃ ĐO"*. Đổi nó khi điều đó xảy ra.
     """
     from apps.auto_scan_video import ho_so_dich
 
-    assert int(ho_so_dich.UOC_CREDIT) > 0
+    assert not hasattr(ho_so_dich, "UOC_CREDIT"), (
+        "hang so cua cua chan con ton tai — phuong an B khong trang bi cua")
 
     (goi,) = [c for c in _cac_goi_thuoc_tinh(ho_so_dich)
               if c.func.attr == "goi_tinh_tien"]
     kw = {k.arg for k in goi.keywords if k.arg}
-    assert "uoc_credit" in kw, (
-        "⛔ không khai `uoc_credit` ⇒ mặc định 0 ⇒ `cua_chan_truoc_khi_tieu` "
-        "KHÔNG BAO GIỜ chạy, và hại (a) vẫn còn nguyên")
+    assert "uoc_credit" not in kw, (
+        "van truyen uoc_credit — mot trong sau loi goi co cua, nam cho kia khong")
+    assert "item_key" in kw, "thieu item_key thi SO CAI khong co khoa"

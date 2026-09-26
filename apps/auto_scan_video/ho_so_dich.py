@@ -37,15 +37,25 @@ KHOA = ("the_loai", "so_nguoi_noi", "bang_dai_tu", "bang_ten_rieng", "giong_van"
 #:    lan quan trong hon do chinh xac tuyet doi chi phi cua ta.
 ITEM_KEY = "ho_so_dich"
 
-#: ⭐ **Chi can KHAC 0**, de `su_dung.cua_chan_truoc_khi_tieu` THAT SU chay:
-#:    `goi_tinh_tien` bo qua cua khi `uoc_credit` la 0 (`ai.py:835`), va mot cua
-#:    khong chay la mot cua khong ton tai.
+#: 🔑 **⛔ KHÔNG truyền `uoc_credit` — chủ dự án chốt PHƯƠNG ÁN B (26/09): CHỈ ĐO.**
 #:
-#: ⛔ Day KHONG phai mot con so tinh tien, va ⛔ khong phai mot bang gia thu hai:
-#:    so cai ghi `credit=0` cho MOI luot LLM (`ai.py:885`) va so khach tra la gia
-#:    PHANG (`gia.tinh_credit`). Gia tri chinh xac ⛔ khong doi phan quyet — cua
-#:    chi noi *"lan chay nay da dot hon muc da giu chua"*.
-UOC_CREDIT = 1
+#:    `ai.goi_tinh_tien` làm **hai** việc, và ta chỉ muốn **một**:
+#:      (1) **cửa chặn** margin — chỉ chạy khi `uoc_credit` khác 0 (`ai.py:835`);
+#:      (2) **sổ cái** — luôn chạy.
+#:    ⇒ Ta đi qua `goi_tinh_tien` để có **(2)**, và ⛔ **không** trang bị **(1)**.
+#:
+#: ⭐ Lý do của chủ dự án: *"Giá chỉ để tượng trưng. Sau này khi hoàn thiện hệ thống
+#:    và vận hành, tôi sẽ tự đề xuất con số sau."* ⇒ Một cửa chặn ⛔ **không có ngưỡng
+#:    đo được** là một cửa sẽ bị **tắt sau lần báo động giả đầu tiên** — nên đo trước,
+#:    đặt ngưỡng sau.
+#:
+#: ⚠️ **Và phải ĐỒNG NHẤT:** cả **sáu** lời gọi LLM của app đều ⛔ không truyền
+#:    `uoc_credit`. Bật cho **một** chỗ là tạo một cửa mà ⛔ không ai đoán được nó ở
+#:    đâu — tệ hơn cả việc ⛔ không có cửa nào.
+#:
+#: ⇒ Dụng cụ thay cửa: `dong_ho["giay_llm_nan"]` · `dong_ho["giay_tts"]` ·
+#:    `so_doan_nan_oan`, đọc bằng `tools/asv_doi_soat.py`. Chúng **thấy** lượt nào
+#:    lỗ mà ⛔ không làm khách gặp lỗi.
 
 
 class HoSoDichLoi(ValueError):
@@ -117,7 +127,7 @@ def dung(db, run, ban_ghi: dict, *, ctx=None) -> dict:
         #    con so o day ⛔ khong ghi de mot nhiet do GHIM nao ca (N-23).
         kq = ai.goi_tinh_tien(db, run, ai.HO_SO_DICH, tin,
                               stage=pipeline.CONTENT_PROCESS,
-                              item_key=ITEM_KEY, uoc_credit=UOC_CREDIT,
+                              item_key=ITEM_KEY,
                               ctx=ctx, temperature=0.2)
         return _doc(kq["noi_dung"])
     except features.AsvError:
