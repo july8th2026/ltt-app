@@ -295,7 +295,18 @@ def test_DO_TAI_hai_preset(moi_truong, tmp_path, monkeypatch):
     for l in luot:
         assert l["trang_thai"] == "done", (l["nhan"], l["nhat_ky"])
         assert [g["ten"] for g in l["giai_doan"] if g["ten"] != "advance"], l["nhan"]
-    assert len(pipeline.CHUOI) == 12
+    # ⭐ **ĐỌC chuỗi, ⛔ KHÔNG chép độ dài của nó.** Bản trước ghim
+    #    `len(pipeline.CHUOI) == 12`; đường ống nay có **13** giai đoạn, nên con số
+    #    ấy đã sai từ lúc `image_finish` ra đời — và ⛔ không ai thấy, vì dòng này
+    #    nằm trong phép kiểm `@NANG` **bị bỏ qua** theo mặc định.
+    #
+    # ⚠️ Ý định thật của nó ⛔ không phải *"đường ống có mấy giai đoạn"* — đó là việc
+    #    của `pipeline.py`. Ý định là **lượt chạy này đã đi HẾT chuỗi**. Chốt đúng
+    #    điều đó thì con số ⛔ không thể trôi nữa.
+    for l in luot:
+        da_di = [g["ten"] for g in l["giai_doan"]
+                 if g["ten"] not in BUOC_NGOAI_CHUOI]
+        assert da_di == list(pipeline.TEN_GIAI_DOAN), (l["nhan"], da_di)
 
 
 def _may() -> dict:
@@ -348,6 +359,44 @@ def test_bao_cao_du_hai_preset_va_dung_luoc_do(bc):
 
     assert bc["schema"] == SCHEMA
     assert {l["preset"] for l in bc["luot"]} == set(hop_dong_v4.PRESET)
+
+
+#: Buoc cua BO CHAY, khong phai giai doan cua `pipeline.CHUOI`.
+BUOC_NGOAI_CHUOI = ("advance", "tai_len")
+
+
+def test_450_bang_chung_phai_PHU_dung_chuoi_giai_doan_HIEN_TAI(bc):
+    """🔴 **Chín phép kiểm dưới đây từng XANH trên bằng chứng ngày 04/09/2026** —
+       một bản ghi thiếu **BA** giai đoạn (`image_finish`, `qc_do_luong`, `qc_ai`),
+       đặt `edit_plan` sai vị trí, và mang một bước `tai_len` ⛔ không thuộc
+       `pipeline.CHUOI`. Đo lúc 27/09: bằng chứng có **11** bước, đường ống có
+       **13** giai đoạn.
+
+    ⚠️ Vì sao ⛔ không ai bắt được: cửa duy nhất so với đường ống là
+       `assert len(pipeline.CHUOI) == ...` **nằm trong phép kiểm `@NANG`**, tức
+       **bị bỏ qua** trên mọi lượt thường. Còn chín phép kiểm đọc `bc` thì ⛔ không
+       một phép nào hỏi *"bản ghi này nói về đường ống NÀO"*.
+
+    ⭐ Nên cửa này phải chạy **LUÔN**, ⛔ không nằm sau `@NANG`: giá trị của nó là
+       làm một bản ghi cũ **ĐỎ** thay vì để chín khẳng định xanh trên một hệ
+       ⛔ không còn tồn tại. Một bằng chứng cũ được *đọc và tin* thì nguy hơn
+       ⛔ không có bằng chứng.
+
+    ⇒ Sửa khi ĐỎ: chạy lại phép đo `@NANG` (`LTT_TEST_NANG=1`) để ghi bản mới,
+      ⛔ **đừng** nới cửa này.
+    """
+    from apps.auto_scan_video import pipeline
+
+    mong = list(pipeline.TEN_GIAI_DOAN)
+    for l in bc["luot"]:
+        co = [g["ten"] for g in l["giai_doan"]
+              if g["ten"] not in BUOC_NGOAI_CHUOI]
+        thieu = [t for t in mong if t not in co]
+        la = [t for t in co if t not in mong]
+        assert co == mong, (
+            f"bang chung ({bc.get('ghi_luc')}) noi ve mot duong ong KHAC: "
+            f"luot {l.get('nhan')!r} thieu {thieu}, co them {la}; "
+            f"chay lai phep do NANG de ghi ban moi")
 
 
 def test_KHONG_giai_doan_nao_dat_may_vao_bao_hoa(bc):
