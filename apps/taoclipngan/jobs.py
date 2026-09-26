@@ -210,7 +210,7 @@ def handle(params: dict, ctx=None) -> dict:
         # Key theo candidate_id (CandidateClip KHONG co clip_id); ClipSpec.clip_id ==
         # candidate.candidate_id → join dung, title/score moi khong bi trong.
         cand_by = {getattr(c, "candidate_id", None): c for c in candidates}
-        clips_out = []
+        clips_out: list[dict] = []
         for i, clip_spec in enumerate(selected, 1):
             if ctx is not None:
                 ctx.progress(min(97, 68 + int(i * 29 / max(len(selected), 1))),
@@ -264,8 +264,13 @@ def handle(params: dict, ctx=None) -> dict:
         # chưa có corpus tham chiếu). Clip nào không có từ confidence → None,
         # UI tự ẩn.
         from apps.taoclipngan.features import tin_cay_ghi_loi
-        total_words = sum(len(seg.get("words") or [])
-                          for c in clips_out for seg in c["transcript"])
+        total_words = 0
+        for _c in clips_out:
+            for _seg in _c["transcript"]:
+                _words = _seg.get("words") if isinstance(_seg, dict) \
+                    else getattr(_seg, "words", None)
+                if isinstance(_words, (list, tuple)):
+                    total_words += len(_words)
         for clip in clips_out:
             clip["transcript_confidence"] = tin_cay_ghi_loi(clip["transcript"], total_words)
 

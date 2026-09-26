@@ -44,6 +44,8 @@ test_3505_wf_flow_d_poll_pg.py::CAN_VO
 test_3505_wf_flow_d_poll_pg.py::vo_that
 test_361_cua_so_yen.py::test_may_ban_KHONG_dem_chinh_no_va_chuoi_cha
 test_362_cay_rieng_va_deploy.py::test_cay_lien_ket_co_dot_git_la_TEP
+test_4107_phu_thuoc_npm_da_cai.py::test_TIEM_LOI_thieu_mot_goi_thi_bao_DUNG_thu_muc_va_lenh_sua
+test_4109_cay_gate_ngoai_kho.py::test_cay_gate_THAT_neu_da_dung_thi_phai_DETACH
 test_4230_wf_code_isolated_vm.py::CAN_WINDOWS
 test_4230_wf_code_isolated_vm.py::vo
 test_4231_wf_code_dien_tap_thoat_vo.py::CAN_WINDOWS

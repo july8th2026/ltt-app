@@ -3,7 +3,7 @@
 # mot-doi-mot (xoa mot var-annotated vo hai, them mot attr-defined
 # la AttributeError luc chay -> tong khong doi).
 
-arg-type = 108
+arg-type = 109
 assignment = 58
 attr-defined = 186
 call-overload = 10
