@@ -66,7 +66,8 @@ cây phát triển chạy được vì `node_modules` của nó **cũ hơn** kha
 
 ⛔ `npm ci` ⛔ KHÔNG chạy trong `chuan-bi` mặc định: nó là **lệnh nặng**, và
 `chuan-bi` phải chạy được cả khi phiên khác đang giữ `cpu_nhieu`. Phải xin
-tường minh: `chuan-bi --cai-npm`, và nó tự đi qua `chay_nang.py`.
+tường minh: `chuan-bi --cai-npm`, và khi ấy nó giữ `cpu_nhieu` qua
+`tools/cua_so_yen.py` — **một khoá mỗi thư mục**, nhả ngay khi thư mục ấy xong.
 
 ## Python thì ⛔ không cần cài gì cả
 
@@ -221,13 +222,27 @@ def dong_bo_npm(cay: Path, *, cai: bool) -> int:
         print("      SUA: python tools/cay_gate.py chuan-bi --cai-npm")
         return 1
 
-    # ⭐ `npm ci` la LENH NANG => di qua `chay_nang.py` de giu dung MOT luot
-    #    nang moi luc tren ca may. ⛔ Dung goi `npm` truc tiep o day.
-    chay_nang = Path(__file__).resolve().parent / "chay_nang.py"
+    # ⭐ `npm ci` la LENH NANG => phai giu `cpu_nhieu` de dung MOT luot nang moi
+    #    luc tren ca may. ⛔ Dung goi `npm` truc tiep o day.
+    #
+    # 🔴 Ban dau goi `chay_nang.py` — va no KHONG CO trong kho: no song o
+    #    `~/.claude/ltt/chay_nang.py`, tuc cau hinh CA NHAN cua may nay.
+    #    `[Errno 2] No such file or directory` ngay lan chay that dau tien.
+    #    ⭐ Mot cong cu TRONG kho ⛔ khong duoc phu thuoc mot duong dan ngoai
+    #       kho: no se hong o moi may khac, va hong theo kieu im lang neu ai do
+    #       tinh co co mot tep cung ten. `tools/cua_so_yen.py` la nguon TRONG
+    #       kho cua dung cai khoa ay, va no da co san context manager.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from cua_so_yen import CuaSoYen  # type: ignore[import-not-found]
+
     for d in thieu:
         print(f"\n  [..] npm ci trong {cay / d}")
-        ra = subprocess.run([sys.executable, str(chay_nang), "--phien", "cay-gate",
-                             "--", "npm", "ci"], cwd=cay / d)
+        # ⭐ Khoa bao DUNG lenh tinh, moi thu muc mot luot: nha ngay khi xong
+        #    de phien khac khong phai cho ca chum. (Luat "nha khoa ngay khi
+        #    tinh xong" — mot phien tung giu khoa 22 phut cho mot viec CHO.)
+        with CuaSoYen("cay-gate", f"npm ci {d}"):
+            ra = subprocess.run(["npm.cmd" if sys.platform == "win32" else "npm",
+                                 "ci"], cwd=cay / d)
         if ra.returncode != 0:
             print(f"  ⛔ `npm ci` that bai o {d} - ma thoat {ra.returncode}")
             return 1

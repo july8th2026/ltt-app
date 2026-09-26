@@ -12,6 +12,70 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-26 — Cây chính: KHÔNG phải một tranh chấp, mà BỐN chiều độc lập
+
+**Việc 3 của kế hoạch vận hành wf-v2** (`docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md`
+mục nợ 3) mở ra với đề bài *"khoá cây chính, va 2 lần trong một tối"*. Đo lại
+trước khi làm thì **sáu** lần, trên **bốn chiều ⛔ không liên quan nhau**:
+
+| chiều | đã vỡ thế nào |
+|---|---|
+| nội dung cây | gate bị vô hiệu vì người khác `merge` giữa lượt (**×2**) |
+| sổ ref | `git commit` chết: `cannot lock ref 'HEAD'` |
+| HEAD/nhánh | một lượt gộp **mang theo** commit của phiên thứ ba |
+| HEAD/nhánh | một commit **đi lạc nhánh** — đúng nội dung, sai nhánh, ⛔ không ai thấy |
+| index | một lượt gộp bị chặn bởi tệp **đang staged** của phiên khác |
+
+⇒ **Một khoá `cay_chinh` là hình dạng SAI.** Khoá tuần tự hoá việc **TÍNH**;
+đây là tranh chấp về **CHỖ ĐỨNG**. Đổi chỗ đứng thì tranh chấp **mất hẳn**,
+⛔ không phải xếp hàng: `git merge` 3 giây của phiên khác ⛔ không còn phải chờ
+một lượt gate 20 phút.
+
+- **`tools/cay_gate.py`** (`25b848e2`) — dựng/làm mới worktree **NGOÀI kho**,
+  `--detach` ở tip `main`, rồi chạy `gate.py` ở đó. ⭐ ⛔ **Không sửa `gate.py`**:
+  nó đã dùng `ROOT = Path(__file__).parent.parent` nên tự đo cây nó nằm trong
+  (đã xác minh bằng cơ học: `gate.ROOT == D:\LTTSTUDIOSAPP-cay-gate`).
+  🔑 Giá trị thật: nó đo **`main` ĐÃ COMMIT** ⇒ miễn nhiễm **cả hai** thứ từng
+  làm bẩn phán quyết, kể cả ca 25/09 đo *"`main` **cộng 8 tệp chưa commit** của
+  phiên khác"* — mà nếu ca ấy XANH thì còn tệ hơn, vì ⛔ không ai đi điều tra
+  một lượt xanh.
+- **`tools/check_worktree_trong_kho.py`** + bước gate (`fe4a70d8`, `e337a712`) —
+  worktree **trong** kho thổi mọi bánh cóc gấp đôi. ⭐ Luật thật cần **CẢ HAI**
+  vế (gitignored **và** máy quét đã loại): công cụ tôn trọng gitignore và công
+  cụ quét hệ tệp mù theo **hai kiểu khác nhau**.
+
+### Ba lỗi của chính tôi trong lượt này, cả ba đều là kênh đo sai
+
+1. **`chay_nang.py` ⛔ không có trong kho** — nó ở `~/.claude/ltt/`, tức cấu
+   hình **cá nhân** của máy này. Lần chạy thật đầu tiên chết `[Errno 2]`.
+   ⭐ Một công cụ **trong** kho ⛔ không được phụ thuộc đường dẫn **ngoài** kho:
+   hỏng ở mọi máy khác, và hỏng **im lặng** nếu nơi đó tình cờ có tệp cùng tên.
+   Thay bằng `tools/cua_so_yen.py` — nguồn **trong kho** của đúng khoá ấy, một
+   khoá mỗi thư mục, nhả ngay khi thư mục đó xong (`0ba633bc`).
+2. **Phép kiểm chốt CÁCH GÕ** — `assert "chay_nang.py" in van`. Nó **XANH**
+   trong khi mã **hỏng thật**: chốt sự có mặt của một **chuỗi** ⛔ không biết gì
+   về việc tệp ấy có tồn tại. Đổi sang tính chất: `npm` ⛔ không được gọi khi
+   ⛔ chưa giữ khoá, đo bằng thứ tự thật `["giu-khoa", "npm", "nha-khoa"]`.
+3. **Phép tiêm lỗi dựng worktree THẬT** — khi tôi tháo lớp chặn để chứng minh
+   bánh cóc cắn được, nó **tạo một worktree trong cây chính**, đúng cái bệnh
+   đang đo. `check_worktree_trong_kho.py` bắt được (hai công cụ có che nhau),
+   nhưng ⭐ một phép kiểm ⛔ không được trả giá bằng cây phiên khác đang dùng —
+   bài học `test_4108` đã viết ra, và tôi vi phạm ở đúng tệp số kế tiếp. Đã thu
+   hẹp: chặn `worktree`/`checkout`, cho lệnh **đọc** đi qua.
+
+### Cái giá đã đo, và nó hoá ra là lãi
+
+Cây gate mới ⛔ không có `node_modules` (untracked): `connector_runner` thiếu
+18 gói, `frontend/agent-canvas` 30. Bước gate `phu thuoc npm da cai` FAIL — **và
+FAIL đúng**. ⭐ `npm ci` từ **đúng `package-lock.json` đã commit** đo thêm được
+câu *"lock này có cài được không"* — đúng hình dạng ca `isolated-vm` và
+`jsondiffpatch` hôm 25/09. Phương án junction `node_modules` từ cây chính đã
+**bỏ**: nó phá đúng tính chất công cụ này tồn tại để có.
+
+⚠️ **Nợ con còn lại**: chiều **commit đi lạc nhánh** vẫn ⛔ chưa ai canh. Nó
+⛔ không thuộc cây gate (cây gate `--detach`, ⛔ không commit), và một lớp canh
+sẽ đổi hành vi `git commit` của **mọi** phiên ⇒ chờ chủ dự án chốt.
+
 ## 2026-09-26 — VPS: khoá OVH hết hạn phơi BỐN lỗ tiền, và chúng cùng MỘT khuôn
 
 Phiên VPS. Gốc của cả ngày là một dòng trong tài liệu của chủ dự án:
