@@ -82,25 +82,33 @@ async def _chay(kich_ban: str, cho_giay: float) -> str:
         # Termproxy doi mot dong `user:ticket` truoc khi noi shell vao.
         await ws.send(f"{ve['user']}:{ve['ticket']}\n")
 
-        async def doc(giay: float) -> None:
+        async def doc(giay: float, can: int = 1) -> None:
+            """Doc toi khi thay dau hieu `can` lan, hoac het gio.
+
+            🔴 `can=2` cho luot chay lenh, va do la ca sua 26/09/2026: termproxy
+               **VONG LAI** ca dong lenh, gom ca `echo ___LTT_XONG___`. Ban cu thoat
+               ngay khi thay dau hieu LAN DAU — tuc ngay o dong vong lai, **truoc
+               khi lenh kip chay**. Ket qua: moi lenh doc tra ve dung mot dong lenh
+               + chu "echo", va nguoi dung ket luan "cong cu khong tra dau ra".
+            """
             het = asyncio.get_event_loop().time() + giay
             while asyncio.get_event_loop().time() < het:
                 try:
                     m = await asyncio.wait_for(ws.recv(), timeout=0.6)
                 except asyncio.TimeoutError:
-                    if any(XONG in x for x in ra):
+                    if "".join(ra).count(XONG) >= can:
                         return
                     continue
                 ra.append(m.decode("utf-8", "replace")
                           if isinstance(m, bytes) else str(m))
-                if any(XONG in x for x in ra):
+                if "".join(ra).count(XONG) >= can:
                     return
 
         await doc(3.0)
         ra.clear()
         lenh = f"{kich_ban}\necho {XONG}\n"
         await ws.send(f"0:{len(lenh)}:{lenh}")
-        await doc(cho_giay)
+        await doc(cho_giay, can=2)
     return "".join(ra)
 
 
@@ -120,8 +128,23 @@ def main() -> int:
 
     _nap_env()
     ra = asyncio.run(_chay(kich_ban, args.cho))
-    # Bo phan tu dau hieu tro di: no chi la rac cua shell.
-    print(ra.split(XONG)[0].replace("\r\n", "\n").rstrip())
+    # 🔴 Dau hieu xuat hien HAI lan, va ban cu lay lan dau nen no in ra dung
+    #    DONG LENH chu khong phai dau ra:
+    #
+    #      <termproxy VONG LAI ca dong lenh, gom ca `echo ___LTT_XONG___`>
+    #      <dau ra that>
+    #      ___LTT_XONG___          <- dau hieu THAT
+    #
+    #    `split(XONG)[0]` cat o lan VONG LAI => tra ve phan truoc no, tuc chinh
+    #    doan lenh. Do 26/09/2026: moi lenh doc deu tra ve dung mot dong lenh +
+    #    chu "echo", va toi da ket luan "cong cu khong tra dau ra" — no co tra,
+    #    chi bi cat sai cho.
+    #
+    # ⇒ Doan GIUA hai dau hieu moi la dau ra. Con mot dau hieu (shell khong vong
+    #   lai) thi doan dau la dau ra.
+    phan = ra.split(XONG)
+    dau_ra = phan[1] if len(phan) >= 3 else phan[0]
+    print(dau_ra.replace("\r\n", "\n").strip())
     return 0
 
 

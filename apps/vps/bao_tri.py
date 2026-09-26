@@ -918,6 +918,28 @@ def dem_profile_mat_tin_hieu(db) -> int:
         if so_lan_mat_tin_hieu(profile))
 
 
+def co_gi_de_doi_chieu(*, so_may: int, so_ip: int) -> bool:
+    """Ho so nay co gi trong SO CUA TA de doi chieu khong.
+
+    Doi chieu ton tai de **so so cua ta voi the gioi that**. So khong co dong nao
+    cho mot ho so ⇒ khong co gi de so, va mot loi nha cung cap o day khong noi gi
+    ve du lieu cua ta.
+
+    🔴 Ca that: ho so Vultr `...0401` la `STANDBY`, 0 may, 0 IP (da chuyen han sang
+       OVH), nhung khoa Vultr bi tu choi (`401 Unauthorized IP address`) ⇒ hai dong
+       WARNING **moi 10 phut**, nhieu ngay. Cai gia khong phai dung luong log — no
+       la **nguoi doc thoi doc WARNING**, va luc ay mot canh bao that se troi qua.
+
+    ⚠️ Doi hoi CA HAI rong. Mot ho so 0 may ma **con IP** thi van phai doi chieu:
+       do dung la ca *"IP dang tinh tien ma so khong biet"*, thu dat nhat ma vong
+       nay sinh ra de bat.
+
+    ⛔ Luat neu TINH CHAT, khong liet ke ten nha cung cap — mot luat ta ten thi moi
+       nha cung cap moi la mot lan sua (cung benh voi `.codex` trong `ruff.toml`).
+    """
+    return int(so_may) > 0 or int(so_ip) > 0
+
+
 def _doi_chieu_profiles(db):
     """Read each profile independently; no fallback to legacy provider drivers."""
     # ⚠️ MỐC RIÊNG. Trước 24/09/2026 hàm này và `_doi_chieu_dinh_ky` dùng CHUNG
@@ -930,8 +952,17 @@ def _doi_chieu_profiles(db):
     from sqlalchemy import select
     from apps.vps.services.reconciliation import reconcile_profile
     from apps.vps.tables import VpsInfrastructureProfile
+    from sqlalchemy import func
+    from apps.vps.tables import VpsInstance, VpsIp
     findings = 0
     for profile in db.execute(select(VpsInfrastructureProfile)).scalars():
+        so_may = db.execute(select(func.count()).select_from(VpsInstance).where(
+            VpsInstance.infrastructure_profile_id == profile.id,
+            VpsInstance.trang_thai != "da_xoa")).scalar() or 0
+        so_ip = db.execute(select(func.count()).select_from(VpsIp).where(
+            VpsIp.infrastructure_profile_id == profile.id)).scalar() or 0
+        if not co_gi_de_doi_chieu(so_may=so_may, so_ip=so_ip):
+            continue
         try:
             result = reconcile_profile(db, profile,
                 compute=backend_factory.compute_backend(profile),
