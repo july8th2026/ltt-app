@@ -655,6 +655,18 @@ git commit -F- -- apps/auto_scan_video/ngon_ngu.py apps/auto_scan_video/nan_thoi
 
 ---
 
+> 🔴 **TASK 7 ĐÃ BỊ HUỶ HÌNH DẠNG NÀY — ⛔ ĐỪNG THI HÀNH (26/09).**
+>
+> Nó nhắm vào `dich_thuat._loi_nhac`, và module đó là **ĐƯỜNG CHẾT**
+> (`thi_hanh.py:124`, `van_ban.py:78`). Đường dịch thật là `long_tieng.loi_nhac`.
+> Trên đường thật, **số giây đã có** (`thoi_luong_giay`), **ngữ cảnh trước/sau đã
+> có** (`ngu_canh_ke`), **lô là 12 ⛔ không phải 20**, và hằng số phiên bản lời nhắc
+> là hằng số **khác**.
+>
+> ⇒ Xem `B2_PLAN_NGU_CANH_DICH.md` §0. Việc còn lại **thật sự** là **Task 7b**: cho
+> cửa sổ ngữ cảnh mang **BẢN ĐÃ DỊCH** của lô trước (nay nó chỉ mang bản **gốc**), và
+> nối `ho_so_dich` vào lời nhắc của `long_tieng`. Điều phối sẽ soạn lại brief.
+
 ## Task 7 · Dịch mang NGỮ CẢNH: hồ sơ + cửa sổ trượt + số giây  (làn C)
 
 **Files:**
