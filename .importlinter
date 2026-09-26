@@ -86,6 +86,16 @@ ignore_imports =
     apps.taovideo.routes -> apps.upscalevideo.cost
     apps.taovideo.routes -> apps.upscalevideo.service
 
+    # `prompt_ai_ommi` dung lai `apps.taovideo.refs` de KHONG chep lai bo
+    # gia tri `role` cua anh tham chieu. Chep lai la hai cho khai cung mot
+    # dieu, va cho sai se la cho khach nhin thay.
+    #
+    # LUU Y: canh nay da khai o CA HAI dau trong `tools/lint_app_contract.py`
+    #    (`APP_DUOC_DUNG_APP`) va `apps/taovideo/__init__.py`
+    #    (`BE_MAT_CONG_KHAI`). Ba cho, ba cong cu khac nhau -- bo cho nao
+    #    cung mat mot lop bao ve. Xem dau tep vi sao giu ca hai cong cu.
+    apps.prompt_ai_ommi.services.bindings -> apps.taovideo.refs
+
 
 [importlinter:contract:server-khong-phu-thuoc-app-cu-the]
 name = server khong duoc import mot app cu the

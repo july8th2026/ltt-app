@@ -1716,7 +1716,22 @@ def load_app_tables(apps_dir: pathlib.Path = APPS_DIR) -> list[str]:
     for entry in sorted(apps_dir.iterdir()):
         if not entry.is_dir() or entry.name.startswith(("_", ".")):
             continue
-        if not (entry / "tables.py").exists():
+        # `tables.py` HOẶC package `tables/` — hai hình dạng, cùng một nghĩa.
+        #
+        # 🔴 Trước 26/09/2026 chỗ này chỉ kiểm `tables.py` là một TỆP. Một app
+        #    tách `tables.py` thành package `tables/` (việc hoàn toàn bình thường
+        #    khi tệp phình quá) liền bị bỏ qua **IM LẶNG**: không lỗi, không cảnh
+        #    báo, chỉ là `Base.metadata` thiếu hết bảng của app đó.
+        #
+        #    Đo được 26/09: `apps/prompt_ai_ommi` tách package ⇒ 14 bảng `ommi_*`
+        #    biến khỏi metadata. `alembic/env.py:30` gọi chính hàm này, nên lần
+        #    `revision --autogenerate` kế tiếp sẽ sinh **DROP TABLE cho cả 14
+        #    bảng** — đúng cái docstring trên cảnh báo là "quá muộn".
+        #
+        # ⛔ Đừng thu hẹp lại thành một hình dạng: đây là hợp đồng chung, không
+        #    phải vá cho một app. App nào tách package cũng phải chạy được.
+        if not ((entry / "tables.py").exists()
+                or (entry / "tables" / "__init__.py").exists()):
             continue
 
         mod = importlib.import_module(f"apps.{entry.name}.manifest")

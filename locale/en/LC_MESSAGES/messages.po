@@ -6328,6 +6328,10 @@ msgstr "Artifact not found."
 msgid "Không tìm thấy asset."
 msgstr "Asset not found."
 
+#: apps/prompt_ai_ommi/routes/bindings.py
+msgid "Không tìm thấy binding."
+msgstr "Binding not found."
+
 #: apps/taoclipngan/routes.py:520
 msgid "Không tìm thấy clip."
 msgstr "Clip not found."
