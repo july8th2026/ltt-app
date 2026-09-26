@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from platform_core.i18n import _ as _t
 from platform_core import phat_media
+import base64 as _base64
 from pathlib import PurePath
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
@@ -178,14 +179,16 @@ def _clean_seed(value: str) -> int | None:
 
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, status: str = "all", sort: str = "newest",
-         model: str = "", aspect: str = "", user: str = Depends(require_login)):
+         model: str = "", aspect: str = "", tu_studio: str = "",
+         user: str = Depends(require_login)):
     status = status if status in {"all", "running", "done", "error", "cancelled"} else "all"
     sort = sort if sort in {"newest", "oldest"} else "newest"
     data = _jobs_cua_toi(request, status, sort, model, aspect)
     return _render(request, user, jobs=data["items"], job_counts=data["counts"],
                    prompt_history=data["history"], saved_assets=data["assets"],
                    active_status=status, active_sort=sort,
-                   active_model=data["model_filter"], active_aspect=data["aspect_filter"])
+                   active_model=data["model_filter"], active_aspect=data["aspect_filter"],
+                   tu_studio_ticket_id=tu_studio[:64])
 
 
 @router.post("/estimate", response_class=HTMLResponse)
@@ -351,6 +354,110 @@ async def _luu_refs(u_id: str, files, roles, handles=None, *, copies: int = 1,
     return groups if grouped else groups[0]
 
 
+#: Tran ref prefill. `taovideo` von cho toi da 4 tai san moi job
+#: (`_luu_refs` + `_saved_refs_for_user`), con ben giao bai cho toi 9 anh. Hai
+#: tran KHAC NHAU va day la cho chung gap nhau: ta giu tran 4 cua app nay
+#: (app `lifecycle="released"`, doi tran la doi hanh vi cho khach dang dung),
+#: va tra ve SO anh bi bo (`bo_qua`) de JS noi ro voi khach. Cat am tham la
+#: dung con bo N-1 ma ca pha nay dang chua.
+TRAN_REF_PREFILL = 4
+
+#: Duoi tep theo content-type — ba kieu nay khop `allowed_types` duoi day.
+#: KHONG dung `.bin`: `upload_sessions.promote()` lay duoi cua `filename` lam
+#: duoi cua `final_key`, va mot key `.bin` lam moi cho doan kieu theo duoi
+#: (route phat media, CDN) thay `application/octet-stream` — mot lech im lang
+#: giua HAI duong nop cho CUNG mot thu (da do that tren trinh duyet).
+_DUOI_ANH = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
+
+
+def _stage_prefill_refs(u_id: str, refs: list, *, tran: int = TRAN_REF_PREFILL
+                        ) -> tuple[list, int]:
+    """Giai ma refs cua ve giao bai (anh: data URL) thanh `upload_sessions`.
+
+    Tra `(staged, bo_qua)`. Chi xu ly `kind == "image"` voi `url` dang `data:`
+    — day la duong duy nhat ben giao bai tao ra cho anh (da qua
+    `normalize_image`/`image_to_inline`). Video/audio mang URL http/duong dan
+    app, khong tu dong tai ve o Pha 2; chung duoc dem vao `bo_qua` de JS noi
+    ro, chu khong bien mat im lang.
+    """
+    from platform_core import upload_sessions
+    from platform_core.db import get_session
+    from platform_core.storage import get_storage
+    storage = get_storage()
+    staged: list[dict] = []
+    bo_qua = 0
+    gen = get_session(); db = next(gen)
+    try:
+        for index, ref in enumerate(refs or []):
+            url = str((ref or {}).get("url") or "")
+            if str((ref or {}).get("kind") or "") != "image" or not url.startswith("data:"):
+                bo_qua += 1
+                continue
+            if len(staged) >= max(0, int(tran)):
+                bo_qua += 1
+                continue
+            header, _, b64data = url.partition(",")
+            try:
+                data = _base64.b64decode(b64data, validate=True)
+            except (ValueError, TypeError):
+                bo_qua += 1
+                continue
+            ct = (header.split(";")[0][5:] or "image/png").lower()
+            if not data or len(data) > _CAP["image"]:
+                bo_qua += 1
+                continue
+            try:
+                session = upload_sessions.stage_bytes(
+                    db, storage, user_id=u_id, app_slug=MANIFEST.slug,
+                    filename=f"prefill-{index}{_DUOI_ANH.get(ct, '.png')}",
+                    content_type=ct, data=data, max_size=_CAP["image"],
+                    allowed_types=("image/png", "image/jpeg", "image/webp"))
+            except (ValueError, upload_sessions.UploadSessionError):
+                bo_qua += 1
+                continue
+            staged.append({"kind": "image", "upload_id": session.id,
+                           "role": str((ref or {}).get("role") or "reference_image"),
+                           "handle": str((ref or {}).get("handle") or "")[:32]})
+        db.commit()
+        return staged, bo_qua
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+@router.post("/prefill")
+async def prefill_apply(request: Request, user: str = Depends(require_login)):
+    """Nhan payload giao bai (JSON tho) tu JS, tra gia tri dien form + ref da stage.
+
+    Route nay KHONG BAO GIO tu goi sang `/prompt-ai-ommi/...`: trinh duyet da tu
+    `fetch()` payload (cung goc, cung phien) roi POST nguyen van sang day. Neu
+    thay minh sap viet `httpx.get("/prompt-ai-ommi/...")` o day, do la dau hieu
+    dang pha ranh gioi app->app — dung lai.
+    """
+    body = await request.json()
+    if not verify_csrf_token(request, str((body or {}).get("csrf_token") or "")):
+        return JSONResponse({"error": _t('Phiên đã hết hạn — tải lại trang.')},
+                            status_code=400)
+    u = user_hien_tai(request)
+    if u is None:
+        return JSONResponse({"error": _t('Cần đăng nhập bằng tài khoản người dùng.')},
+                            status_code=403)
+    tho = (body or {}).get("payload")
+    payload = tho if isinstance(tho, dict) else {}
+    from apps.taovideo import prefill
+    values = prefill.build_form_values(payload)
+    refs = payload.get("refs")
+    try:
+        ref_keys, bo_qua = _stage_prefill_refs(
+            u.id, refs if isinstance(refs, list) else [])
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    return {"values": values, "ref_keys": ref_keys, "bo_qua": bo_qua}
+
+
 def _saved_refs_for_user(user_id: str, keys: list[str]) -> list[dict]:
     """Resolve key từ lịch sử job owner; browser không được tự khai storage key."""
     requested = list(dict.fromkeys(str(k) for k in (keys or [])))
@@ -413,6 +520,9 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
                 ref_audios: list[UploadFile] = File(default=[]),
                 ref_roles: list[str] = Form(default=[]), ref_handles: list[str] = Form(default=[]),
                 saved_ref_keys: list[str] = Form(default=[]),
+                prefill_upload_ids: list[str] = Form(default=[]),
+                prefill_roles: list[str] = Form(default=[]),
+                prefill_handles: list[str] = Form(default=[]),
                 quote_id: str = Form(""),
                 user: str = Depends(require_login)):
     from platform_core import credit, upload_sessions
@@ -472,6 +582,30 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
             staged_ref_groups = await _luu_refs(
                 u.id, actual_files, ref_roles, ref_handles,
                 copies=n, grouped=True)
+            # Ref da stage san boi `/prefill` (duong giao bai). Khong co
+            # `prefill_upload_ids` thi khoi nay la KHONG-OP — moi duong cu
+            # (file moi / tai san da luu) chay y nhu truoc.
+            con_cho = max(0, 4 - len(saved_refs) - len(actual_files))
+            for i, upload_id in enumerate(prefill_upload_ids[:con_cho]):
+                session = upload_sessions.owned(
+                    db, session_id=upload_id, user_id=u.id,
+                    app_slug=MANIFEST.slug)
+                if session is None:
+                    continue  # phien het han/da dung — bo qua, khong chan submit
+                role = (prefill_roles[i] if i < len(prefill_roles)
+                        else "reference_image")
+                handle = (prefill_handles[i] if i < len(prefill_handles) else "")
+                # CHI nhom dau tien: mot `upload_session` chi `promote` duoc MOT
+                # lan, nen dua cung mot ve cho hai variant se lam job thu hai vo
+                # (dung ly do `_luu_refs` phai stage BAN SAO rieng cho tung
+                # variant). Duong giao bai luon `count=1` (JS ep vay).
+                staged_ref_groups[0].append({
+                    "kind": "image", "storage_key": session.staging_key,
+                    "upload_id": session.id, "role": role,
+                    "handle": handle[:32], "name": session.filename,
+                    "content_type": session.content_type,
+                    "size": session.actual_size,
+                })
         except ValueError as exc:
             db.rollback()
             return _render(request, user, error=str(exc),
