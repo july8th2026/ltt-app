@@ -12,6 +12,59 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-26 — PROMPT AI pha 1 xong, va mot chieu THU NAM cua tranh chap index
+
+**Pha 1 cua `docs/superpowers/plans/2026-09-26-prompt-ai-pha1-cho-noi-dung.md`
+da xong**: 9 Task, 4 lan (M1, A, B1), 45 phep kiem xanh trong mot tien trinh
+(`tests/test_5100..5133`). Ba viec nang nhat pha nay chua:
+
+| # | Con bo | Chua o dau |
+|---|---|---|
+| N-1 | `routes/handoff.py` truyen `refs=[]` va ghi de cung `motion="cinematic"` ⇒ khach tra credit dung prompt khoa nhan vat roi nhan video KHONG co nhan vat cua minh | Task 8 |
+| N-2 | The `@IMAGE_k` sinh roi quen — khong bang nao luu `the <-> variant` | Task 1-5, bang `ommi_binding` |
+| N-3 | App tra 503 tren production vi `LTT_PROMPT_AI_OMMI_ROLLOUT` chua dat | Task 9 — **CHUA lam, cho chu du an** |
+
+### Hai loi cua dieu phoi ma agent bat duoc, khong phai nguoc lai
+
+**1. Mot phep kiem tra loi cau HOI KHAC.** Plan Task 8 do dieu phoi viet nhet
+`skipped_over_limit` vao `params`. `platform_core/agent/tools.py:114-116` tu choi
+MOI khoa la, va `routes/handoff.py` doi loi do thanh **HTTP 422** ⇒ mo i luot giao
+bai video se 422. Khong ai thay vi **test cua chinh plan goi `_handoff_params`
+TRUC TIEP**, khong di qua `validate_tool_params`. Chot thanh spec muc 6.2c:
+`params` chi chua khoa cua `params_schema`; `tag_map`/`skipped`/`skipped_over_limit`
+o `payload` cap ngoai; va phep kiem PHAI goi qua `validate_tool_params`.
+
+**2. `load_app_tables()` bo qua IM LANG app tach `tables/` thanh package.** Ham
+kiem `(entry / "tables.py").exists()` — mot TEP. Do duoc: 0 bang `ommi_*` vao
+`Base.metadata`, ma `alembic/env.py:30` goi chinh ham nay ⇒ mot lan
+`revision --autogenerate` ke tiep sinh **DROP TABLE cho ca 14 bang**. Sua o
+`platform_core/registry.py` (bo sung hop dong chung: app nao tach package cung vap).
+
+### ⭐ Chieu THU NAM cua tranh chap index — dieu phoi va agent dung chung MOT index
+
+Muc "Cay chinh: KHONG phai mot tranh chap, ma BON chieu doc lap" hom nay ghi
+chieu index la *"mot luot gop bi chan boi tep dang staged cua phien khac"*. Ca
+hom nay la cung ho, **chieu khac**:
+
+> Agent (lan B1) `git add` 5 tep cua no roi **de o index** trong luc cho duoc go
+> chan. Dieu phoi `git add <2 tep cua minh>` roi `git commit` — va `git commit`
+> lay **CA INDEX**, khong chi thu vua add. Ket qua: commit `89373211` mang ca
+> spec cua dieu phoi LAN Task 7 + Task 8 cua agent, va thong diep commit khong
+> he nhac hai Task do.
+
+⇒ **Khong phai loi cua agent.** Dieu phoi va agent cung mot worktree thi cung
+mot index; `git add` tuong minh KHONG du, vi `git commit` bo qua danh sach vua add.
+
+**Cach lam dung tu nay:**
+- `git commit -o <duong dan> -m ...` (chi commit dung nhung duong dan do), HOAC
+- `git status --short` truoc khi commit: dong `A `/`M ` la **index**, se bi mang theo;
+  dong `??` la untracked, khong bi mang theo.
+- Brief agent: neu phai dung cho, de viec o **working tree**, ⛔ dung de staged.
+
+**Da chon KHONG viet lai lich su**: nhanh chua push, nhung `reset --soft` mot
+commit chua tep cua ca hai chu la thao tac kho dao tren thay doi nhieu chu
+(luat 7). Noi dung dung va da kiem; `89373211` chua Task 7 + Task 8 cua lan B1.
+
 ## 2026-09-26 — Cây chính: KHÔNG phải một tranh chấp, mà BỐN chiều độc lập
 
 **Việc 3 của kế hoạch vận hành wf-v2** (`docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md`
