@@ -235,13 +235,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # 🔑 Task 11 — MOT lan cho CA video, truoc khi buoc vao vong lo dich tung
     #    lo. `dich_mot_lo`/`long_tieng` la VO TRANG THAI (moi lo chi thay
     #    `{ma: chu}` cua chinh no) nen quan he nhan vat phai duoc quyet MOT
-    #    LAN o day, ⛔ khong phai moi lo mot lan. `dung()` tu no rong khi hong
-    #    — ⛔ khong lam chet luot chay.
+    #    LAN o day, ⛔ khong phai moi lo mot lan.
     #
-    # ⚠️ Ho so nay CHUA duoc noi vao loi nhac (`long_tieng.loi_nhac`) — do la
-    #    viec cua buoc noi tiep theo (chua lam trong task nay). O day chi
-    #    dung ho so va ghi no vao `tom_tat` de co bang chung no da chay.
-    ho_so = ho_so_dich.dung(db, goc, ctx=ctx)
+    # ⭐ Ho so DA duoc noi vao loi nhac: `ho_so=ho_so` di vao `long_tieng.loi_nhac`
+    #    o vong lo duoi, va `loi_nhac` THAT SU dung `bang_dai_tu` /
+    #    `bang_ten_rieng` cua no (`test_408::test_loi_nhac_mang_BANG_DAI_TU...`).
+    #    Ngoai ra ho so con vao `tom_tat["ho_so_dich"]` de co bang chung no da
+    #    chay. (Chu thich truoc day khai *"CHUA duoc noi vao loi nhac"* — cau ay
+    #    dung cho buoc dau cua Task 11 va ⛔ da sai tu khi Task 7b noi xong.)
+    #
+    # ⚠️ `dung()` nem khi CUA CHAN ngan sach (`features.AsvError`) va tra ho so
+    #    RONG khi model tra rac — hai ca khac loai, xem docstring cua no.
+    ho_so = ho_so_dich.dung(db, run, goc, ctx=ctx)
 
     vt = long_tieng.van_tay_long_tieng(
         checksum_ban_ghi=checksum, van_tay_ban=van_tay_ban,
