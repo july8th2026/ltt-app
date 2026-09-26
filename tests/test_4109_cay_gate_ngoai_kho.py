@@ -152,14 +152,91 @@ def test_TIEM_LOI_chay_KHONG_goi_gate_khi_thieu_node_modules(monkeypatch, tmp_pa
     assert da_goi == [], f"van goi gate du biet se FAIL: {da_goi}"
 
 
-def test_npm_ci_DI_QUA_chay_nang_khong_goi_npm_truc_tiep():
+def test_npm_ci_phai_GIU_KHOA_may_khong_goi_npm_tran(monkeypatch, tmp_path):
     """`npm ci` là **lệnh nặng**: luật máy đòi đúng MỘT lượt nặng mỗi lúc.
 
-    ⭐ Chốt bằng ĐƯỜNG DẪN `chay_nang.py` trong mã, cùng khuôn `test_4107`/`4108`
-       dùng để chốt *"gate CÓ gọi bộ đo này"*.
+    🔴 Bản đầu của phép này chốt `"chay_nang.py" in van` — **chốt cách gõ, ⛔ không
+       chốt tính chất**, đúng cái bẫy `banh-coc-do-cach-go` đã ghi. Và nó **xanh**
+       trong khi mã **hỏng thật**: `chay_nang.py` ⛔ không nằm trong kho (nó ở
+       `~/.claude/ltt/`), nên lần chạy thật đầu tiên chết `[Errno 2]`. Một phép
+       kiểm chốt sự có mặt của một **chuỗi** ⛔ không biết gì về việc tệp ấy có
+       tồn tại hay không.
+
+    ⭐ Tính chất thật: `npm` ⛔ không được gọi khi ⛔ chưa giữ khoá máy.
     """
+    m = _nap()
+    (tmp_path / "goi").mkdir()
+
+    thu_tu: list[str] = []
+    giu = False
+    lan = []
+
+    def _thieu_gia(cay):
+        # lan 1 = truoc khi cai (con thieu) · lan 2 = kiem lai sau khi cai (du)
+        lan.append(1)
+        return ["goi"] if len(lan) == 1 else []
+
+    monkeypatch.setattr(m, "thu_muc_npm_thieu", _thieu_gia)
+
+    class _KhoaGia:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            nonlocal giu
+            giu = True
+            thu_tu.append("giu-khoa")
+            return self
+
+        def __exit__(self, *a):
+            nonlocal giu
+            giu = False
+            thu_tu.append("nha-khoa")
+            return False
+
+    monkeypatch.syspath_prepend(str(ROOT / "tools"))
+    import cua_so_yen  # type: ignore[import-not-found]
+    monkeypatch.setattr(cua_so_yen, "CuaSoYen", _KhoaGia)
+
+    def _run_gia(cmd, **k):
+        assert giu, f"⛔ goi {cmd} khi CHUA giu khoa may"
+        thu_tu.append("npm")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(m.subprocess, "run", _run_gia)
+    assert m.dong_bo_npm(tmp_path, cai=True) == 0
+    assert thu_tu == ["giu-khoa", "npm", "nha-khoa"], thu_tu
+
+
+def test_cua_so_yen_la_nguon_TRONG_kho():
+    """⭐ Công cụ **trong** kho ⛔ không được phụ thuộc đường dẫn **ngoài** kho.
+
+    🔴 Ca thật ở trên: `chay_nang.py` sống ở `~/.claude/ltt/` — cấu hình **cá
+       nhân** của một máy. Nó sẽ hỏng ở mọi máy khác, và hỏng **im lặng** nếu
+       nơi đó tình cờ có một tệp cùng tên.
+    """
+    assert (ROOT / "tools" / "cua_so_yen.py").exists()
     van = CONG_CU.read_text(encoding="utf-8")
-    assert "chay_nang.py" in van
+    assert "from cua_so_yen import CuaSoYen" in van
+
+    # 🔴 Ban dau chia van ban theo `\"\"\"` de bo docstring — va no dem ca CHU
+    #    THICH, nen do oan vi mot dong ke lai lich su. Doc AST thi chu thich
+    #    khong ton tai, con chuoi va ten thi co: dung kenh tra loi duoc cau
+    #    *"ma CO CHAY dung toi no khong"*.
+    import ast
+    cay = ast.parse(van)
+    goi_toi = [n for n in ast.walk(cay)
+               if (isinstance(n, ast.Constant) and isinstance(n.value, str)
+                   and "chay_nang" in n.value)
+               or (isinstance(n, ast.Name) and "chay_nang" in n.id)
+               or (isinstance(n, ast.Attribute) and "chay_nang" in n.attr)]
+    # Docstring cua module duoc ke lich su => loai dung no, khong loai ca ho.
+    ds = ast.get_docstring(cay) or ""
+    goi_toi = [n for n in goi_toi
+               if not (isinstance(n, ast.Constant) and n.value == ds)]
+    assert goi_toi == [], (
+        f"ma con dung toi `chay_nang` o dong {[n.lineno for n in goi_toi]} — "
+        "no khong co trong kho, no o `~/.claude/ltt/`")
 
 
 def test_dong_bo_npm_TON_TRONG_mien_tru_CHUA_CAI_cua_bo_do_goc(monkeypatch):
