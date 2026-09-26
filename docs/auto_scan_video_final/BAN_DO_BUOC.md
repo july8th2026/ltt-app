@@ -114,6 +114,13 @@ so_tu      = 0         canh_chinh = "ocr_frame"
 dinh_tuyen = {che_do: "auto", ly_do: ["khong_co_phu_de_nhung"]}
 ```
 
+⛔ **BỐN con số trên là của ĐƯỜNG ĐÃ BỊ (26/09, Task 21), giữ làm ảnh chụp.**
+Sản phẩm nay chỉ đi **MỘT** đường voice → voice, nên một lượt `transcribe` hôm nay
+cho `nguon_loi = "asr"`, `canh_chinh` thuộc `{aligned, fallback_unaligned}`,
+`dinh_tuyen = {che_do: "asr", nguon_loi: "asr", ly_do: [], cat_lai: {...}}`, và
+`so_tu > 0`. ⭐ Chính vì thế hai câu hỏi ngay dưới đã đổi câu trả lời — xem
+`B1_PLAN_DUONG_ONG_GD1.md` §11 và `apps/auto_scan_video/nguon_loi.py` đầu tệp.
+
 ⚠️ Hai điều bản đồ **chưa** trả lời được, và bước `transcribe` phải trả lời:
 
 1. **`so_tu = 0` với `so_doan = 95`.** Đường OCR không đếm từ, hay nó đếm sai? Một

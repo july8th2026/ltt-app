@@ -441,3 +441,21 @@ trang ⛔ không được gặp lỗi vì một chế độ ta vừa bỏ.
 ⇒ Thi hành ở **Task 21**, chạy **một mình** (chạm 12 module + 59 tệp test), sau khi các
 làn 17/18/19/20 gộp xong.
 
+### ✅ ĐÃ THI HÀNH — 26/09/2026, làn F (Task 21)
+
+Ba bất biến được ghim ở `tests/test_2041_asv_nguon_loi.py`:
+một chế độ hợp lệ · hồ sơ cũ `"ocr"` đọc ra `"asr"` và ⛔ không ném · ⛔ không
+module nào trong `apps/` nhập RapidOCR (đo bằng **đường nhập / AST**, ⛔ không bằng
+chuỗi — `do_vung.py` còn nhắc tên RapidOCR trong một chú thích ghi một phép ĐO có
+thật, và đó là bằng chứng chứ ⛔ không phải một người gọi).
+
+⭐ Đã xóa: `phu_de_cung.py` · `apps/asv_gpu/do_luong/ocr_khung.py` · `rapidocr` +
+`onnxruntime` khỏi `setup/qc_models_requirements.txt` · nhóm nút *“Lời thoại gốc
+lấy từ đâu”* · `CaiDat.nguon_loi`. ⛔ GIỮ: `ban_ghi.nguon_loi` (provenance),
+`quan_sat.bang_chung_chat_luong` (lần chạy 22–26/09 hiển thị nguyên mã `ocr`),
+`do_vung.do_dai_chu` (dò **vị trí** dải chữ, chạy OpenCV), `L_OCR.md` +
+`l_ocr_gt_v2*.json` (bằng chứng đã trả tiền).
+
+⚠️ **Cái giá:** `tests/test_3009_asv_bench_b1_chay_that.py` đã xóa — xem
+`B1_CHEP_LOI.md` đầu tệp.
+
