@@ -662,58 +662,27 @@ def test_3602_tran_cong_xanh_khi_luoi_min_hon_dung_sai():
     assert r["tran_trung_vi"] == pytest.approx(1.0)
 
 
-# ───────────────────────────────────────────────────────────────────────────
-# 🔴 RÀNG BUỘC ẨN: `fps` đọc OCR ↔ hiệu lực của cổng B1
-# ───────────────────────────────────────────────────────────────────────────
-
-
-def _hang_so_bang_ast(tep: pathlib.Path, ten: str) -> float:
-    """Đọc một hằng số bằng AST — ⛔ không import (module kéo ffmpeg/GPU).
-
-    Bài học `doc-thu-dai-dien-thay-vi-doc-thu-that`: đọc **đúng tệp nguồn**
-    đang chạy, ⛔ không đọc một bản chép trong tài liệu.
-    """
-    import ast
-
-    cay = ast.parse(tep.read_text(encoding="utf-8"))
-    for nut in cay.body:
-        if isinstance(nut, ast.Assign):
-            for dich in nut.targets:
-                if isinstance(dich, ast.Name) and dich.id == ten:
-                    return float(ast.literal_eval(nut.value))
-    raise AssertionError(f"khong tim thay hang so `{ten}` trong {tep.name}")
-
-
-def test_3602_fps_doc_ocr_khong_duoc_ha_duoi_muc_da_hieu_luc():
-    """🔴 Hạ `FPS_DOC` là vô hiệu hoá cổng B1 — ⛔ và nó hỏng IM LẶNG.
-
-    `fps` đọc OCR quyết định độ phân giải mốc của **hardsub**, mà hardsub là
-    **chân lý nền** của `chinh_xac_cho_ngat` (dung sai ±0,3 s, ngưỡng ≥ 0,90).
-
-        4 fps ⇒ lưới 0,25 s < 0,3 s ⇒ trần cổng = 1,0000  ✅
-        điểm gãy ≈ 12 % mốc trôi quá 0,3 s ⇒ trần tụt dưới 0,90
-
-    ⚠️ Đây đúng khuôn `hai-cho-khai-cung-mot-dieu-khong-ai-bat-khop`: giá trị
-    `fps` và tính hợp lệ của một cổng chất lượng khai ở **hai nơi**, và trước
-    hôm nay ⛔ **không chỗ nào trong mã nói chúng ràng buộc nhau**. Ai hạ fps
-    để tiết kiệm GPU sẽ tắt một cổng mà ⛔ không gì kêu lên.
-
-    ⇒ Phép kiểm này **là** chỗ kêu lên.
-    """
-    tep = (
-        pathlib.Path(__file__).resolve().parent.parent
-        / "apps" / "auto_scan_video" / "nguon_loi.py"
-    )
-    fps = _hang_so_bang_ast(tep, "FPS_DOC")
-    da_do = _hang_so_bang_ast(tep, "FPS_DOC_DA_DO_TRAN_CONG_B1")
-    assert fps >= da_do, (
-        f"FPS_DOC={fps} tut duoi muc da do tran cong B1 ({da_do}).\n"
-        "Cong B1 `chinh_xac_cho_ngat` co the da MAT HIEU LUC trong im lang.\n"
-        "=> Chay lai tools/do_luong.py::tran_cua_cong TRUOC, chi ha neu tran "
-        ">= 0,90, roi cap nhat FPS_DOC_DA_DO_TRAN_CONG_B1."
-    )
-    # ⛔ Lưới phải MỊN HƠN dung sai, nếu không lượng tử hoá tự nó ăn mất khớp.
-    assert 1.0 / fps < 0.3, f"luoi {1.0/fps:.3f}s KHONG min hon dung sai 0,3s"
+# ─────────────────────────────────────────────────────────────────────────
+# ⛔ RÀNG BUỘC ẨN ĐÃ XÓA 26/09 (Task 21): `fps` đọc OCR ↔ hiệu lực cổng B1
+#
+#    Bài `test_3602_fps_doc_ocr_khong_duoc_ha_duoi_muc_da_hieu_luc` đọc hai
+#    hằng số `nguon_loi.FPS_DOC` / `FPS_DOC_DA_DO_TRAN_CONG_B1` để chạn việc
+#    hạ fps đọc OCR cho đỡ tốn GPU. Đường OCR đã bỏ ⇒ ⛔ không còn lượt OCR
+#    nào trong tương lai, và hai hằng số đó ⛔ không còn tồn tại.
+#
+# ⭐ ⛔ KHÔNG MẤT ĐỘ PHỦ NÀO — hai bài ở trên đã giữ chính mối lo ấy trên
+#    **vật mang còn sống** (tệp chân lý nền đã đóng băng, tự khai `luoi_s`):
+#      · `test_3602_luoi_MIN_HON_thi_nguong_080_VOI_TOI_DUOC` — lưới thô làm
+#        ngưỡng 0,80 @ 0,3 s ⛔ KHÔNG với tới được (đúng ca “cổng mất hiệu lực”);
+#      · `test_3602_sach_chan_ly_nen_THAT_da_khai_luoi` — tệp đang dùng khai
+#        đúng `luoi_s = 0,5` và 33 dòng.
+#
+# ⚠️ Và hai bài đó nói ra một sự thật mà bài đã xóa ⛔ không nói: lưới của
+#    `l_ocr_gt_v2.json` (0,5 s) **thô hơn** dung sai 0,3 s — nên bản 10 fps
+#    (`l_ocr_gt_v2_10fps.json`, 0,1 s) mới là bản đủ mịn. Bài cũ ghim
+#    `FPS_DOC = 4,0` như “mức đã hiệu lực”, tức nó đo một HẰNG SỐ TRONG MÃ
+#    chứ ⛔ không đo lưới của DỮ LIỆU đang được dùng thật.
+# ─────────────────────────────────────────────────────────────────────────
 
 
 def test_3602_san_may_rui_cua_cham_doi_chung_truc_bicubic():

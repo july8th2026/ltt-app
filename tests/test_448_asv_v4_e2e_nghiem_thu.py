@@ -312,8 +312,7 @@ def _mot_job(db, jobs, _provider_failure_kind, handler, job, ctx,
 
 def _nop_qua_form(client, csrf: str, nguon: Path, *, preset: str,
                   che_do_giong: str, giong_id: str,
-                  ngon_ngu_nguon: str = "", ngon_ngu_dich: str = "",
-                  nguon_loi: str = "") -> str:
+                  ngon_ngu_nguon: str = "", ngon_ngu_dich: str = "") -> str:
     """Nop qua CHINH cai form khach dung. Tra ve `run_id`.
 
     Cap ngon ngu phai nop TUONG MINH khi nghiem thu mot cap cu the. Bo trong thi
@@ -326,9 +325,12 @@ def _nop_qua_form(client, csrf: str, nguon: Path, *, preset: str,
 
     du_lieu = {"csrf_token": csrf, "che_do": "fit_original", "preset": preset,
                "che_do_giong": che_do_giong, "giong_id": giong_id}
+    # ⛔ `nguon_loi` da RUT 26/09 (Task 21): `routes.tao` khong con nhan truong
+    #    do, nen nop no la nop mot truong KHONG AI DOC. ⚠️ Giu tham so lai se
+    #    dung y bay G-02 ma docstring tren mo ta: khuon do noi *"toi dang ep
+    #    nguon nay"* trong khi lan chay di duong mac dinh, va bao cao van XANH.
     for ten, gt in (("ngon_ngu_nguon", ngon_ngu_nguon),
-                    ("ngon_ngu_dich", ngon_ngu_dich),
-                    ("nguon_loi", nguon_loi)):
+                    ("ngon_ngu_dich", ngon_ngu_dich)):
         if gt:
             du_lieu[ten] = gt
     with open(nguon, "rb") as f:
@@ -411,7 +413,7 @@ def _tom_tat(giai_doan: list[dict], ten: str) -> dict:
 def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
               nhan: str, preset: str, che_do_giong: str, giong_id: str,
               su_that=None, khoa=None, ngon_ngu_nguon: str = "",
-              ngon_ngu_dich: str = "", nguon_loi: str = "") -> dict:
+              ngon_ngu_dich: str = "") -> dict:
     """Mot lan chay day du, tu form den tep tai ve. Tra ve phan bao cao.
 
     ⚠️ `su_that=None` khi nguon la PHIM KHACH THAT: phim that khong di kem cau
@@ -431,7 +433,7 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
     run_id = _nop_qua_form(client_chu, csrf, nguon, preset=preset,
                            che_do_giong=che_do_giong, giong_id=giong_id,
                            ngon_ngu_nguon=ngon_ngu_nguon,
-                           ngon_ngu_dich=ngon_ngu_dich, nguon_loi=nguon_loi)
+                           ngon_ngu_dich=ngon_ngu_dich)
 
     db = next(dbmod.get_session())
     try:
@@ -574,9 +576,12 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
 
     return {
         "nhan": nhan, "preset": preset, "che_do_giong": che_do_giong,
+        # ⛔ `nguon_loi` ra khoi bao cao 26/09 (Task 21): MOT duong duy nhat
+        #    voice->voice ⇒ mot truong bao cao luon in cung mot gia tri la mot
+        #    truong khong tra loi cau hoi nao. Nguon THAT da dung van doc duoc o
+        #    `giai_doan[...]["dinh_tuyen"]["nguon_loi"]`.
         "cap_ngon_ngu": {"nguon": ngon_ngu_nguon or "(mac dinh)",
-                         "dich": ngon_ngu_dich or "(mac dinh)",
-                         "nguon_loi": nguon_loi or "(mac dinh)"},
+                         "dich": ngon_ngu_dich or "(mac dinh)"},
         "tang_vat": tang_vat,
         "giong_id": giong_id,
         "trang_thai_run": run.status, "giay_tong": round(time.time() - t0, 1),

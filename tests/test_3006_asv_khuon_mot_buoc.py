@@ -56,7 +56,10 @@ def test_chay_mot_buoc_KHONG_chay_cac_buoc_truoc(moi_truong, tmp_path, monkeypat
 
     asv_mot_buoc.chay_mot_buoc(
         moi_truong, ten_giai_doan=pipeline.TRANSCRIBE,
-        duong_video=None, cai_dat={"nguon_loi": "asr"},
+        # ⛔ Truoc 26/09 day la `cai_dat={"nguon_loi": "asr"}` — mot o dieu khien
+        #    da RUT (Task 21). Bai nay do "chi MOT buoc chay", khong do dieu khien
+        #    nao, nen ho so rong la dung y va ⛔ khong mat do phu.
+        duong_video=None, cai_dat={},
         gieo={pipeline.MEDIA_PREPARE: "bench/tieng.wav"}, xin_card=False,
         # ⛔ `nhanh_mong_doi` la BAT BUOC cho `transcribe`. `None` = khai TUONG MINH
         #    rang bai nay khong quan tam nhanh nao (moi `chay` da bi thay).
