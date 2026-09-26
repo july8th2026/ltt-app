@@ -622,7 +622,7 @@ def bang_chung_chat_luong(db, run) -> dict | None:
 
        `so_canh_hong`/`do_phu_bang_chung` (lan `fix-toc-do`), bao cao QC
        (`qc.tom_tat`), trang thai tung bo do (`giai_doan_qc_do_luong`) va nguon
-       loi thoai THAT (`nguon_loi.dinh_tuyen`) deu nam trong `asv_stage.outputs`
+       loi thoai THAT (`giai_doan_chep_loi` ghi `dinh_tuyen`) deu nam trong `asv_stage.outputs`
        — tuc trong CSDL, doc duoc, va chi doc duoc boi mot nguoi mo CSDL ra.
 
        Hau qua do duoc o luot nen v3: `smart_localize` giao mot video **khong
