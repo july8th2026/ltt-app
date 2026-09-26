@@ -12,6 +12,44 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-26 (chiều) — Cách ly khách-với-khách: **đo bằng gói thật**, có đối chứng
+
+Tường lửa `vmbr1` bật sáng nay mới chỉ là **cấu hình**. Hôm nay đo xem nó có thật sự
+chặn một khách mạo địa chỉ IP của khách khác không.
+
+**Kết quả** (chi tiết + lệnh chạy lại: `docs/VPS/RA_SOAT_2026-09-26.md`):
+
+| NIC | nguồn thật | nguồn mạo |
+|---|---|---|
+| `firewall=1` + `ipfilter` | 3/3 gói tới nơi | **0/3** — luật `! match-set …ipfilter… src` đếm đúng 3 gói / 252 byte |
+| `firewall=0` (đối chứng) | 3/3 | **3/3, có gói trả lời** |
+
+Đo ở **đầu nhận** (`tcpdump`), ⛔ không suy từ `ping` — gói mạo nguồn thì ⛔ không
+bao giờ có đường về, nên "ping hỏng" ⛔ không phân biệt được *bị chặn* với *không ai
+trả lời*. Đối chứng `firewall=0` là thứ biến số 0 thành một phát hiện.
+
+Ngoài IP, mỗi `tap` có `firewall=1` còn chặn **mạo MAC** (ebtables + iptables) và
+**mạo ARP** (`--arp-ip-src`). Lỗi `ipfilter` của cộng đồng (gói thỉnh thoảng lọt,
+vá netfilter 09/2025) ⛔ **không** áp: node này chạy iptables/ebtables, ⛔ không chạy
+nftables cho tường lửa (`nft list ruleset | grep -c 199` = 0).
+
+**Cách đo phải đổi giữa chừng.** Hai máy test Linux ⛔ không dựng nổi trên node này:
+i440fx treo SeaBIOS (máy khách thật là q35), SeaBIOS ⛔ không boot `scsi0` (máy khách
+thật `sata0`), `virtio_balloon` rồi `virtio_net` treo ở `vp_notify`, và khi đổi sang
+`e1000` thì ảnh `debian-13-genericcloud` **⛔ không có driver e1000** (nó chỉ mang
+virtio) — `tcpdump` trên tap bắt 0 gói trong 15 s. Thay bằng **một NIC thứ ba gắn
+nóng vào VM199 + network namespace**: `net0`/`net1` của nó đều `firewall=0` nên bật
+tuỳ chọn ở mức máy ⛔ không chạm đường router, và ⛔ không phải khởi động lại nó.
+Sau khi đo, VM199 về đúng digest rỗng cũ.
+
+⚠️ **Bẫy đo lường ghi lại:** hai guest kẹt ở `vp_notify` **đốt CPU thật** — node lên
+89 % CPU / loadavg 26,8 trong khi `/nodes/*/qemu` báo chính hai máy đó **0 %**. Tắt
+chúng: 51 %. Xoá hẳn: loadavg **0,50**. ⛔ Đừng tin cột `cpu` của một VM đang treo.
+Cũng vì thế mà nghi vấn "sáng nay bật tường lửa làm cả node quá tải" **bị số đo bác**.
+
+Đã dọn: VM 900/901, ảnh `debian-13-genericcloud` trên `local`, netns `thu`, mật khẩu
+test dùng một lần. Máy khách kiểm lại sau phép đo: ARP `REACHABLE`, cổng 3389 **MỞ**.
+
 ## 2026-09-26 — Cây chính: KHÔNG phải một tranh chấp, mà BỐN chiều độc lập
 
 **Việc 3 của kế hoạch vận hành wf-v2** (`docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md`
