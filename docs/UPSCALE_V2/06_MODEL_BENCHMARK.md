@@ -18,7 +18,8 @@
 
 **Fast Preset:** ✅ **Keep current** — Best available model in category
 
-**Quality Preset:** ✅ **Keep current** — Best available model in category
+**Quality Preset:** ✅ **Keep current** — ⚠️ sửa lời: đây là **model hiện dùng cho
+Quality preset**, không phải "best" đã chứng minh bằng dataset đối chứng
 
 **No model changes needed** — Current models are optimal for their use cases.
 
@@ -68,7 +69,8 @@
 | Blur | 27.52 dB | 0.9782 | 7.65 |
 
 **Analysis:**
-- ✅ Best quality in Real-ESRGAN family
+- ⚠️ sửa lời — "best" chưa được chứng minh bằng dataset đối chứng nào; đây là
+  **model hiện dùng cho Quality preset** (`realesrgan-x4plus`)
 - ✅ Good PSNR on bicubic
 - ⚠️ Lower PSNR than fast on noise (tradeoff for quality detail)
 - ⚠️ High VRAM (~11 GB)
@@ -129,12 +131,16 @@
 
 ### 2.2 Speed Comparison
 
+⚠️ ƯỚC LƯỢNG / CHƯA ĐO LẠI — bảng FPS dưới không có script/quy trình đo dẫn
+nguồn trong tài liệu này (cùng vấn đề với các số PSNR ở mục khác); chưa được
+tái đo trong đợt sửa 2026-09-26.
+
 | Model | FPS | Time per Frame | Time per 5min Video |
 |-------|-----|----------------|---------------------|
 | Fast | 5-6 fps | 167-200 ms | 5-10 min |
 | Quality | 0.7 fps | 1,428 ms | 47-85 min |
 
-**Observation:** Fast is 8-12x faster than Quality.
+**Observation:** Fast is 8-12x faster than Quality (ước lượng từ bảng trên, CHƯA ĐO LẠI).
 
 ### 2.3 Quality Comparison
 
@@ -152,7 +158,7 @@
 - Low VRAM available
 - Quick turnaround needed
 - Content has noise/blur
-- 8x faster processing acceptable
+- 8x faster processing acceptable (ước lượng, CHƯA ĐO LẠI — xem mục 2.2)
 
 **Use Quality when:**
 - High VRAM available
@@ -417,11 +423,12 @@ log(f"Runtime: {duration}s, FPS: {len(frames)/duration}")
 ### 6.2 Quality Preset
 
 **Current Model:** `realesrgan-x4plus`  
-**Status:** ✅ **OPTIMAL**  
+**Status:** đang dùng cho Quality preset (⚠️ sửa lời — bỏ "OPTIMAL": chưa có dataset đối chứng)
 **Changes:** None needed
 
 **Why:**
-- Best quality in Real-ESRGAN family
+- ⚠️ sửa lời — "best" chưa được đo bằng dataset đối chứng; đây là **model
+  Quality-preset hiện tại** (`realesrgan-x4plus`)
 - Suitable for clean content
 - No alternative quality model better available
 

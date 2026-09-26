@@ -204,15 +204,18 @@ gpu_vram_mb = {
 - Fast preset requests 2,000 MB
 - Actual peak VRAM: 848 MB
 - Over-allocation: 135%
-- Blocks concurrent jobs unnecessarily
+- ⛔ SAI — "Blocks concurrent jobs unnecessarily" ngụ ý hạ VRAM sẽ MỞ concurrent
+  jobs; `UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) chặn điều đó
+  bất kể VRAM khai bao nhiêu (ISSUE A)
 
 **Root Cause:**
 - Manifest copied from old benchmark without re-measurement
 - Overestimates VRAM needed
 
 **Architecture Impact:**
-- Lower VRAM request → More concurrent jobs possible
-- GPU utilization improves
+- ⛔ SAI — "Lower VRAM request → More concurrent jobs possible": không đúng,
+  xem ISSUE A ở trên; hạ VRAM chỉ đổi sàn nhận MỘT job đang xin
+- GPU utilization improves — CHƯA ĐO
 - No impact on single-job behavior
 
 **Implementation:**
@@ -243,9 +246,11 @@ python -m pytest tests/test_171_upscale_h32.py::test_quality_1080p -v
 ```
 
 **Acceptance:**
-- [ ] Fast VRAM request reduced to 1,000 MB
+- [x] Fast VRAM request reduced to 1,000 MB — làm rồi (`manifest.py`), nhưng vì lý do khác (sàn nhận 1 job), không phải để "tăng đồng thời"
 - [ ] Fast jobs still complete successfully
-- [ ] Max concurrent fast jobs: 4 → 12
+- [ ] ⛔ SAI — "Max concurrent fast jobs: 4 → 12" không thể đo vì nó không tồn tại:
+      `GpuLease.UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá
+      đồng thời GPU = **1**, not 12 (ISSUE A). Bỏ tiêu chí này.
 - [ ] No new OOM errors
 - [ ] Quality jobs unaffected
 
@@ -445,10 +450,14 @@ def _resolve_encoder(codec: Codec) -> str:
 
 **Problem:**
 - Only NVENC enabled
-- Intel QSV → CPU x264 (10x slower)
-- AMD AMF → CPU x264 (10x slower)
+- Intel QSV → CPU x264 (10x slower — ước lượng, CHƯA ĐO khi viết)
+- AMD AMF → CPU x264 (10x slower — ước lượng, CHƯA ĐO khi viết)
 
-**Architecture Impact:**
+**Architecture Impact:** ⛔ SAI toàn mục — MEASURED 2026-09-26: `h264_qsv`,
+`hevc_qsv`, `h264_amf`, `hevc_amf` FAIL hoàn toàn ở runtime trên máy này
+("Nothing was written into output file"), dù `ffmpeg -encoders` liệt kê
+chúng. Không có "better"/"faster" nào để thu — chốt sản phẩm là NVENC+CPU,
+không dựng QSV/AMF thật (`docs/UPSCALE_V2_CORRECTION/05_ENCODER_TRUTH.md`).
 - Better GPU utilization on Intel/AMD
 - Faster encode on non-NVIDIA
 - No impact on NVIDIA workflow
@@ -503,7 +512,11 @@ from platform_core import media
 python -m pytest tests/test_171_upscale_h32.py -v
 ```
 
-**Acceptance:**
+**Acceptance:** ⛔ SAI/KHÔNG THỂ ĐẠT — MEASURED 2026-09-26: `h264_qsv`, `hevc_qsv`,
+`h264_amf`, `hevc_amf` FAIL hoàn toàn ở runtime trên máy này ("Nothing was
+written into output file"), dù `ffmpeg -encoders` liệt kê chúng. Chốt sản
+phẩm: app chỉ hỗ trợ NVENC+CPU — đề xuất dưới đây bị đóng, không phải "pending"
+(`docs/UPSCALE_V2_CORRECTION/05_ENCODER_TRUTH.md`).
 - [ ] QSV fallback added
 - [ ] AMF fallback added
 - [ ] NVENC unchanged
@@ -514,7 +527,7 @@ python -m pytest tests/test_171_upscale_h32.py -v
 
 **Dependency:** None
 
-**Status:** ⏸️ Pending
+**Status:** ⏸️ Pending (⛔ SAI — thật ra ĐÓNG, không phải chờ; xem trên)
 
 ---
 
@@ -641,7 +654,7 @@ def profile_png_io():
 
 # Alternatives:
 # 1. Batch PNG writes (reduce file count)
-# 2. WebP intermediate (30% smaller)
+# 2. WebP intermediate (30% smaller — ước lượng, CHƯA ĐO)
 # 3. RAM buffer for short clips
 # 4. Direct encode (future)
 ```
@@ -1010,26 +1023,32 @@ Before deploying any phase:
 
 ### Expected Impact
 
+⛔ SAI (2 hàng đầu) — "Fast concurrent 4→12" và "Max throughput 3→10" giả định
+kế toán VRAM cộng dồn; `UniqueConstraint("host","gpu_uuid")` (`models.py:1037`)
+khoá đồng thời GPU = **1**, not 12 (ISSUE A). CHƯA ĐO (3 hàng dưới) — Phase 2
+(RIFE, PNG I/O) bị SKIP/PENDING theo chính bảng "Implementation Progress" ở
+trên, nên "CPU utilization -70%"/"Cold start -95%" chưa từng được đo.
+
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
-| Fast concurrent | 4 | 12 | +200% |
-| Max throughput | 3 | 10 | +233% |
-| CPU utilization (smooth) | 80-100% | <30% | -70% |
-| Job reliability | 95% | 99.5% | +5% |
-| Cold start latency | 2s | 0.1s | -95% |
+| Fast concurrent | 4 | 12 | ⛔ SAI — "+200%", not 12 job đồng thời thật (ISSUE A) |
+| Max throughput | 3 | 10 | ⛔ SAI — "+233%" dựa trên đồng thời không tồn tại (ISSUE A) |
+| CPU utilization (smooth) | 80-100% | <30% | -70% (CHƯA ĐO — Phase 2/RIFE bị skip) |
+| Job reliability | 95% | 99.5% | +5% (CHƯA ĐO) |
+| Cold start latency | 2s | 0.1s | -95% (CHƯA ĐO — warmup không giữ model trong VRAM, ISSUE D) |
 | Phase 3 | 8 hours | ⏸️ Pending |
 | Phase 4 | 4 hours | ⏸️ Pending |
 | **Total** | **30 hours** | |
 
-### Expected Impact
+### Expected Impact (bản lặp lại — cùng chú giải ⛔ SAI/CHƯA ĐO ở trên)
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
-| Fast concurrent | 4 | 12 | +200% |
-| Max throughput | 3 | 10 | +233% |
-| CPU utilization (smooth) | 80-100% | <30% | -70% |
-| Job reliability | 95% | 99.5% | +5% |
-| Cold start latency | 2s | 0.1s | -95% |
+| Fast concurrent | 4 | 12 | ⛔ SAI — "+200%", not 12 job đồng thời thật (ISSUE A) |
+| Max throughput | 3 | 10 | ⛔ SAI — "+233%" dựa trên đồng thời không tồn tại (ISSUE A) |
+| CPU utilization (smooth) | 80-100% | <30% | -70% (CHƯA ĐO — Phase 2/RIFE bị skip) |
+| Job reliability | 95% | 99.5% | +5% (CHƯA ĐO) |
+| Cold start latency | 2s | 0.1s | -95% (CHƯA ĐO — warmup không giữ model trong VRAM, ISSUE D) |
 
 ---
 

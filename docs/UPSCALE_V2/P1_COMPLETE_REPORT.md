@@ -16,12 +16,22 @@
 **Evidence:** Verified in code.
 
 **Impact:** 
-- Max concurrent fast: 4 → **12 jobs** (3x increase)
-- GPU utilization: 50-60% → **75-85%**
+- ⛔ SAI — "Max concurrent fast: 4 → 12 jobs (3x increase)": `UniqueConstraint(
+  "host","gpu_uuid")` (`platform_core/models.py:1037`) khoá đồng thời GPU = **1**,
+  not 12 (ISSUE A, `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`)
+- GPU utilization: 50-60% → 75-85% — CHƯA ĐO (không có benchmark nào chạy)
 
 ---
 
 ### P1.1.2: NVENC Fallback Chain
+
+⛔ SAI toàn mục — MEASURED 2026-09-26: `h264_qsv`, `hevc_qsv`, `h264_amf`,
+`hevc_amf` đều FAIL hoàn toàn ở runtime trên máy này ("Nothing was written
+into output file" trên một lượt encode thử 256×256), dù `ffmpeg -encoders`
+liệt kê chúng. Chốt sản phẩm 2026-09-26: app chỉ hỗ trợ NVENC+CPU, KHÔNG dựng
+đường QSV/AMF thật — xem `docs/UPSCALE_V2_CORRECTION/05_ENCODER_TRUTH.md`.
+Mã hiện tại (sau sửa) KHÔNG có `ENCODER_QSV`/`ENCODER_AMD` như mô tả dưới đây.
+
 **Files:** 
 - `apps/upscalevideo/schemas.py:26-29`
 - `apps/upscalevideo/jobs.py:142-160`
@@ -34,8 +44,8 @@
 ```
 
 **Impact:**
-- Intel QSV users: 10x encode speedup
-- AMD AMF users: 10x encode speedup
+- Intel QSV users: 10x encode speedup — ⛔ SAI, not applicable (xem trên)
+- AMD AMF users: 10x encode speedup — ⛔ SAI, not applicable (xem trên)
 - Quality unchanged
 
 ---
@@ -58,7 +68,10 @@
 ### P1.3.1: Thread Threshold (Already Optimal)
 **File:** `apps/upscalevideo/autotune.py:91-95`
 
-**Status:** No changes needed
+**Status:** ⛔ SAI — "Threshold 750 MB already correct": ngưỡng THẬT đang chạy
+trong `est_alloc = 1000` (`autotune.py:99,103`) là **1000 MB**, not 750
+(ISSUE C, `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`). Bản cũ có 3 chú
+thích tự mâu thuẫn nói "750 MB"/"800 MB" cạnh chính con số 1000 dùng thật.
 - Threshold 750 MB already correct
 - Full threads "4:4:4" when budget ≥ 750 MB
 
@@ -70,10 +83,10 @@
 |--------|--------|-------|-------------|
 | Fast VRAM request | 2,000 MB | 1,000 MB | -50% |
 | Quality VRAM request | 12,000 MB | 11,500 MB | -4% |
-| Max concurrent fast | 4 | 12 | +200% |
-| GPU utilization | 50-60% | 75-85% | +25% |
-| Encode on QSV | libx264 (CPU) | h264_qsv | +10x |
-| Encode on AMF | libx264 (CPU) | h264_amf | +10x |
+| Max concurrent fast | 4 | 12 | ⛔ SAI — "+200%": đồng thời GPU = 1, not 12 (ISSUE A, `models.py:1037`) |
+| GPU utilization | 50-60% | 75-85% | +25% (CHƯA ĐO) |
+| Encode on QSV | libx264 (CPU) | h264_qsv | ⛔ SAI — "+10x": QSV FAIL hoàn toàn ở runtime, MEASURED 2026-09-26 (ISSUE I) |
+| Encode on AMF | libx264 (CPU) | h264_amf | ⛔ SAI — "+10x": AMF FAIL hoàn toàn ở runtime, MEASURED 2026-09-26 (ISSUE I) |
 
 ---
 

@@ -6,10 +6,12 @@
 
 **Goal:** Add stage-based checkpoint/resume for long jobs (5min+ videos).
 
-**Benefits:**
+**Benefits (mục tiêu ban đầu — ⛔ SAI, không đạt được):**
 - Zero waste on job crashes (OOM, STALL)
-- Resume from last completed stage
-- Better reliability (99%+ completion rate)
+- ⛔ SAI — "Resume from last completed stage" KHÔNG được xây: `load_checkpoint`/
+  `get_job_checkpoints` không có caller nào trong cả kho; chỉ có `save_`
+  (ISSUE G, `docs/UPSCALE_V2_CORRECTION/03_CHECKPOINT_TRUTH.md`)
+- Better reliability (99%+ completion rate) — CHƯA ĐO, không đo được vì resume không tồn tại
 
 ## CURRENT STATE
 

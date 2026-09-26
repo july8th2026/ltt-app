@@ -50,8 +50,13 @@ gpu_vram_mb = {
 - Quality: Reduce from 12,000 → 11,500 MB (4% reduction)
 
 **Impact:**
-- Max concurrent fast jobs: 4 → 12 (tripling)
-- Quality margin: 824 MB → 525 MB
+- ⛔ SAI — "Max concurrent fast jobs: 4 → 12 (tripling)" giả định kế toán VRAM cộng
+  dồn nhiều job trên một GPU; `GpuLease.UniqueConstraint("host","gpu_uuid")`
+  (`platform_core/models.py:1037`) khoá đồng thời GPU = **1**, not 12
+  (ISSUE A, `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`). Con số
+  `gpu_vram_mb` chỉ đổi sàn nhận MỘT job đang xin (ISSUE B), không mua thêm job.
+- Quality margin: 824 MB → 525 MB — đúng số học, nhưng không có "throughput" nào
+  để thu vì Quality vẫn chỉ chạy 1 job tại một thời điểm.
 
 ### 2.2 Tile Configuration
 
@@ -67,7 +72,12 @@ gpu_vram_mb = {
 
 **Tile VRAM Estimation (Fast):**
 
-| Tile Size | VRAM Allocation | Use Case |
+⛔ SAI — bộ số dưới đây không khớp cái nào với `autotune.py` đang chạy (bản cũ
+đưa một bộ số THỨ BA, khác cả hai bộ đã có). Mã thật (`autotune.py:96-98,120-127`)
+dùng `est_alloc` **cố định** theo dải: Fast 1000/500 MB; Quality 10024/9314/
+7025/5095/3513 MB. Xem `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md` ISSUE C.
+
+| Tile Size | VRAM Allocation (bản cũ, không khớp mã) | Use Case |
 |-----------|-----------------|----------|
 | 200 | ~600 MB | Small frames, VRAM constrained |
 | 256 | ~750 MB | Medium frames, balanced |
@@ -75,7 +85,7 @@ gpu_vram_mb = {
 
 **Tile VRAM Estimation (Quality):**
 
-| Tile Size | VRAM Allocation | Use Case |
+| Tile Size | VRAM Allocation (bản cũ, không khớp mã — xem ISSUE C) | Use Case |
 |-----------|-----------------|----------|
 | 256 | ~3,500 MB | Low VRAM budget |
 | 320 | ~4,200 MB | Moderate budget |
@@ -95,9 +105,14 @@ gpu_vram_mb = {
 # VRAM budget < 800 MB: Reduced threading
 ```
 
-Current threshold is 1000 MB → Lower to 800 MB for VRAM margin.
+⛔ SAI — "Lower to 800 MB" (và một chú thích khác trong `autotune.py` từng nói
+"750 MB") KHÔNG PHẢI ngưỡng đang chạy. Ngưỡng thật là `est_alloc = 1000`
+(`autotune.py:99,103`), khớp `manifest.py`'s `gpu_vram_mb.fast = 1000` (848 MB
+đỉnh đo được + 152 MB an toàn). Đề xuất 750/800 MB ở đây **chưa bao giờ được
+triển khai** — xem `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md` ISSUE C.
 
-**Code change in `autotune.py`:**
+**Code change in `autotune.py`:** ⛔ SAI — mã thật không có nhánh `budget >= 800`;
+xem `autotune.py:103` (`if budget < est_alloc` với `est_alloc = 1000`).
 
 ```python
 if budget >= 800:
@@ -120,16 +135,20 @@ threads = "1:2:2"
 
 **RTX 5060 Ti 16GB Single GPU:**
 
-| Preset Mix | Max Jobs | GPU Util | VRAM Used | Safety Margin |
+⛔ SAI — bảng dưới đây giả định nhiều job chia sẻ VRAM trên một GPU. Thật ra
+`GpuLease.UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng
+thời GPU = 1 bất kể preset (ISSUE A). "Max Jobs" > 1 ở mọi hàng dưới đây SAI.
+
+| Preset Mix | Max Jobs (bản cũ, SAI) | GPU Util | VRAM Used | Safety Margin |
 |------------|----------|----------|-----------|---------------|
 | Fast only | 12 | 75% | 10 GB | 6 GB |
 | Quality only | 1 | 90% | 11 GB | 5 GB |
 | Mixed (Fast×8 + Quality×1) | 9 | 80% | 14 GB | 2 GB |
 
 **Recommended Production Limits:**
-- Fast: Max 8 concurrent (leaves safety margin)
-- Quality: Max 1 concurrent (single GPU)
-- Mixed: Limit total to 8
+- Fast: ⛔ SAI — "Max 8 concurrent (leaves safety margin)"; thật là **1**, not 12 (ISSUE A).
+- Quality: Max 1 concurrent (single GPU) — đúng, và đây là trần cho MỌI preset.
+- Mixed: ⛔ SAI — không có "limit total to 8"; đồng thời GPU luôn là 1.
 
 **Why not max theoretical?**
 - Safety margin for system operations
@@ -207,7 +226,7 @@ def pick(preset, frame_w, frame_h, budget):
 | Fast peak VRAM | 848 MB |
 | Quality VRAM request | 12,000 MB |
 | Quality peak VRAM | 11,176 MB |
-| Max concurrent fast | 4 (theoretical) |
+| Max concurrent fast | ⛔ SAI — "4 (theoretical)": `exclusive=True` (`gpu_lease.py:201-203`) đã giữ TRỌN card từ trước; đồng thời luôn là 1, not 4 |
 | Max concurrent quality | 1 |
 | Smooth motion engine | CPU minterpolate |
 | Fast encode codec | NVENC p5 cq19 |
@@ -218,31 +237,35 @@ def pick(preset, frame_w, frame_h, budget):
 | Metric | Target | Improvement |
 |--------|--------|-------------|
 | Fast VRAM request | 1,000 MB | -50% |
-| Max concurrent fast | 12 | +3x |
+| Max concurrent fast | 12 | ⛔ SAI — "+3x": `UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng thời = 1, not 12 (ISSUE A) |
 | Max concurrent quality | 1 | - |
-| Smooth motion engine | GPU RIFE | +10x |
-| Fast encode | NVENC p5 cq23 | +20% speed |
-| Quality encode | NVENC p2 cq19 | +50% quality |
+| Smooth motion engine | GPU RIFE | ⛔ SAI — "+10x": RIFE chưa từng cài đặt (`ff.py:138-140`), vẫn `minterpolate` CPU (ISSUE K) |
+| Fast encode | NVENC p5 cq23 | +20% speed (ước lượng, CHƯA ĐO) |
+| Quality encode | NVENC p2 cq19 | +50% quality (ước lượng, CHƯA ĐO) |
 
 ### 3.3 Throughput Calculation
 
-**Current (RTX 5060 Ti 16GB):**
+⛔ SAI toàn mục — cả hai bảng dưới đây và kết luận cộng dồn từ chúng đều dựa
+trên giả định >1 job GPU đồng thời (4 rồi 12) VÀ trên RIFE (chưa cài đặt).
+Đồng thời GPU thật là **1** (ISSUE A, `models.py:1037`); RIFE không tồn tại
+(ISSUE K, `ff.py:138-140`). Không có "throughput" nào để tính theo cách này.
 
-| Preset | Max Concurrent | Time per Job (5min) | Throughput |
+**Current (RTX 5060 Ti 16GB):** (bản cũ, SAI — xem trên)
+
+| Preset | Max Concurrent (SAI) | Time per Job (5min) | Throughput (SAI, not 12) |
 |--------|----------------|---------------------|------------|
 | Fast | 4 | 5-10 min | 0.5-0.8 jobs/min |
 | Quality | 1 | 15-30 min | 0.03-0.06 jobs/min |
 
-**Optimized (with RIFE):**
+**Optimized (with RIFE):** (bản cũ, SAI — xem trên, RIFE chưa cài đặt ISSUE K)
 
-| Preset | Max Concurrent | Time per Job (5min) | Throughput |
+| Preset | Max Concurrent (⛔ SAI, not 12 — ISSUE A) | Time per Job (5min) | Throughput (⛔ SAI) |
 |--------|----------------|---------------------|------------|
 | Fast | 12 | 2-4 min | 2.5-5 jobs/min |
 | Quality | 1 | 8-15 min (with RIFE) | 0.06-0.12 jobs/min |
 
-**Total throughput improvement:**
-- Fast: 3-5x increase
-- Overall system: 3x increase (weighted average)
+**Total throughput improvement:** ⛔ SAI — "Fast 3-5x", "Overall 3x" tính từ
+hai bảng SAI ở trên (đồng thời 4→12 không có thật, RIFE không tồn tại), not 12.
 
 ---
 
@@ -333,7 +356,7 @@ def pick(preset, frame_w, frame_h, budget):
 
 | Metric | Tool | Threshold |
 |--------|------|-----------|
-| Fast concurrent jobs | `admin-telemetry` | Max 8 |
+| Fast concurrent jobs | `admin-telemetry` | ⛔ SAI — "Max 8"; đồng thời GPU thật là **1**, not 12 (ISSUE A, `models.py:1037`) |
 | Quality concurrent jobs | `admin-telemetry` | Max 1 |
 | Peak VRAM per job | `GpuEvidenceSampler` | Fast: <1.2GB, Quality: <11.5GB |
 | GPU utilization | `nvidia-smi` | Target 70-85% |
@@ -346,7 +369,7 @@ def pick(preset, frame_w, frame_h, budget):
 | Metric | Before | After | Gate |
 |--------|--------|-------|------|
 | Fast VRAM request | 2,000 MB | 1,000 MB | 1,000 ± 50 |
-| Max concurrent fast | 4 | 12 | ≥ 12 |
+| Max concurrent fast | 4 | 12 | ⛔ SAI — "≥ 12" không đo được vì không tồn tại: đồng thời GPU = 1 (ISSUE A) |
 | Quality VRAM request | 12,000 MB | 11,500 MB | 11,500 ± 300 |
 | Fast threads (budget≥800) | 4:4:4 | 4:4:4 | 4:4:4 |
 | Fast threads (budget<800) | 2:2:2 | 2:2:2 | 2:2:2 |
@@ -357,12 +380,12 @@ def pick(preset, frame_w, frame_h, budget):
 
 | Test | Before | After | Pass |
 |------|--------|-------|------|
-| Fast job time (5min) | 5-10 min | 2-4 min | ≤ 4 min |
-| Fast concurrent | 4 jobs | 12 jobs | ≥ 12 |
-| Quality job time (5min) | 15-30 min | 8-15 min | ≤ 15 min |
+| Fast job time (5min) | 5-10 min | 2-4 min (ước lượng, CHƯA ĐO) | ≤ 4 min |
+| Fast concurrent | 4 jobs | 12 jobs | ⛔ SAI — không đo được vì không tồn tại: đồng thời GPU = 1 (ISSUE A) |
+| Quality job time (5min) | 15-30 min | 8-15 min | ⛔ SAI — số "8-15 min" giả định có RIFE; RIFE chưa cài đặt (ISSUE K) |
 | GPU memory peak (Fast) | 848 MB | 848 MB | Same |
 | GPU memory peak (Quality) | 11,176 MB | 11,176 MB | Same |
-| CPU utilization (smooth) | 80-100% | <30% | ≤ 30% |
+| CPU utilization (smooth) | 80-100% | <30% | ⛔ SAI — mức <30% giả định RIFE thay CPU minterpolate; RIFE chưa cài đặt (ISSUE K) |
 
 ---
 
@@ -424,17 +447,17 @@ If quality issues occur:
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
-| Fast throughput | 0.5-0.8 jobs/min | 2.5-5 jobs/min | +300-500% |
-| Quality throughput | 0.03-0.06 jobs/min | 0.06-0.12 jobs/min | +100% |
-| Smooth motion CPU | 80-100% | <30% | -70% |
-| Smooth motion time | 5-10x longer | 1-2x longer | +4-8x |
+| Fast throughput | 0.5-0.8 jobs/min | 2.5-5 jobs/min | ⛔ SAI — "+300-500%" dựa trên đồng thời 4→12, không tồn tại (ISSUE A) |
+| Quality throughput | 0.03-0.06 jobs/min | 0.06-0.12 jobs/min | ⛔ SAI — "+100%" dựa trên thời gian job có RIFE, RIFE chưa cài đặt (ISSUE K) |
+| Smooth motion CPU | 80-100% | <30% | ⛔ SAI — "-70%" dựa trên RIFE thay CPU minterpolate; chưa cài đặt (ISSUE K) |
+| Smooth motion time | 5-10x longer | 1-2x longer | ⛔ SAI — "+4-8x" dựa trên RIFE; chưa cài đặt (ISSUE K) |
 
 ### 8.2 Business Impact
 
-- User wait time reduced by 70%
-- Production capacity tripled
-- Cost per job reduced (more throughput)
-- Better customer satisfaction
+- User wait time reduced by 70% — ⛔ SAI, cộng dồn từ các con số SAI ở 8.1 (ISSUE A + K)
+- Production capacity tripled — ⛔ SAI — đồng thời GPU = 1, not 12 (ISSUE A)
+- Cost per job reduced (more throughput) — ⛔ SAI — không có "more throughput" từ đồng thời (ISSUE A)
+- Better customer satisfaction — CHƯA ĐO (không có khảo sát/số liệu nào dẫn nguồn)
 
 ### 8.3 Technical Benefits
 

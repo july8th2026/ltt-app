@@ -151,16 +151,20 @@ _guard_disk() — requires sufficient free space
 
 | Card | VRAM Total | Fast Peak | Quality Peak | Max Fast Concurrent | Max Quality Concurrent |
 |------|------------|-----------|--------------|---------------------|------------------------|
-| RTX 5060 Ti 16GB | 16,311 MB | 848 MB | 11,176 MB | ~12 jobs | ~1 job |
+| RTX 5060 Ti 16GB | 16,311 MB | 848 MB | 11,176 MB | ⛔ SAI: "~12 jobs" — thật là **1** | 1 job |
 
 **Recommendation:**
-- Fast jobs: Can run 10-12 concurrent (16GB / 900MB safety margin)
-- Quality jobs: Only 1 concurrent (16GB - 11GB safety = 5GB margin)
-- Mixed workload: Fast + Quality overlap limited
+- Fast jobs: ⛔ SAI — bản cũ ghi "Can run 10-12 concurrent" (16GB / 900MB safety margin); `GpuLease` có `UniqueConstraint("host","gpu_uuid")` (`platform_core/models.py:1037`) nên đồng thời GPU thật là **1**, not 12 — xem `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md` ISSUE A.
+- Quality jobs: 1 concurrent — đúng, và đây là trần THẬT cho cả hai preset, không riêng Quality (cùng ISSUE A).
+- Mixed workload: không tồn tại "overlap" — một máy một lease sống, Fast và Quality không bao giờ chạy cùng lúc trên cùng GPU.
 
 ### NCNN Thread Recommendations (CPU: 10900K 10C/20T)
 
-| Config | Load % | GPU Impact | Throughput |
+⚠️ CHƯA ĐO — cột "Throughput" giả định FPS tỉ lệ thuận tuyến tính với % CPU
+(load thấp hơn ⇒ FPS thấp hơn đúng theo tỉ lệ). Đây là suy luận, không phải số
+đo; NCNN không nhất thiết scale tuyến tính theo số luồng.
+
+| Config | Load % | GPU Impact | Throughput (ước lượng, CHƯA ĐO) |
 |--------|--------|------------|------------|
 | `4:4:4` | ~100% CPU | High | Max FPS |
 | `2:2:2` | ~50% CPU | Medium | 50% FPS |
@@ -188,7 +192,12 @@ _guard_disk() — requires sufficient free space
 
 ### Concurrency Limits
 
-| Preset | Max Concurrent | GPU Util Target |
+⛔ SAI — toàn bộ cột "Max Concurrent" dưới đây giả định >1 job GPU cùng lúc.
+`GpuLease.UniqueConstraint("host","gpu_uuid")` (`platform_core/models.py:1037`)
+khoá đồng thời GPU = **1** cho MỌI preset, not 12 (ISSUE A,
+`docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`).
+
+| Preset | Max Concurrent (bản cũ, SAI) | GPU Util Target |
 |--------|---------------|-----------------|
 | Fast | 12 | 70-80% |
 | Quality | 1 | 85-95% |
@@ -207,7 +216,8 @@ _guard_disk() — requires sufficient free space
 
 ### Performance Limits
 
-1. **Max Fast throughput:** ~12 jobs/sec (theoretical, limited by disk/I/O)
+1. **Max Fast throughput:** ⛔ SAI — "~12 jobs/sec (theoretical...)" giả định 12
+   job đồng thời; đồng thời GPU thật là **1**, not 12 (ISSUE A, `models.py:1037`).
 2. **Max Quality throughput:** ~1 job (single concurrent)
 3. **Max resolution:** GPU limited by VRAM and tile size
 4. **Frame rate:** CPU limited for minterpolate, GPU for Real-ESRGAN
