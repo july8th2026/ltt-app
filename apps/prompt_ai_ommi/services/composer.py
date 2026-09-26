@@ -30,10 +30,14 @@ def resource_lines(resources: list[dict]) -> list[str]:
     counters: dict[str, int] = {"image": 0, "video": 0, "audio": 0}
     for item in resources[:24]:
         kind = str(item.get("kind") or "prop")
-        handle = ""
-        if kind in counters:
-            counters[kind] += 1
-            handle = f"@{kind.upper()}_{counters[kind]} "
+        tag = str(item.get("tag") or "").strip()
+        if tag:
+            handle = f"{tag} "
+        else:
+            handle = ""
+            if kind in counters:
+                counters[kind] += 1
+                handle = f"@{kind.upper()}_{counters[kind]} "
         name = str(item.get("name") or "Tài nguyên").strip()
         desc = str(item.get("description") or "").strip()
         lines.append(f"- {handle}[{kind}] {name}: {desc}".rstrip())
