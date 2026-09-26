@@ -1061,6 +1061,66 @@ def _bay_gio():
     return datetime.now(timezone.utc)
 
 
+#: Sau bao lau thi mot may con o `dang_tao` la KET, khong phai dang dung.
+#:
+#: ⛔ Phai RONG HON HAN mot luot dung may that: mua mot IP OVH la mot luot dat hang
+#:    cong checkout, tinh bang phut. Nguong hep hon la bat oan mot may DANG DUOC TAO,
+#:    va cai gia la **xoa may cua khach** — te hon nhieu so voi de mot hang mo coi
+#:    them mot gio.
+KET_DANG_TAO_GIAY = 4 * 3600
+
+
+def ket_dang_tao(may, *, su_kien, now=None) -> tuple[bool, str]:
+    """May nay co dang KET o `dang_tao` khong. `(ket, ly_do)`.
+
+    ## Vi sao can lop nay
+
+    Duong job hong CO dat `LOI` tin cay (`jobs.py`, trong mot `except` co `commit`).
+    Nen may chi ket `dang_tao` khi **worker chet ma khong chay nhanh do**: `kill -9`,
+    may khoi dong lai, mat dien. Trong du an nay chuyen worker bi giet khong phai gia
+    thuyet — mot cu giet cay tien trinh da lam PostgreSQL sap 4 phut.
+
+    Luc do: `_don_thao_tac_qua_han` go `tac_vu` nhung KHONG doi `vong_doi`;
+    `den_han_thu` bo qua `dang_tao` (dung); `_hoan_may_tao_hong` chi quet `loi` nen
+    khong hoan khong don; va vong doi chieu khong goi no la VM mo coi vi `vmid` CO
+    trong so. ⇒ Mot hang khong ai thu tien, khong ai don, co the kem mot VM that.
+
+    ⭐ Ham nay chi TRA LOI; nguoi goi dua may ve `LOI` roi de `_hoan_may_tao_hong`
+      (da co, da test) don va hoan. Dung mot vong don thu hai la hai cho khai cung
+      mot luat.
+    """
+    import datetime as _dt
+
+    from apps.vps import trang_thai_may
+
+    if str(getattr(may, "vong_doi", "") or "") != trang_thai_may.DANG_TAO:
+        return False, ""
+    # ⛔ Con thao tac dang mo nghia la viec CO THE VAN DANG CHAY tren Proxmox.
+    if str(getattr(may, "tac_vu", "") or ""):
+        return False, "con thao tac dang mo"
+    loai = {str(getattr(e, "loai", "")) for e in su_kien}
+    if "tao_xong" in loai:
+        return False, "da tung len"         # khong phai mot luot tao that bai
+
+    bay_gio = now or _bay_gio()
+    moc = None
+    for e in su_kien:
+        luc = getattr(e, "created_at", None)
+        if luc is not None and (moc is None or luc > moc):
+            moc = luc
+    if moc is None:
+        moc = getattr(may, "created_at", None)
+    if moc is None:
+        return False, "khong do duoc tuoi"
+    if moc.tzinfo is None:
+        moc = moc.replace(tzinfo=_dt.timezone.utc)
+    tuoi = (bay_gio - moc).total_seconds()
+    if tuoi < KET_DANG_TAO_GIAY:
+        return False, ""
+    return True, (f"ket o dang_tao {int(tuoi // 3600)} gio ma khong co thao tac nao "
+                  f"dang mo — gan nhu chac chan worker da chet giua luot dung may")
+
+
 def _hoan_may_tao_hong(db) -> int:
     """Hoàn tiền cho máy **chưa từng chạy được**. Trả số máy đã hoàn.
 
@@ -1091,10 +1151,33 @@ def _hoan_may_tao_hong(db) -> int:
 
     from platform_core import credit
 
+    from apps.vps import trang_thai_may
+    from apps.vps.services import provisioning
     from apps.vps.tables import VpsEvent, VpsInstance
 
     da_hoan = 0
     can_commit = False
+
+    # ⭐ Dua may KET o `dang_tao` ve `LOI` TRUOC, roi vong ben duoi don va hoan
+    #    bang duong da co. Mot vong don thu hai la hai cho khai cung mot luat.
+    for may in db.execute(select(VpsInstance).where(
+            VpsInstance.trang_thai == trang_thai_may.DANG_TAO)).scalars():
+        sk = list(db.execute(select(VpsEvent).where(
+            VpsEvent.instance_id == may.id)).scalars())
+        ket, ly_do = ket_dang_tao(may, su_kien=sk)
+        if not ket:
+            continue
+        log.warning("VPS bao tri: may %s %s", may.id, ly_do)
+        trang_thai_may.dat(may, vong_doi=trang_thai_may.LOI,
+                           dien_quan_sat=trang_thai_may.KHONG_RO,
+                           tac_vu=trang_thai_may.KHONG_CO,
+                           ly_do=ly_do[:2000])
+        provisioning.ghi_su_kien(db, may.id, "loi", boi="he_thong",
+                                 ma_loi="ket_dang_tao")
+        can_commit = True
+    if can_commit:
+        db.commit()
+
     for may in db.execute(select(VpsInstance).where(
             VpsInstance.trang_thai == "loi")).scalars():
         loai = {e.loai: e for e in db.execute(
