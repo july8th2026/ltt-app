@@ -14,11 +14,12 @@ from apps.prompt_ai_ommi.tables.thu_vien import (
 from apps.prompt_ai_ommi.tables.kich_ban import (
     OmmiStoryboard, OmmiScene, OmmiSceneVersion)
 from apps.prompt_ai_ommi.tables.binding import OmmiBinding
+from apps.prompt_ai_ommi.tables.handoff import OmmiHandoff
 
 __all__ = [
     "RESOURCE_KINDS", "OmmiResource", "OmmiResourceVariant", "OmmiTag",
     "OmmiResourceTag", "OmmiCollection", "OmmiCollectionItem",
     "OmmiResourceUsage", "OmmiMetaPrompt", "OmmiPromptSnippet",
     "OmmiPromptVersion", "OmmiStyle", "OmmiStoryboard", "OmmiScene",
-    "OmmiSceneVersion", "OmmiBinding",
+    "OmmiSceneVersion", "OmmiBinding", "OmmiHandoff",
 ]
