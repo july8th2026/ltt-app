@@ -60,9 +60,12 @@ def test_option_matrix_covers_customer_visible_compatibility_surface():
 def test_gpu_lease_contract_splits_fast_and_quality_from_legacy_lane():
     from apps.upscalevideo.manifest import MANIFEST
 
+    # H32.6 (2026-09-25, docs/UPSCALE_V2/01_HARDWARE_TRUTH.md): do that fast
+    # 848 MB / quality 11.176 MB -> ban khai giam 2000->1000 va 12000->11500,
+    # giu bien an toan. Lan legacy giu 12000 (tuong thich job da xep hang).
     assert MANIFEST.vram_for("upscalevideo.render") == 12000
-    assert MANIFEST.vram_for("upscalevideo.render.fast") == 2000
-    assert MANIFEST.vram_for("upscalevideo.render.quality") == 12000
+    assert MANIFEST.vram_for("upscalevideo.render.fast") == 1000
+    assert MANIFEST.vram_for("upscalevideo.render.quality") == 11500
 
 
 def test_motion_smoothing_doubles_source_cadence_instead_of_forcing_60fps():

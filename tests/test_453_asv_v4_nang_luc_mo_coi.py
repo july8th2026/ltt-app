@@ -267,6 +267,27 @@ MO_COI_DA_BIET = frozenset({
     #       (khong can chi so tung `ma`) va goi `gop_khe` truc tiep — hoac
     #       `gop_khe` bi XOA vi `nhom_chi_so` + `_gop_mot_nhom` da du dung.
     "gop_khe",
+
+    # ── `tran_nhac_nen_byte` (`assets.py:293`, V3 `asv-nhac`, 25/09) — CHINH
+    #    SACH da viet, CUA VAO chua ton tai.
+    #
+    #    🔴 `am_master.py`/`am_thanh.py` da co day du toan tron nhac nen
+    #       (`chuan_hoa_nhac_nen`, `_bieu_thuc_tron` voi `nhac_nen_idx`) — nua
+    #       ENGINE cua V3 song that. Nhung KHONG mot route nao nhan tep nhac
+    #       nen tu khach: `grep asv-nhac|nhac_nen routes*.py` khong ra gi. Ham
+    #       nay tu no da noi ro trong docstring: "chua noi day, xem
+    #       `logo.gan_vao_run`/`doc_tu_bieu_mau` — dung lai DUONG do".
+    #
+    #    ⛔ Noi no vao mach that su (them mot route/tham so upload cho nhac
+    #       nen, khuon theo `logo.doc_tu_bieu_mau`) la XAY MOI mot cua vao
+    #       khach — mo rong be mat cong khai, khong phai don banh coc. Ngoai
+    #       pham vi cua lan khep do nay (het do gate L2, khong phai them tinh
+    #       nang).
+    #
+    #    ⭐ DIEU KIEN GO RA: ngay route upload nhac nen duoc xay (goi ham nay
+    #       de ep tran, giong `logo.py:179`) — hoac ham bi XOA neu V3 nhac nen
+    #       bi huy.
+    "tran_nhac_nen_byte",
 })
 
 

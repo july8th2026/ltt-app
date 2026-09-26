@@ -390,6 +390,13 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         "AsvError", "KhongTimThay", "XungDot",   # tang route, khong len toi bien
         "AssetError",                            # bi doi loai truoc khi len bien
         "DaHuy",                                 # nhanh rieng cua job_runner
+        # 🔑 `PhienChuaSan` (de_xuat_vung.py, tach tu routes.py 26/09): nem
+        #    trong `de_xuat_cho_phien`, va `routes.de_xuat_vung` bat no NGAY
+        #    trong than request (`except de_xuat_vung_mod.PhienChuaSan` ->
+        #    HTTP 404) — cung khuon voi `AsvError`/`KhongTimThay`/`XungDot`
+        #    ngay tren: loi nghiep vu o tang route, khong bao gio bay ra tu
+        #    than mot giai doan job nen khong bao gio toi `job_runner`/`retry`.
+        "PhienChuaSan",
         # 🔑 Chi song trong TIEN TRINH CON demucs. Chot an toan cua pha 13 nem no
         #    khi mot phep kiem cham toi model that; production khong bao gio co
         #    `PYTEST_CURRENT_TEST` nen no khong the len toi bien cua nen tang.

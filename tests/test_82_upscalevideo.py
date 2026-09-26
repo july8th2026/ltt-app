@@ -139,9 +139,13 @@ def test_service_chon_lane_theo_preset_va_giu_legacy_compatibility():
     assert job_type_for_preset("invalid") == FAST_JOB_TYPE
     assert resolve_handler(LEGACY_JOB_TYPE) is resolve_handler(FAST_JOB_TYPE)
     assert resolve_handler(FAST_JOB_TYPE) is resolve_handler(QUALITY_JOB_TYPE)
+    # H32.6 (2026-09-25, docs/UPSCALE_V2/01_HARDWARE_TRUTH.md): fast do that
+    # 848 MB, quality do that 11.176 MB -> ban khai giam 2000->1000 (fast) va
+    # 12000->11500 (quality), giu bien an toan. Lan legacy (`render`) khong
+    # doi vi no la lan tuong thich cho job da nam trong hang doi.
     assert MANIFEST.vram_for(LEGACY_JOB_TYPE) == 12000
-    assert MANIFEST.vram_for(FAST_JOB_TYPE) == 2000
-    assert MANIFEST.vram_for(QUALITY_JOB_TYPE) == 12000
+    assert MANIFEST.vram_for(FAST_JOB_TYPE) == 1000
+    assert MANIFEST.vram_for(QUALITY_JOB_TYPE) == 11500
 
 
 def test_ffmpeg_subprocess_bi_kill_khi_job_cancel(monkeypatch):
