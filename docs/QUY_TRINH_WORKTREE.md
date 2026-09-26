@@ -58,6 +58,29 @@ dọn — cây chưa dọn sẽ đỏ.
 - Không ghi vào cây của mình khi nó đang chạy gate (hợp đồng §4.9).
 - Commit checkpoint thoải mái trên nhánh phiên (`git add` tường minh).
 
+### ⭐ Gate chạy ở cây RIÊNG ghim `main`, đặt NGOÀI kho
+
+```
+python tools\cay_gate.py chuan-bi --cai-npm    # mot lan, hoac khi lock doi
+python tools\cay_gate.py chay                  # = gate.py, nhung trong cay do
+```
+
+⚠️ **Vì sao**: cây chính là tài nguyên chia sẻ có **bốn chiều độc lập** (nội
+dung cây · sổ ref · HEAD/nhánh · index), và 25–26/09 cả bốn đều vỡ ít nhất một
+lần — trong đó **hai** lần làm bẩn đúng một phán quyết gate (người khác gộp
+giữa lượt; và một lượt đo `main` **cộng 8 tệp chưa commit** của phiên khác).
+
+⭐ Cây gate đo **`main` ĐÃ COMMIT** ⇒ miễn nhiễm với **cả hai**. Và nó ⛔ không
+xếp hàng ai: `git merge` của phiên khác chạy song song, ⛔ không chờ 20 phút.
+
+⛔ Một khoá `cay_chinh` là hình dạng **sai**: khoá tuần tự hoá việc **tính**,
+còn đây là tranh chấp về **chỗ đứng** — thay chỗ đứng thì tranh chấp mất hẳn.
+
+⚠️ Cây mới ⛔ không có `node_modules` (untracked) ⇒ lần đầu phải `--cai-npm`
+(đi qua `chay_nang.py`). Phần Python ⛔ không cần gì: `gate.py` ⛔ không tham
+chiếu `venv`, và nó chạy bằng interpreter đang gọi. Chi tiết + phương án đã bỏ
+(junction `node_modules`): docstring `tools/cay_gate.py`.
+
 ## 4. Kết thúc phiên — gộp `main`
 
 Điều kiện (hợp đồng §7): cây sạch · **giữa phiên** test nhắm xanh (+ L1/L2 khi thay
