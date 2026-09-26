@@ -1114,23 +1114,90 @@ def test_tieng_long_NAM_DUNG_CHO_trong_tep_ra(bc):
 #    dong TODO nam lai them mot nam."* No da bao XPASS o lan chay E2E dau tien
 #    sau khi B22-01 duoc sua, tren mot luot chay THAT: `so_canh 4, so_giu 3,
 #    so_cat 1, so_canh_da_doc 4`.
-def test_preset_CAT_phai_cat_it_nhat_MOT_canh_khong_co_thoai(bc):
-    """🔴 Ban nguon co han mot canh **khong co loi thoai nao** (canh thu tu), va
-    preset cat van giu nguyen no.
+#
+# 🔴 **Task 26 (27/09/2026) — ky vong `so_cat >= 1` da bi GO, va day la cai gia
+#    cua no.** Luot 27/09 tren CUNG phim mau, CUNG 4 canh, CUNG do phu 1,0 cho
+#    `so_cat = 0`. Phep do (dung phim mau cua `fixtures/asv_e2e.nguon_hoi_thoai`,
+#    chay `_do_cac_canh` hom nay va tai hien bang chung hinh dang 25/09) noi ro
+#    day la **HE QUA CO CHU Y** cua `defba7b2` (Task 10 — thay VLM bang phep do
+#    TAT DINH), ⛔ khong phai hoi quy:
+#
+#      * Canh bi cat hom 25/09 la `canh_0004` (27,292 -> 32,189 s). No **KHONG co
+#        loi thoai** (cau cuoi ket o 26,389 s) — dung nhu ten bai kiem noi.
+#      * Nhung no bi cat vi **ban thay the VLM** (`asv_e2e._phan_hoi`, nhanh
+#        `ai.DOC_CANH`) tra `de_xuat="bo", do_tin=0.9` cho MOI canh khong thoai,
+#        va `_quyet_dinh_mot_canh` cat o `0,90 >= nguong 0,65`. Tuc tieu chi that
+#        su chay hom do la *"khong thoai la DU de cat"* — mot tieu chi ⛔ CHUA
+#        TUNG co trong ma san pham, chi co trong ban gia.
+#      * Tieu chi chu du an la mot PHEP HOI: *"cat vung KHONG co loi thoai, chat
+#        luong doan kem, ⛔ khong qua 5 %"*. Hinh cua `canh_0004` la `testsrc` —
+#        phep do tat dinh dem **0,000 s** khung den / dung hinh tren 4,897 s ⇒
+#        `ti_le = 0,00 < 0,65` ⇒ GIU. ⭐ Va canh DUY NHAT cua phim nay co hinh
+#        kem that (`canh_0003`, `color=c=0x101830`, 100 % den + dung hinh) thi
+#        **CO thoai**, nen no duoc bao ve — dung loi hua san pham.
+#      * ⇒ Phim mau nay ⛔ khong con mot canh nao vua KHONG thoai vua hinh kem,
+#        nen `so_cat = 0` la cau tra loi DUNG tren no. (Va ke ca neu co: lat cat
+#        ay dai 15,2 % thoi luong, tren `ke_cat.TRAN_CAT_TI_LE` = 5 %.)
+#
+# ⚠️ **Nhung mot preset `cat_thong_minh` ma ⛔ khong phep kiem nao chot no CO cat
+#    la mot preset ⛔ khong ai canh.** Ky vong do ⛔ khong bi ha xuong — no duoc
+#    **doi cho**, sang du lieu DUNG SAN, o `test_2025_asv_doc_canh_hong.py`:
+#      `test_canh_KHONG_THOAI_va_hinh_KEM_thi_BAN_BIEN_TAP_that_su_CAT`
+#      `test_cat_canh_KHONG_THOAI_do_bang_ffmpeg_THAT_tren_PHIM_DUNG_SAN`
+#    Bai duoi chay phep do THAT (⛔ khong ban thay the nao) tren mot phim dung
+#    san CO canh vua khong thoai vua den — tuc no ⛔ khong phu thuoc vao viec
+#    phim mau tinh co co canh nao.
+def test_preset_CAT_do_du_MOI_canh_va_KHONG_cat_canh_CO_THOAI(bc):
+    """🔴 Thu bai nay chot, sau Task 26: **phep do da chay tren MOI canh**, va
+    **⛔ khong canh CO THOAI nao bi cat**.
 
-    ⭐ `xfail(strict=True)` chu khong phai mot chu thich: ngay ai do noi VLM vao
-       chuoi, phep kiem nay **thanh cong** va pytest bao XPASS — tuc bo test tu
-       noi rang khiem khuyet da het, thay vi de mot dong TODO nam lai them mot
-       nam.
+    ⭐ Hai ve nay la thu phim mau con chung minh duoc, va ve dau chinh la lo hong
+       23/09 (luot nen v3): 2/6 canh do hong ⇒ `so_cat = 0/6` ⇒ khac biet san
+       pham giua hai preset bien mat, va giai doan van bao `succeeded`. Mot bai
+       chi doc `so_cat` ⛔ khong phan biet duoc *"khong co gi dang cat"* voi
+       *"khong do duoc gi"* — nen o day ta chot `do_phu_bang_chung == 1,0` va
+       `canh_hong == []` TRUOC, roi moi doc `so_cat`.
+
+    ⚠️ Ve thu hai do tren **su that doc lap** (`bc["nguon"]`), ⛔ khong doc lai
+       mot dong tom tat: so canh KHONG thoai duoc tinh tu moc cau thoai nguon,
+       va `so_cat` ⛔ khong duoc vuot con so do. Mot lat cat vao canh CO thoai la
+       *"nguoi xem nghe mot cau tra loi cho mot cau hoi khong con"* — hong nang
+       hon han cat thua mot canh im lang.
+
+    ⛔ Bai nay ⛔ KHONG con chot `so_cat >= 1`; xem khoi ghi chu ngay tren, kem
+       ngay va kem `defba7b2`.
     """
     from apps.auto_scan_video import hop_dong_v4
 
     cat = next(l for l in bc["luot"]
                if l["preset"] == hop_dong_v4.PRESET_CAT_THONG_MINH)
-    assert int(cat["ban_bien_tap"].get("so_cat") or 0) >= 1, (
-        f"so_canh={cat['ban_bien_tap'].get('so_canh')}, "
-        f"so_cat={cat['ban_bien_tap'].get('so_cat')}, "
-        f"so_co_bang_chung={cat['ban_bien_tap'].get('so_co_bang_chung')}")
+    bt = cat["ban_bien_tap"]
+    so_canh = int(bt.get("so_canh") or 0)
+
+    # ── (1) Phep do da chay tren MOI canh — bat bien, ⛔ khong tham so ──────
+    assert so_canh >= 1, bt
+    assert int(bt.get("so_canh_hong") or 0) == 0 and bt.get("canh_hong") == [], bt
+    assert float(bt.get("do_phu_bang_chung") or 0.0) == 1.0, bt
+    assert int(bt.get("so_co_bang_chung") or 0) == so_canh, bt
+
+    # ── (2) SU THAT doc lap: canh nao giao mot cau thoai NGUON ─────────────
+    def _co_thoai(c) -> bool:
+        return any(float(l["bat"]) < float(c["ket"])
+                   and float(l["bat"]) + float(l["giay"]) > float(c["bat"])
+                   for l in bc["nguon"]["loi"])
+
+    khong_thoai = [c["ten"] for c in bc["nguon"]["canh"] if not _co_thoai(c)]
+    assert khong_thoai, (
+        "ban nguon ⛔ khong con canh nao KHONG co thoai — `HINH_CANH` cua "
+        "fixtures/asv_e2e.py chu dinh giu mot canh nhu vay, va thieu no thi "
+        "ve (3) duoi day ⛔ khong con noi gi")
+
+    # ── (3) ⛔ Khong canh CO THOAI nao bi cat ───────────────────────────────
+    so_giu, so_cat = int(bt.get("so_giu") or 0), int(bt.get("so_cat") or 0)
+    assert so_giu + so_cat == so_canh, bt
+    assert so_cat <= len(khong_thoai), (
+        f"cat {so_cat} canh trong khi chi co {len(khong_thoai)} canh KHONG "
+        f"thoai ({khong_thoai}) — mot lat cat da vao canh co loi thoai. {bt}")
 
 
 def test_QC_moi_muc_deu_co_phan_quyet_va_khong_muc_nao_hong(bc):
