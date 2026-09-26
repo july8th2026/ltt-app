@@ -174,20 +174,37 @@ def test_lat_cat_tien_do_khong_bao_gio_ghi_lui():
     `da_lam` phải đơn điệu — ghi lùi nghĩa là một lượt tiếp nối sau đó sẽ hỏi
     (và **trả tiền**) lại một cảnh đã hỏi.
 
-    ⭐ Nay ⛔ không cảnh nào tốn tiền riêng, nên điểm chốt theo CẢNH biến mất và
-       giai đoạn còn **đúng một** điểm chốt: chỉ mục cảnh. Ý định được giữ ở chỗ
-       nó vẫn là một điểm chốt THẬT (một lần tách cảnh trên video 120 phút là một
-       lệnh ffmpeg dài), và `lc.kiem`/`lc.xong_mot` ⛔ không nằm trong vòng lặp.
+    ⭐ Nay ⛔ không cảnh nào tốn tiền riêng, nên điểm chốt theo CẢNH biến mất.
+       Giai đoạn còn **HAI** đơn vị dài — tách cảnh, rồi một lượt ffmpeg giải mã
+       cả tệp — và đúng **một** điểm chốt nằm giữa chúng, mang `chi_muc`.
+
+    🔴 **Và thứ tự `xong_mot()` → `kiem()` là một BẤT BIẾN, không một chi tiết.**
+       `nen_nhuong()` trả `False` khi `da_lam < 1` (*"mỗi lượt phải tiến ít nhất
+       một đơn vị"*), nên đặt ngược lại thì điểm chốt này ⛔ **không bao giờ nổ
+       được** — một nhánh phòng thủ cho một ca không thể xảy ra, đúng lớp lỗi kho
+       đã ghi sổ. Bài này chốt thứ tự đó bằng máy.
     """
-    cay = ast.parse(inspect.getsource(gdbbt.chay))
+    from apps.auto_scan_video import lat_cat
+
+    ma = inspect.getsource(gdbbt.chay)
+    cay = ast.parse(ma)
     trong_vong: set[str] = set()
     for nut in ast.walk(cay):
         if isinstance(nut, (ast.For, ast.While, ast.AsyncFor)):
             trong_vong |= _ten_duoc_goi(ast.unparse(nut))
     assert "kiem" not in trong_vong and "xong_mot" not in trong_vong, (
-        "diem chot cua edit_plan nam trong mot vong lap — no chi con MOT don vi")
-    ma = inspect.getsource(gdbbt.chay)
+        "diem chot cua edit_plan nam trong mot vong lap — no chi con HAI don vi")
     assert 'trang_thai={"chi_muc"' in ma, "chi muc canh khong duoc chot lai"
+    # ⭐ Đối chứng CƠ HỌC cho luật `da_lam < 1`, ⛔ không chỉ một lời khai.
+    lc = lat_cat.LatCat(ten="edit_plan", van_tay="v", phien="p", luot=0,
+                        vi_tri=0, trang_thai={}, tran_s=1.0, du_phong_s=0.0,
+                        bat_dau=float(lat_cat.dong_ho()) - 10 ** 6)
+    assert lc.nen_nhuong() is False, "da_lam = 0 ma da nhuong"
+    lc.xong_mot()
+    assert lc.nen_nhuong() is True, "het ngan sach roi ma khong nhuong"
+    # Và `chay` phải gọi theo ĐÚNG thứ tự đó.
+    assert ma.index("lc.xong_mot()") < ma.index('lc.kiem(vi_tri=2'), (
+        "`kiem` dat truoc `xong_mot` — diem chot nay khong bao gio no duoc")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

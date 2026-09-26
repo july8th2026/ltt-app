@@ -50,7 +50,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     🔑 **Thu tu 26/09: buoc nay chay SAU `render`.** Quyet dinh cat va phep cat
        (`ke_cat`/`image_finish`) dung tren **cung mot truc** — bo di phep doi
-       truc mà `thoi_gian.ngan_sach_doan` da goi la *"tron hai dong ho"*.
+       truc ma `thoi_gian.ngan_sach_doan` da goi la *"tron hai dong ho"*.
 
     ⛔ Ly do CU (`V4-R07`: *"dung dich nhung cau thuoc canh se bi cat"*) het
        dung khi GD1 giu nguyen hinh va xuat MP4 full do dai — ⛔ khong con canh
@@ -94,12 +94,25 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             ci = canh_mod.phan_tich(duong, thoi_luong=thoi_luong,
                                     hoi_huy=getattr(ctx, "is_cancelled", None))
         canh_mod.kiem_chi_muc(ci)
-        # 🔑 Diem chot DUY NHAT cua giai doan nay: chi muc canh. Mot lan tach canh
-        #    tren video 120 phut la mot lenh ffmpeg dai, va ma canh ⛔ khong duoc
-        #    doi giua hai luot. ⛔ Khong con diem chot theo TUNG canh — tu 26/09
-        #    ⛔ khong canh nao ton tien rieng.
+        # 🔑 **HAI don vi lat cat, ⛔ khong con mot don vi moi CANH** (26/09): tu
+        #    khi VLM thoi viec, ⛔ khong canh nao ton tien rieng nen ⛔ khong co
+        #    gi de nhuong GIUA cac canh. Nhung giai doan nay van la HAI buoc dai:
+        #
+        #        don vi 1  tach canh   (PySceneDetect tren ca video)
+        #        don vi 2  do hinh     (MOT luot ffmpeg giai ma ca tep)
+        #
+        # ⭐ Nen diem chot nam DUNG giua hai buoc do, va no mang `chi_muc`: neu
+        #    buoc tach canh mot minh da an het ngan sach job, luot sau doc lai
+        #    chi muc thay vi tach canh lai tren video 120 phut — va ma canh ⛔
+        #    khong doi giua hai luot.
+        #
+        # ⚠️ `nen_nhuong()` tra `False` khi `da_lam < 1` (*"moi luot phai tien it
+        #    nhat mot don vi"*), nen `xong_mot()` phai chay TRUOC `kiem()`; dat
+        #    nguoc lai thi diem chot nay ⛔ khong bao gio no duoc — mot nhanh
+        #    phong thu cho mot ca khong the xay ra.
         if lc is not None:
-            lc.kiem(vi_tri=1, trang_thai={"chi_muc": _chi_muc_dict(ci)})
+            lc.xong_mot()
+            lc.kiem(vi_tri=2, trang_thai={"chi_muc": _chi_muc_dict(ci)})
 
     ban_ghi = _ban_ghi(db, kho, run)
     # 🔑 **Phep do nam SAU khi co ban chep loi, va truoc `lap_ban`.** Nguong bo
