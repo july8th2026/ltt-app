@@ -13672,6 +13672,18 @@ msgstr "VPS Small"
 msgid "VPS Vừa"
 msgstr "VPS Medium"
 
+#: apps/prompt_ai_ommi/routes/handoff.py
+msgid "Vé giao bài đã hết hạn."
+msgstr "Handoff ticket has expired."
+
+#: apps/prompt_ai_ommi/routes/handoff.py
+msgid "Vé giao bài đã được dùng."
+msgstr "Handoff ticket has already been used."
+
+#: apps/prompt_ai_ommi/routes/handoff.py
+msgid "Vé giao bài không hợp lệ."
+msgstr "Handoff ticket is not valid."
+
 #: apps/auto_scan_video
 msgid "Video"
 msgstr "Video"
