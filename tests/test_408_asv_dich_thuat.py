@@ -583,3 +583,50 @@ def test_ho_so_dich_MOT_loi_goi_cho_ca_video():
         and c.func.attr == "goi"
         for v in vong for c in ast.walk(v))
     assert not trong_vong, "loi goi model nam trong mot vong lap"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Task 7b — cua so ngu canh mang BAN DA DICH + noi ho so dich vao loi nhac
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ngu_canh_ke_uu_tien_BAN_DA_DICH_cho_phia_truoc():
+    """🔴 Lời nhắc nói `ke_ben` là "câu khán giả VỪA NGHE". Với phía `truoc` thì
+    khán giả đã nghe **bản tiếng Việt**, ⛔ không phải chữ Hán nguồn."""
+    from apps.auto_scan_video.long_tieng import ngu_canh_ke
+
+    tat_ca = [{"ma": "seg_0001", "chu": "你好"},
+              {"ma": "seg_0002", "chu": "你呢"},
+              {"ma": "seg_0003", "chu": "再见"}]
+    ra = ngu_canh_ke(tat_ca, 1, ke=1,
+                     da_dich={"seg_0001": {"chu": "Chao cac ban"}})
+    assert ra["truoc"] == ["Chao cac ban"], ra
+    # phía `sau` CHƯA dịch nên vẫn là nguồn — đó là đúng, ⛔ không phải thiếu sót
+    assert ra["sau"] == ["再见"], ra
+
+
+def test_ngu_canh_ke_KHONG_co_ban_dich_thi_giu_nguyen_nhu_cu():
+    """⛔ Không có `da_dich` thì hàm phải chạy y hệt bản trước một mili-giây."""
+    from apps.auto_scan_video.long_tieng import ngu_canh_ke
+
+    tat_ca = [{"ma": "a", "chu": "X"}, {"ma": "b", "chu": "Y"},
+              {"ma": "c", "chu": "Z"}]
+    assert ngu_canh_ke(tat_ca, 1, ke=1) == {"truoc": ["X"], "sau": ["Z"]}
+
+
+def test_loi_nhac_mang_BANG_DAI_TU_va_TEN_RIENG_khi_co_ho_so():
+    """C1+C2: quan hệ nhân vật quyết MỘT lần cho cả video, ⛔ không mỗi lô một lần."""
+    from apps.auto_scan_video.long_tieng import loi_nhac
+
+    lo = [{"ma": "seg_0001", "chu": "光子来了", "bat": 0.0, "ket": 2.0}]
+    tin = loi_nhac(lo, tat_ca=lo, ngon_ngu_goc="zh", dac_diem_giong={},
+                   ho_so={"bang_dai_tu": {"A->KHAN": {"toi": "minh",
+                                                     "goi": "cac ban"}},
+                          "bang_ten_rieng": {"光子": "Quang Tu"}})
+    ca = " ".join(m["content"] for m in tin)
+    assert "Quang Tu" in ca and "cac ban" in ca
+
+
+def test_doi_loi_nhac_thi_PHAI_tang_PHIEN_BAN_LONG_TIENG():
+    """⛔ Thiếu bước này, lượt chạy mới dùng lại bản lồng tiếng của lời nhắc CŨ."""
+    from apps.auto_scan_video import long_tieng
+    assert long_tieng.PHIEN_BAN_LONG_TIENG >= 3

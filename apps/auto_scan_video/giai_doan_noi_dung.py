@@ -237,7 +237,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    cac ma cua LO nay, nen mot lo ⛔ khong co doan bi che se cho ra
             #    loi nhac **y het ban nen** (`long_tieng.loi_nhac` chi chen luat
             #    `y_canh` khi lo that su co doan mang no).
-            y_canh={m: y for m, y in y_canh_cho_lo.items() if m in ma_da_gui})
+            y_canh={m: y for m, y in y_canh_cho_lo.items() if m in ma_da_gui},
+            # 🔑 Task 7b — `chuyen` la dict DANG TICH LUY (`chuyen.update(moi)`
+            #    sau moi lo o duoi), nen tai lo `i` no giu ban dich cua MOI lo
+            #    truoc. `ho_so` la ket qua MOT lan goi cua Task 11 (dong 182),
+            #    ⛔ khong goi lai o day.
+            da_dich=chuyen, ho_so=ho_so)
 
         kq = ai.goi_tinh_tien(
             db, run, ai.CHUYEN_LOI_THOAI, messages,
