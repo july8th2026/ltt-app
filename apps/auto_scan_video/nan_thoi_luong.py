@@ -130,8 +130,9 @@ from apps.auto_scan_video import ngon_ngu as _ngon_ngu
 #:      3,35    dai [3,04 ; 3,51]   giong san pham, do lai 23/09/2026
 #:
 #:    Hai dai chong nhau gan het, hai trung vi lech 2% ⇒ **trong nhieu**. Giu ban
-#:    **moi hon** va **da noi vao san pham** (`nan_cho_vua.loi_nhac_nan` qua
-#:    `ngon_ngu.HE_SO_MUC_TIEU`). Con so `3,284` nghi huu — lich su giu o day.
+#:    **moi hon** va **da noi vao san pham** (`nan_cho_vua.loi_nhac_nan_lo` qua
+#:    `ngon_ngu.HE_SO_MUC_TIEU`; nguoi goi cu `loi_nhac_nan` da xoa 26/09, Task
+#:    22). Con so `3,284` nghi huu — lich su giu o day.
 #:
 #: ⛔ Khong phai 9 ky tu/giay cua Netflix — do la toc do **DOC** cua phu de.
 #: ⛔ Va khong phai `4,5` — con so cu do da **lam hong mot lan chay that**

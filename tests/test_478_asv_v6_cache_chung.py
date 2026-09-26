@@ -277,7 +277,10 @@ def test_chep_loi_CHI_doc_nhung_thiet_lap_NAM_TRONG_khoa():
     """
     doc = _thuoc_tinh_cua_cai_dat(GOC / "apps/auto_scan_video/giai_doan_chep_loi.py")
     assert doc, "bo phan tich khong thay phep doc thiet lap nao — xanh rong"
-    assert doc <= {"ngon_ngu_nguon", "ngon_ngu_dich", "nguon_loi"}, doc
+    # ⛔ `nguon_loi` ra khoi tap nay 26/09 (Task 21): `giai_doan_chep_loi` khong
+    #    con doc no. ⭐ Thu hep tran tren la CO Y — mot tran tren rong hon thuc te
+    #    la mot phep kiem noi it hon no co the noi.
+    assert doc <= {"ngon_ngu_nguon", "ngon_ngu_dich"}, doc
 
 
 def test_audio_prepare_CHI_doc_LOP_va_no_nam_trong_khoa():

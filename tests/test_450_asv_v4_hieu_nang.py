@@ -51,10 +51,20 @@ import apps.ltt_voice.tables  # noqa: E402,F401  isort:skip
 #:    so tu tep nay; sau pha 29 nhung so do khong con o trong no nua — lien ket
 #:    van song, noi dung van dung, chi la no khong con la thu bao cao 24 mo ta.
 #:    Doi ten de cai ten thoi hua mot dieu ma tep khong giu.
-BAO_CAO = (Path(__file__).resolve().parents[1]
-           / "docs" / "auto_scan_video_v4" / "evidence"
-           / "hieu_nang_hien_hanh.json")
 BIEN_RA = "LTT_ASV_PERF_RA"
+#: ⭐ **ĐỌC theo đúng cờ mà người GHI dùng.** Bản trước ghim cứng đường này và chỉ
+#:    người GHI đọc `BIEN_RA*` — tức một cờ *"ghi ra chỗ khác"* mà ⛔ không kéo theo
+#:    *"đọc từ chỗ khác"*. Docstring của `test_448` đã gọi đúng tên nó: **một cờ NÓI
+#:    DỐI**, vì nó hứa một sự cô lập mà nó ⛔ không tạo ra. `test_448` đã sửa; tệp anh
+#:    em này thì chưa — một lời dặn dò ⛔ không tự thành động tác.
+#:
+#: 🔴 Và cái giá là THẬT: điều phối thử chạy cửa chặn-bằng-chứng-cũ trên bản 04/09
+#:    lấy từ git, nó **XANH** — vì nó vẫn đọc tệp MỚI. Một phép kiểm sức bắt bị báo
+#:    là *"⛔ không mất sức bắt"* bởi chính cái cờ ⛔ không được tôn trọng.
+BAO_CAO = (Path(os.environ[BIEN_RA]) if os.environ.get(BIEN_RA)
+           else (Path(__file__).resolve().parents[1]
+                 / "docs" / "auto_scan_video_v4" / "evidence"
+                 / "hieu_nang_hien_hanh.json"))
 SCHEMA = "asv.v4.hieu_nang.1"
 NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
 
@@ -295,7 +305,17 @@ def test_DO_TAI_hai_preset(moi_truong, tmp_path, monkeypatch):
     for l in luot:
         assert l["trang_thai"] == "done", (l["nhan"], l["nhat_ky"])
         assert [g["ten"] for g in l["giai_doan"] if g["ten"] != "advance"], l["nhan"]
-    assert len(pipeline.CHUOI) == 12
+    # ⭐ **ĐỌC chuỗi, ⛔ KHÔNG chép độ dài của nó.** Bản trước ghim
+    #    `len(pipeline.CHUOI) == 12`; đường ống nay có **13** giai đoạn, nên con số
+    #    ấy đã sai từ lúc `image_finish` ra đời — và ⛔ không ai thấy, vì dòng này
+    #    nằm trong phép kiểm `@NANG` **bị bỏ qua** theo mặc định.
+    #
+    # ⚠️ Ý định thật của nó ⛔ không phải *"đường ống có mấy giai đoạn"* — đó là việc
+    #    của `pipeline.py`. Ý định là **lượt chạy này đã đi HẾT chuỗi**. Chốt đúng
+    #    điều đó thì con số ⛔ không thể trôi nữa.
+    for l in luot:
+        da_di = _chuoi_gon(l["giai_doan"])
+        assert da_di == list(pipeline.TEN_GIAI_DOAN), (l["nhan"], da_di)
 
 
 def _may() -> dict:
@@ -348,6 +368,65 @@ def test_bao_cao_du_hai_preset_va_dung_luoc_do(bc):
 
     assert bc["schema"] == SCHEMA
     assert {l["preset"] for l in bc["luot"]} == set(hop_dong_v4.PRESET)
+
+
+#: Buoc cua BO CHAY, khong phai giai doan cua `pipeline.CHUOI`.
+BUOC_NGOAI_CHUOI = ("advance", "tai_len")
+
+
+def _chuoi_gon(giai_doan) -> list[str]:
+    """Ten giai doan, BO TRUNG LAP, giu thu tu LAN DAU xuat hien.
+
+    ⚠️ **Mot giai doan xuat hien NHIEU LAN trong bao cao la HOP LE**: lat cat va
+       vong thu lai deu ghi them mot dong. Ban dau cua `_chuoi_gon` khong co — no
+       so danh sach Y NGUYEN — nen mot bang chung DUNG (13 ten / 22 dong) bi bao
+       la sai. Do la mot cua qua CHAT, tuc mot bao dong gia; va bao dong gia lam
+       nguoi ta TAT cong.
+
+    ⭐ Tinh chat can chot van nguyen: **tap ten va thu tu lan dau** phai khop
+       `pipeline.TEN_GIAI_DOAN`. Thieu `image_finish` thi van DO — tuc suc bat
+       khong mat gi.
+    """
+    ra: list[str] = []
+    for g in giai_doan:
+        ten = g["ten"] if isinstance(g, dict) else str(g)
+        if ten in BUOC_NGOAI_CHUOI or ten in ra:
+            continue
+        ra.append(ten)
+    return ra
+
+
+def test_450_bang_chung_phai_PHU_dung_chuoi_giai_doan_HIEN_TAI(bc):
+    """🔴 **Chín phép kiểm dưới đây từng XANH trên bằng chứng ngày 04/09/2026** —
+       một bản ghi thiếu **BA** giai đoạn (`image_finish`, `qc_do_luong`, `qc_ai`),
+       đặt `edit_plan` sai vị trí, và mang một bước `tai_len` ⛔ không thuộc
+       `pipeline.CHUOI`. Đo lúc 27/09: bằng chứng có **11** bước, đường ống có
+       **13** giai đoạn.
+
+    ⚠️ Vì sao ⛔ không ai bắt được: cửa duy nhất so với đường ống là
+       `assert len(pipeline.CHUOI) == ...` **nằm trong phép kiểm `@NANG`**, tức
+       **bị bỏ qua** trên mọi lượt thường. Còn chín phép kiểm đọc `bc` thì ⛔ không
+       một phép nào hỏi *"bản ghi này nói về đường ống NÀO"*.
+
+    ⭐ Nên cửa này phải chạy **LUÔN**, ⛔ không nằm sau `@NANG`: giá trị của nó là
+       làm một bản ghi cũ **ĐỎ** thay vì để chín khẳng định xanh trên một hệ
+       ⛔ không còn tồn tại. Một bằng chứng cũ được *đọc và tin* thì nguy hơn
+       ⛔ không có bằng chứng.
+
+    ⇒ Sửa khi ĐỎ: chạy lại phép đo `@NANG` (`LTT_TEST_NANG=1`) để ghi bản mới,
+      ⛔ **đừng** nới cửa này.
+    """
+    from apps.auto_scan_video import pipeline
+
+    mong = list(pipeline.TEN_GIAI_DOAN)
+    for l in bc["luot"]:
+        co = _chuoi_gon(l["giai_doan"])
+        thieu = [t for t in mong if t not in co]
+        la = [t for t in co if t not in mong]
+        assert co == mong, (
+            f"bang chung ({bc.get('ghi_luc')}) noi ve mot duong ong KHAC: "
+            f"luot {l.get('nhan')!r} thieu {thieu}, co them {la}; "
+            f"chay lai phep do NANG de ghi ban moi")
 
 
 def test_KHONG_giai_doan_nao_dat_may_vao_bao_hoa(bc):
@@ -455,10 +534,12 @@ def test_may_va_tai_NEN_duoc_ghi_lai(bc):
 DINH_CPU_DE_TACH_SUAT = 70.0
 RAM_TRONG_DE_TACH_SUAT_GIB = 8.0
 
-BAO_CAO_SUAT = (Path(__file__).resolve().parents[1]
-                / "docs" / "auto_scan_video_v4" / "evidence"
-                / "suat_gpu_hien_hanh.json")
 BIEN_RA_SUAT = "LTT_ASV_SUAT_RA"
+#: ĐỌC theo đúng cờ mà người GHI dùng — xem chú thích của `BAO_CAO`.
+BAO_CAO_SUAT = (Path(os.environ[BIEN_RA_SUAT]) if os.environ.get(BIEN_RA_SUAT)
+                else (Path(__file__).resolve().parents[1]
+                      / "docs" / "auto_scan_video_v4" / "evidence"
+                      / "suat_gpu_hien_hanh.json"))
 
 
 def _rut_tieng(nguon: str, dich: Path, *, tan_so: int, so_kenh: int) -> str:
@@ -668,10 +749,12 @@ def test_SUAT_GPU_van_phai_dung_CHUNG_cho_toi_khi_co_phep_do_moi(bc):
 #  ASR tren CUDA — mon no pha 22 giao lai, do o day
 # ══════════════════════════════════════════════════════════════════════════════
 
-BAO_CAO_ASR = (Path(__file__).resolve().parents[1]
-               / "docs" / "auto_scan_video_v4" / "evidence"
-               / "asr_cuda_hien_hanh.json")
 BIEN_RA_ASR = "LTT_ASV_ASR_RA"
+#: ĐỌC theo đúng cờ mà người GHI dùng — xem chú thích của `BAO_CAO`.
+BAO_CAO_ASR = (Path(os.environ[BIEN_RA_ASR]) if os.environ.get(BIEN_RA_ASR)
+               else (Path(__file__).resolve().parents[1]
+                     / "docs" / "auto_scan_video_v4" / "evidence"
+                     / "asr_cuda_hien_hanh.json"))
 
 
 @rao_chan_nang.NANG

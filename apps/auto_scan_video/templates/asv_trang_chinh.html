@@ -285,33 +285,6 @@
     <details class="asv-nang-cao">
       <summary>{{ _("Tuỳ chọn nâng cao") }}</summary>
 
-      {# ── Nguồn lời thoại gốc (asv-final 23/09, `nguon_loi.py`) ───────────
-
-         🔑 Mặc định `Tự chọn nguồn tốt nhất` đúng cho gần hết khách, nên ô này
-            ở NÂNG CAO chứ không ở tầng cơ bản — khác cặp ngôn ngữ.
-
-         ⛔ Nhưng nó KHÔNG phải ô trang trí: ba chế độ còn lại là ÉP, và ép một
-            nguồn video không có thì `nguon_loi.dinh_tuyen` **dừng lần chạy**
-            (`KhongCoNguon`). Câu ghi chú dưới nói đúng điều đó, vì một khách ép
-            "chữ trên hình" cho video không có hardsub cần biết trước hậu quả
-            chứ không phải sau khi đã bị giữ credit.
-
-         ⭐ Nguồn THẬT đã dùng hiện ở màn một lần chạy (`Bằng chứng chất
-            lượng`) — đó là chỗ ô này về đích. #}
-      <div class="asv-nhom" id="asv-nhom-nguon-loi">
-        <h3>{{ _("Lời thoại gốc lấy từ đâu") }}</h3>
-        <fieldset class="asv-o">
-          <legend class="asv-an-doc">{{ _("Nguồn lời thoại") }}</legend>
-          {% for ma, ten, mo_ta in nguon_loi %}
-            <label class="asv-chon">
-              <input type="radio" name="nguon_loi" value="{{ ma }}"
-                     {% if ma == nguon_loi_chon %}checked{% endif %}>
-              <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
-            </label>
-          {% endfor %}
-        </fieldset>
-      </div>
-
       <div class="asv-nhom">
         <h3>{{ _("Cách đọc tên riêng") }}</h3>
         {# 🔴 `apps/ltt_voice/text_pipeline.chuan_hoa` nhan `tu_dien_rieng` tu

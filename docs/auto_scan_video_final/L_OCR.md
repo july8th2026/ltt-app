@@ -1,5 +1,19 @@
 # L-OCR — Nguon loi thoai: phu de nhung -> hardsub (OCR) -> ASR
 
+> ⛔ **ĐƯỜNG ĐÃ BỊ 26/09/2026 (Task 21) — GIỮ LÀM BẰNG CHỨNG LỊCH SỬ.**
+> Chủ dự án chốt sản phẩm chỉ đi **MỘT** đường: voice → voice. Ba chế độ
+> `ocr` · `embedded` · `auto` đã bỏ khỏi mã, cùng với `phu_de_cung.py` và
+> `apps/asv_gpu/do_luong/ocr_khung.py`. Lý do + ba mệnh đề kiểm được mà người
+> muốn thêm lại phải bác được: `docs/auto_scan_video_final/B1_PLAN_DUONG_ONG_GD1.md` §11.
+>
+> ⭐ **Tệp này ⛔ KHÔNG bị xoá**, và đó là một quyết định: nó là bằng chứng
+> đã trả tiền cho một phép đo thật, và `l_ocr_gt_v2*.json` sinh ra từ đây vẫn
+> đang là **chân lý nền phân đoạn của cổng B1** (`tools/do_luong.py:CHAN_LY_NEN_PHAN_DOAN`).
+> Xoá bằng chứng là xoá khả năng kiểm lại chính quyết định 26/09.
+>
+> ⚠️ Mọi `tệp:dòng` và mọi tên hàm dưới đây là **ảnh chụp 22–23/09**, ⛔ không
+> còn tra được trong mã hôm nay.
+
 > Lan `ocr` cua phien `asv-final`. Nhanh `phien/asv-final-ocr`.
 > Do tren 4 clip Douyin that cua chu du an (`Desktop\TEST VIDEO`), 22-23/09/2026.
 > Moi con so duoi day deu do tren may A (RTX 5060 Ti, 20 loi), lenh nang qua

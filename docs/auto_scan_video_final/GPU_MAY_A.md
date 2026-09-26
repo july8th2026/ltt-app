@@ -139,7 +139,7 @@ khai 5.200 dung. Tach suat thi + demucs 1.083 = 9.356, van thua.
 | Rut khung · giai ma · T13 · timing_align · compose · media_prepare | moi buoc 0,3–3,3 s, duoi nguong §0; nvdec do duoc **cham 2,6x** (§3b) |
 | MetricX lo nho | 0,98x ma an 2,6 GiB — va dang **hoan co chu y** cho B2 (§4) |
 | VMAF (T18) | 62 s, la nut thuc, nhung khong co `libvmaf_cuda` trong ban ffmpeg nay (§3b) |
-| OCR hardsub | 1,6x, doi lai CUDA 13 + tranh card; `nguon_loi.py:224` ghi `gpu_uuid=""` co chu y |
+| ~~OCR hardsub~~ ⛔ **DUONG DA BO 26/09 (Task 21)** | Nguyen van: 1,6x, doi lai CUDA 13 + tranh card; `nguon_loi.py:224` ghi `gpu_uuid=""` co chu y. ⛔ Ca dong nay va tep `ocr_khung.py` khong con — MOT duong duy nhat voice->voice |
 | DNSMOS | onnxruntime `qc-venv` la ban CPU, chay ngoai duong san pham |
 
 ⇒ Tat ca deu la mot he qua cua §0: **card chi thang tren buoc dai hon ~3–4 giay**.

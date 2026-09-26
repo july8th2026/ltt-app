@@ -239,17 +239,33 @@ def _do_llm(doan: tuple[dict, ...], *, vong: int, cho_ban: float,
         for m in doan:
             giay = (statistics.mean(do_duoc[m["ma"]]) if do_duoc.get(m["ma"])
                     else m["khe"] * 1.2)
-            msg = nan_cho_vua.loi_nhac_nan(
-                m, chu_hien_tai=m["chu"], giay_do_duoc=giay, khe=m["khe"],
+            # 🔴 **26/09/2026 — di qua `loi_nhac_nan_lo`/`doc_nan_lo`, tuc DUONG
+            #    SAN PHAM hom nay.** Truoc do cho nay goi `loi_nhac_nan`/
+            #    `doc_nan` (mot doan mot luot); Task 12 chuyen `giai_doan_giong`
+            #    sang LO va Task 22 xoa cap ham cu. Do mot loi nhac ⛔ khong con
+            #    ai gui la do **thu dai dien** cho thu that.
+            #
+            # ⭐ MOT muc moi lo, co y: cong cu nay do **do tre mot luot goi** de
+            #    so cac muc `muc_nghi` voi nhau, nen phai giu dung mot luot =
+            #    mot doan. `giai_doan_giong` gom nhieu muc hon vao mot lo; con
+            #    so o day la SAN cua do tre, ⛔ khong phai tong chi phi cua pha.
+            msg = nan_cho_vua.loi_nhac_nan_lo(
+                [{"ma": str(m["ma"]), "chu": m["chu"], "giay_doc": giay,
+                  "khe": m["khe"], "truoc": "", "sau": ""}],
                 ngon_ngu_dich="vi")
             for lan in range(ban_toi_da + 1):
                 t0 = time.monotonic()
                 try:
                     kq = ai.goi(db, ai.RUT_NGAN_CHO_VUA, msg,
                                 muc_nghi=muc_nghi)
-                    chu_moi = nan_cho_vua.doc_nan(
-                        ai.doc_ket_qua(kq, ai.RUT_NGAN_CHO_VUA))
-                    nhan = "ok"
+                    # ⛔ `doc_nan_lo` KHONG nem — mot ma thieu tra ve dict rong,
+                    #    va o mot bo do thi "khong doc duoc" phai la mot NHAN
+                    #    rieng chu khong duoc lan vao "ok" voi chu rong.
+                    _lo = nan_cho_vua.doc_nan_lo(
+                        ai.doc_ket_qua(kq, ai.RUT_NGAN_CHO_VUA),
+                        can={str(m["ma"])})
+                    chu_moi = _lo.get(str(m["ma"]), "")
+                    nhan = "ok" if chu_moi else "khong_doc_duoc_cau_moi"
                 except Exception as exc:                    # noqa: BLE001
                     kq = {}
                     chu_moi = ""

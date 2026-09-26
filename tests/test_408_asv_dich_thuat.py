@@ -731,6 +731,85 @@ def test_doi_soat_moi_khoa_doc_deu_CO_AI_GHI_vao_outputs():
         "tai. No ghi: %s" % (thieu, sorted(bg)))
 
 
+def _khoa_tom_tat_that_su_ghi() -> dict[str, set[str]]:
+    """`{ten_giai_doan: khoa `tom_tat` THAT SU tới `outputs`}`.
+
+    ⭐ Cùng một nguồn với chiều thuận: dict tại chỗ `return` + khoá của `**` lấy
+       bằng cách GỌI THẬT hàm sinh nó. ⛔ Không bịa một danh sách thứ hai.
+    """
+    from apps.auto_scan_video import (giai_doan_giong, giai_doan_thoi_gian,
+                                      nan_cho_vua, thoi_gian)
+
+    return {
+        "voice_synthesis": (_khoa_chuoi(_dict_tom_tat_tai_return(giai_doan_giong))
+                            | set(nan_cho_vua.tom_tat([], tung_luot_doc=[]))),
+        "timing_align": (_khoa_chuoi(_dict_tom_tat_tai_return(giai_doan_thoi_gian))
+                         | set(thoi_gian.tom_tat({"doan": []}))),
+    }
+
+
+def test_doi_soat_moi_khoa_DA_GHI_deu_co_NGUOI_QUYET_doc_hay_KHONG():
+    """🔴 **Chiều NGƯỢC của bánh cóc** — chiều đã để `so_doan_nan_oan` lọt.
+
+    Bài ngay trên hỏi *"khoá công cụ ĐỌC → có ai GHI không"*. Chiều ấy bắt được
+    N-5b, nhưng nó ⛔ mù tuyệt đối với chiều này: `giai_doan_giong` **đã xuất**
+    `so_doan_nan_oan` vào `tom_tat`, mà `asv_doi_soat` ⛔ không liệt kê và ⛔
+    không đọc nó ⇒ Đ4 **vô hình với người vận hành** dù con số nằm sẵn trong
+    `asv_stage.outputs`. Không phép đo nào bắt được, vì ⛔ không có gì để đếm.
+
+    ⇒ Từ đây một khoá mới phải vào `KHOA_CAN` **hoặc** `KHOA_BO_QUA_CO_Y`; ⛔
+      không có đường thứ ba để nó im lặng.
+    """
+    from tools import asv_doi_soat as cc
+
+    for ten, ghi in _khoa_tom_tat_that_su_ghi().items():
+        biet = set(cc.KHOA_CAN[ten]) | set(cc.KHOA_BO_QUA_CO_Y[ten])
+        chua_quyet = sorted(ghi - biet)
+        assert not chua_quyet, (
+            "giai doan %s ghi %s vao `tom_tat` ma `asv_doi_soat` ⛔ khong DOC "
+            "va cung ⛔ khong khai la co y bo qua — dung cai lo da lam Đ4 vo "
+            "hinh. Them vao `KHOA_CAN` hoac `KHOA_BO_QUA_CO_Y`."
+            % (ten, chua_quyet))
+
+
+def test_doi_soat_KHOA_BO_QUA_khong_chua_khoa_MA_KHONG_AI_GHI():
+    """⚠️ Danh sách bỏ qua cũng mắc được **chính** con bọ N-5b.
+
+    Một tên ma trong `KHOA_BO_QUA_CO_Y` nghĩa là: *"đã có người nhìn và quyết
+    không đọc"* — về một khoá ⛔ không tồn tại. Nó làm bài trên yếu đi mà ⛔
+    không ai thấy, và nó che đúng trường hợp đổi tên khoá.
+    """
+    from tools import asv_doi_soat as cc
+
+    ghi_theo_gd = _khoa_tom_tat_that_su_ghi()
+    for ten, bo_qua in cc.KHOA_BO_QUA_CO_Y.items():
+        ma = sorted(set(bo_qua) - ghi_theo_gd[ten])
+        assert not ma, (
+            "`KHOA_BO_QUA_CO_Y[%r]` khai %s ma ⛔ KHONG AI ghi chung — ten ma "
+            "hoac khoa da doi ten" % (ten, ma))
+        trung = sorted(set(bo_qua) & set(cc.KHOA_CAN[ten]))
+        assert not trung, (
+            "%s vua DOC vua 'co y bo qua' (%s) — hai bang noi hai dieu trai "
+            "nguoc" % (ten, trung))
+
+
+def test_doi_soat_D4_so_doan_nan_oan_NAY_do_duoc():
+    """🔴 Docstring cũ của `asv_doi_soat` nói *"Đ4 hiện chưa đo được"* — nay SAI.
+
+    ⛔ Không đủ nếu khoá chỉ có mặt trong `KHOA_CAN`: `doi_soat()` phải THẬT SỰ
+    trả con số ra, vì `main()` chỉ in những gì `doi_soat()` trả về.
+    """
+    from tools.asv_doi_soat import doi_soat
+
+    ra = doi_soat({"voice_synthesis": {"so_doan_nan_oan": 3}})
+    assert ra["so_doan_nan_oan"] == 3
+    # ⭐ `0` = do duoc va khong doan nao; `None` = giai doan chua chay. Gop hai
+    #    thu do vao mot gia tri la mat dung kha nang phan biet tep ay giu.
+    assert doi_soat({"voice_synthesis": {"so_doan_nan_oan": 0}}
+                    )["so_doan_nan_oan"] == 0
+    assert doi_soat({})["so_doan_nan_oan"] is None
+
+
 def test_doi_soat_khoa_MASTER_dung_cho_ma_ghi_no():
     """`KHOA_TRONG_MASTER` phải khớp `do_duoc[...] = ` của `giai_doan_thoi_gian`.
 
@@ -929,3 +1008,163 @@ def test_doi_loi_nhac_thi_PHAI_tang_PHIEN_BAN_LONG_TIENG():
     """⛔ Thiếu bước này, lượt chạy mới dùng lại bản lồng tiếng của lời nhắc CŨ."""
     from apps.auto_scan_video import long_tieng
     assert long_tieng.PHIEN_BAN_LONG_TIENG >= 3
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Task 11 — ho_so_dich phai di qua CUA TRA TIEN (`ai.goi_tinh_tien`)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class _RunGia:
+    """Chỉ ba trường mà `goi_tinh_tien` + cửa chặn đọc. ⛔ Không cần CSDL."""
+
+    def __init__(self, credit_held: int) -> None:
+        self.id = 1
+        self.owner_id = 1
+        self.credit_held = credit_held
+
+
+def _cac_goi_thuoc_tinh(mo_dun) -> list[ast.Call]:
+    cay = ast.parse(inspect.getsource(mo_dun))
+    return [n for n in ast.walk(cay)
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)]
+
+
+def test_ho_so_dich_KHONG_goi_ai_goi_truc_tiep_ma_qua_goi_tinh_tien():
+    """🔴 `ai.py:806` khai `goi_tinh_tien` là **đường trả tiền DUY NHẤT**.
+
+    Bản đầu của `ho_so_dich` gọi `ai.goi(...)` trực tiếp, và
+    `giai_doan_noi_dung` gọi nó **vô điều kiện trên mọi lượt `content_process`
+    thật** ⇒ (a) khách hết ngân sách vẫn phát sinh một lời gọi thật ~16 giây;
+    (b) chi phí model ⛔ không bao giờ vào `su_dung`, nên báo cáo margin và
+    `quyet_toan` lệch đúng một lời gọi mỗi video.
+
+    ⭐ Phép kiểm này neo vào CHỖ GỌI (AST), ⛔ không vào văn bản mã nguồn: chuỗi
+       `"goi_tinh_tien"` nằm trong một docstring cũng làm xanh một phép đo dựa
+       trên `in ma`, còn một `ast.Call` thì không.
+    """
+    from apps.auto_scan_video import ho_so_dich
+
+    cac = _cac_goi_thuoc_tinh(ho_so_dich)
+    truc_tiep = [c for c in cac
+                 if c.func.attr == "goi"
+                 and isinstance(c.func.value, ast.Name) and c.func.value.id == "ai"]
+    assert not truc_tiep, (
+        "`ho_so_dich` còn gọi `ai.goi(...)` trực tiếp — một lời gọi model ngoài "
+        "cửa trả tiền là một bút toán không có người làm chứng")
+
+    qua_cua = [c for c in cac if c.func.attr == "goi_tinh_tien"]
+    assert len(qua_cua) == 1, (
+        "mong ĐÚNG một lời gọi `goi_tinh_tien` (hồ sơ là câu hỏi TOÀN CỤC của "
+        "cả video), thấy %d" % len(qua_cua))
+
+    # `item_key` la KHOA SO CAI: `UNIQUE(run_id, ma_dispatch)` nen thieu no thi
+    # ⛔ khong con menh de "mot video = dung mot dong so".
+    khoa = {k.arg for k in qua_cua[0].keywords if k.arg}
+    assert "item_key" in khoa, (
+        "`goi_tinh_tien` được gọi mà ⛔ không khai `item_key` — khoá sổ cái")
+    assert "stage" in khoa, "thiếu `stage`, dòng sổ ⛔ không thuộc giai đoạn nào"
+
+
+def test_ho_so_dich_MOT_video_dung_MOT_dong_so_cai():
+    """`item_key` là HẰNG SỐ ⇒ `ma_dispatch` của cả lượt chạy là DUY NHẤT.
+
+    ⚠️ Lượt nối tiếp (sau lát cắt) gọi lại `giai_doan_noi_dung.chay` từ đầu, và
+    nó gọi `ho_so_dich.dung` **vô điều kiện** — một `item_key` mang số lô hay số
+    lần thử sẽ biến hai lần hỏi **cùng một** câu thành hai dòng tính tiền.
+    """
+    from apps.auto_scan_video import ho_so_dich
+
+    assert isinstance(ho_so_dich.ITEM_KEY, str) and ho_so_dich.ITEM_KEY
+    # ⛔ Khong duoc mang dinh dang: mot khoa co `{` la mot khoa theo don vi.
+    assert "{" not in ho_so_dich.ITEM_KEY and "%" not in ho_so_dich.ITEM_KEY
+
+    (goi,) = [c for c in _cac_goi_thuoc_tinh(ho_so_dich)
+              if c.func.attr == "goi_tinh_tien"]
+    (kw,) = [k for k in goi.keywords if k.arg == "item_key"]
+    assert isinstance(kw.value, ast.Name) and kw.value.id == "ITEM_KEY", (
+        "`item_key` phải là hằng số `ITEM_KEY` của mô-đun, ⛔ không phải một "
+        "biểu thức dựng tại chỗ")
+
+
+def test_ho_so_dich_AsvError_KHONG_bi_nuot_thanh_ho_so_rong(monkeypatch):
+    """🔴 Hai ca hỏng KHÁC loại, và gộp chúng là mất một trạng thái khách phải biết.
+
+    - model trả **rác** ⇒ hồ sơ rỗng, đi tiếp (hồ sơ làm bản dịch TỐT HƠN, ⛔ không
+      phải thứ nó cần để CHẠY);
+    - một **`features.AsvError`** ⇒ **NÉM**. Đó là họ lỗi chính sách của app (hết
+      ngân sách, vượt trần chi) — thứ ⛔ không được biến thành "hồ sơ rỗng" rồi im.
+
+    ⚠️ **Bản trước của bài này (26/09 sáng) đạt tới tính chất trên bằng cách
+       monkeypatch `features.kiem_tran_chi`** — tức đi qua **cửa chặn** của
+       `goi_tinh_tien`. Nhưng chủ dự án chốt **PHƯƠNG ÁN B: chỉ đo, ⛔ không trang bị
+       cửa** ⇒ `uoc_credit` ⛔ không được truyền ⇒ `cua_chan_truoc_khi_tieu` **⛔ không
+       bao giờ được gọi** ⇒ bản trước đo **một ca không thể xảy ra**.
+
+    ⭐ Nên bài này giữ **nguyên tính chất**, chỉ đổi **đường tới nó**: `AsvError` ném
+       từ bất cứ đâu trong `goi_tinh_tien` đều phải bay lên. Tính chất ⛔ không phụ
+       thuộc việc cửa có được trang bị hay không — và đó là lý do nó đáng giữ.
+    """
+    from apps.auto_scan_video import ai, features, ho_so_dich
+
+    def nem_chinh_sach(*a, **k):
+        raise features.AsvError("Chi phi thuc te se vuot muc da giu")
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", nem_chinh_sach)
+
+    with pytest.raises(features.AsvError):
+        ho_so_dich.dung(None, _RunGia(0),
+                        {"doan": [{"ma": "seg_0001", "chu": "\u4f60\u597d"}]})
+
+
+def test_ho_so_dich_model_tra_RAC_van_tra_ho_so_RONG(monkeypatch):
+    """⛔ Vế còn lại: hồ sơ làm bản dịch TỐT HƠN, ⛔ không phải thứ nó cần để CHẠY.
+
+    Nếu bản sửa *"đừng nuốt cửa chặn"* biến thành *"đừng nuốt gì cả"*, một model
+    trả rác sẽ làm chết cả lượt chạy — đúng điều nguyên tắc này tồn tại để ngăn.
+    """
+    from apps.auto_scan_video import ai, features, ho_so_dich
+
+    monkeypatch.setattr(features, "kiem_tran_chi", lambda db, run, them: None)
+    monkeypatch.setattr(ai, "goi", lambda *a, **k: {"noi_dung": "khong phai JSON"})
+
+    ra = ho_so_dich.dung(None, _RunGia(999),
+                         {"doan": [{"ma": "seg_0001", "chu": "你好"}]})
+    assert set(ra) == set(ho_so_dich.KHOA)
+    assert ra["bang_dai_tu"] == {} and ra["the_loai"] == ""
+
+
+def test_ho_so_dich_KHONG_trang_bi_cua_chan__phuong_an_B():
+    """🔑 **Chủ dự án chốt PHƯƠNG ÁN B (26/09): CHỈ ĐO, ⛔ không bật cửa chặn.**
+
+    `ai.goi_tinh_tien` làm **hai** việc, và ta chỉ muốn **một**:
+      (1) **cửa chặn** margin — chỉ chạy khi `uoc_credit` khác 0 (`ai.py:835`);
+      (2) **sổ cái** — luôn chạy.
+    ⇒ Đi qua `goi_tinh_tien` để có (2), và ⛔ **không** trang bị (1).
+
+    ⚠️ Bài này chốt chiều **NGƯỢC** với bản trước nó, và đó là **có chủ ý**. Bản
+       trước khẳng định `uoc_credit > 0` *"để cửa thật sự chạy"*. Nhưng đo ra: **cả
+       SÁU** lời gọi LLM của app đều ⛔ không truyền `uoc_credit` ⇒ bật cho **một**
+       chỗ là tạo một cửa mà ⛔ không ai đoán được nó ở đâu — **tệ hơn** cả việc
+       ⛔ không có cửa nào.
+
+    ⭐ Lý do của chủ dự án: *"Giá chỉ để tượng trưng. Sau này khi hoàn thiện hệ thống
+       và vận hành, tôi sẽ tự đề xuất con số sau."* Một cửa chặn ⛔ **không có ngưỡng
+       đo được** là một cửa sẽ bị **tắt sau lần báo động giả đầu tiên**.
+
+    ⇒ Dụng cụ thay cửa: `giay_llm_nan` · `giay_tts` · `so_doan_nan_oan`, đọc bằng
+      `tools/asv_doi_soat.py`. Chúng **thấy** lượt nào lỗ mà ⛔ không làm khách gặp lỗi.
+
+    ⛔ Bài này ⛔ **không** nói *"đừng bao giờ có cửa"* — nó nói *"khi bật thì bật
+       ĐỒNG THỜI cả sáu, kèm một ngưỡng ĐÃ ĐO"*. Đổi nó khi điều đó xảy ra.
+    """
+    from apps.auto_scan_video import ho_so_dich
+
+    assert not hasattr(ho_so_dich, "UOC_CREDIT"), (
+        "hang so cua cua chan con ton tai — phuong an B khong trang bi cua")
+
+    (goi,) = [c for c in _cac_goi_thuoc_tinh(ho_so_dich)
+              if c.func.attr == "goi_tinh_tien"]
+    kw = {k.arg for k in goi.keywords if k.arg}
+    assert "uoc_credit" not in kw, (
+        "van truyen uoc_credit — mot trong sau loi goi co cua, nam cho kia khong")
+    assert "item_key" in kw, "thieu item_key thi SO CAI khong co khoa"
