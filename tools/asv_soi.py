@@ -85,10 +85,23 @@ def _dong_dau(dong: dict) -> str:
     if nhip:
         e = nhip[-1]
         ct = e.get("chi_tiet") or {}
+        # ⭐ SO hai mau so, dung chi in mot cai. Mot cau dan do ("nho rang
+        #    hai so nay khac nhau") la thu nguoi ta doc mot lan roi quen; mot
+        #    phep so chay moi lan goi thi khong quen duoc.
+        dv_b = (muc.get("don_vi") or {}).get("tong")
+        canh = ""
+        if dv_b not in (None, "") and ct.get("tong") not in (None, "?"):
+            try:
+                if int(dv_b) != int(ct["tong"]):
+                    canh = (f"  ⚠️ cot `job` duoi day noi tong={dv_b} — do la so"
+                            f" job DA TAO (tu lon len), KHONG phai so viec"
+                            f" ({ct['tong']}).")
+            except (TypeError, ValueError):
+                pass
         return (
             f"DANG CHAY {ten_dang_chay} — TIEN BO LAN CUOI CACH DAY "
             f"{_ago(e.get('luc'))} ({ct.get('da_xong', '?')}/"
-            f"{ct.get('tong', '?')} {ct.get('don_vi') or 'don vi'}).")
+            f"{ct.get('tong', '?')} {ct.get('don_vi') or 'don vi'})." + canh)
     if su_kien:
         e = su_kien[-1]
         return (
@@ -109,7 +122,14 @@ def _bang(dong: dict) -> str:
             f"  {m['giai_doan']:<16} {m['trang_thai']:<18} "
             f"{giay_s:>8} s   "
             f"thu {m.get('so_lan_thu', 0)}   "
-            f"don_vi {dv.get('xong', '')}/{dv.get('tong', '')}   "
+            # 🔴 Nhan `job` chu khong `don_vi`, va do KHONG phai chuyen chu.
+            #    `dv['tong']` la so job DA TAO, va no **tu lon len** trong luc
+            #    chay; con bo dem cua giai doan (`progress_counter.tong`) la so
+            #    viec THAT SU phai lam. Hai so, cung hinh dang `xong/tong`.
+            #    Do 26/09 tren lan chay that: `voice_synthesis` bang hien
+            #    `0/1` trong khi bo dem noi `1/63 doan` — mot nguoi doc bang
+            #    se tuong giai doan nay co MOT don vi.
+            f"job {dv.get('xong', '')}/{dv.get('tong', '')}   "
             f"worker {(m.get('job') or {}).get('worker', '')}   "
             f"credit {m.get('credit', '')}"
             + (f"   LOI: {m['loi']}" if m.get("loi") else ""))
