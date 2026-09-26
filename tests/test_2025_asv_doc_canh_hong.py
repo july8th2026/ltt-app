@@ -337,17 +337,59 @@ def test_khoang_den_va_dung_hinh_CHONG_LAN_khong_bi_cong_HAI_lan(monkeypatch):
     assert set(h.canh_bao) == {"toi_den", "dung_hinh"}
 
 
-def test_nguong_de_xuat_bo_DOC_tu_module_chu_khong_go_lai(monkeypatch):
-    """⛔ Mot hang so, mot nguon. `_quyet_dinh_mot_canh` so `do_tin` voi DUNG
-    `ban_bien_tap.NGUONG_BO`, nen phep de xuat phai dung chinh no."""
+def test_nguong_ti_le_hinh_kem_TACH_khoi_nguong_do_tin_VLM(monkeypatch):
+    """Task 18 (R5): `ti_le` (do TAT DINH bang ffmpeg — khung den/dung hinh) va
+    `do_tin` cua VLM (chu quan) la HAI dai luong khac ban chat. Truoc Task 18
+    ca hai bi ep chung mot hang so `ban_bien_tap.NGUONG_BO` ma ⛔ khong ai do
+    lai cho dai luong moi — nay chung la HAI hang so o HAI module.
+
+    (a) hai hang so rieng biet (gia tri KHOI DIEM van la 0,65 — ke thua, Task 18
+        ⛔ khong duoc doi hanh vi cat).
+    (b) duong quyet dinh (`_do_cac_canh`) doc `NGUONG_TI_LE_HINH_KEM` cua
+        CHINH module nay, ⛔ khong con doc `ban_bien_tap.NGUONG_BO`: doi
+        `NGUONG_TI_LE_HINH_KEM` PHAI doi ket qua; doi `ban_bien_tap.NGUONG_BO`
+        (hang so cua VLM) thi ⛔ khong duoc anh huong gi den duong bang chung
+        tat dinh nay.
+    (c) ca bien: `ti_le` DUNG BANG nguong ⇒ `de_xuat = "bo"` (so sanh `>=`,
+        chot lai vi bien la cho hay troi).
+    """
     from apps.auto_scan_video import ban_bien_tap as bt
 
     ci = _chi_muc(1)
-    for ti_le, mong in ((bt.NGUONG_BO, "bo"), (bt.NGUONG_BO - 0.01, "giu")):
+
+    # (a) — hai ten hang so khac nhau o hai module, cung gia tri khoi diem.
+    assert gdbbt.NGUONG_TI_LE_HINH_KEM == bt.NGUONG_BO == 0.65
+    nguon = inspect.getsource(gdbbt._do_cac_canh)
+    # Xet DUNG dong so sanh (⛔ khong xet ca comment — comment duoc phep NHAC
+    # den ten hang so cu de giai thich vi sao no bi bo).
+    dong_so_sanh = next(d for d in nguon.splitlines() if "de_xuat = hc.BO" in d)
+    assert "NGUONG_TI_LE_HINH_KEM" in dong_so_sanh
+    assert "NGUONG_BO" not in dong_so_sanh, (
+        "duong quyet dinh cua phep do tat dinh van doc hang so nghi cho VLM")
+
+    # (c) — ca bien: dung bang nguong la "bo" (>=), duoi mot chut la "giu".
+    for ti_le, mong in ((0.65, "bo"), (0.65 - 0.01, "giu")):
         _do_gia(monkeypatch, den=[(0.0, ti_le)])
         (h,), _ = gdbbt._do_cac_canh("phim.mp4", ci, _ban_ghi_thoai((5.0, 6.0)))
         assert h.de_xuat == mong, (ti_le, h.ly_do)
-    assert "NGUONG_BO" in inspect.getsource(gdbbt._do_cac_canh)
+
+    # (b) — doi NGUONG_TI_LE_HINH_KEM (hang so cua module NAY) PHAI doi ket qua.
+    monkeypatch.setattr(gdbbt, "NGUONG_TI_LE_HINH_KEM", 0.9)
+    _do_gia(monkeypatch, den=[(0.0, 0.65)])  # ti_le = 0,65 — duoi 0,9
+    (h,), _ = gdbbt._do_cac_canh("phim.mp4", ci, _ban_ghi_thoai((5.0, 6.0)))
+    assert h.de_xuat == "giu", (
+        "NGUONG_TI_LE_HINH_KEM da doi ma ket qua khong doi — "
+        "duong quyet dinh van dang doc mot hang so khac")
+    monkeypatch.setattr(gdbbt, "NGUONG_TI_LE_HINH_KEM", 0.65)  # tra ve khoi diem
+
+    # ...con doi `ban_bien_tap.NGUONG_BO` (hang so cua VLM) thi ⛔ khong duoc
+    # anh huong gi den duong bang chung tat dinh nay.
+    monkeypatch.setattr(bt, "NGUONG_BO", 0.01)
+    _do_gia(monkeypatch, den=[(0.0, 0.65 - 0.01)])  # van "giu" o nguong 0,65
+    (h,), _ = gdbbt._do_cac_canh("phim.mp4", ci, _ban_ghi_thoai((5.0, 6.0)))
+    assert h.de_xuat == "giu", (
+        "doi ban_bien_tap.NGUONG_BO da lam doi ket qua cua phep do tat dinh — "
+        "hai duong van con dung chung mot hang so")
 
 
 def test_phep_do_la_TAT_DINH_cung_dau_vao_cung_ket_qua(monkeypatch):

@@ -125,6 +125,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         _chot_do_phu(preset, ci, hieu, hong)
         if lc is not None:
             lc.xong_mot()
+    # ⚠️ **Task 18**: `de_xuat` trong `hieu` da duoc CHOT theo
+    #    `NGUONG_TI_LE_HINH_KEM` cua module nay (xem `_do_cac_canh`) TRUOC khi
+    #    toi day, nen `lap_ban` ⛔ khong can — va ⛔ khong duoc — nhan them
+    #    tham so nguong (xem chu thich cua no ve `_cat_canh_le`).
     ban = ban_bien_tap.lap_ban(preset=preset, chi_muc=ci,
                                hieu_canh=hieu, ban_ghi=ban_ghi)
     if hieu:
@@ -204,8 +208,13 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 # ⭐ **Lop TINH la thu vien chuan; ta chi viet phan NOI.** Ca ba phep do deu DA
 #    CO trong kho va da duoc do: `canh.py` chon PySceneDetect bang benchmark,
 #    `qc.py` §T13 chay `blackdetect`+`freezedetect` trong MOT luot giai ma.
-#    ⛔ Khong mot nguong moi nao duoc dat o day — nguong quyet dinh van la
-#    `ban_bien_tap.NGUONG_BO`, doc tu module chu.
+#
+# 🔴 **Task 18 (26/09):** truoc day khoi nay so `ti_le` (mot ti le thoi luong,
+#    do TAT DINH bang ffmpeg) thang voi `ban_bien_tap.NGUONG_BO` — hang so nghi
+#    cho **do tin CHU QUAN cua VLM**. Hai dai luong khac ban chat bi ep dung
+#    chung mot nguong ma ⛔ khong noi dau ca. Nay no co nguong RIENG:
+#    `NGUONG_TI_LE_HINH_KEM` (ngay duoi day) — doc chu thich cua no truoc khi
+#    doi gia tri.
 #
 # ⭐ Va tat dinh la mot **tinh chat san pham**, khong phai mot toi uu: cat la
 #    thao tac ⛔ KHONG DAO DUOC tren ban giao khach, nen cung mot video phai cat
@@ -219,6 +228,28 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 #: Ten phep do, di vao `ly_do` cua tung quyet dinh va vao bao cao van hanh.
 LOAI_DO_TAT_DINH = "do_tat_dinh"
 
+#: Nguong bo cho `ti_le` — ti le THOI LUONG canh la khung den / dung hinh,
+#: do TAT DINH bang ffmpeg (`_phan_giao`/`_khoang_kem` duoi day).
+#:
+#: 🔴 **Task 18 (26/09) — tach khoi `ban_bien_tap.NGUONG_BO`.** Truoc do khoi
+#:    nay dung THANG `ban_bien_tap.NGUONG_BO` cho ca hai: nguong nghi cho **do
+#:    tin chu quan cua VLM** ve "canh nay co nen bo khong", VA ti le do tat
+#:    dinh o day. Hai dai luong nay KHAC BAN CHAT — mot la y kien, mot la phep
+#:    do — nen ⛔ khong duoc chung mot hang so ma khong ai kiem chung ca hai
+#:    dung mot muc.
+#:
+#: ⚠️ **Gia tri `0,65` la KE THUA, ⛔ CHUA duoc do rieng cho dai luong nay.**
+#:    No duoc giu nguyen tu `NGUONG_BO` chi de ⛔ KHONG doi hanh vi cat trong
+#:    ban sua tach nguong nay (Task 18) — ⛔ khong phai vi 0,65 da duoc kiem
+#:    chung la dung cho ti le khung den/dung hinh.
+#:
+#: 🔑 **Phep do se xac nhan (hoac sua) con so nay:** mot canh dai 10 giay co
+#:    6,5 giay den/dung hinh thi co nen bo khong? Do la mot phan quyet
+#:    **nghe/nhin** tren video that, ⛔ khong suy ra duoc tu ma — can chu du an
+#:    chot, hoac mot lot do tren vat lieu that (mau canh da biet dung/sai) roi
+#:    moi doi con so nay.
+NGUONG_TI_LE_HINH_KEM = 0.65
+
 
 @dataclass(frozen=True)
 class BangChungCanh:
@@ -230,6 +261,13 @@ class BangChungCanh:
        mot phep do ffmpeg vao do la mot ban khai **SAI ve xuat xu** cua con so.
        Va `hieu_canh.py` con phuc vu `HO_SO_NOI_DUNG` (duong chon giong), nen
        ⛔ khong duoc lam nhap nhang no.
+
+    ⚠️ **Truong `do_tin` o day la mot TI LE (0..1), ⛔ khong phai do tin cua
+       model** — ten truong giu nguyen vi no la mot HOP DONG duck-type voi
+       `HieuCanh.do_tin` ma `ban_bien_tap._quyet_dinh_mot_canh` doc chung
+       (Task 18: doi ten truong se pha hop dong do). Bien CUC BO tao ra gia
+       tri nay o `_do_cac_canh` ten la `ti_le`, khong phai `do_tin` — chi luc
+       DUA vao dataclass nay no moi mang ten khoa dung chung.
     """
 
     ma_canh: str
@@ -330,9 +368,14 @@ def _do_cac_canh(duong: str, ci, ban_ghi: dict) -> tuple[tuple, list[dict]]:
                 ("co_thoai",)))
             continue
         ti_le = (_phan_giao(kem, bat, ket) / dai) if dai > 0 else 0.0
-        # ⭐ Nguong DOC tu module chu. `_quyet_dinh_mot_canh` so `do_tin` voi
-        #    DUNG hang so nay, nen hai ben ⛔ khong the troi khoi nhau.
-        de_xuat = hc.BO if ti_le >= ban_bien_tap.NGUONG_BO else hc.GIU
+        # ⭐ **Task 18**: nguong RIENG cua module nay (`NGUONG_TI_LE_HINH_KEM`),
+        #    ⛔ khong con doc `ban_bien_tap.NGUONG_BO` (nguong do tin VLM) nua —
+        #    day la CHO CHOT cua `de_xuat` cho phep do tat dinh. `_quyet_dinh_
+        #    mot_canh` van con mot lop so lai voi `NGUONG_BO` (an toan chung
+        #    cho MOI nguon bang chung), nhung do la NO-OP mien la hai hang so
+        #    con bang nhau — xem chu thich cua no ve vi sao no ⛔ khong nhan
+        #    tham so nguong tu day duoc (`tests/test_440..._cat_canh_le`).
+        de_xuat = hc.BO if ti_le >= NGUONG_TI_LE_HINH_KEM else hc.GIU
         canh_bao = tuple(ten for ten, co in (
             ("toi_den", _phan_giao(den, bat, ket) > 0.0),
             ("dung_hinh", _phan_giao(dong, bat, ket) > 0.0),
