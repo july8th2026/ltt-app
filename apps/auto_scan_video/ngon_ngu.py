@@ -256,6 +256,107 @@ def ten_nguon(ma) -> str:
     return TEN_LOI_NHAC.get(chuan_nguon(ma), "")
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  BAN DICH CO THAT SU DA DICH CHUA — mot phep do tren HE CHU
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 **Vi sao phep do nay ton tai (do duoc 27/09/2026).**
+#
+#    `test_448::test_G17_hai_preset_tren_PHIM_KHACH_THAT` chet bon lan voi
+#    `"Tep tieng sinh ra qua ngan (0.0s)."`. That ra ⛔ khong doan nao rong:
+#    `content_process` giao **95/95 doan chu TRUNG nguyen van** trong khi
+#    `ngon_ngu_dich = "vi"`. Khong mot cua nao trong ca chuoi hoi cau
+#    *"ban dich nay co phai tieng dich khong"*, nen loi lo ra o cho xa nhat —
+#    may sinh tieng — duoi mot cau chi tay vao chinh no.
+#
+# ⛔ **Va day ⛔ KHONG phai mot bo nhan dang ngon ngu.** Do la mot bai toan mo;
+#    day la mot bai toan DONG, va do la ly do mot phep dem ky tu la du:
+#
+#        nguon ∈ {zh, en, vi}      dich ∈ {vi, en}
+#
+#    Ca hai DICH deu viet bang chu La Tinh, va `zh` la NGUON duy nhat viet bang
+#    he chu khac — `zh` thi ⛔ khong bao gio la dich (xem docstring dau tep). Nen
+#    "ban dich con he chu nguon" quy ve **dung mot** cau hoi dem duoc:
+#    *con bao nhieu phan tram chu Han?*
+#
+# ⭐ Va vi the ⛔ khong can mot thu vien nhan dang ngon ngu (do 27/09: khong co
+#    `langdetect`/`langid`/`lingua`/`fasttext`/`py3langid`/`cld3` nao trong venv
+#    nay). Bang khoi Unicode la mot BANG CHUAN, khong phai mot phong doan tu
+#    viet — day la lop NOI, khong phai lop TINH.
+#
+# ⚠️ Phep do nay ⛔ KHONG phan biet duoc `en` voi `vi` (tieng Viet khong dau chi
+#    gom chu ASCII — bay ma `ltt_voice.lan_ngon_ngu` ghi ca mot muc cho no). Nen
+#    `chua_dich_sang` **chi tra loi duoc chieu `zh`**, va no noi ra dieu do o
+#    docstring thay vi tra `False` nhu mot ket luan.
+
+#: Cac khoang Unicode CHU HAN — bang chuan, khong phai mot danh sach doan.
+#:
+#: ⭐ Gom ca Hiragana/Katakana/Hangul: chung ⛔ khong nam trong hop dong nguon,
+#:    nhung mot ban chep loi lan tieng Nhat/Han vao thi cau tra loi dung van la
+#:    *"day ⛔ khong phai ban dich sang tieng Viet"* — `kiem_nguon_da_doan` moi la
+#:    cho tu choi ca video, va no chay TRUOC cho nay.
+_KHOANG_CJK: tuple[tuple[int, int], ...] = (
+    (0x3040, 0x30FF),      # Hiragana + Katakana
+    (0x3400, 0x4DBF),      # CJK Ext A
+    (0x4E00, 0x9FFF),      # CJK thong dung
+    (0xAC00, 0xD7A3),      # Hangul am tiet
+    (0xF900, 0xFAFF),      # CJK tuong thich
+    (0x20000, 0x2FA1F),    # CJK Ext B..F + bo sung tuong thich
+)
+
+#: Ti le chu Han toi thieu de goi mot doan la **chua dich**.
+#:
+#: 🔑 `0.15` chu khong phai `> 0`, va day la ca **doi chung** bat buoc: mot cau
+#:    tieng Viet hoan toan binh thuong duoc phep nhac mot chu Han (ten thuong
+#:    hieu, mot chu trich) — chan no la bien mot ban dich dung thanh mot lan chay
+#:    hong. Do tren du lieu that: doan hong cua G17 do ra **1,00**; mot cau Viet
+#:    co mot chu Han trong 90 ky tu do ra **0,011**. Hai ca cach nhau gan hai bac
+#:    do lon, nen nguong nam o dau trong khoang ay cung khong doi phan quyet —
+#:    va do la ly do mot nguong go tay o day la du an toan.
+NGUONG_CHU_HAN = 0.15
+
+
+def ty_le_chu_han(chu: str) -> float:
+    """Ti le ky tu CHU HAN (+ kana/hangul) tren tong ky tu **co nghia**.
+
+    ⭐ Mau so bo khoang trang va dau cau: `'这才是让人羡慕的生活。'` co mot dau
+       cau Trung, va de no vao mau so lam moi cau ngan tu tut ti le xuong mot
+       cach ⛔ khong lien quan gi toi cau hoi dang hoi.
+
+    Tra `0.0` cho chuoi rong — **va do la mot cau tra loi dung**: mot doan rong
+    ⛔ khong phai "chua dich", no la mot ca KHAC va `giong_noi.chu_se_doc` tra
+    loi no. ⛔ Dung gop hai trang thai vao mot gia tri o day.
+    """
+    s = str(chu or "")
+    han = 0
+    tong = 0
+    for k in s:
+        if k.isspace() or not (k.isalnum() or _la_cjk(k)):
+            continue
+        tong += 1
+        if _la_cjk(k):
+            han += 1
+    return (han / tong) if tong else 0.0
+
+
+def _la_cjk(k: str) -> bool:
+    n = ord(k)
+    return any(a <= n <= b for a, b in _KHOANG_CJK)
+
+
+def chua_dich_sang(chu: str, *, dich) -> bool:
+    """Doan `chu` co CON he chu nguon (`zh`) khong, khi dich la `dich`.
+
+    ⚠️ **Chi tra loi duoc chieu `zh`.** `en` va `vi` dung cung he chu La Tinh —
+       tieng Viet khong dau gom dung chu ASCII — nen `False` o day nghia la
+       *"khong thay he chu nguon"*, ⛔ khong phai *"da dich dung"*. Cua chan chat
+       luong ban dich la viec cua `qc_ai`/`qc_do_luong`, khong phai cua ham nay.
+    """
+    if chuan_dich(dich) not in DICH_HOP_LE:
+        return False
+    return ty_le_chu_han(chu) >= NGUONG_CHU_HAN
+
+
 def _kiem() -> None:
     # 🔑 Moi dich phai la mot LAN giong that. Xem docstring dau tep.
     thieu = set(DICH_HOP_LE) - set(_LAN_GIONG)

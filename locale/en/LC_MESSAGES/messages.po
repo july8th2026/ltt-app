@@ -22001,3 +22001,13 @@ msgstr "Runs every edition in the catalogue, including the ones with a desktop. 
 
 msgid "Cùng CPU và RAM với gói Nhỏ, nhưng đĩa 60 GB và băng thông 150 GB mỗi chu kỳ. Chọn nó khi bạn cần chỗ chứa dữ liệu chứ không phải thêm sức tính."
 msgstr "Same CPU and RAM as the Small plan, but 60 GB of disk and 150 GB of traffic per cycle. Pick it when you need room for data rather than more compute."
+
+#: apps/auto_scan_video/giai_doan_giong.py
+#, python-brace-format
+msgid "Đoạn {ma}: bản dịch còn {ty} phần trăm chữ Hán — bước xử lý nội dung chưa dịch đoạn này sang {dich}. Không gọi máy sinh tiếng. Chữ: {chu}"
+msgstr "Segment {ma}: the translation still contains {ty} percent Han characters — the content step has not translated this segment into {dich}. Not calling the speech engine. Text: {chu}"
+
+#: apps/auto_scan_video/giai_doan_giong.py
+#, python-brace-format
+msgid "Đoạn {ma}: {loi} Chữ gửi sang dài {n} ký tự ⇒ lỗi ở THƯỢNG NGUỒN của máy sinh tiếng, không ở chính nó. Chữ: {chu}"
+msgstr "Segment {ma}: {loi} The text sent over was {n} characters long ⇒ the fault is UPSTREAM of the speech engine, not in the engine itself. Text: {chu}"

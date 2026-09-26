@@ -248,6 +248,16 @@ def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
 
         ra["so_ke"] = sd.so_ke(db, run)
         ra["doi_soat"] = doi_soat_nhanh(db, run)
+        # 🔑 **LY DO HONG o CUNG mot cho voi dong thoi gian** (Task 25, 27/09).
+        #    Cung lap luan voi `so_ke` ngay tren: mot nguoi van hanh mo man nay ra
+        #    la de hoi *"vi sao lan chay nay hong"*, va truoc day cau tra loi nam
+        #    o **ba** cho khac nhau (`AsvUsage`, `AsvStage.error`, `run.error`) —
+        #    nen ai muon tra loi phai TU lam mot phep noi ma khong ai kiem. Do la
+        #    dung cho `test_448` lam sai va in `[]` cho mot luot co ly do ro rang.
+        #
+        # ⛔ CHI o nhanh `cho_van_hanh`: `ly_do` la thong diep THO. Ban cho khach
+        #    la `loi` (da `sanitize_text`) va `loi_co_ma` o tren.
+        ra["vi_sao_hong"] = vi_sao_hong(db, run)
         # ⭐ Preset khach chon + duong render no keo theo — xem `duong_render_cua`.
         ra["duong_render"] = duong_render_cua(run)
     return ra
@@ -356,6 +366,118 @@ def doi_soat_nhanh(db, run) -> dict:
         "don_vi_co_tien_khong_co_so_cai": sorted(thieu_dong)[:20],
         "so_cai_khong_co_don_vi": sorted(thieu_don_vi)[:20],
     }
+
+
+#: Nhan `nguon` cua tung dong `vi_sao_hong`. ⭐ MOI dong khai no den tu dau:
+#: "so cai noi vay" va "giai doan noi vay" la hai loai bang chung khac nhau, va
+#: mot nguoi van hanh doc chung khac nhau.
+NGUON_SO_CAI = "so_cai"
+NGUON_GIAI_DOAN = "giai_doan"
+NGUON_RUN = "run"
+
+#: 🔴 **Gia tri quan trong nhat cua tep nay.** Xem `vi_sao_hong`.
+NGUON_KHONG_DOC_DUOC = "khong_doc_duoc"
+
+
+def vi_sao_hong(db, run) -> list[dict]:
+    """MOI ly do khong-thanh-cong cua mot lan chay. ⛔ Khong bao gio rong im lang.
+
+    🔴 **Vi sao ham nay ton tai — do duoc 27/09/2026 (Task 25).**
+
+       `test_448` dung bang ly do CHI tu `AsvUsage` co `trang_thai != "da_giao"`.
+       Bon luot G17 hong o `voice_synthesis` ⛔ khong co dong nao nhu vay — giai
+       doan chet **TRUOC** khi ghi so — nen bao cao in `[]`, trong khi
+       `asv_stage.error` VA `asv_run.error` mang dung cau
+       `"voice_synthesis: Tep tieng sinh ra qua ngan (0.0s)."`.
+
+    ⇒ Cho noi giua *"lan chay hong"* va *"ly do hong"* **vut truong im lang**,
+      va `[]` doc **y het** *"lan chay nay khong co ly do hong"*. Do la ho loi
+      "hai trang thai gop thanh mot gia tri": ⛔ khong sai ket qua, chi **mat
+      kha nang phan biet** — va o day cai mat la thu duy nhat con lai khi he
+      thong dang hong.
+
+    ⭐ Nen ham nay:
+      · doc **BA** nguon, ⛔ khong mot: so cai (`nang_luc` nao tu choi), giai
+        doan (`error` cua tung giai doan hong), va `run.error` (cau cuoi cung
+        `thi_hanh` da chot);
+      · va khi lan chay **da hong** ma ⛔ khong nguon nao noi duoc gi, no tra
+        **mot dong** `nguon = NGUON_KHONG_DOC_DUOC` thay vi `[]`. *"Toi khong
+        doc duoc ly do"* va *"khong co ly do"* la hai cau khac nhau, va gop
+        chung lai la giau dung cho dang hong.
+
+    ⚠️ `[]` VAN co nghia — cho mot lan chay ⛔ khong hong gi ca. Do la ly do dieu
+       kien duoi day doc `run.status`, ⛔ khong doc "co tim thay gi khong".
+
+    ⛔ Cho NGUOI VAN HANH, ⛔ khong cho khach: `error` tho co the chua duong dan
+       hay ten model. Ban cho khach la `tom_tat_loi_cho_khach` (mot cau, an toan).
+    """
+    # ⛔ Dung `select` DA import o dau tep, ⛔ khong import lai tai cho: mot ban
+    #    thu hai lam `ruff` bao `F811` va — dang ke hon — lam ban o dau tep
+    #    thanh "khong ai dung" (`F401`), tuc mot don dep dung sau se xoa no va
+    #    lam hong mot cho khac.
+    from .tables import RUN_DONE, STAGE_FAILED_RETRYABLE, STAGE_FAILED_TERMINAL
+    from .tables import AsvUsage
+
+    ra: list[dict] = []
+
+    # ── (1) So cai: don vi nao KHONG "da giao" ─────────────────────────────
+    #    ⭐ Nguon CU (`test_448`) — giu nguyen, ⛔ khong thay the. Mot ban sua
+    #       lam mat nguon cu la doi mot lo hong lay mot lo hong khac.
+    for r in db.execute(select(AsvUsage).where(
+            AsvUsage.run_id == run.id)).scalars():
+        if r.trang_thai == su_dung_da_giao():
+            continue
+        ra.append({"nguon": NGUON_SO_CAI, "nang_luc": r.nang_luc,
+                   "stage": str(r.stage or ""),
+                   "trang_thai": r.trang_thai,
+                   "ly_do": str((r.ghi_chu or {}).get("ly_do") or "")[:300]})
+
+    # ── (2) Giai doan hong: `error` cua CHINH no ───────────────────────────
+    for s in features.cac_giai_doan(db, run):
+        if s.status not in (STAGE_FAILED_TERMINAL, STAGE_FAILED_RETRYABLE):
+            continue
+        ra.append({"nguon": NGUON_GIAI_DOAN, "stage": s.stage,
+                   "trang_thai": s.status,
+                   "ma_loi": str((s.outputs or {}).get("ma_loi") or ""),
+                   "ly_do": str(s.error or "")[:600]})
+
+    # ── (3) Cau cuoi cung cua ca lan chay ─────────────────────────────────
+    #    ⚠️ Them ke ca khi (2) da noi: `run.error` la cau `thi_hanh` CHOT, va no
+    #       co the mang ten giai doan + mot phan loai ma `s.error` khong co.
+    if str(run.error or "").strip():
+        ra.append({"nguon": NGUON_RUN, "trang_thai": str(run.status or ""),
+                   "ly_do": str(run.error)[:600]})
+
+    # 🔴 **Dieu kien la "khong DOC DUOC ly do", ⛔ khong phai "khong co dong".**
+    #    Ban dau cho nay hoi `if not ra`, va phep kiem do bat ngay: mot giai doan
+    #    `failed_terminal` voi `error = ""` cho ra MOT dong co that voi
+    #    `ly_do = ""` — tuc dung cai cam giac "khong co ly do" da mac phai, chi
+    #    doi tu `[]` sang `[{…, 'ly_do': ''}]`. Mot dong khong co ly do ⛔ khong
+    #    phai mot ly do.
+    if str(run.status or "") != RUN_DONE and not any(
+            str(d.get("ly_do") or "").strip() for d in ra):
+        ra.append({
+            "nguon": NGUON_KHONG_DOC_DUOC,
+            "trang_thai": str(run.status or ""),
+            "so_dong_khong_ly_do": len(ra),
+            "ly_do": (f"lan chay o trang thai {run.status!r} va KHONG nguon nao "
+                      f"doc duoc ly do: {len(ra)} dong tim thay deu co `ly_do` "
+                      f"rong (so cai / giai doan / run.error)"),
+        })
+    return ra
+
+
+def su_dung_da_giao() -> str:
+    """`su_dung.DA_GIAO`, nap muon — ⛔ khong go lai chuoi.
+
+    ⚠️ `quan_sat` ⛔ khong import `su_dung` o dau tep (vong import: `su_dung`
+       doc `tables`, `quan_sat` doc `features` doc `su_dung`). Mot chuoi go tay
+       o day se la ban thu hai cua mot hang so, va ho loi do da co ten trong kho
+       nay.
+    """
+    from . import su_dung
+
+    return su_dung.DA_GIAO
 
 
 def tom_tat_cho_khach(db, run) -> dict:

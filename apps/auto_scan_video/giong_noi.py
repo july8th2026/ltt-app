@@ -227,6 +227,67 @@ def chuan_hoa_van_ban(chu: str, *, doc_so_tran: bool = False,
                                    tu_dien_rieng=tu_dien_rieng)
 
 
+def chu_se_doc(chu: str, *, doc_so_tran: bool = False,
+               tu_dien_rieng: dict | None = None) -> str:
+    """Van ban may sinh tieng SE THAT SU nhan — hoac `""` khi khong con gi.
+
+    🔴 **Vi sao ham nay ton tai (do duoc 27/09/2026).** Mot cua chan o thuong
+       nguon muon hoi *"doan nay co chu de doc khong"*, va cach sai la tu viet
+       mot phep `strip()` thu hai. Hai ban cua mot luat la hai ban se lech nhau:
+       do duoc ca THAT — mot `chu` gom ky tu vo hinh (`U+200B`, `U+FEFF`) lot
+       qua `van_ban._sach` (vi `str.split()` ⛔ khong tach chung) nhung
+       `text_pipeline.chuan_hoa` xoa het, nen mot cua chan dung `strip()` noi
+       *"co chu"* cho dung cai se thanh RONG o may sinh tieng.
+
+    ⭐ Nen `doc_mot_doan` goi CHINH ham nay. Mot phep, mot cho khai.
+
+    ⚠️ Tra `""` la mot cau tra loi, ⛔ khong phai mot loi — nguoi goi quyet dinh
+       lam gi voi mot doan khong co chu. Xem `giai_doan_giong` muc `[F0]`.
+    """
+    chu = str(chu or "").strip()
+    if not chu:
+        return ""
+    # ⚠️ Chuan hoa TRUOC khi do do dai. Chuan hoa co the lam van ban DAI RA
+    #    ("CPU" -> "xi pi diu", "2024" -> "hai nghin khong tram hai muoi bon"),
+    #    nen do truoc rồi chuan hoa sau la do nhầm cái sẽ không được đọc.
+    return chuan_hoa_van_ban(chu, doc_so_tran=doc_so_tran,
+                             tu_dien_rieng=tu_dien_rieng).strip()
+
+
+#: Do dai toi thieu cua mot tep khoang lang thay cho mot luot doc.
+#:
+#: ⭐ `kiem_tep_tieng` tu choi tep duoi `0.05` giay, nen mot khe ngan hon the
+#:    phai duoc keo len nguong do — khong thi phep thay the lai tao ra dung cai
+#:    loi no dung ra de tranh.
+TOI_THIEU_IM_LANG_S = 0.05
+
+
+def wav_im_lang(giay: float, *, tan_so: int = 24000) -> bytes:
+    """Mot WAV **im lang** dai dung `giay` — thay cho mot luot doc khong co chu.
+
+    🔑 **Vi sao phai la mot TEP THAT chu khong phai "bo qua".**
+       `thoi_gian.lap_ke_hoach` nem `Doan {ma} chua co tieng` cho MOI `ma` thieu
+       dong `ban_ke`. Nen "bo qua mot doan" ⛔ khong duoc nghia la "khong ghi
+       gi" — no la **mot khoang lang dung do dai khe**, co dong `ban_ke`, co do
+       dai that, va dem duoc.
+
+    ⛔ Khong goi ffmpeg: mot tep im lang la mot khoi byte 0: `wave` cua thu vien
+       chuan lam duoc, va no ⛔ khong them mot tien trinh con vao mot vong lap
+       chay mot lan cho moi doan.
+    """
+    import io
+    import wave
+
+    giay = max(TOI_THIEU_IM_LANG_S, float(giay or 0.0))
+    dem = io.BytesIO()
+    with wave.open(dem, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(int(tan_so))
+        w.writeframes(b"\x00\x00" * int(round(giay * tan_so)))
+    return dem.getvalue()
+
+
 def doc_mot_doan(chu: str, *, ref_b64=None, preset=None,
                  doc_so_tran: bool = False,
                  tu_dien_rieng: dict | None = None) -> tuple[bytes, dict]:
@@ -240,15 +301,9 @@ def doc_mot_doan(chu: str, *, ref_b64=None, preset=None,
     from apps.ltt_voice import features as vf
     from apps.ltt_voice.tham_so_cong_khai import TRAN_MOI_LUOT_SINH
 
-    chu = str(chu or "").strip()
-    if not chu:
-        raise GiongError(_t('Đoạn rỗng, không có gì để đọc.'))
-
-    # ⚠️ Chuan hoa TRUOC khi do do dai. Chuan hoa co the lam van ban DAI RA
-    #    ("CPU" -> "xi pi diu", "2024" -> "hai nghin khong tram hai muoi bon"),
-    #    nen do truoc rồi chuan hoa sau la do nhầm cái sẽ không được đọc.
-    chu = chuan_hoa_van_ban(chu, doc_so_tran=doc_so_tran,
-                            tu_dien_rieng=tu_dien_rieng).strip()
+    # ⭐ MOT phep chuan hoa cho ca duong: `chu_se_doc` la chinh phep ma cua chan
+    #    o thuong nguon hoi. Xem docstring cua no.
+    chu = chu_se_doc(chu, doc_so_tran=doc_so_tran, tu_dien_rieng=tu_dien_rieng)
     if not chu:
         raise GiongError(_t('Đoạn rỗng, không có gì để đọc.'))
     if len(chu) > TRAN_MOI_LUOT_SINH:
