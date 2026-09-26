@@ -12,6 +12,62 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-26 (tối) — TCN nextgen: sửa 6 lỗi mypy + tiếp nhận 3 ratchet, FF-merge `main` (`0b2ae6f6`)
+
+Nhánh `phien/tcn-nextgen` (worktree `D:\LTTSTUDIOSAPP-tcn-nextgen`) khép lại phần
+nợ mypy còn lại của app `taoclipngan`, tiếp nhận ratchet cho nợ mà `main` mới
+mang vào, rồi FF-merge vào `main` và push origin.
+
+**6 lỗi mypy (phạm vi app) — sửa thật, ⛔ không accept:**
+- `apps/taoclipngan/features.py:101` — union-attr trên `results`
+  (`dict[str, X | None]`): vòng `for` tường minh + guard `res is None`
+  trước khi đọc `.vetoed`.
+- `apps/taoclipngan/jobs.py:267–270` — union-attr/misc khi đếm `total_words`
+  trên union lỏng: narrowing `isinstance(_seg, dict)` +
+  `isinstance(_words, (list, tuple))`; anot `clips_out: list[dict]` để mypy
+  theo dõi kiểu. Bẫy EOL: `jobs.py` trên HEAD là blob "tròn" (EOL lẫn lộn) —
+  ghi lại bằng rewrite giữ nguyên từng dòng EOL theo blob HEAD (hook
+  `kieu-xuong-dong` so khớp loại EOL với HEAD, ⛔ không phải "CRLF hay LF
+  tuỳ ý").
+
+**3 ratchet tiếp nhận (nợ MAIN, có lý do trong mỗi commit):**
+- `tools/silent_except_baseline.json`: 51→53 — nợ commit của main trước gộp.
+- `tools/check_mypy.moc`: union-attr 88→90 (commit `85f2eb31`) — nợ
+  `27a6e921` "freeze the public surface" (`platform_core/public_api/status.py:
+  122–124` `.reason`/`.created_at` trên `None`; `server/routes/webhooks.py:27`
+  `.xac_thuc_webhook` trên `Gateway | None`). Đã đo: diff của nhánh với
+  `platform_core/` + `server/` **rỗng** — không phải nợ của app.
+- `tools/check_bo_qua.moc`: +2 skip môi trường (commit `4588ac46`) —
+  `test_4022` (merge driver i18n chưa cài trên máy này) và `test_4905::
+  pytestmark` (cần ffmpeg+ffprobe thật, app upscalevideo). Cả hai là điều
+  kiện MÔI TRƯỜNG đúng nghĩa (AGENTS.md §4b), không phải skip dữ liệu trong kho.
+
+**Gộp + đẩy:**
+- Merge `main` 3 lần trong buổi (main tiến liên tục vì các phiên ASV/VPS/
+  upscale đang bay): `39f46aef` → `b3ea4cd6` → `0b2ae6f6`. Lần nào cũng kiểm:
+  diff main-mới với `platform_core/` + `server/` + `apps/taoclipngan/`
+  **rỗng** ⇒ không phát sinh nợ mới cho app.
+- Cây chính `D:\LTTSTUDIOSAPP` dirty đúng 1 tệp: `apps/taoclipngan/jobs.py`
+  — đã đo `git diff --ignore-cr-at-eol` = **0 dòng** (chỉ nhiễu EOL của phiên
+  khác). Restore tệp đó rồi `git merge --ff-only 0b2ae6f6`.
+- `pre-commit run --all-files` trên HEAD sau gộp: **7/7 Passed**.
+- `git push origin main`: `7cd19266..0b2ae6f6`.
+
+**Test đã chạy (kết quả thật):**
+- 4 tệp test TCN (`test_4900`…`test_4903`) trên cây đã merge cuối:
+  **21 passed** (3.82s).
+- 3 ratchet kiểm lại trên cây đã merge cuối: mypy `đạt mốc: 558` (⊆ 569)
+  · silent-except `PASS` (53/53) · bo-qua `PASS` (76).
+
+**Đang chạy:** gate L1 `python tools/cay_gate.py chay --doi` trên cây gate
+(`D:\LTTSTUDIOSAPP-cay-gate`, ghim `0b2ae6f6`) — kết quả sẽ ghi thêm vào mục
+này khi xong.
+
+⚠️ **Deploy — CHƯA:** `NHAT_KY.md` mục 26/09 chiều chốt rằng làn ASV đang
+chặn deploy (`app.lttstudios.com` vẫn bán giá VPS cũ, bản chạy `dff24d4b`).
+Chặn gỡ khi làn ASV báo xong 13/13. Lần deploy tới sẽ mang luôn TCN này
+(`git archive` xuất HEAD). UI verify theo luật 7 đợi cửa sổ deploy chung.
+
 ## 2026-09-26 (chiều, sau) — Gói Nhỏ lên **2 vCPU / 4 GB**; và "cấu hình" ⛔ không phải "đang chạy"
 
 Chủ dự án dùng thật và báo lại: Windows Server 2016 trên 1 vCPU / 2 GB **nặng
