@@ -510,7 +510,10 @@ def _tao_may(params: dict, ctx=None) -> dict:
         _profile_for_job(db, may)
         _cau_hinh_vm_co_journal(
             db, may, client, cau_hinh, operation_id=operation_id)
-        _dat_firewall_may_khach(client, may.vmid)
+        # ⭐ Dung bien vua cap o buoc tren (dong ~477), khong doc lai truong: neu
+        #    `cap_ip_noi_bo` doi cach ghi thi doc lai co the ra rong — va rong o day
+        #    nghia la KHONG bat `ipfilter`, tuc mat lang le lop chong gia mao.
+        _dat_firewall_may_khach(client, may.vmid, str(ip_noi_bo or ""))
 
         # 4b) Đặt chỗ DHCP trên VM router — TRƯỚC khi bật máy.
         #
@@ -1115,9 +1118,21 @@ def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
 #: ⚠️ Proxmox mac dinh `policy_in = DROP` khi bat firewall. De nguyen mac dinh la
 #:    **cat mang cua moi khach** bang mot ban va an ninh. Nen hai policy phai
 #:    ACCEPT TUONG MINH, va `test_4000` chot dung dieu do.
-def _firewall_may_khach() -> dict:
+def _firewall_may_khach(*, co_ip_noi_bo: bool = True) -> dict:
+    """Tuy chon tuong lua cho MOT may khach.
+
+    ⚠️ `dhcp: 1` BAT BUOC: khach lay dia chi qua DHCP tu VM199, va `ipfilter` chan
+       luon goi DHCP (nguon `0.0.0.0`) neu khong khai. Thieu no thi may mat dia chi
+       ngay tu lan xin lease dau tien.
+
+    🔴 `co_ip_noi_bo=False` ⇒ `ipfilter=0`. Bat `ipfilter` khi CHUA biet IP la de
+       lai mot ipset RONG, tuc **chan het IPv4 cua may** — va no hong theo kieu te
+       nhat: may dung xong, Proxmox bao `running`, trang khach noi "Dang chay", va
+       khach RDP vao thi khong co gi. Tha de may chua duoc chong spoof (trang thai
+       da song nhieu tuan) con hon giao mot may khong vao duoc.
+    """
     return {"enable": 1, "policy_in": "ACCEPT", "policy_out": "ACCEPT",
-            "ipfilter": 1, "macfilter": 1}
+            "ipfilter": 1 if co_ip_noi_bo else 0, "macfilter": 1, "dhcp": 1}
 
 
 def _dat_rdns_khong_chan(db, may, profile, ip_cong_khai: str) -> bool:
@@ -1141,7 +1156,7 @@ def _dat_rdns_khong_chan(db, may, profile, ip_cong_khai: str) -> bool:
         return False
 
 
-def _dat_firewall_may_khach(client, vmid: int | None) -> bool:
+def _dat_firewall_may_khach(client, vmid: int | None, ip_noi_bo: str = "") -> bool:
     """Bat chong gia mao cho MOT may. Tra `True` neu da dat duoc.
 
     ⛔ Khong nem: mot may khong dat duoc firewall van la mot may giao duoc. Nhung
@@ -1150,8 +1165,16 @@ def _dat_firewall_may_khach(client, vmid: int | None) -> bool:
     """
     if not vmid:
         return False
+    ip = str(ip_noi_bo or "").strip()
     try:
-        client.dat_firewall(int(vmid), **_firewall_may_khach())
+        # ⭐ NAP IPSET TRUOC khi bat `ipfilter`. Nguoc thu tu la co mot khoang —
+        #    du ngan — may co `ipfilter` bat voi ipset RONG, tuc mat mang.
+        if ip:
+            client.dat_ipset_may(int(vmid), "ipfilter-net0", [ip])
+        client.dat_firewall(int(vmid), **_firewall_may_khach(co_ip_noi_bo=bool(ip)))
+        if not ip:
+            log.warning("VPS: vmid %s chua co IP noi bo — dat firewall KHONG bat "
+                        "ipfilter (ipset rong se cat mang may)", vmid)
         return True
     except ProxmoxError as exc:
         log.warning("VPS: khong dat duoc firewall chong gia mao cho vmid %s: %s",

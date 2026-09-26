@@ -436,6 +436,33 @@ class ProxmoxClient:
             ra = ra["data"]
         return ra if isinstance(ra, dict) else {}
 
+    def dat_ipset_may(self, vmid: int, ten: str, cac_cidr) -> None:
+        """Nap mot ipset cua VM (vd `ipfilter-net0`) bang dung tap dia chi cho truoc.
+
+        🔴 Ipset RONG khong phai "khong loc gi" — voi `ipfilter=1` no la **chan het
+           IPv4** cua may do. Tai lieu Proxmox: `ipfilter` *"is equivalent to adding
+           an empty `ipfilter-net<id>` ipset"*, va IP chi duoc tu them cho
+           **container**, may ao thi khong.
+
+        Chay lai duoc: tao set neu chua co, roi them dia chi con thieu. ⛔ Khong xoa
+        dia chi la: mot dia chi ta khong biet co the la mot IP phu nguoi van hanh
+        them tay, va xoa no la cat mot duong dang chay.
+        """
+        goc = f"/nodes/{self.config.node}/qemu/{int(vmid)}/firewall/ipset"
+        try:
+            dang_co = self._goi("GET", goc)
+        except ProxmoxError:
+            dang_co = []
+        dang_co = dang_co.get("data", dang_co) if isinstance(dang_co, dict) else dang_co
+        if not any(str(x.get("name")) == str(ten) for x in (dang_co or [])):
+            self._goi("POST", goc, data={"name": str(ten)})
+        hien = self._goi("GET", f"{goc}/{ten}")
+        hien = hien.get("data", hien) if isinstance(hien, dict) else hien
+        da_co = {str(x.get("cidr")) for x in (hien or [])}
+        for cidr in cac_cidr:
+            if str(cidr) and str(cidr) not in da_co:
+                self._goi("POST", f"{goc}/{ten}", data={"cidr": str(cidr)})
+
     def doc_firewall_cum(self) -> dict:
         """`/cluster/firewall/options`. Tang cao nhat cua phep AND ba tang."""
         ra = self._goi("GET", "/cluster/firewall/options")
