@@ -158,6 +158,45 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         k.ma: thoi_gian.ngan_sach_nan_s(k.khe_s, k.ngan_sach_s) for k in khes
     }
 
+    # ══ CAU DA NAN DA LUU BEN — doc TRUOC khi tieu them mot dong ════════════
+    #
+    # 🔴 **Truoc 26/09 cau da nan chi song trong `m["chu"]`, tuc trong BO NHO cua
+    #    MOT job.** `[A]` chi danh dau `da_tra_tien` cho doan DA DOC (`i0 <
+    #    lc.vi_tri`), nen `[B]` cua MOI lat cat sau lai thay dung nhung doan tran
+    #    ay, va `[E]` nan LAI ca danh sach. Do cua luot soat R2 tren video 120
+    #    phut: ~1.200 doan tran ⇒ **~700 loi goi nan thay vi 60**, va `item_key`
+    #    mang `luot` nen moi lan la mot dong so cai THAT — mot hoa don ×12.
+    #
+    # ⭐ Cho luu la `outputs` cua CHINH don vi viec cua doan (`item_key = ma`).
+    #    Ba dieu kien cua no, va chi cho nay thoa ca ba:
+    #      (i)   **song qua lat cat** — no la mot dong CSDL, ⛔ khong phai
+    #            `lc.trang_thai`: con tro chi duoc ghi khi `TiepNoi` BAY RA, tuc
+    #            mot lan SAP (`job_runner._het_gio` -> `os._exit(3)`) lam mat no;
+    #      (ii)  **song qua mot lan sap** — `[E]` `commit` ngay sau MOI lo;
+    #      (iii) **⛔ khong pha `ban_ke` hay van tay** — `_doc_lat` loc theo khoa
+    #            `"lat"` nen no bo qua ban ghi nay, va `[F]` `danh_dau_xong` ghi
+    #            DE `outputs`, tuc ban ghi tu bien mat dung luc no het viec.
+    #
+    # ⚠️ Ban ghi mang `chu_goc` + `lan`, va CA HAI phai khop moi duoc dung lai:
+    #    `features._dat_lai_giai_doan` ⛔ KHONG cham don vi viec, nen mot ban dich
+    #    MOI (`chu_goc` khac) hoac mot vong sua (`lan` khac) phai lam ban nan cu
+    #    vo hieu — neu khong, khach nhan mot cau rut tu mot ban dich da bo.
+    lan_lai = _lan_doc_lai(db, run)
+    nan_ben = _doc_chu_da_nan(db, run)
+    da_nan: set[str] = set()
+    for m in muc:
+        g = nan_ben.get(str(m["ma"]))
+        if not g or str(g.get("chu_goc") or "") != str(m["chu"]):
+            continue
+        if int(g.get("lan") or 0) != int(lan_lai.get(str(m["ma"]), 0)):
+            continue
+        m["chu"] = str(g["chu"])
+        da_nan.add(str(m["ma"]))
+    # ⭐ `so_vong` cua chung la 1 — khai o DAY chu khong o `[E]`: mot doan da nan
+    #    o mot lat TRUOC van la mot doan DA qua mot vong nan, va `ket_luan`,
+    #    `ban_ghi_luot_doc`, `tom_tat`, `_ke_nan` deu doc dung con so ay.
+    so_vong_theo_ma: dict[str, int] = {ma: 1 for ma in da_nan}
+
     ref_b64, preset = giong_noi.giai_giong(
         db, owner_id=run.owner_id, voice_id=ma_giong,
         van_ban="\n".join(str(m.get("chu") or "") for m in muc),
@@ -165,10 +204,6 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     phan: list[dict] = []
     ban_ke: list[dict] = []
-    # 🔑 Doan bi vong sua goi DOC LAI (doc sai / khong vua): lay mot LUOT DOC
-    #    MOI. Van tay cu = khoa cu = tep cu; khong muoi van tay thi "doc lai" tra
-    #    ve dung ban da bi bao sai. Xem `_lan_doc_lai`.
-    lan_lai = _lan_doc_lai(db, run)
     cac_nan: list[nan_cho_vua.KetQuaNan] = []
     # ⭐ Buoc 0.5 (25/09): MOI LUOT DOC mot dong — giay DO DUOC luc ay, khong phai
     #    giay cuoi cung. `cac_nan`/`tung_doan` chi giu giay sau khi da nan xong,
@@ -274,6 +309,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         ngan_sach = ngan_sach_theo_ma.get(str(m["ma"]), nan_cho_vua.khe_cua(m))
         giay_doan = kg.giay_can()
         giay_uoc_theo_ma[str(m["ma"])] = giay_doan
+        # 🔴 **Doan DA co cau nan luu ben thi ⛔ KHONG duoc vao `doan_tran`.**
+        #    Day la cua chan cua hoa don ×12: khong co dong nay thi moi lat cat
+        #    lai xin nan dung nhung doan ay mot lan nua (xem khoi `da_nan` o dau
+        #    ham). ⭐ `giay_uoc_theo_ma` van duoc ghi TRUOC dong nay — no do tren
+        #    van ban SE DOC (`m["chu"]` da la cau nan), va `[F]` can no cho
+        #    `ban_ghi_luot_doc`; bo qua ca phep do la lam mat sai so cua bo uoc
+        #    luong o dung nhung doan dat nhat.
+        if str(m["ma"]) in da_nan:
+            continue
         if nan_cho_vua.nen_viet_lai(giay_doan, ngan_sach):
             doan_tran.append({"ma": str(m["ma"]), "chu": str(m["chu"]),
                               "giay_doc": giay_doan, "khe": ngan_sach,
@@ -286,20 +330,36 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    truoc luot doc nay*. Sau ban dao thu tu no chi con nhan hai gia tri —
     #    `0` (chua nan) hoac `1` (`VONG_TOI_DA`) — va `ban_ghi_luot_doc`,
     #    `ket_luan`, `_ke_nan` van doc dung con so ay.
-    so_vong_theo_ma: dict[str, int] = {}
-    if doan_tran:
-        _t0 = time.monotonic()
-        chu_moi = _nan_lo(db, run, doan_tran, luot=lc.luot, ctx=ctx)
-        dong_ho["giay_llm_nan"] += time.monotonic() - _t0
-        for m in muc:
-            moi = chu_moi.get(str(m["ma"]))
+    theo_ma = {str(m["ma"]): m for m in muc}
+
+    def _chot_lo(chu_lo: dict[str, str]) -> None:
+        """Chot MOT lo nan: doi `chu`, LUU BEN, `commit`, dem mot don vi.
+
+        🔴 **`commit` o day la thu chan mot lan mat tien thanh mat khong dau
+           vet.** `ai.goi_tinh_tien` ghi so cai trong giao dich CUA NGUOI GOI
+           (`su_dung.ghi` chi `flush`), va `db.commit()` dau tien cua giai doan
+           nay von nam SAU ca `[E]`, trong `[F]`. Nen mot `TiepNoi` hay mot loi
+           bat ky truoc doan tieng dau tien di qua `thi_hanh` -> `db.rollback()`
+           va **ca luot nan da tieu bien mat khoi so cai**: tien mat, so trong.
+        """
+        for ma, moi in chu_lo.items():
+            m = theo_ma.get(ma)
             # ⛔ `moi == m["chu"]` (model tra ve y nguyen) ⛔ khong tinh la mot
             #    vong nan: van tay khong doi, nen doan do van dung lai duoc tep cu
             #    y nhu truoc — dung lap luan voi nhanh `moi_chu == chu` cua bac
-            #    thang cu.
-            if moi and moi != str(m["chu"]):
-                m["chu"] = moi
-                so_vong_theo_ma[str(m["ma"])] = 1
+            #    thang cu. Va ⛔ khong luu ben mot ban "nan" khong doi mot byte.
+            if m is None or not moi or str(moi) == str(m["chu"]):
+                continue
+            _ghi_chu_da_nan(db, run, ma=ma, chu_goc=str(m["chu"]),
+                            chu=str(moi), lan=int(lan_lai.get(ma, 0)))
+            m["chu"] = str(moi)
+            so_vong_theo_ma[ma] = 1
+        db.commit()
+
+    if doan_tran:
+        _t0 = time.monotonic()
+        _nan_lo(db, run, doan_tran, luot=lc.luot, ctx=ctx, sau_lo=_chot_lo)
+        dong_ho["giay_llm_nan"] += time.monotonic() - _t0
 
     with tempfile.TemporaryDirectory(prefix="asv-voice-") as tam:
         thu_muc = Path(tam)
@@ -385,9 +445,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                     phan.append({"staging_key": ho_so["staging"],
                                  "kind": "audio", "duoi": "wav",
                                  "van_tay": str(ho_so["vt"])})
-                kq = nan_cho_vua.ket_luan(m["ma"], chu=chu,
-                                          giay=float(ho_so["cu"]),
-                                          khe=khe, so_vong=0)
+                # ⭐ `so_vong` doc tu `so_vong_theo_ma`, ⛔ khong ghim `0`: tu
+                #    26/09 `[A]` tham cache bang van tay cua CAU DA NAN (xem
+                #    khoi `da_nan`), nen mot doan dung lai tep cu VAN co the la
+                #    doan da qua mot vong nan — ghim `0` la bao cao noi doi ve
+                #    so vong nan cua chinh no.
+                kq = nan_cho_vua.ket_luan(
+                    m["ma"], chu=chu, giay=float(ho_so["cu"]), khe=khe,
+                    so_vong=int(so_vong_theo_ma.get(str(m["ma"]), 0)))
                 ban_ke.extend(nan_thoi_luong.no_ban_ke(
                     {"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
                      "giay": float(ho_so["cu"]), "tu_cu": True, **_ke_nan(kq)},
@@ -631,6 +696,66 @@ def _doc_lat(db, run, lc) -> dict:
     return ra
 
 
+#: Khoa trong `outputs` cua don vi viec giu CAU DA NAN cua chinh doan do.
+#:
+#: ⛔ Mot khoa RIENG, ⛔ khong tron vao `"lat"`: `_doc_lat` chi nhan ban ghi cua
+#:    doan DA DOC o CUNG phien lat cat, con ban ghi nay phai song qua ca mot
+#:    phien khac (mot `attempt` moi) — hai vong doi khac nhau thi hai khoa.
+KHOA_CHU_NAN = "chu_da_nan"
+
+
+def _doc_chu_da_nan(db, run) -> dict[str, dict]:
+    """`{ma: {"chu_goc", "chu", "lan"}}` — cau da nan DA LUU BEN cua tung doan.
+
+    ⭐ Doc tu `outputs` cua don vi viec, tuc tu CSDL: no la thu duy nhat song
+       qua ca mot lat cat (`TiepNoi` + `db.rollback()` cua `thi_hanh`) lan mot
+       lan bi giet (`job_runner._het_gio` -> `os._exit(3)`).
+    """
+    from . import features
+
+    ra: dict[str, dict] = {}
+    for it in features.cac_don_vi(db, run.id, pipeline.VOICE_SYNTHESIS):
+        g = (it.outputs or {}).get(KHOA_CHU_NAN)
+        if isinstance(g, dict) and g.get("chu"):
+            ra[str(it.item_key)] = dict(g)
+    return ra
+
+
+def _ghi_chu_da_nan(db, run, *, ma: str, chu_goc: str, chu: str,
+                    lan: int) -> None:
+    """Luu BEN cau da nan vao `outputs` cua don vi viec cua chinh doan `ma`.
+
+    🔴 **`UPDATE ... WHERE revision = :r`, cung khuon voi `su_dung.danh_dau_xong`
+       va `su_dung.mo_lai_don_vi`.** `tables.py` khai cot `revision` de *"bien
+       mot cuoc dua thanh mot xung dot NHIN THAY DUOC thay vi mot ban ghi de"*;
+       mot phep gan ORM tran o day se la duong ghi THU BA cua cung mot bang, va
+       la duong duy nhat di vong qua lop bao ve do.
+
+    ⛔ GOP vao `outputs`, ⛔ khong ghi de: `mo_lai_don_vi` cat `y_canh` (ly do
+       vong sua) o cung cho, va vut no la vut dung thu giai thich vi sao doan
+       nay bi lam lai.
+    """
+    from sqlalchemy import update
+
+    from .tables import AsvWorkItem
+
+    it = su_dung.mo_don_vi(db, run, stage=pipeline.VOICE_SYNTHESIS,
+                           item_key=str(ma))
+    rev = int(it.revision or 1)
+    ra = db.execute(
+        update(AsvWorkItem)
+        .where(AsvWorkItem.id == it.id, AsvWorkItem.revision == rev)
+        .values(revision=rev + 1,
+                outputs={**(it.outputs or {}),
+                         KHOA_CHU_NAN: {"chu_goc": str(chu_goc),
+                                        "chu": str(chu), "lan": int(lan)}}))
+    if ra.rowcount != 1:
+        raise su_dung.XungDotDonVi(
+            _t('Đơn vị việc đã được cập nhật ở tiến trình khác.'))
+    db.flush()
+    db.expire(it)
+
+
 def _chu_ke(khes: list[nan_thoi_luong.Khe], k: int, buoc: int) -> str:
     """Chu cua khe lien TRUOC (`buoc=-1`) hoac lien SAU (`buoc=+1`) khe thu `k`.
 
@@ -699,8 +824,8 @@ def _ke_nan(kq) -> dict:
 LAN_XIN_NAN_LO = 3
 
 
-def _nan_lo(db, run, cac: list[dict], *, luot: int = 0,
-            ctx=None) -> dict[str, str]:
+def _nan_lo(db, run, cac: list[dict], *, luot: int = 0, ctx=None,
+            sau_lo=None) -> dict[str, str]:
     """Xin model viet lai NHIEU doan trong 1..N loi goi. Tra ve `{ma: chu moi}`.
 
     🔑 **Ke nhiem cua `_viet_lai` (bo 26/09).** Ban cu xin MOT doan mot loi goi
@@ -783,6 +908,10 @@ def _nan_lo(db, run, cac: list[dict], *, luot: int = 0,
             log.warning("nan lo %d: thieu %d/%d ma sau %d luot xin (%s) - GIU "
                         "CAU GOC cho chung", so_lo, len(thieu), len(can),
                         LAN_XIN_NAN_LO, thieu[:5])
+        # ⭐ Chot NGAY lo nay (luu ben + `commit`), ⛔ khong doi het moi lo: mot
+        #    lo da tra tien ma chua ben la mot lo se bi xin lai o lat sau.
+        if sau_lo is not None:
+            sau_lo({m: ra[m] for m in can if m in ra})
     return ra
 
 
