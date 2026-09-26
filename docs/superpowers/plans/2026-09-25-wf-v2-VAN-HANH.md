@@ -103,8 +103,7 @@ Windmill (AGPLv3) · Evaluator n8n (`.ee.`) · Slack APP_WEBHOOK.
 
 ⚠️ **Còn nợ, ⛔ không thuộc plan này:** nghiệm thu upload YouTube thật (chặn vì không
 đăng nhập được) · xoay client secret Google + mật khẩu superuser PostgreSQL · hai
-khiếm khuyết deploy còn lại · khoá cây chính · sổ dải số test · **phát hiện
-`node_modules`/lược đồ cũ hơn khai báo** (không có gì báo, đã cắn 6 lần).
+khiếm khuyết deploy còn lại · khoá cây chính · sổ dải số test · ~~phát hiện `node_modules` cũ hơn khai báo~~ ✅ **ĐÃ TRẢ** (`abc27c2e`): bước gate `phu thuoc npm da cai` + `tools/check_phu_thuoc_npm.py` + `test_4107`. Hỏi chính `npm ls --json` (đọc `problems`), phạm vi từ `git ls-files`, tập miễn trừ `CHUA_CAI` **chỉ được co lại**, và in thẳng `cd <thư mục> && npm ci`. ⭐ Tiêm lỗi dựng lại đúng ca `jsondiffpatch` ⇒ đỏ đúng chỗ. ⚠️ Lược đồ CSDL thì đã có `do_migration_tren_postgres.py` canh từ trước.
 
 ---
 
