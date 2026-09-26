@@ -48,8 +48,8 @@ import logging
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (ai, assets, ban_bien_tap, ban_ghi, lat_cat, long_tieng, ngon_ngu,
-               pipeline, rang_giong, su_dung)
+from . import (ai, assets, ban_bien_tap, ban_ghi, ho_so_dich, lat_cat,
+               long_tieng, ngon_ngu, pipeline, rang_giong, su_dung)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
@@ -170,6 +170,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     provider = ai.THU_TU_PROVIDER[0]
     model = ai.model_cho(ai.CHUYEN_LOI_THOAI, provider=provider)
 
+    # 🔑 Task 11 — MOT lan cho CA video, truoc khi buoc vao vong lo dich tung
+    #    lo. `dich_mot_lo`/`long_tieng` la VO TRANG THAI (moi lo chi thay
+    #    `{ma: chu}` cua chinh no) nen quan he nhan vat phai duoc quyet MOT
+    #    LAN o day, ⛔ khong phai moi lo mot lan. `dung()` tu no rong khi hong
+    #    — ⛔ khong lam chet luot chay.
+    #
+    # ⚠️ Ho so nay CHUA duoc noi vao loi nhac (`long_tieng.loi_nhac`) — do la
+    #    viec cua buoc noi tiep theo (chua lam trong task nay). O day chi
+    #    dung ho so va ghi no vao `tom_tat` de co bang chung no da chay.
+    ho_so = ho_so_dich.dung(db, goc, ctx=ctx)
+
     vt = long_tieng.van_tay_long_tieng(
         checksum_ban_ghi=checksum, van_tay_ban=ban.van_tay(),
         ma_giong=ma_giong, provider=provider, model=model, ngon_ngu_dich=dich)
@@ -226,7 +237,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    cac ma cua LO nay, nen mot lo ⛔ khong co doan bi che se cho ra
             #    loi nhac **y het ban nen** (`long_tieng.loi_nhac` chi chen luat
             #    `y_canh` khi lo that su co doan mang no).
-            y_canh={m: y for m, y in y_canh_cho_lo.items() if m in ma_da_gui})
+            y_canh={m: y for m, y in y_canh_cho_lo.items() if m in ma_da_gui},
+            # 🔑 Task 7b — `chuyen` la dict DANG TICH LUY (`chuyen.update(moi)`
+            #    sau moi lo o duoi), nen tai lo `i` no giu ban dich cua MOI lo
+            #    truoc. `ho_so` la ket qua MOT lan goi cua Task 11 (dong 182),
+            #    ⛔ khong goi lai o day.
+            da_dich=chuyen, ho_so=ho_so)
 
         kq = ai.goi_tinh_tien(
             db, run, ai.CHUYEN_LOI_THOAI, messages,
@@ -325,7 +341,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         "tom_tat": {**long_tieng.tom_tat(tai_lieu),
                     "so_doan_goc": len(goc.get("doan") or []),
                     "so_lo": so_lo_truoc + len(lo_lo),
-                    "nguon_giong": nguon_giong},
+                    "nguon_giong": nguon_giong,
+                    "ho_so_dich": ho_so},
     }
 
 

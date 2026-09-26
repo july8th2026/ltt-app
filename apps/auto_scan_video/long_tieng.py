@@ -51,7 +51,11 @@ from platform_core.i18n import _ as _t
 #: 2 (23/09/2026): loi nhac mang `do_dai_toi_da` — mot TRAN DEM DUOC cho moi
 #: doan, tinh tu `ngon_ngu.ngan_sach_do_dai` (nhip DO DUOC 3,35 am tiet/giay
 #: thay cho con so 4,5 chua do). Doi ban long tieng da sinh, nen phai doi van tay.
-PHIEN_BAN_LONG_TIENG = 2
+#: 3 (26/09/2026, Task 7b): `ngu_canh_ke` phia `truoc` doi tu chu Han nguon sang
+#: BAN DA DICH tich luy tu cac lo truoc, va `loi_nhac` nhan them `ho_so` (bang
+#: dai tu + ten rieng chot MOT lan cho ca video, Task 11). Ca hai doi NOI DUNG
+#: loi nhac gui model, nen ban long tieng da sinh voi ban cu khong con dung.
+PHIEN_BAN_LONG_TIENG = 3
 
 SCHEMA_LONG_TIENG = "asv.long_tieng.v1"
 
@@ -194,15 +198,31 @@ def chia_lo(doan: list[dict], *, moi_lo: int | None = None) -> list[list[dict]]:
     return [doan[i:i + n] for i in range(0, len(doan), n)]
 
 
-def ngu_canh_ke(tat_ca: list[dict], vi_tri: int, *, ke: int | None = None) -> dict:
+def ngu_canh_ke(tat_ca: list[dict], vi_tri: int, *, ke: int | None = None,
+                da_dich: dict | None = None) -> dict:
     """Cac doan GIU LAI ngay truoc/sau, theo thu tu ban ra — khong phai ban goc.
 
     `ke=None` chu khong phai `ke=NGU_CANH_KE`: cung ly do nhu `chia_lo`.
+
+    🔴 **`da_dich` (26/09/2026) — phia `truoc` phai la BAN DA DICH.** Loi nhac he
+       thong noi `ke_ben` la *"nhung cau khan gia VUA NGHE"*. Voi phia `truoc` thi
+       cau khan gia da nghe la **ban tieng Viet**, ⛔ khong phai chu Han nguon. Bo
+       sot no la co che cua loi `ong/chau/con/toi/ban`: mot lo ⛔ khong thay lo
+       truoc da quyet dai tu nao, nen no quyet lai tu dau.
+
+    ⭐ Phia `sau` van la NGUON, va do la DUNG: nhung cau ay **chua duoc dich**.
+    ⛔ `da_dich=None` thi ham chay y het ban truoc mot mili-giay.
     """
     ke = NGU_CANH_KE if ke is None else int(ke)
-    truoc = [str(d.get("chu") or "") for d in tat_ca[max(0, vi_tri - ke):vi_tri]]
-    sau = [str(d.get("chu") or "")
-           for d in tat_ca[vi_tri + 1:vi_tri + 1 + ke]]
+    da_dich = da_dich or {}
+
+    def _chu(d: dict) -> str:
+        ma = str(d.get("ma") or "")
+        v = (da_dich.get(ma) or {}).get("chu") if ma else ""
+        return str(v or d.get("chu") or "")
+
+    truoc = [_chu(d) for d in tat_ca[max(0, vi_tri - ke):vi_tri]]
+    sau = [str(d.get("chu") or "") for d in tat_ca[vi_tri + 1:vi_tri + 1 + ke]]
     return {"truoc": [t for t in truoc if t], "sau": [t for t in sau if t]}
 
 
@@ -212,11 +232,20 @@ def ngu_canh_ke(tat_ca: list[dict], vi_tri: int, *, ke: int | None = None) -> di
 
 def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
              dac_diem_giong: dict, y_canh: dict | None = None,
-             ngon_ngu_dich: str = "vi") -> list[dict]:
+             ngon_ngu_dich: str = "vi", da_dich: dict | None = None,
+             ho_so: dict | None = None) -> list[dict]:
     """Dung loi nhac cho MOT lo. Tra ve `messages` cho `ai.goi_tinh_tien`.
 
     ⛔ Yeu cau tra ve JSON co khoa la **ma doan**, khong phai mot mang. Xem ghi
        chu dau tep ve vi sao vi tri khong dung lam dinh danh duoc.
+
+    `da_dich`: dict `chuyen` dang TICH LUY tu `giai_doan_noi_dung.chay()` (Task
+    7b) — chuyen xuong `ngu_canh_ke` de phia `truoc` mang ban da dich, khong
+    phai chu Han nguon.
+
+    `ho_so`: `tom_tat["ho_so_dich"]` do `ho_so_dich.dung()` (Task 11) sinh MOT
+    lan cho ca video — `bang_dai_tu`/`bang_ten_rieng` chot quan he nhan vat,
+    tranh moi lo tu quyet lai (co che loi `ong/chau/con/toi/ban`).
     """
     from . import ngon_ngu
 
@@ -236,7 +265,7 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
              #    `thoi_luong_giay`, va pha 15 phai don hau qua bang 11 luot
              #    viet lai / 751 giay tren mot phim 107 giay.
              "do_dai_toi_da": ngon_ngu.ngan_sach_do_dai(dai, ngon_ngu_dich),
-             "ke_ben": ngu_canh_ke(tat_ca, chi_so.get(ma, 0))}
+             "ke_ben": ngu_canh_ke(tat_ca, chi_so.get(ma, 0), da_dich=da_dich)}
         y = y_canh.get(ma)
         if y:
             m["y_canh"] = y
@@ -252,6 +281,19 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
     #    cu cua duong thuong het so sanh duoc.
     y_canh_luat = QUY_TAC_Y_CANH["content"] if any("y_canh" in m for m in muc) else ""
 
+    # 🔑 Hai bang nay do `ho_so_dich.dung()` chot MOT LAN cho ca video. Chung vao
+    #    day duoi dang DU LIEU kem mot cau "dung DUNG bang nay".
+    # ⛔ KHONG them vi du moi: mot vi du trong loi nhac la mot menh lenh ngam, va
+    #    bon vi du khong dau tung lam tut mot ten von dung (bai hoc 24/09).
+    ho_so = ho_so or {}
+    bang_luat = ""
+    if ho_so.get("bang_dai_tu") or ho_so.get("bang_ten_rieng"):
+        bang_luat = (
+            "- DUNG DUNG hai bang duoi day, chung da chot cho CA video nen moi lo "
+            "phai dung y nhu nhau:\n"
+            f"  bang_dai_tu = {json.dumps(ho_so.get('bang_dai_tu') or {}, ensure_ascii=False)}\n"
+            f"  bang_ten_rieng = {json.dumps(ho_so.get('bang_ten_rieng') or {}, ensure_ascii=False)}\n")
+
     he_thong = (
         f"Ban la bien tap vien long tieng {c['tieng']}. Ban KHONG dich tung chu: "
         f"ban viet lai cau thoai sao cho {c['nguoi']} nghe thay tu nhien, dung y, "
@@ -265,7 +307,7 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
         "va sap nghe, sau khi da cat.\n"
         "- Xung ho va giong dieu hop voi `giong` da chon.\n"
         "- Khong them thong tin khong co trong cau goc.\n"
-        + ten_rieng + QUY_TAC_TU_KHAI["content"] + y_canh_luat +
+        + ten_rieng + QUY_TAC_TU_KHAI["content"] + y_canh_luat + bang_luat +
         f"- `cam_xuc` phai la MOT trong: {', '.join(CAM_XUC)}.\n"
         f"- `kieu_noi` phai la MOT trong: {', '.join(KIEU_NOI)}.\n"
         "Tra ve DUY NHAT mot doi tuong JSON:\n"

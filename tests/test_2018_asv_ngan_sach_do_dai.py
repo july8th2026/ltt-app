@@ -178,6 +178,36 @@ def test_ai_goi_TRUYEN_muc_nghi_cua_thao_tac_xuong_dieu_phoi():
     assert "reasoning_effort" in ma and "thao_tac.muc_nghi" in ma
 
 
+def test_cua_TIEU_TIEN_phai_doc_NGAN_SACH_khong_doc_khe_cua():
+    """🔴 Đ4: đoạn vừa được nếu mượn khoảng lặng thì ⛔ KHÔNG được gọi LLM.
+
+    Chốt bằng AST: `nen_viet_lai` trong `giai_doan_giong` ⛔ không được nhận biến
+    tên `khe`. Một phép kiểm hành vi ở đây phải dựng cả máy sinh tiếng; một phép
+    kiểm hình dạng thì bắt đúng cái sai và ⛔ không đòi GPU.
+    """
+    import ast
+
+    cay = ast.parse(inspect.getsource(giai_doan_giong))
+    goi = [n for n in ast.walk(cay)
+           if isinstance(n, ast.Call)
+           and isinstance(n.func, ast.Attribute)
+           and n.func.attr == "nen_viet_lai"]
+    assert goi, "khong tim thay loi goi nen_viet_lai"
+    for n in goi:
+        ten = [a.id for a in n.args if isinstance(a, ast.Name)]
+        assert "khe" not in ten, (
+            "cua tieu tien van doc `khe` (= ket - bat). Phai doc `ngan_sach` "
+            "(da gom khoang lang muon duoc) — xem thoi_gian.ngan_sach_nan_s")
+        assert "ngan_sach" in ten, "cua tieu tien chua doc ngan_sach"
+
+
+def test_dong_ho_giai_doan_giong_co_bo_dem_nan_oan():
+    """Đ4 phải ĐẾM ĐƯỢC, ⛔ không phải suy ra từ log."""
+    ma = inspect.getsource(giai_doan_giong)
+    assert '"so_doan_nan_oan"' in ma, (
+        "thieu bo dem D4: so doan `giay > khe` NHUNG `giay <= ngan_sach`")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  §5  `thoi_gian.ngan_sach_nan_s` — MOT nguon cho ngan sach BAC THANG NAN
 # ══════════════════════════════════════════════════════════════════════════════
@@ -198,3 +228,61 @@ def test_ngan_sach_nan_KHONG_BAO_GIO_nho_hon_khe():
     """Du lieu hong (`moc_sau` < `ket`) khong duoc lam ngan sach teo lai."""
     from apps.auto_scan_video.thoi_gian import ngan_sach_nan_s
     assert ngan_sach_nan_s(3.0, 1.0) == 3.0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §6  Task 4 — VONG_TOI_DA 2 -> 1, tran tang toc thanh CANH BAO (chot 26/09)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_vong_nan_toi_da_la_MOT():
+    """VideoLingo (18,5k★) đã bỏ vòng rút gọn thứ hai; chú thích của chính ta
+    cũng nói "vòng thứ hai thường không cần đến"."""
+    from apps.auto_scan_video import nan_cho_vua
+    assert nan_cho_vua.VONG_TOI_DA == 1
+
+
+def test_he_so_toc_KHONG_bi_kep_ve_tran():
+    """Chủ dự án chốt: vượt trần thoải mái. Trần còn là CẢNH BÁO, ⛔ không phải cổng."""
+    import ast
+    import inspect
+    from apps.auto_scan_video import giai_doan_thoi_gian
+
+    ma = inspect.getsource(giai_doan_thoi_gian)
+    assert "he_so_toc_da_ap" in ma, "chua ghi lai he so da ap"
+    cay = ast.parse(ma)
+    ten_goi = {n.func.id for n in ast.walk(cay)
+               if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "min" not in ten_goi or "max" not in ten_goi, (
+        "van con phep kep he_so_co_gian ve [1/tran, tran]")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §7  Task 12 — dao thu tu: uoc luong TRUOC, nan theo LO, TTS MOT luot
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_loi_nhac_nan_LO_mang_ngu_canh_truoc_sau():
+    """Rút một câu mà ⛔ không biết câu kế nói gì thì dễ rút mất chủ ngữ mà câu
+    sau đang trỏ tới."""
+    from apps.auto_scan_video.nan_cho_vua import loi_nhac_nan_lo
+
+    cac = [{"ma": "seg_0002", "chu": "Cau hai rat dai",
+            "giay_doc": 4.8, "khe": 3.2,
+            "truoc": "Cau mot", "sau": "Cau ba"}]
+    tin = loi_nhac_nan_lo(cac)
+    ca = " ".join(m["content"] for m in tin)
+    assert "seg_0002" in ca and "3.2" in ca and "4.8" in ca
+    assert "Cau mot" in ca and "Cau ba" in ca
+
+
+def test_giai_doan_giong_KHONG_con_vong_while_quanh_TTS():
+    """[F] chạy MỘT lượt: text đã chốt ở [E]."""
+    import ast
+
+    from apps.auto_scan_video import giai_doan_giong
+
+    cay = ast.parse(inspect.getsource(giai_doan_giong))
+    for v in [n for n in ast.walk(cay) if isinstance(n, ast.While)]:
+        trong = {c.func.attr for c in ast.walk(v)
+                 if isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute)}
+        assert "doc_mot_doan" not in trong, (
+            "TTS van nam trong mot vong `while` — bac thang chua duoc dao")

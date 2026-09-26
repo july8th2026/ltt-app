@@ -21993,3 +21993,8 @@ msgstr "duration off by {0:.2f}s (expected ~{1:.2f}s, tolerance {2:.2f}s)"
 #: apps/upscalevideo/quality_gate.py
 msgid "khách yêu cầu giữ tiếng nhưng đầu ra không có luồng audio"
 msgstr "customer asked to keep audio but the output has no audio stream"
+msgid "Chạy được mọi bản trong danh mục, kể cả bản có giao diện đồ hoạ. Đĩa 40 GB — vừa đủ cho Windows và vài phần mềm, chưa dư để chứa dữ liệu lớn."
+msgstr "Runs every edition in the catalogue, including the ones with a desktop. 40 GB of disk — enough for Windows and a few programs, not enough to store large data."
+
+msgid "Cùng CPU và RAM với gói Nhỏ, nhưng đĩa 60 GB và băng thông 150 GB mỗi chu kỳ. Chọn nó khi bạn cần chỗ chứa dữ liệu chứ không phải thêm sức tính."
+msgstr "Same CPU and RAM as the Small plan, but 60 GB of disk and 150 GB of traffic per cycle. Pick it when you need room for data rather than more compute."

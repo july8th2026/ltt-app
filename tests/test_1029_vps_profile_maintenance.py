@@ -29,6 +29,21 @@ def test_periodic_reconciliation_is_independent_even_when_one_profile_fails(db, 
     from apps.vps.services.backends.contracts import BackendConflict
     _profile(db, profile_id="broken", default=False)
     _profile(db, profile_id="healthy", default=True)
+    # 26/09/2026: vong doi chieu nay BO QUA ho so khong co may lan IP
+    # (`bao_tri.co_gi_de_doi_chieu` — so cua ta khong co dong nao thi khong co gi
+    # de so, xem test_4015). Fixture cu khong co may nao, nen ke tu do bai nay
+    # khong con do dieu no noi la do: ca hai ho so bi bo qua va `called` rong.
+    #
+    # ⭐ Sua bang cach cho moi ho so MOT may that, chu khong bang cach tat cua —
+    #    de cau hoi cua bai ("mot ho so hong co lam chet ho so kia khong") van
+    #    con duoc hoi.
+    from apps.vps.tables import VpsInstance
+    for ma, ho_so in (("i-broken", "broken"), ("i-healthy", "healthy")):
+        db.add(VpsInstance(
+            id=ma, user_id="owner", plan_id="vps-vua", os_id="winsrv2022-gui",
+            gateway_id="gateway-1", infrastructure_profile_id=ho_so,
+            profile_resolution_state="PINNED"))
+    db.commit()
     called = []
     monkeypatch.setattr(bao_tri, "_moc_doi_chieu", 0)
     def compute(profile):

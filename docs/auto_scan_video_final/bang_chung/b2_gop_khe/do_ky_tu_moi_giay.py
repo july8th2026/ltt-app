@@ -24,6 +24,20 @@ tệp tiếng). Nên:
 ⭐ Trần: Netflix 17–20 ký tự/giây (`localize.py:9069-9070`), và trần **bố cục**
    của chính ta: `phu_de.SO_DONG_TOI_DA (2) x KY_TU_MOI_DONG (42)` = 84 ký tự
    một ô.
+
+## ⚠️ `so_nhom` là một MỐC TẠM, ⛔ không phải một hằng số của tự nhiên (26/09)
+
+`so_nhom` **126 → 122** khi Task 6 cho `Khe.giay_can()` cộng thêm thời gian ngắt
+hơi ở dấu câu (`ngon_ngu.GIAY_MOI_DAU_CAU`): ước lượng dài hơn ⇒ **ít khe được
+gộp hơn**. Đó là hệ quả **đúng** của một bản sửa đúng.
+
+⛔ **Nhưng `GIAY_MOI_DAU_CAU = 0.10` CHƯA được đo trên giọng của ta** — nó mượn
+   hình từ `VideoLingo`. ⇒ *"122 đúng với `GIAY_MOI_DAU_CAU = 0.10`; hằng số này
+   còn phải được `tools/asv_doi_soat.py` (Đ1/Đ2) kiểm chứng, nên con số này là
+   **mốc tạm**, ⛔ không phải một hằng số của tự nhiên."*
+
+⇒ Mỗi lượt sinh lại ghi thẳng giá trị đã dùng vào `ket_qua.json` (khoá
+  `canh_bao`), để ⛔ không ai đọc `so_nhom` mà không thấy nó dựa trên cái gì.
 """
 from __future__ import annotations
 
@@ -102,7 +116,22 @@ def _cong(ra: dict, khoa: str) -> dict:
 
 
 def chay() -> dict:
+    from apps.auto_scan_video import ngon_ngu as _nn
+
     ra: dict = {
+        # ⚠️ MOC TAM, ⛔ khong phai hang so cua tu nhien — xem chu thich dau tep.
+        #    `so_nhom` phu thuoc `GIAY_MOI_DAU_CAU`, va hang so ay CHUA duoc do
+        #    tren giong cua ta (muon hinh tu VideoLingo). Ghi thang gia tri da
+        #    dung vao day de ⛔ khong ai doc con so ma khong thay no dua tren gi.
+        "canh_bao": {
+            "moc_tam": True,
+            "giay_moi_dau_cau": _nn.GIAY_MOI_DAU_CAU,
+            "am_tiet_moi_giay": RATE,
+            "ghi_chu": ("so_nhom dung voi GIAY_MOI_DAU_CAU = %s; hang so nay con "
+                        "phai duoc tools/asv_doi_soat.py (D1/D2) kiem chung, nen "
+                        "con so nay la MOC TAM, khong phai mot hang so cua tu "
+                        "nhien" % _nn.GIAY_MOI_DAU_CAU),
+        },
         "tran": {"netflix_ky_tu_moi_giay": TRAN_NETFLIX,
                  "o_phu_de_ky_tu": TRAN_O,
                  "am_tiet_moi_giay": RATE,

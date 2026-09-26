@@ -187,9 +187,12 @@ class Khe:
         """
         return max(0.0, self.moc_sau - self.bat)
 
-    def giay_can(self, *, am_tiet: int | None = None) -> float:
+    def giay_can(self, *, am_tiet: int | None = None,
+                 dau_cau: int | None = None) -> float:
         n = self.am_tiet if am_tiet is None else am_tiet
-        return n / AM_TIET_MOI_GIAY
+        if dau_cau is None:
+            dau_cau = sum(1 for c in (self.chu or "") if c in _ngon_ngu.DAU_NGAT)
+        return n / AM_TIET_MOI_GIAY + dau_cau * _ngon_ngu.GIAY_MOI_DAU_CAU
 
 
 def xep_bac(khe: Khe, *, tran_tang_toc: float, am_tiet: int | None = None) -> int:
