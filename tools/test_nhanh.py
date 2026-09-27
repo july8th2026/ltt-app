@@ -344,7 +344,8 @@ def _la_gate(ten: str, argv, kich_ban: str = "gate.py") -> bool:
                for d in list(argv or [])[1:])
 
 
-def to_tien_da_giu_khoa(kich_ban: tuple[str, ...] = ("gate.py", "test_nhanh.py"),
+def to_tien_da_giu_khoa(kich_ban: tuple[str, ...] = ("gate.py", "test_nhanh.py",
+                                                    "chay_nang.py"),
                         to_tien: list[tuple] | None = None) -> bool:
     """Mot to tien CO PHAI mot cong cu da xin khoa ho ta khong.
 
@@ -356,6 +357,32 @@ def to_tien_da_giu_khoa(kich_ban: tuple[str, ...] = ("gate.py", "test_nhanh.py")
     ⛔ Dung MOT ham cho ca hai cho, dung chep. Hai ban sao cua cung mot phep
        hoi la hai cho de chung lech nhau — va lech o day nghia la hoac khoa
        chet (ca hai cung xin) hoac lo hong (ca hai cung bo qua).
+
+    🔴 `chay_nang.py` THEM 26/09/2026 — MOT CA KHOA CHET DA XAY RA THAT.
+
+       `chay_nang.py` cung xin `cpu_nhieu` ho, nhung no song NGOAI kho
+       (`~/.claude/ltt/`), nen danh sach nay — viet tu goc nhin cua kho — khong
+       he biet no ton tai. He qua do duoc:
+
+           chay_nang.py giu cpu_nhieu
+             └─ pytest (>= _NGUONG_TEP_NANG tep)
+                  └─ conftest xin cpu_nhieu  ->  CHO MAI mot khoa TO TIEN dang giu
+
+       Khoa la tep `O_EXCL`, khong tai nhap, nen no khong bao gio tu thoat.
+
+       ⚠️ Vi sao no song lau ma khong ai thay: no CHI no khi luot co >= 20 tep
+          (`tests/conftest.py::_NGUONG_TEP_NANG`). Do duoc cung ngay: 12 tep
+          XANH, 18 tep XANH, 26 tep CHET. Nen moi luot nho deu "chung minh" ma
+          dung, va nguoi ta di tim loi o cho khac. Toi da loai hai gia thuyet
+          sai (`pytest-randomly`, "import module lay lock") truoc khi thay.
+
+       ⛔ Va trieu chung giong MOI thu khac: treo vo han, CPU bang 0, tai hien
+          duoc voi giay CPU gan y het moi lan — vi no luon dung o CUNG MOT DIEM
+          CHAN, khong phai vi cung mot con bo.
+
+       ⭐ Cach bat trong mot lenh: luc "treo", chay
+          `python tools/cua_so_yen.py trang-thai` tu shell khac. Neu nguoi giu
+          khoa CHINH LA luot cua minh thi do la tu khoa, khong phai con bo.
     """
     if to_tien is None:
         try:

@@ -67,6 +67,47 @@ Số làn = số việc **độc lập**, không trần cố định. Nhưng **m
 toàn máy** (`cpu_nhieu`) ⇒ mọi agent đi qua
 `python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien <làn> -- <lệnh>`, `-n ≤ 7`.
 
+### 3.1 🔴 ⛔ KHÔNG bọc `pytest` trong `chay_nang.py` — đó là tự khoá chính mình
+
+Đã xảy ra thật 26/09 và mất một buổi để khoanh.
+
+`tests/conftest.py` **tự xin `cpu_nhieu`** khi lượt có **≥ 20 tệp** test
+(`_NGUONG_TEP_NANG = 20`), và nó làm đúng hơn lớp bọc: xin **sau khi thu thập**, vì
+chỉ lúc đó mới biết lượt to hay nhỏ. Nó bỏ qua nếu **tổ tiên** đã xin hộ — danh sách
+ở `tools/test_nhanh.py::to_tien_da_giu_khoa`.
+
+```
+chay_nang.py giu cpu_nhieu
+  └─ pytest (>= 20 tep)
+       └─ conftest xin cpu_nhieu  ->  CHO MAI mot khoa TO TIEN dang giu
+```
+
+Khoá là tệp `O_EXCL`, ⛔ không tái nhập, nên nó **không bao giờ tự thoát**.
+
+⚠️ **Vì sao rất dễ đuổi sai:** nó CHỈ nổ khi ≥ 20 tệp. Đo cùng ngày: **12 tệp XANH ·
+18 tệp XANH · 26 tệp CHẾT**. Nên mọi lượt nhỏ đều "chứng minh" mã đúng. Và triệu chứng
+giống mọi thứ khác: treo vô hạn, **CPU bằng 0**, tái hiện được với giây CPU gần y hệt
+mỗi lần — vì luôn dừng ở **cùng một điểm chặn**, ⛔ không phải vì cùng một con bọ.
+
+| Lệnh | Bọc `chay_nang`? |
+|---|---|
+| `pytest` (mọi số tệp) | ⛔ **KHÔNG** — nó tự lấy khoá |
+| `pre-commit run --all-files` | ✅ có |
+| `npm run build`, cargo, tauri | ✅ có |
+| script đo của riêng mình | ✅ có |
+
+⭐ **Cách bắt trong một lệnh:** lúc "treo", chạy `python tools/cua_so_yen.py trang-thai`
+từ **shell khác**. Nếu người giữ khoá **chính là lượt của mình** ⇒ tự khoá, ⛔ không
+phải con bọ.
+
+⛔ **Và đừng chuyển hướng/nối đầu ra khi đang chẩn đoán treo.** `cua_so_yen` IN ra
+`xep hang N phut - cpu_nhieu: <ai>` — đúng những dòng nói ra nguyên nhân. Điều phối mất
+chúng **hai lần**: một lần vì `| grep | tail` (`tail` giữ tới khi tiến trình chết), một
+lần vì `> tệp` (Python đệm stdout). Dùng `PYTHONUNBUFFERED=1` + `-u`.
+
+✅ Đã vá 26/09: thêm `"chay_nang.py"` vào `to_tien_da_giu_khoa`, kèm `test_5104`. Nhưng
+brief **vẫn phải ghi luật này** — bản vá chỉ đỡ được khi agent chạy trong cây đã có nó.
+
 | Lô | Gửi cùng lúc | Chờ gì |
 |---|---|---|
 | 1 | **M₁** | — |
@@ -103,7 +144,7 @@ Mọi brief thi hành **phải** có đủ 12 mục dưới đây, theo đúng t
 | 5 | **Dải số test** | Số cụ thể. Kèm: `python tools/check_so_test.py --list` trước khi tạo tệp |
 | 6 | **Interfaces** | Chữ ký hàm **đầy đủ** của việc nó Consumes (do làn trước tạo) và Produces |
 | 7 | **Nhịp TDD** | test đỏ → chạy thấy đỏ → cài đặt tối thiểu → chạy thấy xanh → commit. ⛔ Không viết mã trước test |
-| 8 | **Lệnh nặng** | Qua `chay_nang.py --phien <làn>`, `-n ≤ 7`. Kiểm `cua_so_yen.py trang-thai` + `tai_may.py` trước |
+| 8 | **Lệnh nặng** | Qua `chay_nang.py --phien <làn>`, `-n ≤ 7`. Kiểm `cua_so_yen.py trang-thai` + `tai_may.py` trước. 🔴 **⛔ TRỪ `pytest` — xem §3.1**: bọc `pytest` là **tự khoá chính mình**. Và ⛔ nhiều bước thì viết một tệp `.py` rồi chạy tệp, ⛔ không `cmd /c "a && b"` (thoát exit 0 mà **không chạy gì**) |
 | 9 | **Rào cứng của làn** | §4.2 — riêng từng làn |
 | 10 | **⛔ Không được làm** | Không gate · không deploy · không đổi ENV production · không `git add .` · không sửa `tests/conftest.py` gốc · không `--accept` bánh cóc |
 | 11 | **Ghi dần** | ⭐ Commit sau **mỗi Task**, ⛔ không giữ việc trong ngữ cảnh rồi commit một lần cuối |
