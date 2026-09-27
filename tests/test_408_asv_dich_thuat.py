@@ -542,7 +542,7 @@ def test_DOI_CHUNG_tang_hang_DICH_thi_van_tay_LONG_TIENG_khong_nhuc_nhich(monkey
 #:
 #: ⭐ Chep tu CSDL production 26/09/2026, ⛔ chi DOC:
 #:      run_id  = asvr_23c9aa26b48a4f78ba6e49c5ca98336   (status `succeeded`)
-#:      stage_id= asvs_b7259be34c6e4f8e807afce8f81aee8a  (stage `voice_synthesis`)
+#:      stage_id= asvs_b7259be34c6e...  (12 ky tu dau, du de tra)  (stage `voice_synthesis`)
 #:    Ba ban ghi `tung_luot_doc` dau + cac khoa vo huong, nguyen van. ⛔ Khong
 #:    mang loi thoai cua khach (`ban_ghi_luot_doc` khong ghi `chu`).
 OUTPUTS_GIONG_THAT = {
