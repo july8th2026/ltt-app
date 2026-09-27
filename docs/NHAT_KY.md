@@ -22126,3 +22126,89 @@ với hàng có bằng chứng là đúng lỗi *hai trạng thái gộp thành 
   (nền hiện tại: **5408 mục, 200 chưa dịch**; bánh cóc chỉ đỏ khi TĂNG.)
 - `tools/check_i18n.py` đếm cả chuỗi trong `log.info/warning` ⇒ báo tăng oan.
   Không bọc log (dịch log là nhiễu); nên thêm ngoại lệ cho `log.*`.
+
+## 2026-09-27 — Upscale V2 correction: ĐO xong, và 4/5 phát hiện là "ĐỪNG LÀM"
+
+Tiếp phiên 26/09. Gate L2 `--pham-vi app:upscalevideo` **XANH 24/24**
+(`.gate/20260927T085021Z-24280.json`).
+
+### Số đo thật — `docs/UPSCALE_V2_CORRECTION/08_BENCHMARK_RESULTS.md` §F–K
+
+| Phát hiện | Quyết định |
+|---|---|
+| Tầng SR chiếm **96,6–96,8 %** (3 phép đo độc lập) | ⛔ KHÔNG viết lại đường PNG — trần lợi ích 3,3 % |
+| Warmup: chênh **< 1 %**, dấu không nhất quán (n=13/nhánh) | **XOÁ** khỏi `engine.py` |
+| Tile Fast: biên độ **2,4 %**, nhiễu cùng cỡ | ⛔ KHÔNG chỉnh |
+| Tile Quality: **nhanh 8,7 %**, ít VRAM 64 % — nhưng PSNR 45–46 dB, SSIM 0,990 | ⛔ **TỪ CHỐI** — chủ dự án chốt ưu tiên chất lượng |
+| Đích 1080/1440/2160: chênh **±4 %**, Quality chênh **−0,19 %** | đích ⛔ không điều khiển chi phí GPU |
+
+⭐ **4/5 là quyết định KHÔNG LÀM.** Cả bốn chỉ có được nhờ **đo trước khi sửa** —
+nếu làm ngược lại, cả bốn đã thành "tối ưu" ghi trong docs.
+
+⇒ Câu §50 "cải thiện bao nhiêu %": **0 %**. Không một tối ưu tốc độ nào được ship.
+
+### 🔴 Hai phát hiện chạm TIỀN (⛔ không đổi giá — chủ dự án chốt giữ)
+
+- `cost.py` khai *"chi phí ~ thời gian GPU"* — **sai**. Đo: GPU 1,00/1,07/1,03×
+  trong khi giá 1,0/1,8/4,0×. Giá bám **kích thước đầu ra** (1,00/1,61/3,15×),
+  tức lưu trữ + băng thông — chi phí có thật. ⇒ giá hợp lý, **lời khai lý do** sai.
+- **Quality chậm hơn Fast 15,7×, tính tiền 2,5×.** Quy ra doanh thu/phút-GPU:
+  `fast 2160` = 3 994 đ, `quality 1080` = **161 đ** — chênh **25 lần** trên cùng
+  một card (đồng thời = 1). Một job `quality 1080` chiếm **cả card ~83 phút**.
+
+### ⚠️ Ba lần phép đo của CHÍNH TÔI hỏng trước khi đúng
+
+1. **Không xen kẽ** (`on,on,on` rồi `off,off,off`) ⇒ trôi theo thời gian ánh xạ
+   thẳng lên điều kiện; cho ra *"warmup nhanh hơn 20 %"*.
+2. **`cpu_s` cộng dồn** (đo CPU tích luỹ của tiến trình cha) ⇒ tăng đều +20 s/lượt.
+   ⭐ Tệ hơn: tôi **dùng chính nó** để chẩn đoán lỗi (1) ⇒ tiền đề sai.
+3. **`sum(stage_timings.values())` đếm cả khoá `total`** ⇒ mọi tổng gấp đôi.
+
+⇒ Cả ba cho số **trông hợp lệ**. **Một chỉ số sai không chỉ cho số sai — nó làm
+hỏng cả kết luận rút ra từ nó.**
+
+### 🔴 Tôi tự khoá chính mình 36,5 phút
+
+Bọc `cay_gate.py` trong `chay_nang.py`. Nhưng `gate.py` **tự xin** `cpu_nhieu`
+(`:1072 :1079 :1101 :1345`) và có **0** phép hỏi tổ tiên ⇒ chờ một khoá mà **tổ
+tiên mình đang giữ**. Chặn cả máy, một phiên khác phải xếp hàng.
+
+| Lệnh | Bọc `chay_nang.py`? |
+|---|---|
+| `gate.py` · `cay_gate.py` · `pytest` | ⛔ **KHÔNG** — tự lấy khoá |
+| `pre-commit --all-files` · build · script đo | ✅ có |
+
+⭐ **Phép chẩn một lệnh**: lúc treo, chạy `cua_so_yen.py trang-thai` từ **shell
+khác**. Người giữ khoá **chính là lượt của mình** ⇒ tự khoá. ⛔ Đừng `| tail`,
+đừng `> tệp` — chúng nuốt mất dòng nói ra nguyên nhân.
+
+⭐ **Vì sao một luật ĐÚNG vẫn dẫn tôi vào đó:** luật tôi tự viết nói *"lệnh nặng
+đi qua `chay_nang.py`"* — đúng, nhưng thiếu vế *"trừ lệnh TỰ LẤY khoá"*. **Một
+luật thiếu vế ngoại lệ thì đúng ở mặt chữ mà sai ở mặt dùng**, và người đọc càng
+tuân thủ càng đâm vào chỗ hỏng. Phiên "Phân tích PROMPT AI" đã viết đúng câu
+thiếu vế ấy vào **brief mẫu gửi 4 làn** — cùng khuyết tật, bán kính khác hẳn.
+
+⚠️ `cua_so_yen` **đã cảnh báo** ở mốc 30 phút. Ngưỡng hoạt động; chỗ hỏng là
+**người đọc** lướt qua. Cảnh báo chỉ có giá trị khi có ai đó dừng lại.
+
+### ⭐ Một phép xác minh không để lại hiện vật thì không kiểm toán được
+
+Tôi đối soát giá trước deploy (960 tổ hợp, 0 lệch) bằng script trong thư mục
+**tạm**. Một agent đi kiểm lại **không tìm thấy gì trong kho** và nói thẳng ra.
+Câu *"tôi đã kiểm rồi"* có hình dạng **giống hệt** câu *"tôi nghĩ là ổn"*.
+⇒ Biến thành `tests/test_4907_upscale_gia_khong_tu_doi.py` (16 bộ tham số + ca
+biên). Nó bắt lỗi **ngay lượt đầu**: mốc tôi gõ tay 141, đúng là 142. **Mã đúng,
+mốc sai.**
+
+### Còn hở
+
+🔴 **ISSUE L chưa vá**: `job_runner._het_gio` dùng `os._exit(3)` ⇒ bỏ qua
+`finally` ⇒ rò temp + **tiến trình engine mồ côi giữ GPU**. Hôm nay đã phải dọn
+đúng một con như thế. Nằm ở `platform_core/` — cần chủ khu.
+
+⛔ **Mục tiêu ≥90/100 KHÔNG tuyên bố được.** `10_FINAL_SCORECARD.md` từ chối in
+một con số Overall: trộn hàng đã đo với hàng `CHƯA ĐO` vào một giá trị là đúng
+lỗi *hai trạng thái gộp thành một*.
+
+⛔ **KHÔNG CÓ MẪU (vĩnh viễn với bộ test hiện tại)**: portrait · VFR · nguồn
+1080p+ · clip mặt người · clip nhiễu. 4 clip đều ~576p ngang CFR.
