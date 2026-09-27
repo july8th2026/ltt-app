@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi" class="theme-dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hộp thử — mặt thực thi (UI-7)</title>
+    <!--
+      HỘP THỬ cho lớp TRÌNH BÀY của mặt thực thi. ⛔ KHÔNG vào bản dựng:
+      `vite.config.ts` chỉ lấy `src/main.tsx` làm input, nên trang này chỉ tồn
+      tại dưới `vite dev`.
+
+      ⭐ Vì sao cần nó dù đã có vitest: jsdom KHÔNG tính layout. Một dòng thời
+         gian bị tràn, một thanh tiến trình đè lên chữ, một `<details>` không
+         bấm được — cả ba đều XANH trong vitest. Trang này mở đúng các component
+         ấy trên layout thật, với `tests/runGia.ts` làm dữ liệu.
+    -->
+    <style>
+      /* ⚠️ Bang mau NEN TANG, ⛔ khong thuoc goi `agent-canvas`.
+       *
+       * `canvas.css` dinh nghia `--text-primary` & co. CHI duoi
+       * `.canvas-shell.theme-light`. O che do TOI — mac dinh san pham (Q66) —
+       * chung den tu stylesheet cua NEN TANG, thu ma template
+       * `apps/agent/templates/agent_canvas.html` nap chu goi nay thi khong.
+       *
+       * Nen hop thu phai tu dat NEN toi, neu khong mau chu lui (`var(--x, #fff)`
+       * trong `run.css`, deu la gia tri che do toi) se la chu trang tren nen
+       * trang — va anh chup nghiem thu se to ra mot loi KHONG co that.
+       *
+       * ⛔ KHONG chep lai ca bang token nen tang vao day: hai ban sao se troi
+       *    khoi nhau. Chi dat NEN; mau chu de gia tri lui cua `run.css` lo —
+       *    do cung la thu chay that khi mot token vang mat. Mau CHOT o che do B.
+       */
+      body { margin: 0; padding: 24px; background: #0e0e0e; }
+    </style>
+  </head>
+  <body>
+    <div id="hop-thu"></div>
+    <script type="module" src="./harness.tsx"></script>
+  </body>
+</html>

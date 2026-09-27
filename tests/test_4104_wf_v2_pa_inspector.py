@@ -32,9 +32,22 @@ def test_RunInspector_doc_ca_node_lan_su_kien():
 
 
 def test_CanvasShell_da_noi_RunInspector():
-    nguon = (SRC / "CanvasShell.tsx").read_text(encoding="utf-8")
+    """⚠️ Bài này đọc CHỖ GẮN THẬT, không đọc `CanvasShell.tsx`.
+
+    `CanvasShell.tsx` từng là cả trình soạn (740 dòng). Làn UI-3 tách nó ra
+    `features/editor/` và để lại đúng MỘT dòng `export { CanvasShell } from
+    './features/editor/EditorShell'` — nên từ lúc ấy bài này ĐỎ, và nó đỏ vì
+    một tệp bị DỜI, ⛔ không vì `RunInspector` thôi được gắn. Đó là hình dạng
+    bánh cóc đo CÁCH GÕ thay vì đo tính chất: nó neo vào tên tệp.
+
+    Tính chất cần giữ ⛔ không đổi: panel thô phải được GẮN vào ngăn kéo chạy.
+    Neo lại vào `ExecutionPanel/index.tsx` — mảnh sở hữu ngăn kéo ấy.
+    """
+    tep = SRC / "features" / "editor" / "ExecutionPanel" / "index.tsx"
+    assert tep.exists(), "ngăn kéo chạy phải ở features/editor/ExecutionPanel/"
+    nguon = tep.read_text(encoding="utf-8")
     assert "RunInspector" in nguon
-    assert "from './RunInspector'" in nguon
+    assert "from '../../../RunInspector'" in nguon
 
 
 def test_react_json_view_khai_trong_package_json_MIT():
