@@ -200,16 +200,28 @@ def test_lan_chay_that_QUA_duoc_cong(run_xong, db):
     assert (s.outputs or {}).get("qc_ky_thuat_dat") is True
 
 
-def test_QC_hong_thi_RUN_KHONG_ve_done(db, kho_tam, tmp_path, asr_gia,
-                                       dich_gia, giong_gia, monkeypatch):
-    """🔑 CHINH LA CONG THOAT, va ban dau toi lam SAI cho nay.
+def test_QC_hong_VAN_ve_done_va_VAN_ghi_phat_hien(db, kho_tam, tmp_path, asr_gia,
+                                                 dich_gia, giong_gia,
+                                                 monkeypatch):
+    """🔴 **DAO CHIEU 27/09/2026 — chu du an chot: QC la BO DO va BAO CAO, ⛔ khong
+    phai cong cam phat hanh.**
 
-    Ban dau `thi_hanh` goi `danh_dau_xong` roi moi nem: dong `asv_stage` ghi
-    `succeeded`, `_advance` dem du chin giai doan, va lan chay ve `done` **du
-    bao cao QC noi `dat: False`**. Cong van do va van cho qua.
+    Ban truoc cua bai nay chot `run.status == RUN_ERROR`, voi ly le *"mot cong
+    khong chan thi khong phai cong"*. Ly le ay dung ve nguyen tac, nhung no chi
+    dung khi **con so cua cong dang tin** — va do duoc rang chung ⛔ khong:
 
-    ⛔ Mot cong khong chan thi khong phai cong — va no te hon khong co cong, vi
-       no trong nhu co.
+      Ba luot chay THAT 27/09 bi chan boi bon roi ba roi hai muc, trong do
+        T2  SAI  — chinh QC chia `toc_do` hai lan (da sua)
+        T18 SAI  — tham chieu 1083 khung/30 fps vs ban giao 1351 khung/37,5 fps
+        T17 THAT nhung vo hai voi nguoi xem (moc DTS trung, trinh phat bo qua)
+      ⇒ Cong nhu the ⛔ khong bao ve khach, no **giu hang cua khach lai**.
+
+    ⭐ Bai nay ⛔ khong bi XOA ma bi DAO CHIEU, vi bat bien moi can duoc canh y
+       nhu bat bien cu: mot bo do bi tat cong van la mot bo do, nhung mot bo do
+       bi **xoa so** thi ⛔ khong con gi. Nen bai chot CA HAI ve:
+         1. lan chay VAN ve `done` (khach nhan hang)
+         2. phat hien VAN duoc ghi (`qc_muc_hong`, `qc_ky_thuat_dat = False`)
+       ⛔ Chot mot ve thoi thi mot ban "sua" vut het phat hien di cung se xanh.
     """
     fx.require_ffmpeg()
     that = qc.kiem
@@ -226,7 +238,18 @@ def test_QC_hong_thi_RUN_KHONG_ve_done(db, kho_tam, tmp_path, asr_gia,
     _chay_het_hang_doi(db, nang_luc=NANG_LUC)
 
     run = features.lay_run(db, run.id, "uA")
-    assert run.status == RUN_ERROR, "QC hong ma lan chay van ve done"
+    # ── Ve 1: khach NHAN duoc hang ───────────────────────────────────────────
+    assert run.status != RUN_ERROR, (
+        f"QC hong ma lan chay ve {run.status!r} — QC la bo do, ⛔ khong phai cong")
+
+    # ── Ve 2: phat hien ⛔ KHONG duoc bien mat ────────────────────────────────
+    from apps.auto_scan_video import pipeline
+    st = features.giai_doan_theo_ten(db, run.id, pipeline.QC)
+    out = dict((st.outputs or {}) if st else {})
+    assert out.get("qc_muc_hong") == ["T4"], (
+        f"phat hien QC bien mat khoi outputs: {out}")
+    assert out.get("qc_ky_thuat_dat") is False, (
+        f"`qc_ky_thuat_dat` ⛔ khong con noi rang co muc hong: {out}")
 
 
 def test_QC_hong_van_LUU_bao_cao(db, kho_tam, tmp_path, asr_gia, dich_gia,

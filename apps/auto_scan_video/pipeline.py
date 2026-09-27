@@ -491,8 +491,12 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "doan tu chinh tep dang do (giai_doan_qc._thoi_luong_mong_doi)",
                  "ffmpeg co bo loc libvmaf + mo hinh, neu khong T18 thanh "
                  "khong_kha_dung (giai_doan_qc.py:245)",
-                 "giai doan nay KHONG tu lam hong lan chay: nguoi goi doc "
-                 "`muc_hong` va nem QcChan sau khi promote (giai_doan_qc.py:214)"),
+                 "giai doan nay KHONG tu lam hong lan chay, va tu 27/09 "
+                 "nguoi goi CUNG khong: QC la BO DO va BAO CAO, ⛔ khong "
+                 "phai cong cam phat hanh (chu du an chot). `thi_hanh` doc "
+                 "`_qc_hong`, GHI mot dong warning, roi DI TIEP; phat hien "
+                 "nam o `qc_muc_hong` + `qc_ky_thuat_dat` + qc_report.json "
+                 "(thi_hanh.py:~650)"),
              ma_loi=RONG_TUONG_MINH,
              do=("t1_den_t18",)),
     # 🔑 `asv_gpu`: nap model len card (whisper, SQUIM, MetricX), tung bo do mot

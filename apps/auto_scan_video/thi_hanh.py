@@ -635,26 +635,45 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
         if kc:
             ket_qua["khoa_chung"] = kc
 
-        # 🔑 QC la mot CONG, va mot cong phai CHAN duoc (Prompt 18 muc 2).
+        # 🔴 **QC la BO DO va BAO CAO, ⛔ KHONG phai cong cam phat hanh (chu du
+        #    an chot 27/09/2026).**
         #
-        # 🔴 Ban dau cho nay goi `danh_dau_xong` roi moi nem. Ket qua: dong
-        #    `asv_stage` ghi `succeeded`, `_advance` dem du chin giai doan, va
-        #    lan chay ve `done` — **du bao cao QC noi `dat: False`**. Tuc cong
-        #    van do va van cho qua. Mot cong khong chan thi khong phai cong, va
-        #    no con te hon khong co cong vi no trong nhu co.
+        #    Ban truoc: `_qc_hong` ⇒ `danh_dau_hong(cuoi_cung=True)` ⇒ nem
+        #    `QcChan` ⇒ ca lan chay ve `error`, khach nhan **⛔ khong gi ca**.
+        #    Chu thich cu bien ho cho no bang mot cau dung ve nguyen tac —
+        #    *"mot cong khong chan thi khong phai cong"* — nhung nguyen tac ay
+        #    chi dung khi **con so cua cong dang tin**.
         #
-        # ⭐ Nhung artifact van duoc promote TRUOC (ngay ben tren), va thu tu do
-        #    la co y: mot lan chay hong phai de lai **bang chung ve vi sao**.
-        #    Nguoi can cau tra loi do nhat la nguoi ho tro, khong phai khach.
+        # ⚠️ **Va do duoc rang chung ⛔ KHONG dang tin.** Ba luot chay THAT
+        #    (27/09, `asvr_3059dc3d` / `asvr_f997f794` / `asvr_3c5a11c4`) bi chan
+        #    boi bon roi ba roi hai muc, trong do:
+        #      T2  — SAI: chinh QC chia `toc_do` hai lan (da sua)
+        #      T18 — SAI: tham chieu 1083 khung/30 fps vs ban giao 1351 khung/
+        #            37,5 fps, tuc phep SO SANH lech, ⛔ khong phai hinh kem
+        #      T17 — THAT nhung vo hai voi nguoi xem: moc DTS trung, moi trinh
+        #            phat deu bo qua
+        #    ⇒ Mot cong chan bang nhung con so nhu the thi no ⛔ khong bao ve
+        #      khach, no chi **giu hang cua khach lai**.
+        #
+        # ⭐ Nen QC nay GHI va DI TIEP. Thu KHONG duoc mat la **phat hien**:
+        #      `ket_qua["qc_muc_hong"]`      danh sach ma (tu `tom_tat`)
+        #      `ket_qua["qc_ky_thuat_dat"]`  `False` khi co muc hong
+        #      `qc_report.json`              bao cao day du, da promote o TREN
+        #      mot dong log `warning`        cho nguoi van hanh
+        #    Mot bo do bi tat cong van la mot bo do; mot bo do bi **xoa so** thi
+        #    ⛔ khong con gi. Do la khac biet duy nhat phai giu o day.
+        #
+        # ⛔ `QcChan` GIU lai (`loi.py:111` phan loai no, `test_418` chot) — no
+        #    ⛔ khong con duong nao trong san pham nem nua, nhung xoa mot lop
+        #    ngoai le la mot viec khac, va lop do con la cho de bat lai neu chu
+        #    du an muon chan MOT SO muc (vd T17) sau nay.
         hong_qc = ra.get("_qc_hong") or []
         if hong_qc:
-            thong_bao = _t(
-                'Bản kết xuất không đạt {n} mục kiểm chất lượng: {ds}.').format(
-                n=len(hong_qc), ds=", ".join(hong_qc))
-            features.danh_dau_hong(db, stage, thong_bao, cuoi_cung=True)
-            stage.outputs = ket_qua
-            db.commit()
-            raise QcChan(thong_bao)
+            log.warning(
+                "asv qc: run=%s ban giao co %d muc QC HONG (%s) — QC la bo do, "
+                "⛔ khong phai cong, nen lan chay DI TIEP. Bao cao: %s",
+                getattr(run, "id", "?"), len(hong_qc), ", ".join(hong_qc),
+                ", ".join(khoa_ra) or "(⛔ khong co artifact)")
 
         features.danh_dau_xong(
             db, stage, fingerprint=vt, credit_actual=CHI_PHI_GIA,
