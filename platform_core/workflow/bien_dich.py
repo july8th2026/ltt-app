@@ -622,6 +622,26 @@ def _node(n: dict, cc: dict[str, CongCu], *, nghiem: bool = True) -> dict:
         return _node_tu_dinh_nghia(n, nid, loai, nd)
     tool = cc.get(ten)
     if tool is None:
+        # ⭐ Node do PALETTE Canvas tao: `type` la hang so `'tool'`, con loai
+        #    THAT nam o `data.tool` (`editorState.nextNode()` dung MOI node nhu
+        #    vay), va `params`/`settings` nam duoi `data`. `_node_loi` DA co
+        #    dung chuoi tra ta can (`nut_loi.tat_ca()` roi `dinh_nghia_piece`),
+        #    nen chi can nang `data.*` len muc tren cho khop hop dong cua no.
+        #
+        # ⛔ KHONG cai dat lai phep tra o day: hai ban cai dat song song thi
+        #    lech, va lech im lang — cung bai hoc voi luat noi day.
+        #
+        # 🔴 Nhanh nay la thu DUY NHAT cho 55/67 loai buoc keo tu palette bien
+        #    dich duoc (do tren trinh duyet that 27/09/2026: bam MOT the
+        #    `core.set` roi Chay -> "node_khong_ton_tai: core.set"). Go no la
+        #    lam chet lai ca palette. `tests/test_5600_wf_node_palette_bien_dich.py`
+        #    giu cho nay.
+        #
+        # ⚠️ `_node_loi` van nem `node_khong_ton_tai` khi ca hai nguon deu
+        #    khong co `ten`, nen mot loai go sai VAN bao dung ma loi cu.
+        if loai == "tool" and ten:
+            return _node_loi({**n, "type": ten, "params": params,
+                              "settings": settings}, nid, ten)
         raise LoiBienDich("node_khong_ton_tai", ten, nid)
     return {"id": nid, "type": f"app.{ten}", "type_version": tool.type_version,
             "params": _doi(dict(params), nid, nghiem=nghiem),
