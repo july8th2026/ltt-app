@@ -86,6 +86,15 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 
 _(mới nhất ở trên)_
 
+- `2026-09-27` `ui0` — Task 2 XONG. `_suy_kind_canh` + đấu vào `cau_truc`.
+  `test_5601` 5/5 xanh; lưới hồi quy `1714 + 1719 + 1783 + 4250` = **81 passed**.
+  🔴 **ĐỔI HÀNH VI (R3):** cạnh rời cổng `control` của một node có ≥2 cổng control
+  nay mang `kind=CONTROL` + `condition=<tên cổng>`. Workflow hôm nay chạy **cả
+  hai** nhánh của `core.if`; sau bản vá chạy **một** nhánh. Đúng, nhưng **phải báo
+  chủ dự án TRƯỚC khi deploy** — nhánh lẽ ra không chạy hiện vẫn sinh job và bút
+  toán thật.
+- `2026-09-27` `ui0` — Task 1 XONG. `_node()` uỷ quyền `_node_loi` khi sổ công cụ
+  app không có. `test_5600` 5/5 xanh; hồi quy `1714 + 4250 + 1783` = 62 passed.
 - `2026-09-27` `ui0` — 🔴 **Sửa lỗi THIẾT KẾ trong plan trước khi viết mã.** Bước
   xác minh `nut_loi.tat_ca()` mà Task 1 dặn chạy đã bắt được: luật suy
   `(CONTROL, tên cổng)` của Task 2 sẽ gán `condition='nhanh'` cho `core.switch`
