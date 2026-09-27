@@ -335,13 +335,14 @@ async def breakdown_storyboard(request: Request, storyboard_id: str,
                        str(body.get("framework_id") or ""))
     if framework is None:
         # Ban co dau that: "Không tìm thấy khung." (xem bao cao lam I).
-        raise HTTPException(status_code=404, detail='Khong tim thay khung.')
+        raise HTTPException(status_code=404,
+                            detail=_t('Không tìm thấy khung.'))
 
     story_vi = str(body.get("story_vi") or "").strip()
     if not story_vi:
         # Ban co dau that: "Thiếu nội dung câu chuyện." (xem bao cao lam I).
         raise HTTPException(status_code=422,
-                            detail='Thieu noi dung cau chuyen.')
+                            detail=_t('Thiếu nội dung câu chuyện.'))
 
     n_scenes = body.get("n_scenes")
     try:

@@ -230,7 +230,8 @@ async def generate_from_image_template(request: Request, template_id: str,
         # Ban co dau that de dieu phoi dich sau: "Không tìm thấy mẫu." — de
         # khong dau + khong boc _t() de khong do ban-dich-thieu (msgid moi
         # chua co trong catalog, xem bao cao lam I / composite.py dau tep).
-        raise HTTPException(status_code=404, detail='Khong tim thay mau.')
+        raise HTTPException(status_code=404,
+                            detail=_t('Không tìm thấy mẫu.'))
 
     try:
         result = composite.generate(

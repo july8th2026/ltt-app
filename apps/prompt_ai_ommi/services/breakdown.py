@@ -26,12 +26,23 @@ diem se doi (xem bao cao lam I).
 from __future__ import annotations
 
 from apps.prompt_ai_ommi import provider
+from platform_core.i18n import _ as _t
 
-# ⚠️ Cac chuoi hien thi duoi day CO Y khong dau va KHONG boc `_t()` — tep moi
-# tao trong luc cong dich dang chay song song (dieu phoi dang dich hang loat
-# mot lan, xem `DIEU_HUONG_AGENT.md` Sec 4.5), nen boc `_t()` ngay bay gio se
-# tao msgid CHUA CO trong catalog va lam do `ban-dich-thieu` (chi minh boc);
-# con neu de co dau ma KHONG boc thi do `chuoi-chua-dich` (check_i18n.py).
+# ⭐ MOI chuoi hien thi o day CO DAU va BOC `_t()`, ke ca chuoi duoc GHI vao
+#    CSDL (`ommi_canh.title`, ghi chu tu dong bu / gop).
+#
+# 🔴 Ban dau chung de KHONG DAU va KHONG boc, de ne cung luc hai banh coc
+#    (`chuoi-chua-dich` + `ban-dich-thieu`). Ne cong thi xanh, nhung KHACH THAY
+#    "Khong tim thay luot sinh anh." — mot loi SAN PHAM that. ⛔ Cong khong phai
+#    thu de NE; o day co duong THOA: lan bao msgid nguyen van, dieu phoi dich va
+#    bien dich `.mo`.
+#
+# ⚠️ Danh doi cua viec boc chuoi GHI vao CSDL: dich luc GHI dong bang ngon ngu
+#    cua NGUOI GHI, nen doi ngon ngu se KHONG doi cac hang cu. Cach sach hon la
+#    luu mot KHOA roi phan giai luc DOC — nhung app nay KHONG co co che do o bat
+#    ky dau, nen khong boc co nghia la khach EN LUON thay tieng Viet. Giua hai cai
+#    khong hoan hao, "dung ngon ngu luc tao" tot hon "luon sai ngon ngu".
+#    Doi thi phai doi CA app, ⛔ khong doi rieng cho nay.
 # Khong dau + khong boc la duong DUY NHAT qua duoc CA HAI banh coc cung luc —
 # dung theo dung tien le `services/nhap_mau_goc.py:65`. Ban co dau that de
 # dieu phoi dua vao dot dich hang loat sau, ghi trong bao cao lam I:
@@ -60,7 +71,13 @@ def _system_prompt(framework) -> str:
 
 
 def _default_title(index: int) -> str:
-    return "Canh {n}".format(n=index + 1)
+    """Tieu de mac dinh cua mot canh — GHI vao `ommi_canh.title`.
+
+    Boc `_t()`: xem danh doi da ghi o dau tep. Tom lai — app nay khong co co
+    che phan giai ngon ngu luc DOC cho noi dung da luu, nen KHONG boc nghia la
+    khach EN LUON thay tieng Viet.
+    """
+    return _t('Cảnh {n}').format(n=index + 1)
 
 
 def _clean_scene(raw: dict, index: int) -> dict:
@@ -78,8 +95,8 @@ def _auto_fill_scene(index: int) -> dict:
     return {
         "index": index,
         "title": _default_title(index),
-        "prompt": ("[TU DONG BU - AI chua sinh du canh; can chinh sua hoac "
-                  "chia lai truoc khi dung]"),
+        "prompt": _t('[TỰ ĐỘNG BÙ — AI chưa sinh đủ cảnh; cần chỉnh sửa hoặc '
+                     'chia lại trước khi dùng]'),
         "auto_filled": True,
     }
 
@@ -114,8 +131,9 @@ def breakdown(db, *, framework, story_vi: str, n_scenes: int | None = None,
             f"{str((item or {}).get('title') or '')}: "
             f"{str((item or {}).get('prompt') or '')}"
             for item in overflow_raw)
-        note = ("[GOP {n} CANH VUOT {target} - AI da sinh nhung bi cat do "
-               "vuot so luong yeu cau]:\n{text}").format(
+        # Ghi vao CSDL nhung VAN boc `_t()` — xem ly le o `_default_title`.
+        note = _t('[GỘP {n} CẢNH VƯỢT {target} — AI đã sinh nhưng bị cắt do '
+                  'vượt số lượng yêu cầu]:\n{text}').format(
             n=len(overflow_raw), target=target, text=overflow_text)
         scenes[-1]["prompt"] = f"{scenes[-1]['prompt']}\n\n{note}"
         scenes[-1]["overflow_merged_count"] = len(overflow_raw)

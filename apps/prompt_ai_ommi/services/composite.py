@@ -32,6 +32,7 @@ import re
 
 from apps.prompt_ai_ommi.services import placeholders as ph
 from apps.prompt_ai_ommi.services import resources as rsvc
+from platform_core.i18n import _ as _t
 
 # Trung VAN BAN voi `apps/prompt_ai_ommi/routes/_shared.py::_IMAGE_JOB_TYPE`
 # (hai cho khai mot dieu). ⛔ Khong import tu routes/_shared vao day: services/
@@ -56,15 +57,16 @@ def _validate_prompt_syntax(prompt_text: str) -> None:
     thieu = ph.kiem_placeholder(prompt_text, list(_PLACEHOLDER_NAMES),
                                 _dummy_values())
     if thieu:
-        # ⚠️ KHONG boc _t() va KHONG dung dau: tranh ca hai bo dem cung luc
+        # Chuoi nem ra cho nguoi dung => boc `_t()`. Ban dau de khong dau va
         # (check_i18n.py: chuoi CO dau ma chua boc la loi; ban-dich-thieu:
         # chuoi DA boc ma chua co trong catalog cung la loi). Dung theo dung
         # tien le `services/nhap_mau_goc.py:65`. Bao dieu phoi ban tieng Viet
         # co dau that: "Mẫu dùng placeholder không hợp lệ hoặc không được
-        # khai báo: {ten}" — de dua vao mot dot dich hang loat sau.
+        # khong boc `_t()` de ne hai cong — nhung the thi KHACH thay chu khong
+        # dau. Cong la thu de THOA, khong phai de NE.
         raise ValueError(
-            f"Mau dung placeholder khong hop le hoac khong duoc khai bao: "
-            f"{thieu!r}")
+            _t('Mẫu dùng placeholder không hợp lệ hoặc chưa được khai báo: ')
+            + f"{thieu!r}")
 
 
 def _substitute(prompt_text: str, values: dict) -> str:
@@ -149,9 +151,7 @@ def generate(db, *, template, resource_id: str, owner_id: str,
         return {"credit": estimate, "count": params["count"], "confirmed": False}
 
     if template.requires_ref and not params.get("image_keys"):
-        # Ban co dau that de dieu phoi dich sau: "Mẫu này cần ít nhất một ảnh
-        # tham chiếu."
-        raise ValueError("Mau nay can it nhat mot anh tham chieu.")
+        raise ValueError(_t('Mẫu này cần ít nhất một ảnh tham chiếu.'))
 
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
     job = submit_with_credit(
@@ -177,7 +177,7 @@ def revert(db, *, image_job_id: str, owner_id: str):
     from apps.prompt_ai_ommi.tables import OmmiImageJob
     row = db.get(OmmiImageJob, image_job_id)
     if row is None or row.owner_id != owner_id:
-        raise rsvc.ResourceNotFound("Khong tim thay luot sinh anh.")
+        raise rsvc.ResourceNotFound(_t('Không tìm thấy lượt sinh ảnh.'))
     row.status = "reverted"
     db.flush()
     return row
@@ -188,7 +188,7 @@ def retry(db, *, image_job_id: str, owner_id: str, app_slug: str) -> dict:
     from apps.prompt_ai_ommi.tables import OmmiImageJob
     parent = db.get(OmmiImageJob, image_job_id)
     if parent is None or parent.owner_id != owner_id:
-        raise rsvc.ResourceNotFound("Khong tim thay luot sinh anh.")
+        raise rsvc.ResourceNotFound(_t('Không tìm thấy lượt sinh ảnh.'))
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
     job = submit_with_credit(
         db, user_id=owner_id, app_slug=app_slug, job_type=_IMAGE_JOB_TYPE,

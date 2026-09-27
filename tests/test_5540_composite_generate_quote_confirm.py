@@ -77,11 +77,24 @@ def test_requires_ref_template_rejects_generation_without_any_reference(db_sessi
     db, owner_id = db_session
     resource = rsvc.create(db, owner_id=owner_id, kind="character", name="A")
     db.commit()
-    with pytest.raises(ValueError, match="anh tham chieu"):
+    # ⛔ KHONG khop van ban thong bao. Ban dau bai nay dung
+    #    `match="anh tham chieu"` va DO ngay khi chuoi duoc boc `_t()` + bo dau —
+    #    du hanh vi khong doi mot li nao. Mot thong bao hien thi la thu SE doi
+    #    (dich, sua chinh ta, doi cach dien dat); khang dinh vao no la khang dinh
+    #    vao mot thu khong phai hop dong.
+    #
+    # ⭐ Khang dinh vao HANH VI: nem `ValueError`, VA khong job nao duoc tao.
+    #    Ve thu hai quan trong hon ve thu nhat — mot phien ban nem dung loi nhung
+    #    da kip ghi mot `OmmiImageJob` mo coi thi bai chi-kiem-exception van XANH.
+    from apps.prompt_ai_ommi.tables import OmmiImageJob
+    truoc = db.query(OmmiImageJob).count()
+    with pytest.raises(ValueError):
         composite.generate(db, template=_template(requires_ref=True),
                            resource_id=resource.id, owner_id=owner_id,
                            reference_variant_ids=[], confirmed=True,
                            app_slug="prompt_ai_ommi")
+    assert db.query(OmmiImageJob).count() == truoc, (
+        "nem loi nhung van tao mot OmmiImageJob mo coi")
 
 
 def test_confirmed_generate_submits_taoanh_job_and_records_image_job(db_session):

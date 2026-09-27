@@ -22141,3 +22141,30 @@ msgstr "merging feedback into the brief"
 
 msgid "Chưa chọn prompt meta."
 msgstr "No meta prompt selected."
+
+msgid "Mẫu dùng placeholder không hợp lệ hoặc chưa được khai báo: "
+msgstr "Template uses an invalid or undeclared placeholder: "
+
+msgid "Mẫu này cần ít nhất một ảnh tham chiếu."
+msgstr "This template needs at least one reference image."
+
+msgid "Không tìm thấy lượt sinh ảnh."
+msgstr "Image run not found."
+
+msgid "Không tìm thấy mẫu."
+msgstr "Template not found."
+
+msgid "Không tìm thấy khung."
+msgstr "Frame not found."
+
+msgid "Thiếu nội dung câu chuyện."
+msgstr "The story text is missing."
+
+msgid "Cảnh {n}"
+msgstr "Scene {n}"
+
+msgid "[TỰ ĐỘNG BÙ — AI chưa sinh đủ cảnh; cần chỉnh sửa hoặc chia lại trước khi dùng]"
+msgstr "[AUTO-FILLED - the AI did not produce enough scenes; edit or re-split before use]"
+
+msgid "[GỘP {n} CẢNH VƯỢT {target} — AI đã sinh nhưng bị cắt do vượt số lượng yêu cầu]:\n{text}"
+msgstr "[MERGED {n} SCENES OVER {target} - produced by the AI but cut for exceeding the requested count]:\n{text}"
