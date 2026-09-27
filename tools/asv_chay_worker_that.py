@@ -188,9 +188,20 @@ def _tao(args) -> str:
     #    `edit_plan`/`image_finish`, va chuoi tham chieu VMAF cua T18. ⛔ Khong co
     #    co nay thi moi luot nghiem thu deu chay `toc_do = 1`, va hai duong ay
     #    ⛔ khong bao gio duoc do tren worker that.
-    if getattr(args, "bien_tap", ""):
-        tho["bien_tap"] = args.bien_tap
-        print("BIEN TAP:", args.bien_tap)
+    # ⭐ MOI truc di qua DUNG cua duyet dau vao (`dich_vu_tao.dung_cai_dat`), nen
+    #    mot ho so sai bi tu choi o CUA chu ⛔ khong xuong tan worker. ⛔ Khong ghi
+    #    thang vao `cai_dat`: lam vay la di cua sau cua chinh cua ma khach dung.
+    #
+    # 🔴 Vi sao them bon co nay (B7, 28/09): truoc lan nay cong cu CHI co
+    #    `--bien-tap`, nen phep nghiem thu *"bat het"* ⛔ KHONG CHAY NOI — du ma
+    #    san pham da co du tu lau. Cai thieu nam o CONG CU, ⛔ khong o san pham.
+    for _ten, _co in (("bien_tap", "bien_tap"), ("vung", "vung"),
+                      ("cat", "cat"), ("lop_phu", "lop_phu"),
+                      ("phu_de", "phu_de")):
+        _gt = getattr(args, _co, "")
+        if _gt:
+            tho[_ten] = _gt
+            print("%-8s:" % _ten.upper(), _gt)
     for s in dbmod.get_session():
         r = s.execute(text("SELECT id FROM users WHERE email = :e"),
                       {"e": args.email}).first()
@@ -209,6 +220,25 @@ def _tao(args) -> str:
             run = features.tao_run_tu_tai_len(
                 s, owner_id=owner, duong_tep=str(video),
                 ten_tep=video.name, settings=ho_so)
+            # ⚠️ **`logo` KHAC moi truc khac: no ⛔ khong o trong
+            #    `dich_vu_tao.KHOA_NHAN`**, nen cua tao TU CHOI no ("Cai dat co
+            #    truong la"). Duong that la `logo.gan_vao_run`, va no phai chay
+            #    SAU `tao_run` va TRUOC `commit` — de hoac ca run lan logo cung
+            #    thanh, hoac ca hai cung khong (bat bien I2 cua `tao_run`).
+            if getattr(args, "logo", "") and getattr(args, "logo_tep", ""):
+                from apps.auto_scan_video import logo as _logo
+                from platform_core.storage import get_storage as _kho
+
+                _hh = json.loads(args.logo)
+                _byte = pathlib.Path(args.logo_tep).read_bytes()
+                _mime = ("image/png" if args.logo_tep.lower().endswith(".png")
+                         else "image/jpeg")
+                _logo.gan_vao_run(
+                    s, _kho(), run=run,
+                    ds_hinh_hoc=_logo.chuan_hoa([_hh]),
+                    anh=[(_byte, _mime)])
+                print("LOGO    :", args.logo, "<-", args.logo_tep,
+                      "(%d byte)" % len(_byte))
             s.commit()
         except Exception as exc:                          # noqa: BLE001
             s.rollback()
@@ -627,6 +657,30 @@ def main() -> int:
                    help="danh sach nang luc cach nhau bang phay, hoac 'all' "
                         "cho worker da nang (nhat MOI job tren nen tang)")
     w.set_defaults(fn=lenh_worker)
+
+    for _p in (t, c):
+        # ⭐ MOI truc cua `cai_dat` deu nhan JSON, y nhu `--bien-tap`, nen mot ho
+        #    so sai bi tu choi o CUA voi thong diep cua san pham.
+        _p.add_argument("--vung", default="",
+                        help='JSON vung che, vd \'[{"x0":0.1,"y0":0.8,'
+                             '"x1":0.9,"y1":0.95,"loai":"lam_mo"}]\'')
+        _p.add_argument("--cat", default="",
+                        help="JSON cua so cat dau/cuoi — CAP PHAN SO "
+                             "[bat_dau, ket_thuc], vd '[0.05, 0.95]'")
+        _p.add_argument("--lop-phu", dest="lop_phu", default="",
+                        help='JSON chu de, vd \'[{"chu":"LTT","x":0.5,'
+                             '"y":0.9,"vien":true}]\'')
+        _p.add_argument("--phu-de", dest="phu_de", default="",
+                        help='JSON ho so phu de, vd \'{"che_do":"tu_dong",'
+                             '"kieu":"default"}\'')
+        # ⚠️ Logo can HAI co: hinh hoc (phan so) VA duong tep anh — no ⛔ khong
+        #    qua cua tao ma qua `logo.gan_vao_run`.
+        _p.add_argument("--logo", default="",
+                        help='JSON hinh hoc logo, vd \'{"x":0.04,"y":0.04,'
+                             '"rong":0.18,"do_mo":0.9}\'')
+        _p.add_argument("--logo-tep", dest="logo_tep", default="",
+                        help="duong tep anh logo (.png/.jpg)")
+
 
     args = ap.parse_args()
     return int(args.fn(args) or 0)
