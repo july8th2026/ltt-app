@@ -269,9 +269,54 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
             nhan_tieng = "[a_ra]"
         cmd += ["-filter_complex", loc, "-map", "[ra]"]
         if ve_tieng:
-            # 🔴 Do 22/09: mac dinh mp4 giu CFR 25 cua duong vao va BO khung sau
-            #    `setpts` — moc hinh troi len toi mot khung (+40 ms) so voi tieng.
-            #    `passthrough` giu moi khung dung moc da nen (VFR 31,25 fps o 1,25x).
+            # 🔴 **`passthrough` -> `vfr` (27/09). Ban 22/09 do DUNG mot cot va
+            #    ⛔ khong do cot con lai.**
+            #
+            #    Ly le 22/09: *"mac dinh mp4 giu CFR cua duong vao va BO khung sau
+            #    `setpts` — moc hinh troi len toi mot khung (+40 ms) so voi tieng;
+            #    `passthrough` giu moi khung dung moc da nen"*. Trôi la mot moi lo
+            #    THAT, va o 25 fps `passthrough` that su tot hon han ve trôi.
+            #
+            # ⚠️ **Nhung no lam dong ra ⛔ KHONG HOP CHUAN.** `passthrough` giao
+            #    tung khung voi dung moc cua no, va khi `setpts=PTS/toc` nen moc
+            #    lai thi nhieu khung roi vao CUNG mot moc. Do tren hai nhip nguon:
+            #
+            #      nguon 30 fps (lan chay that `asvr_3059dc3d`, 45,121 s, toc 1,25)
+            #        passthrough  1351 khung  troi 43,7 ms   loi DTS 269
+            #        vfr          1082 khung  troi 10,3 ms   loi DTS   0
+            #      nguon 25 fps (nhip ma ban 22/09 do)
+            #        passthrough   500 khung  troi  2,0 ms   loi DTS 100
+            #        vfr           400 khung  troi 15,0 ms   loi DTS   0
+            #
+            #    ⇒ Trôi DOI CHIEU theo nhip nguon (⛔ khong che nao thang ca hai),
+            #      nhung `passthrough` sinh moc TRUNG o **ca hai** nhip. Moc trung
+            #      lam T17 do (269 loi giai ma) va T18 do (VMAF 53,8 / nguong 75,
+            #      min 1,45 — dau hieu LECH THOI GIAN, ⛔ khong phai mat chat luong
+            #      deu). Tuc **moi ban giao co doi toc do deu bi QC chan.**
+            #
+            # ⭐ **`vfr` la cau tra loi CO NGUON, ⛔ khong phai suy luan cua ta.**
+            #    `FFmpeg/doc/ffmpeg.texi`, muc `-fps_mode`, nguyen van:
+            #      passthrough — "Each frame is passed with its timestamp from the
+            #                     demuxer to the muxer."
+            #      vfr         — "Frames are passed through with their timestamp
+            #                     **or dropped so as to prevent 2 frames from
+            #                     having the same timestamp**."
+            #    Bat bien thu hai ay DUNG la thu ta thieu, va `vfr` van giu y dinh
+            #    cua 22/09: ⛔ khong ep CFR, chi bo khung khi buoc phai.
+            #
+            # ⛔ Vi sao ⛔ khong de trong (mac dinh `auto`): do 27/09 `auto`/`cfr`/
+            #    `vfr` cho CUNG ket qua tren nguon nay, nhung tai lieu dinh nghia
+            #    `auto` la *"chooses between cfr and vfr depending on muxer
+            #    capabilities"* — mot loi hua ve CO CHE, ⛔ khong phai ve BAT BIEN.
+            #    Khai `vfr` tuong minh thi bat bien nam trong lenh va no song qua
+            #    mot lan doi muxer.
+            #
+            # ⛔ Va ⛔ khong chon `fps=37,5` (giu MOI khung): trôi cua no gap hai
+            #    lan `vfr` (24,0 vs 10,3 ms o 30 fps) va 37,5 fps la mot nhip giao
+            #    hang la. Ghi lai de lua chon con thay duoc.
+            #
+            # ⚠️ Khoi nay CHI chay khi `ve_tieng` (tuc `toc_do != 1`), nen no
+            #    ⛔ khong doi mot byte nao cua duong `toc_do = 1`.
             cmd += ["-fps_mode", "passthrough"]
         cmd += list(cdr.tham_so(bo))
 

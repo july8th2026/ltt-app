@@ -12,6 +12,262 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-27 (toi) — PROMPT AI pha 3 DONG; va HAI BAT BIEN da do tu pha 1/2
+
+**Pha 3 xong.** Nam lan (M, C, D, E, J) + mot lan phu (T, tran tai san taovideo).
+Nghiem thu: **863 passed / 93 tep** (quet rong, 6 phut 20) · frontend **28/28** +
+build exit 0 · banh coc ruff **GIAM** (F401 416->407, F821 3->0).
+
+### 🔴 Hai bat bien DA DO tu pha 1/2 ma khong ai thay
+
+1. `test_135_ommi_ownership` — **5 bang thieu `owner_id`**: `ommi_handoff` (pha 2),
+   `ommi_canh`, `ommi_iteration`, `ommi_outfit`, `ommi_face_embedding` (pha 3).
+   Phep kiem nay ton tai vi module goc co mot loi **P0 ro ri lien khach** THAT:
+   moi truy van loc theo mot `master_user_id` dung chung. Dau hieu cot duoc them
+   theo cam tinh: `OmmiPose`/`OmmiBackground` **cung tep** da co.
+2. `test_155_ommi_metrics` — **3 rang buoc UNIQUE** khong nam trong drill khoi phuc
+   (`uq_ommi_binding_tag` tu **pha 1**).
+
+⭐ **Vi sao khong ai thay**: ca hai **khong nam trong tap test nham** cua bat ky lan
+nao. Do trong phien nay: `thanh_phan.py` gan test vao thanh phan bang **do thi
+import**, nen mot test chi goi app qua **chuoi duong dan HTTP** thi vo hinh.
+Do hai tang va doi chieu kenh that: **42 tep test bi bo that**. Vi trong phien chi
+co test nham, day la lo trong **luoi an toan duy nhat**. Da ghi thanh viec rieng.
+
+### Bon ca cung mot khuon: mot dai luong, nhieu ban khai
+
+| Dai luong | So cho khai | Cho dat nhat |
+|---|---|---|
+| tran tai san `taovideo` | **6** (toi liet ke 5) | `jobs.py:111` tren duong WORKER |
+| nguong 20 ky tu brief | **6** | `routes/projects.py` la CUA, `jobs.py` la WORKER |
+| `MAX_SCENES` | **2 hang so KHAC GIA TRI CUNG TEN** (20 canh / 60 khung hinh) | ten, khong phai so |
+| tran so canh o frontend | 2 | `max` cua input KHACH DANG GO |
+
+⇒ Bat bien **B-6** (spec §8): *tran o **worker** khong duoc thap hon tran o **cua***.
+Nang cua ma quen worker = khach **bi tru tien** roi job chet — **xau hon hien trang**.
+
+### Bang chung tu do thay doi san pham (Q-16, Q-17)
+
+Do THAT **hai lan** o `scene_count=20`: ca hai lan tra **19/20 canh**, va do dai
+truong `prompt` **co dan theo thu tu canh** (159->87 va 165->~90 ky tu) khi chi dung
+**67%/69%** cua `_MAX_TOKENS = 8192` ⇒ **chat luong suy TRUOC khi cham tran cung**,
+nen nang tran token ⛔ khong phai thuoc. Chu du an chot **mang chia lo** cua
+`prompt_canh` sang (them **pha 6**), va **E5 (xoa `prompt_canh`) BI CHAN** cho toi
+khi pha 6 xong — xoa bay gio la mat 810 dong prompt dang chay + 3 nang luc.
+
+⚠️ **Mot ket luan bi RUT LAI**: "khach tra tien cho 20 canh ma nhan 19" — SAI. Kiem
+bang chinh `manifest._director_cost`: 19 va 20 canh **cung gia 16 credit** (bac gia
+tho). ⭐ Mot cau ve **tien** phai kiem bang **ham tinh gia**, ⛔ khong suy tu so luong.
+
+### Ba bay cong cu tra gia trong phien nay
+
+- `git commit --only` dung cay **chi tu cac path liet ke**, va `pre-commit` mo phong
+  dung cay do ⇒ mot so dung chung (`locale/`) phai vao **HEAD TRUOC**, `git add` la
+  **chua du**. Toi bao mot lan "cong xanh roi" **ba lan** dua tren phep kiem tay cua
+  minh — phep ay do tren cay **co** ban dich, con lan commit tren cay **bi an** no.
+- `b"\r\n" in raw` la phep hoi **SAI CAU**: "co CHUA CRLF" thay vi "co phai TOAN
+  CRLF". Tep **tron** thi bi ghi lai toan bo; hook bao dung: *"thay doi THAT: 0 dong"*.
+- `chay_nang.py -- cmd /c "..."` nuot `/c` va thoat 0 **khong chay gi** (dau hieu:
+  `giu khoa 0.0 phut`). Goi qua mot tep `.py`.
+
+### No co ten
+
+| No | Noi dung |
+|---|---|
+| D-4 | `_luu_refs(copies=2)` doc toan bo vao RAM; tran moi ⇒ ca xau nhat 420 MB |
+| D-5 | `routes/iterate.py`, `routes/nhan_vat.py` thieu `raise ... from None` (B904) |
+| D-6 | `services/composer.py` con 2 cho go tay nguong 20 ky tu (nhan hien thi) |
+| D-7 | `library.dat_mac_dinh()` chua co chu — can khi khach tu dat mac dinh |
+| — | **Nghiem thu trinh duyet** tren app.lttstudios.com: CHUA LAM, tra duoc sau deploy |
+
+## 2026-09-27 (chiều) — Job test THẬT trên worker production: ba bug chỉ lộ ra khi `toc_do ≠ 1`
+
+Sau khi deploy `47b277ca7080`, chạy **một** job đầy đủ trên worker thật:
+`asvr_3059dc3d77f0456bb3a3ab3705b6fae` — phim khách thật 45,121 s / 30 fps /
+1353 khung, preset `smart_localize`, **`toc_do = 1,25`** (cấu hình mà **⛔ chưa
+lượt nghiệm thu nào từng chạy**).
+
+**10/13 giai đoạn xong, `qc` chặn với bốn mục: T2 · T4 · T17 · T18.**
+Tôi tự đo lại **cả bốn** thay vì đọc báo cáo QC:
+
+| mục | tôi đo độc lập | kết luận |
+|---|---|---|
+| **T17** | tái hiện đúng **269** lỗi `non monotonic dts` bằng **một** lệnh | 🔴 thật |
+| **T18** | VMAF trung bình 53,8 / ngưỡng 75, **min 1,45**, p5 9,26 | 🔴 cùng gốc T17 |
+| **T4** | `ebur128` = −15,2 trên tệp giao; bản phối −15,24 | 🔴 thật |
+| **T2** | compose hứa 36,097 s, tệp giao 36,077 s ✓ | ❌ **QC tự sai** |
+
+### 🔴 Bug 1+2 — `-fps_mode passthrough` làm dòng ra ⛔ KHÔNG hợp chuẩn
+
+Dòng ra có **1351 khung nhưng chỉ 1081 mốc thời gian** ⇒ 270 khung xếp chồng
+cách nhau **1 tick**. Đo trực tiếp: khoảng cách khung là `512 tick`
+(= 15360/30, nhịp **nguồn**) cộng 80/400 cặp `(1, 511)` ⇒ scale lên 1351 khung
+= **270**, khớp đúng số lỗi.
+
+⚠️ **Hai lần tôi tái hiện bằng tay đều ra dòng SẠCH** — vì chúng mặc định về
+CFR. Chỉ khi gọi **chính `ket_xuat.dung_lenh`** mới thấy `-fps_mode passthrough`.
+⇒ Bản tái hiện gõ tay là một **thứ đại diện**; lệnh thật phải lấy từ hàm dựng
+lệnh của sản phẩm.
+
+Bản 22/09 thêm `passthrough` để chữa trôi hình/tiếng. Đo trên **hai** nhịp nguồn:
+
+| nguồn | chế độ | khung | trôi ms | lỗi DTS |
+|---|---|---|---|---|
+| 30 fps | `passthrough` | 1351 | **43,7** | **269** |
+| 30 fps | `vfr` | 1082 | 10,3 | **0** |
+| 25 fps | `passthrough` | 500 | **2,0** | **100** |
+| 25 fps | `vfr` | 400 | 15,0 | **0** |
+
+⇒ Trôi **đổi chiều** theo nhịp nguồn, nên bản 22/09 đo **đúng cho nguồn của họ**.
+Thứ họ ⛔ không đo là **mốc trùng**, và `passthrough` sinh mốc trùng ở **cả hai**
+nhịp. Họ lỗi *"mọi cần gạt đo riêng, tổng chưa ai đo"*.
+
+⭐ **Bản sửa có NGUỒN, ⛔ không phải suy luận.** `FFmpeg/doc/ffmpeg.texi`, mục
+`-fps_mode`, nguyên văn:
+- `passthrough` — *"Each frame is passed with its timestamp from the demuxer to
+  the muxer."*
+- `vfr` — *"Frames are passed through with their timestamp **or dropped so as to
+  prevent 2 frames from having the same timestamp**."*
+
+Bất biến thứ hai **đúng** là thứ ta thiếu, và `vfr` vẫn giữ ý định 22/09 (⛔ không
+ép CFR). ⛔ Không để trống (mặc định `auto`): tài liệu định nghĩa `auto` bằng
+**cơ chế** (*"chooses between cfr and vfr depending on muxer capabilities"*),
+⛔ không bằng **bất biến**.
+
+### 🔴 Bug 2 — T2 chia `toc_do` HAI LẦN
+
+`_thoi_luong_mong_doi` trả **hai trục khác nhau** tuỳ nhánh — *có kế cắt* trả
+`thoi_luong_ra` của `image_finish` (đã **sau** `toc_do`), *⛔ không có* trả
+`tong_ms` (**trước** `toc_do`) — mà người gọi áp `moc_ban_ra` cho **cả hai**.
+⇒ T2 mong đợi `28,862` = 36,077/1,25, lệch **7,215 s**, và **hỏng trên một bản
+giao đúng**.
+
+⚠️ **Ba phép kiểm đầu của tôi ⛔ KHÔNG bắt được nó**: chúng gọi hàm **trực tiếp**
+nên đo *hợp đồng của hàm*, còn bug thì ở **chỗ gọi** — đo được bằng cách tiêm lại
+và thấy **7/7 vẫn xanh**. Đã thêm một phép đọc **cây AST** của `chay()`. Đúng họ
+*"phạm vi phép đo hẹp hơn lời tuyên bố"*, xảy ra **ngay trong** loạt bài viết để
+sửa họ lỗi ấy.
+
+### 🔴 Bug 3 — biên dư cho codec ăn hết độ chính xác của `loudnorm` (T4)
+
+**Hai giả thuyết của tôi bị bác bằng phép đo:**
+1. *"Xung đột giữa đích −14 LUFS và trần −3,5 dBTP"* — nới trần chỉ được **0,1 LU**,
+   và ở −2,5 đỉnh ⛔ không đụng trần. **SAI.**
+   ⚠️ Phép đo ấy nhắm **sai kênh**: tôi đo trên bản phối **đã chuẩn âm** (một
+   lượt) — một **thứ đại diện**. Trên chuỗi thật từ bản trộn thô, nới trần được
+   **0,6 LU**.
+2. *"Hai mất mát xếp chồng: `loudnorm` rồi bộ hạn đỉnh"* — đo bằng chính
+   `am_master.loc_han_dinh`: bộ hạn đỉnh cost **0,00 LU**. **SAI.**
+
+**Giả thuyết thứ ba, có nguồn và đã đo**: `loudnorm ... linear=true` áp một gain
+tuyến tính để trúng đích, nhưng **lùi về chế độ động** khi gain ấy làm vượt `TP`
+— và chế độ động sai ~1 LU. Đo trên **chính ba lượt của sản phẩm** với dữ liệu
+thật của lượt chạy:
+
+| `BIEN_CHO_CODEC_DB` | trần phối | LUFS ra | đỉnh giao | vòng ghim |
+|---|---|---|---|---|
+| **2,0** | −3,5 | **−15,0** | −3,35 | 1 | ← **hỏng T4** |
+| 1,0 | −2,5 | −14,8 | −2,38 | 1 |
+| **0,5** | −2,0 | **−14,6** | −1,92 | 1 | ← **chọn** |
+| 0,0 | −1,5 | −14,5 | −1,78 | 2 |
+
+⇒ `2,0 → 0,5` lấy lại **0,4 LU**, đưa T4 vào trong khoảng với dư 0,4 LU, đỉnh
+giao −1,92 (dư 0,42 dB dưới trần T5), và **1 vòng ghim** — ⛔ không tốn lượt mã
+hoá nào thêm.
+
+🔑 **Dám hạ vì lưới an toàn là một PHÉP ĐO, ⛔ không phải một lời khai**: ở trần
+−1,5 vòng ghim đo bản giao **−1,47** (vượt T5 0,03), tự hạ xuống −1,83, đo lại
+**−1,78** ⇒ **hội tụ**. Nó mã hoá **thử** bằng đúng tham số giao hàng, nên biên
+dư chỉ còn là một phép tối ưu **số vòng**.
+
+⚠️ Và chính chú thích của hằng số đã **tiên đoán** điều này: *"đặt quá thấp thì
+bản phối bị hạn nhiều hơn cần (**LUFS tụt, T4 hẹp dần**)"*.
+
+### ⭐ Bốn mục QC hôm nay là một thí nghiệm tự nhiên về *"bộ đo phải tải về"*
+
+| mục | lớp TÍNH | kết quả |
+|---|---|---|
+| T18 | **libvmaf** (thư viện chuẩn) | ✅ đúng — bắt lệch thời gian mà ⛔ không phép kiểm nào khác thấy |
+| T4 | **EBU R128** (`loudnorm`) | ✅ đúng — lệch 0,26 LU so với `ebur128` khi tôi đối chứng |
+| T17 | ta **tự grep** stderr | ⚠️ đúng **tình cờ** — đếm chuỗi, ⛔ không kiểm hợp chuẩn |
+| T2 | ta **tự tính** số học | ❌ **SAI** |
+
+⇒ Chi phí bảo trì QC đến từ **lớp tự suy**, ⛔ không từ việc có một cổng. Và nếu
+⛔ không có QC, lượt này **giao cho khách** một tệp 270 mốc trùng, VMAF 53 —
+`credit_actual = 0` nên khách ⛔ không bị thu tiền. **Đề xuất còn mở**: thay T17
+bằng kiểm hợp chuẩn thật (`MP4Box -info` / `mediainfo` + kiểm mốc đơn điệu đọc
+từ `ffprobe -show_packets`), và hỏi chủ dự án việc `qc` đỏ nên **chặn cứng** hay
+**giao kèm cảnh báo** cho những mục ⛔ không phải an toàn.
+
+### Ba lượt job test THẬT trên production — 4 → 3 → 2 mục đỏ
+
+| lượt | SHA production | mục đỏ | thứ đã khỏi |
+|---|---|---|---|
+| `asvr_3059dc3d` | `47b277ca` | T2 · T4 · T17 · T18 | — |
+| `asvr_f997f794` | `a171522e` | T4 · T17 · T18 | **T2** (`lech = 0,0`) |
+| `asvr_3c5a11c4` | `0d6d0aed` | T17 · T18 | **T4** (`lufs = −14,75`) |
+
+⭐ **T4 cần HAI bản sửa, và bản thứ hai mới là bản đúng chỗ.** Bản đầu
+(`BIEN_CHO_CODEC_DB 2,0 → 0,5`) cải thiện đúng 0,37 LU như bảng dự đoán nhưng
+**vẫn hỏng, thiếu 0,09 LU**. Chỗ thiếu ấy có tên: `do_ban_giao` mã hoá **thử**
+để trả lời *"khách nhận bao nhiêu"*, nhưng nó ⛔ **không áp `atempo`** — và
+docstring của chính nó đã khai phạm vi: *"cùng một con số (cả hai preset **khi
+⛔ không đổi tốc độ**)"*. Ngoài phạm vi ấy nó đo một tín hiệu **khác**.
+
+Đo: `atempo` + AAC ăn **0,21 LU** (lượt thật: bản phối −14,86 → bản giao −15,09,
+tức 0,23 LU). ⇒ Đúng khoảng cách còn lại.
+
+🔑 Và `do_ban_giao` **đã** đo `lufs` từ trước — chỉ `dinh_that` được đọc, `lufs`
+bị **vứt**. Một con số đã trả tiền để đo mà ⛔ không ai dùng, trong khi nó là
+**đúng** đại lượng T4 đo. Họ lỗi *"có được ghi mà ⛔ không ai đọc"*, lần thứ tư
+trong hai ngày.
+
+⚠️ `BIEN_CHO_CODEC_DB = 0,25` ⛔ **không** phải bản sửa bền vững. Bền vững là một
+vòng **đo-và-sửa cho ĐỘ TO**, đối xứng với `ghim_tran_phoi` của ĐỈNH — và sau bản
+vá trên thì **con số để sửa đã có sẵn**. ⛔ Chưa làm vì hai vòng **tranh nhau**
+(tăng gain để lên −14,0 thì đẩy đỉnh lên, vòng ghim lại hạ xuống); một vòng hội
+tụ chung cần **thiết kế**, ⛔ không cần một hằng số.
+
+### 🔴 T17 và T18 vẫn MỞ — và tôi đã LÙI một bản sửa
+
+Tôi đổi `-fps_mode passthrough → vfr` với lý lẽ **có nguồn** (`ffmpeg.texi`:
+`vfr` = *"dropped so as to prevent 2 frames from having the same timestamp"*).
+Nguồn đúng, **tiền đề của tôi sai** — tôi *giả định* mốc trùng là nguyên nhân
+T18 mà ⛔ chưa đo. Đo bằng chính bộ đo của sản phẩm:
+
+| bản | VMAF tb | trôi A/V | lỗi DTS |
+|---|---|---|---|
+| **`passthrough`** | **53,783** | **15,9 ms** | 269 |
+| `vfr` | 48,031 | 55,9 ms | 0 |
+| `cfr` | 37,102 | 95,9 ms | 0 |
+
+⇒ `passthrough` **tốt nhất cả hai cột** dù nó gây mốc trùng. Và `vfr` phá cổng
+`test_2064` (trôi ≤ 40 ms) — một cổng **đúng**, tôi ⛔ không nới nó. Đã lùi.
+
+**Năm giả thuyết bị phép đo bác trong một buổi** — ghi lại vì đó là phần đáng giá:
+
+| giả thuyết | phép đo bác nó |
+|---|---|
+| `passthrough` là lỗi ⇒ bỏ | `vfr`/`cfr` tệ hơn ở **cả** VMAF lẫn trôi |
+| mốc trùng ⇒ VMAF lệch | `vfr` hết mốc trùng mà VMAF **tụt** 53,8 → 48,0 |
+| xung đột −14 LUFS vs −3,5 dBTP | nới trần chỉ được 0,1 LU… vì tôi đo **bản đã chuẩn âm** (thứ đại diện); chuỗi thật: 0,6 LU |
+| hai mất mát xếp chồng | bộ hạn đỉnh cost **0,00 LU** |
+| timescale mp4 chia hết | 269 lỗi **⛔ không đổi**, VMAF **bit-identical** |
+
+⭐ **Chỗ đi tiếp cho T18, đã đo**: tham chiếu VMAF có **1083 khung / 30 fps**, bản
+giao có **1351 khung / 37,5 fps** — hai bên dùng **hai chính sách nhịp khác nhau**.
+Đó là khiếm khuyết của **phép so sánh**, độc lập với chế độ nào thắng. Và
+`libvmaf` chạy `n_subsample=5` (`qc.py:111`) nên nó lấy mẫu **theo chỉ số trong
+từng dòng**; hai dòng khác số khung thì chỉ số *i* là hai thời điểm khác nhau.
+
+### Thứ ⛔ chưa đo được
+
+- `edit_plan` **cắt 0 cảnh** trên lượt này — ⛔ chưa đo được là đúng hay sai.
+- ①→⑤ (`media_prepare` → `voice_synthesis`) chỉ có `succeeded`; tôi ⛔ **chưa tự
+  đo** artifact của chúng, nên ⛔ không tuyên bố chúng đúng.
+- `D:\Viral` ⛔ **không** có câu trả lời cho hai câu này (nó nói về hiệu năng và
+  bug che mép).
+
 ## 2026-09-27 — PROMPT AI pha 2 DONG; va BON ca cung mot khuon "tu khoa chinh minh"
 
 **Pha 2 xong** (`docs/superpowers/plans/2026-09-26-prompt-ai-pha2-giao-bai.md`):
@@ -22300,3 +22556,214 @@ với hàng có bằng chứng là đúng lỗi *hai trạng thái gộp thành 
   (nền hiện tại: **5408 mục, 200 chưa dịch**; bánh cóc chỉ đỏ khi TĂNG.)
 - `tools/check_i18n.py` đếm cả chuỗi trong `log.info/warning` ⇒ báo tăng oan.
   Không bọc log (dịch log là nhiễu); nên thêm ngoại lệ cho `log.*`.
+
+## 2026-09-27 — Upscale V2 correction: ĐO xong, và 4/5 phát hiện là "ĐỪNG LÀM"
+
+Tiếp phiên 26/09. Gate L2 `--pham-vi app:upscalevideo` **XANH 24/24**
+(`.gate/20260927T085021Z-24280.json`).
+
+### Số đo thật — `docs/UPSCALE_V2_CORRECTION/08_BENCHMARK_RESULTS.md` §F–K
+
+| Phát hiện | Quyết định |
+|---|---|
+| Tầng SR chiếm **96,6–96,8 %** (3 phép đo độc lập) | ⛔ KHÔNG viết lại đường PNG — trần lợi ích 3,3 % |
+| Warmup: chênh **< 1 %**, dấu không nhất quán (n=13/nhánh) | **XOÁ** khỏi `engine.py` |
+| Tile Fast: biên độ **2,4 %**, nhiễu cùng cỡ | ⛔ KHÔNG chỉnh |
+| Tile Quality: **nhanh 8,7 %**, ít VRAM 64 % — nhưng PSNR 45–46 dB, SSIM 0,990 | ⛔ **TỪ CHỐI** — chủ dự án chốt ưu tiên chất lượng |
+| Đích 1080/1440/2160: chênh **±4 %**, Quality chênh **−0,19 %** | đích ⛔ không điều khiển chi phí GPU |
+
+⭐ **4/5 là quyết định KHÔNG LÀM.** Cả bốn chỉ có được nhờ **đo trước khi sửa** —
+nếu làm ngược lại, cả bốn đã thành "tối ưu" ghi trong docs.
+
+⇒ Câu §50 "cải thiện bao nhiêu %": **0 %**. Không một tối ưu tốc độ nào được ship.
+
+### 🔴 Hai phát hiện chạm TIỀN (⛔ không đổi giá — chủ dự án chốt giữ)
+
+- `cost.py` khai *"chi phí ~ thời gian GPU"* — **sai**. Đo: GPU 1,00/1,07/1,03×
+  trong khi giá 1,0/1,8/4,0×. Giá bám **kích thước đầu ra** (1,00/1,61/3,15×),
+  tức lưu trữ + băng thông — chi phí có thật. ⇒ giá hợp lý, **lời khai lý do** sai.
+- **Quality chậm hơn Fast 15,7×, tính tiền 2,5×.** Quy ra doanh thu/phút-GPU:
+  `fast 2160` = 3 994 đ, `quality 1080` = **161 đ** — chênh **25 lần** trên cùng
+  một card (đồng thời = 1). Một job `quality 1080` chiếm **cả card ~83 phút**.
+
+### ⚠️ Ba lần phép đo của CHÍNH TÔI hỏng trước khi đúng
+
+1. **Không xen kẽ** (`on,on,on` rồi `off,off,off`) ⇒ trôi theo thời gian ánh xạ
+   thẳng lên điều kiện; cho ra *"warmup nhanh hơn 20 %"*.
+2. **`cpu_s` cộng dồn** (đo CPU tích luỹ của tiến trình cha) ⇒ tăng đều +20 s/lượt.
+   ⭐ Tệ hơn: tôi **dùng chính nó** để chẩn đoán lỗi (1) ⇒ tiền đề sai.
+3. **`sum(stage_timings.values())` đếm cả khoá `total`** ⇒ mọi tổng gấp đôi.
+
+⇒ Cả ba cho số **trông hợp lệ**. **Một chỉ số sai không chỉ cho số sai — nó làm
+hỏng cả kết luận rút ra từ nó.**
+
+### 🔴 Tôi tự khoá chính mình 36,5 phút
+
+Bọc `cay_gate.py` trong `chay_nang.py`. Nhưng `gate.py` **tự xin** `cpu_nhieu`
+(`:1072 :1079 :1101 :1345`) và có **0** phép hỏi tổ tiên ⇒ chờ một khoá mà **tổ
+tiên mình đang giữ**. Chặn cả máy, một phiên khác phải xếp hàng.
+
+| Lệnh | Bọc `chay_nang.py`? |
+|---|---|
+| `gate.py` · `cay_gate.py` · `pytest` | ⛔ **KHÔNG** — tự lấy khoá |
+| `pre-commit --all-files` · build · script đo | ✅ có |
+
+⭐ **Phép chẩn một lệnh**: lúc treo, chạy `cua_so_yen.py trang-thai` từ **shell
+khác**. Người giữ khoá **chính là lượt của mình** ⇒ tự khoá. ⛔ Đừng `| tail`,
+đừng `> tệp` — chúng nuốt mất dòng nói ra nguyên nhân.
+
+⭐ **Vì sao một luật ĐÚNG vẫn dẫn tôi vào đó:** luật tôi tự viết nói *"lệnh nặng
+đi qua `chay_nang.py`"* — đúng, nhưng thiếu vế *"trừ lệnh TỰ LẤY khoá"*. **Một
+luật thiếu vế ngoại lệ thì đúng ở mặt chữ mà sai ở mặt dùng**, và người đọc càng
+tuân thủ càng đâm vào chỗ hỏng. Phiên "Phân tích PROMPT AI" đã viết đúng câu
+thiếu vế ấy vào **brief mẫu gửi 4 làn** — cùng khuyết tật, bán kính khác hẳn.
+
+⚠️ `cua_so_yen` **đã cảnh báo** ở mốc 30 phút. Ngưỡng hoạt động; chỗ hỏng là
+**người đọc** lướt qua. Cảnh báo chỉ có giá trị khi có ai đó dừng lại.
+
+### ⭐ Một phép xác minh không để lại hiện vật thì không kiểm toán được
+
+Tôi đối soát giá trước deploy (960 tổ hợp, 0 lệch) bằng script trong thư mục
+**tạm**. Một agent đi kiểm lại **không tìm thấy gì trong kho** và nói thẳng ra.
+Câu *"tôi đã kiểm rồi"* có hình dạng **giống hệt** câu *"tôi nghĩ là ổn"*.
+⇒ Biến thành `tests/test_4907_upscale_gia_khong_tu_doi.py` (16 bộ tham số + ca
+biên). Nó bắt lỗi **ngay lượt đầu**: mốc tôi gõ tay 141, đúng là 142. **Mã đúng,
+mốc sai.**
+
+### Còn hở
+
+🔴 **ISSUE L chưa vá**: `job_runner._het_gio` dùng `os._exit(3)` ⇒ bỏ qua
+`finally` ⇒ rò temp + **tiến trình engine mồ côi giữ GPU**. Hôm nay đã phải dọn
+đúng một con như thế. Nằm ở `platform_core/` — cần chủ khu.
+
+⛔ **Mục tiêu ≥90/100 KHÔNG tuyên bố được.** `10_FINAL_SCORECARD.md` từ chối in
+một con số Overall: trộn hàng đã đo với hàng `CHƯA ĐO` vào một giá trị là đúng
+lỗi *hai trạng thái gộp thành một*.
+
+⛔ **KHÔNG CÓ MẪU (vĩnh viễn với bộ test hiện tại)**: portrait · VFR · nguồn
+1080p+ · clip mặt người · clip nhiễu. 4 clip đều ~576p ngang CFR.
+
+## 2026-09-27 — ISSUE L (`job_runner` mồ côi giữ GPU): vá đúng nửa nguy hiểm hơn
+
+`platform_core/job_runner.py::_het_gio` thoát bằng `os._exit(3)` khi job vượt
+giờ. `os._exit` vẫn **ĐÚNG**, không đổi: handler chạy code C/CUDA giữ GIL,
+không có cách đáng tin dừng nó từ Python. Sai ở chỗ khác — engine là
+`subprocess.Popen`, **không** phải con `multiprocessing`, nên nó sống sót
+`os._exit` và thành **mồ côi, vẫn giữ GPU**.
+
+⭐ **Vì sao đáng chạm mã dùng chung `platform_core/` thay vì để ngoài phạm vi
+app**: `gpu_lease.reclaim_orphans` xoá lease **ngay khi job kết thúc**, không
+chờ nhịp đập. Chuỗi thật: `_het_gio` đánh dấu job failed → `os._exit` → con
+VẪN giữ GPU → `reclaim_orphans` thấy "job đã kết thúc" → xoá lease NGAY → hệ
+thống tin card TRỐNG → nhận job mới → tranh VRAM với mồ côi. Đó đúng là cuộc
+đua mà `UniqueConstraint` của `GpuLease` sinh ra để chặn — mồ côi vô hình với
+lease vì nó không phải job. Quan sát thật 26/09: một `realesrgan-ncnn-vulkan.exe`
+mồ côi giữ GPU 100 % trong khi hệ thống coi card là rảnh
+(`docs/UPSCALE_V2_CORRECTION/12_PLAN_TRIEN_KHAI.md` mục 2).
+
+Vá (commit `fbdc7a3c`, nhánh `claude/upscale-video-v2-correction-5fa61a`,
+**CHƯA gộp `main`**): thêm `_giet_cay_tien_trinh_con` —
+`taskkill /T /F /PID <os.getpid()>` (stdlib thuần; `/T` giết cả cây con trong
+MỘT lệnh, không tự viết phép duyệt cây), bounded 10 s, không bao giờ ném — gọi
+TRƯỚC `os._exit(3)`, không thay nó. 4 test mới khoá thứ tự (giết con trước
+`_exit`) + đích danh pid + never-raise; tiêm lỗi (đảo thứ tự ⇒ đỏ, nhắm sai pid
+⇒ đỏ). 353 passed / 1 skipped trên 14 tệp `job_runner`.
+
+⛔ **Không overclaim**: chỉ nửa "tiến trình mồ côi" được vá. **Thư mục temp cỡ
+GB vẫn rò** — `os._exit` vẫn bỏ qua `finally` nên `shutil.rmtree(tmp)` không
+chạy. Cố ý để lại: dọn temp mồ côi thuộc một sweeper định kỳ, không phải đường
+thoát khẩn — `rmtree` trên thư mục GB có thể chặn trên tệp mà handler treo
+đang giữ, biến MỘT tiến trình treo thành HAI. Vẫn là khuyết tật đã biết, chưa
+có chủ.
+
+Cập nhật docs: `00_CURRENT_TRUTH.md` (ISSUE L + bảng phán quyết),
+`09_FINAL_ARCHITECTURE.md` (mục "hai rò rỉ"), `10_FINAL_SCORECARD.md` (hàng
+Reliability 55→65/100), `12_PLAN_TRIEN_KHAI.md` (mục 4), `13_TRA_LOI_27_CAU.md`
+(câu 3, 24).
+
+## 2026-09-27 (cuối phiên) — Upscale V2: ISSUE L vá, deploy KHÔNG bấm, gate ĐỎ không phải của ta
+
+### ISSUE L — vá **một nửa**, và nửa kia là cố ý
+
+`platform_core/job_runner.py` (`fbdc7a3c`): trước `os._exit(3)` nay giết cây tiến
+trình con bằng `taskkill /T /F /PID <os.getpid()>`.
+
+⛔ **Không** bỏ `os._exit` — docstring của nó đúng, và tôi kiểm cả ba tiền đề:
+handler giữ GIL (đúng) · cha thay thế con chết (đúng, cả `multiprocessing` lẫn
+`nssm AppExit Default Restart`) · *"không còn gì đáng dọn"* (**SAI** — engine là
+`Popen`, không nằm trong CSDL).
+
+⭐ **Vì sao đáng đụng `platform_core`:** `reclaim_orphans` xoá lease **NGAY** khi
+job kết thúc (không chờ nhịp đập). Nên hệ thống tin card trống và **nhận job
+mới** trong khi mồ côi vẫn giữ nó — đúng cuộc đua `UniqueConstraint` sinh ra để
+chặn, và **vô hình** với lease vì mồ côi không phải một job.
+
+⛔ **Không** dọn thư mục temp: `rmtree` cỡ GB có thể chặn trên tệp mà handler treo
+đang giữ — biến một tiến trình treo thành hai, ngay trên đường thoát khẩn.
+
+### Deploy — tôi KHÔNG bấm, dù được bảo bấm
+
+`0d6d0aed` đang chạy, nghiệm thu ĐẠT tuyệt đối (1275 tệp, 0 lệch). Kiểm từng
+commit bằng `git merge-base --is-ancestor`: **22/22 commit của tôi đã trên
+production**. `main` chỉ hơn 2 commit, **cả hai của phiên khác**.
+
+⇒ Bấm deploy sẽ: không mang gì của tôi · đẩy việc của người khác thay họ · **khởi
+động lại dịch vụ trong lúc họ đang chạy job test thật**.
+
+⭐ Luật 5 *"báo, không chờ"* nói về việc đừng treo mình chờ người khác — ⛔ không
+phải cho phép giẫm lên một phép đo đang dở **khi biết rõ nó đang chạy**.
+⚠️ Và một phép đo bị deploy giẫm lên thì ⛔ **không ĐỎ — nó BIẾN MẤT**. Đỏ thì có
+người đi xem; biến mất thì trông giống *"chưa chạy"*. (Phiên ASV xác nhận: nhật ký
+của họ còn ghi một thư mục tạm 344 MB rò lại từ *"lượt bị deploy giết"*.)
+
+### 🔴 GATE ĐỎ — và nó ⛔ KHÔNG phải của làn này
+
+`.gate/20260927T105155Z-3712.json` · `FAIL (1/33)` · `mypy union-attr 90 → 91`.
+
+Ba dòng, **cả ba ở `apps/auto_scan_video/`** (`qc.py:780`, `am_master.py:748`,
+`giai_doan_qc.py:443`), thuộc `5d568ffe` và `0d6d0aed`. `job_runner.py` và
+`apps/upscalevideo/` ⛔ không có `union-attr` nào. Đã báo chủ khu, ⛔ không tự sửa,
+⛔ không `--accept` hộ — hạ một cái mốc là tuyên bố *"ba chỗ này an toàn"*, và một
+mốc bị hạ hộ là một mốc ⛔ không ai chịu trách nhiệm.
+
+### 🔴 CHƯA CÓ GATE NÀO PHỦ `job_runner.py` — ghi nguyên văn
+
+Gate của tôi chạy `--pham-vi app:upscalevideo`. Nhưng:
+
+```
+thanh_phan.py --doi --goc-so ab359e73  ->  19+ thanh phan bi anh huong
+```
+
+`job_runner` được **gần như mọi app** tiêu thụ ⇒ phạm vi tôi chọn **loại trừ chính
+thứ tôi định phủ**. Một chữ PASS ở đó ⛔ không có nghĩa như tôi tưởng.
+
+Đường khép cũng chặn: L3 lúc 03:54 UTC, cửa sổ `CUA_SO_L3_LAI_GIO = 12` giờ còn
+**5,2 giờ**. ⇒ Trong phiên này ⛔ **không thể** có gate phủ `job_runner`.
+
+⭐ **Bằng chứng thay thế, mạnh hơn gate cho đúng câu hỏi này** (nguồn: phiên "Auto
+Scan Video final closure"): một job **bình thường** chạy **trọn 13/13 giai đoạn,
+QC ĐẠT, thu 10 credit** trên chính `0d6d0aed` — bản mang `job_runner.py` của tôi —
+và ⛔ không để lại tiến trình mồ côi nào. Đó là **runtime**, thứ mà 4 phép kiểm
+argv của tôi ⛔ không cho được, và một gate cũng ⛔ không cho được.
+
+### Nghiệm thu cổng kỹ thuật trên BẢN ĐÃ CÀI
+
+4/4, `canh_bao=[]` sạch. ⚠️ Lượt đầu tôi **gõ tay** kỳ vọng thời lượng `2.0` và ăn
+một cảnh báo GIẢ — `encode_full` map **trọn audio nguồn** (không `-shortest`) nên
+container dài bằng nguồn. Chỉ khi gọi `jobs._thoi_luong_hua` **của bản đã cài**
+mới ra `106,83 s`. ⇒ Đường job thật tính đúng; **preview của khách ⛔ không dính
+cảnh báo giả**.
+
+⭐ Tôi nghe lời khuyên *"gọi hàm của sản phẩm, đừng gõ lại"* cho phía **encode**
+rồi quên đúng lời khuyên đó ở phía **kỳ vọng**. Mắc **một nửa** một lời khuyên thì
+sinh ra một "phát hiện" sai trông y như bug production.
+
+### Còn lại
+
+- **thread sweep** và **ma trận tính năng** (`stabilize` ×1,2 · `smooth_motion`
+  ×2,2 đang tính tiền mà ⛔ chưa ai đo) — `CHƯA ĐO`.
+- ⭐ Và một câu tôi ⛔ **chưa từng hỏi**, phiên ASV hỏi hộ: *"khách THẬT SỰ nộp
+  gì?"* Bộ 4 clip của tôi đều ~576p ngang CFR; tôi ghi `KHÔNG CÓ MẪU` cho
+  portrait/VFR/4K — **trung thực nhưng chưa đủ**. Nếu phần lớn khách nộp video dọc
+  từ điện thoại thì cả ma trận đo **sai dân số**. Chọn mẫu theo *"cái gì phơi bày
+  bug"* ⛔ không thay được *"cái gì khách dùng"*.

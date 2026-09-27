@@ -15,6 +15,12 @@
 | Bộ đo | dựng xong, `--dry-run` chạy được | `48e779a0` |
 | Tài liệu | 12 báo cáo + gỡ **75** lời khai SAI khỏi docs cũ | `2f6c7f85`, `6d7db805` |
 
+> ⚠️ **ISSUE L (tiến trình mồ côi) đã vá 27/09** (commit `fbdc7a3c`) — nhưng đó
+> là một sửa **RIÊNG, SAU** Phase C, ở `platform_core/job_runner.py` (dùng
+> chung, ngoài phạm vi app `upscalevideo`), **không** đi qua bảng trên và
+> **CHƯA gộp `main`**. Nửa "temp dir" của cùng khuyết tật vẫn mở. Chi tiết ở
+> mục 4 dưới.
+
 ## 2. 🟢 Cửa sổ GPU ĐÃ MỞ (26/09, ~17:4x)
 
 Chủ dự án dừng bot GEMINI. Còn lại **một tiến trình `realesrgan` MỒ CÔI**
@@ -50,9 +56,18 @@ chỉ còn khả năng cache OS/driver, và đó là thứ phải **ĐO** chứ 
 
 ## 4. Còn hở, đã biết, chưa vá
 
-- 🔴 **ISSUE L**: `job_runner._het_gio` dùng `os._exit(3)` ⇒ bỏ qua `finally` ⇒
-  rò temp cỡ GB + **tiến trình engine mồ côi giữ GPU**. Hôm nay đã chứng kiến
-  đúng ca này. Nằm ở `platform_core/` (dùng chung) ⇒ việc riêng, cần chủ khu.
+- 🟡 **ISSUE L — VÁ MỘT PHẦN** (27/09, commit `fbdc7a3c`, nhánh này, **CHƯA gộp
+  `main`**): `_het_gio` giờ `taskkill /T /F` cây tiến trình con TRƯỚC
+  `os._exit(3)` ⇒ nửa nguy hiểm hơn — **tiến trình engine mồ côi giữ GPU** —
+  đã hết. Lý do đáng vá dù nằm ở `platform_core/`: `gpu_lease.reclaim_orphans`
+  xoá lease ngay khi job kết thúc, không chờ nhịp đập, nên mồ côi tái lập đúng
+  cuộc đua mà `UniqueConstraint` của `GpuLease` sinh ra để chặn — xem
+  `00_CURRENT_TRUTH.md` ISSUE L, `09_FINAL_ARCHITECTURE.md` mục 2. ⛔ **Rò temp
+  cỡ GB — VẪN CHƯA VÁ**: `os._exit` vẫn bỏ qua `finally` nên
+  `shutil.rmtree(tmp)` không chạy; cố ý để lại cho một sweeper định kỳ, không
+  cho đường thoát khẩn (`rmtree` trên thư mục GB có thể chặn trên tệp mà
+  handler treo đang giữ, biến một tiến trình treo thành hai). Nằm ở
+  `platform_core/` (dùng chung) ⇒ phần còn lại vẫn là việc riêng, cần chủ khu.
 - `routes.py`: 10 phát hiện `ruff` cũ + 2 chuỗi chưa dịch EN.
 - `tools/check_i18n.py` đếm cả chuỗi trong `log.*` ⇒ báo tăng oan.
 
@@ -86,6 +101,52 @@ chỉ còn khả năng cache OS/driver, và đó là thứ phải **ĐO** chứ 
   bị thay toàn bộ mỗi lần cập nhật — đừng sửa trực tiếp.
 - ⛔ `C:\Users\...\Desktop\TEST VIDEO` **chỉ đọc**: không sửa, không xoá, không
   ghi đầu ra vào đó.
+
+## 5.2b 🔴 ⛔ ĐỪNG bọc `chay_nang.py` quanh lệnh TỰ LẤY KHOÁ — nó tự khoá chính mình
+
+Tôi mắc đúng lỗi này ở cuối phiên và **chặn cả máy 36,5 phút** cho một lượt gate
+⛔ không bao giờ thoát được.
+
+```
+pid A  chay_nang.py --phien gate-upscale   ──GIỮ──►  cpu_nhieu
+  └ pid B  cay_gate.py chay --pham-vi ...
+      └ pid C  gate.py --pham-vi ...       ──XIN──►  cpu_nhieu   (đứng mãi)
+```
+
+`gate.py` tự xin `cpu_nhieu` ở **4 chỗ** (`:1072 :1079 :1101 :1345`), và nó có
+**0** phép hỏi tổ tiên (`grep "to_tien|parents()"` → 0). Khoá là tệp `O_EXCL`,
+⛔ **không tái nhập**. ⇒ Bọc nó là **chờ một khoá mà tổ tiên mình đang giữ**.
+
+| Lệnh | Bọc `chay_nang.py`? |
+|---|---|
+| `gate.py` · `cay_gate.py` | ⛔ **KHÔNG** — tự lấy khoá, ⛔ không hỏi tổ tiên |
+| `pytest` | ⛔ **KHÔNG** — `conftest` tự lấy khi ≥ 20 tệp |
+| `pre-commit run --all-files` | ✅ có |
+| `npm run build`, cargo, script đo riêng | ✅ có |
+
+### ⭐ Phép chẩn trong MỘT lệnh — dùng cho mọi ca "treo" về sau
+
+Lúc một lệnh có vẻ treo, chạy từ **shell KHÁC**:
+
+```
+python tools\cua_so_yen.py trang-thai
+```
+
+Người giữ khoá **chính là lượt của mình** ⇒ **tự khoá**, ⛔ không phải con bọ.
+
+⛔ **Đừng `| tail` và đừng `> tệp` khi chẩn treo.** `cua_so_yen` *in ra* dòng
+`xep hang N phut - cpu_nhieu: <ai>` — đúng dòng nói ra nguyên nhân. `tail` giữ
+tới khi tiến trình chết, `>` thì bị Python đệm; cả hai đều **nuốt mất** nó.
+
+### Vì sao một luật đúng vẫn dẫn tôi vào đây
+
+Luật tôi tự viết ở §5.2 nói *"lệnh nặng đi qua `chay_nang.py`"* — và nó **đúng**.
+Nhưng nó ⛔ không nói *"trừ những lệnh TỰ LẤY khoá"*. ⭐ **Một luật thiếu vế ngoại
+lệ thì đúng ở mặt chữ mà sai ở mặt dùng** — và người đọc càng tuân thủ thì càng
+đâm thẳng vào chỗ hỏng.
+
+⚠️ `cua_so_yen` **đã cảnh báo** tôi ở mốc 30 phút. Ngưỡng ấy hoạt động; chỗ hỏng
+là **người đọc** đã lướt qua nó. Cảnh báo chỉ có giá trị khi có ai đó dừng lại.
 
 ## 5.3 🔴 Đo lường — luật vàng của phiên này
 

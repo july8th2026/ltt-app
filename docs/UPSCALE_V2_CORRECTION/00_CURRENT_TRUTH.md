@@ -245,7 +245,8 @@ H.264** (`media.py:220`: `h264_nvenc, h264_qsv, h264_amf`) — **không bao gi�
 `os._exit(3)`.
 
 `os._exit` **bỏ qua** `finally` ⇒ `jobs.py:444` `shutil.rmtree(tmp)` **không chạy**.
-Không có `atexit`, không Job Object (đã grep, không có). Hệ quả trên Windows:
+Không có `atexit`, không Job Object (đã grep, không có). Hệ quả trên Windows
+(nguyên trạng lúc audit, TRƯỚC vá — xem cập nhật dưới):
 
 - thư mục temp khung/segment (**cỡ GB**) **còn lại**;
 - tiến trình con `realesrgan-ncnn-vulkan.exe` / `ffmpeg.exe` (`engine.py:115`,
@@ -255,6 +256,32 @@ Huỷ **hợp tác** (`cancel_check`) thì ổn: `engine.py:118-141` và `ff.py:
 poll rồi kill+wait; `job_runner.py:745-800` xét lại trạng thái DB nên
 `ff.ProcessingCancelled` được coi là huỷ, không phải lỗi. **Chỉ đường hết-giờ-cứng
 rò rỉ.**
+
+### ⭐ Cập nhật 27/09 — VÁ MỘT PHẦN (commit `fbdc7a3c`, nhánh này, CHƯA gộp `main`)
+
+Nửa **tiến trình mồ côi** đã vá: `_het_gio` giờ gọi hàm mới
+`_giet_cay_tien_trinh_con` — `taskkill /T /F /PID <os.getpid()>` (stdlib thuần;
+`psutil` chỉ ở `requirements-dev.txt`, không phải phụ thuộc server; `/T` giết
+cả cây con trong MỘT lệnh, không tự viết phép duyệt cây), bounded bởi
+`_GIAY_GIET_CAY_CON = 10 s`, không bao giờ ném — **TRƯỚC** `os._exit(3)`, không
+thay nó. `os._exit(3)` **vẫn giữ nguyên** làm lưới cuối: lý do ban đầu (handler
+chạy code C/CUDA giữ GIL, không có cách đáng tin dừng nó từ Python) **không
+đổi** — vá chỉ thêm một bước trước khi thoát, không đổi thiết kế. 4 test mới
+khoá bằng tiêm lỗi (đảo thứ tự giết-con/`_exit` ⇒ đỏ; nhắm sai pid ⇒ đỏ; hàm
+không bao giờ ném) — `tests/test_4908_het_gio_khong_de_lai_mo_coi.py`; 353
+passed / 1 skipped trên 14 tệp `job_runner`, không hồi quy.
+
+⛔ **Nửa còn lại — thư mục temp — VẪN CHƯA VÁ.** Lý do giữ nguyên: `rmtree` trên
+thư mục cỡ GB có thể chặn trên tệp mà handler treo đang giữ, biến MỘT tiến
+trình treo thành HAI. Dọn temp mồ côi thuộc về một sweeper định kỳ, không phải
+đường thoát khẩn `_het_gio` — vẫn là khuyết tật đã biết, chưa có chủ.
+
+⭐ Vì sao xứng đáng chạm mã dùng chung (`platform_core/`) dù ngoài phạm vi app
+này: `gpu_lease.reclaim_orphans` xoá lease **ngay khi job kết thúc**, không chờ
+nhịp đập — nên trước khi vá, tiến trình mồ côi làm hệ thống tin card đã trống
+trong khi nó **vẫn giữ VRAM**, tái lập đúng cuộc đua mà `UniqueConstraint` của
+`GpuLease` sinh ra để chặn (quan sát thật 26/09, `12_PLAN_TRIEN_KHAI.md` mục
+2). Mồ côi vô hình với lease vì nó không phải job.
 
 ## ISSUE M — không hề xác minh nội dung đầu ra (MỚI)
 
@@ -289,5 +316,10 @@ vẫn báo `SUCCEEDED`.
 | I encoder | hỗ trợ QSV/AMF | rơi âm thầm về libx264 | hợp đồng sai |
 | J HEVC | trả HEVC | trả **H.264** mà **khai HEVC** | **bug ngữ nghĩa** |
 | K smooth motion | (RIFE trong chú thích) | `minterpolate` CPU | lời khai mờ |
-| L hết giờ cứng | — | `os._exit` bỏ `finally` ⇒ rò GB + mồ côi | **rò rỉ thật** |
+| L hết giờ cứng | — | mồ côi ĐÃ VÁ (`fbdc7a3c`); temp GB vẫn rò | **vá một phần** |
 | M xác minh ra | — | chỉ `isfile()` | lưới an toàn vắng |
+
+⚠️ Bảng này ghi **SHA**, ⛔ không ghi *"đã gộp `main` chưa"*: trạng thái gộp
+đổi theo thời gian nên đóng băng nó vào văn bản là hẹn trước một câu sai.
+Hỏi `git` thay vì hỏi tài liệu: `git branch --contains <sha>`.
+

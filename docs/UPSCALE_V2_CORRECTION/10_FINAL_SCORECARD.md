@@ -22,7 +22,7 @@
 | Disk I/O | CHƯA ĐO | 85/100 | ĐÃ ĐO: tầng SR+encode chiếm 96,7% tổng thời gian, tách khung PNG chỉ 3,1% (`08_BENCHMARK_RESULTS.md` §F) ⇒ PNG I/O KHÔNG phải bottleneck, bác lời khai cũ "2-3× nhanh hơn nếu viết lại". Không chấm 100 vì phạm vi hẹp: 1 cấu hình (Fast, 836×576, không stabilize/smooth_motion) — với smooth_motion tỉ lệ CHƯA ĐO |
 | Encoder | CHƯA ĐO | 80/100 | Bất biến producer↔consumer khoá bằng test AST/behavior (`test_resolve_encoder_luon_tra_ten_ma_venc_args_hieu`, `test_venc_args_nem_valueerror_cho_encoder_la`); HEVC→CPU giờ ra `libx265` đúng, không còn giả `libx264` — `05_ENCODER_TRUTH.md` |
 | Resume | 90/100 (khai "9/10 Full stage recovery") | **10/100** | Resume KHÔNG tồn tại, chưa từng tồn tại. 10 điểm cho "sổ tiến độ" (ghi được, dọn được) — không phải resume — `03_CHECKPOINT_TRUTH.md` |
-| Reliability | 90/100 (khai "9/10") | 55/100 | Rò rỉ sổ tiến độ đã vá (cleanup + TTL sweep); rò rỉ temp dir + tiến trình mồ côi khi `os._exit` **CHƯA VÁ** (ngoài phạm vi app) — `09_FINAL_ARCHITECTURE.md` |
+| Reliability | 90/100 (khai "9/10") | 65/100 | Rò rỉ sổ tiến độ đã vá (cleanup + TTL sweep). Rò rỉ hết-giờ có HAI phần: tiến trình engine mồ côi **ĐÃ VÁ 27/09** (`fbdc7a3c` — `taskkill /T /F` cây con trước `os._exit`, 4 test tiêm lỗi, 353 passed); thư mục temp cỡ GB **VẪN CHƯA VÁ**, cố ý để lại cho một sweeper định kỳ — `09_FINAL_ARCHITECTURE.md` mục 1/2 |
 | Quality validation | CHƯA ĐO (bản cũ khai "COMPLETE" mâu thuẫn nội bộ) | 70/100 | Cổng kỹ thuật mới kiểm được khung/thời lượng/codec/audio, khoá bằng 6 test — `04_QUALITY_GATE_TRUTH.md`. Không chấm 100 vì chưa đo tỉ lệ bắt lỗi thật trên job production |
 | AI model quality | 80/100 (khai "8/10") | **CHƯA ĐO** | PSNR/SSIM ở `06_MODEL_BENCHMARK.md` không có dataset/script dẫn nguồn kiểm chứng lại được; đo thật thuộc `apps/qualitylab`, không đổi trong đợt sửa này. (Phép so PSNR/SSIM tile 256 vs 512 ở §K đo SAI KHÁC giữa hai cấu hình engine, không đo chất lượng mô hình so với ảnh gốc — không lấp được hàng này) |
 | Observability | CHƯA ĐO | 60/100 | `res["codec"]` vs `res["codec_requested"]` cho phép đối soát fallback; `quality_warning`/`tech_gate` trong kết quả job — `05_ENCODER_TRUTH.md`, `04_QUALITY_GATE_TRUTH.md` |
@@ -53,11 +53,13 @@ Ba lý do, mỗi lý do đủ để tự nó chặn khẳng định:
    Một hạng mục chưa đo không thể được tính là "đạt" — vắng mặt phép đo không
    được đọc thành đạt (`MEMORY.md`, `12_PLAN_TRIEN_KHAI.md` §5.3).
 3. **Bốn hàng đang ở dưới 90** sau khi sửa lời khai: GPU scheduling 40/100,
-   Smooth Motion 30/100, Resume 10/100, Reliability 55/100 — mỗi hàng này
+   Smooth Motion 30/100, Resume 10/100, Reliability 65/100 — mỗi hàng này
    từng được bản cũ tự chấm 90/100 bằng lời khai sai; điểm sau khi đối chiếu
    với mã + runtime thấp hơn nhiều so với ngưỡng 90, và đây là những khuyết
    tật **có chủ đích không vá trong đợt này** (deferred, không phải bỏ sót) —
-   xem điều kiện mở khoá ở `12_PLAN_TRIEN_KHAI.md` mục 3.
+   xem điều kiện mở khoá ở `12_PLAN_TRIEN_KHAI.md` mục 3. (Reliability là
+   ngoại lệ một phần: nửa "tiến trình mồ côi" đã vá 27/09 ngoài đợt sửa app
+   này, ở `platform_core/`; nửa "temp dir" vẫn deferred như ba hàng kia.)
 
 ⇒ Đợt sửa này đạt được mục tiêu **trung thực hoá** scorecard (lời khai khớp
 mã + runtime, mỗi con số có `tệp:dòng`/benchmark) — không đạt mục tiêu số học

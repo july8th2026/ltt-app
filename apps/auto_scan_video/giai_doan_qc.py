@@ -98,6 +98,37 @@ def _do_hinh_hai_ben(duong_ra: str, duong_nguon: str, *, tt_ra: dict,
         return None, None, f"{type(exc).__name__}: {exc}"
 
 
+#: Bien bat T18 (VMAF). **Mac dinh TAT (chu du an chot 27/09).**
+#:
+#: 🔴 **Vi sao tat, va cai gia.** T18 la cong DUY NHAT canh chat luong hinh sau
+#:    ma hoa lai. Tat no la mat cong do — dieu phoi da neu ro truoc khi chu du an
+#:    quyet, va quyet dinh la cua chu du an.
+#:
+#: ⚠️ Nhung con so no cho hien **⛔ khong dang tin**, va do duoc: tren ba luot
+#:    chay that lien tiep no ra `trung_binh = 53,783` **bit-identical**, kem
+#:    `nho_nhat = 1,452` — mot VMAF 1,45 nghia la gan nhu ⛔ khong giong gi, va do
+#:    ⛔ khong the la ton that cua bo ma hoa o `cq = 28`. Goc: ban tham chieu co
+#:    **1083 khung / 30 fps** trong khi ban giao co **1351 khung / 37,5 fps** —
+#:    hai ben dung HAI chinh sach nhip khac nhau, nen phep SO SANH sai, ⛔ khong
+#:    phai hinh kem. Mot cong bao dong vi chinh no hong la mot cong chan moi ban
+#:    giao co doi toc do.
+#:
+#: 🔑 Va no ton **32 giay moi job** (do: 32,07 s va 33,6 s tren hai luot that).
+#:    Tra 32 giay cho mot con so ⛔ khong ai dam dung la mot khoan chi thuan.
+#:
+#: ⭐ Cung khuon voi `giai_doan_qc_ai.BIEN_BAT`: doi dung `"1"`, ⛔ khong nhan
+#:    `"true"`/`"yes"` — mot cong tieu tien phai kho bat mot cach co chu dich.
+#:    Bat lai bang `LTT_ASV_QC_T18=1` de do sau khi sua xong phep so sanh.
+BIEN_T18 = "LTT_ASV_QC_T18"
+
+
+def t18_bat() -> bool:
+    """T18 (VMAF) co duoc bat khong. **Mac dinh TAT.** Xem `BIEN_T18`."""
+    import os
+
+    return str(os.environ.get(BIEN_T18, "")).strip() == "1"
+
+
 def tom_tat_kem_khong_do(bao_cao: dict, ly_do: dict) -> dict:
     """`qc.tom_tat` + **phep do nao ⛔ KHONG chay duoc**, kem ly do.
 
@@ -133,8 +164,27 @@ def tom_tat_kem_khong_do(bao_cao: dict, ly_do: dict) -> dict:
     return tt
 
 
-def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict) -> float:
-    """Do dai (giay) ma TEP DUOC DO phai co, truoc phep chia `toc_do`.
+def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict, bien_tap=None) -> float:
+    """Do dai (giay) ma TEP DUOC DO phai co, **tren TRUC BAN RA** (sau `toc_do`).
+
+    🔴 **Sua 27/09 — truoc do ham nay tra HAI TRUC KHAC NHAU tuy nhanh, va nguoi
+       goi ap `moc_ban_ra` cho CA HAI:**
+
+         co ke cat  -> `ke.ban_do().thoi_luong_ra` cua `image_finish`. Giai doan do
+                       cat **ban ra cua render**, tuc con so nay DA o tren truc SAU
+                       `toc_do`.  ⇒ chia them mot lan nua la ap `toc_do` HAI LAN.
+         ⛔ khong    -> `tong_ms` cua ke hoach = do dai NGUON, tuc TRUOC `toc_do`.
+                       ⇒ o nhanh nay phep chia la DUNG.
+
+       Do tren lan chay that `asvr_3059dc3d` (nguon 45,121 s, `toc_do = 1,25`):
+         tep giao        = 36,077 s
+         compose hua     = 36,097 s   (= 45,121 / 1,25 — DUNG)
+         T2 mong doi     = 28,862 s   (= 36,077 / 1,25 — SAI, chia lan hai)
+         ⇒ `lech = 7,215 s`, va T2 **hong tren mot ban giao dung**.
+
+    ⭐ Ban va: ham TU dua ca hai nhanh ve **mot truc** — truc cua tep ma cong nay
+       dang do — nen nguoi goi ⛔ khong con phep doi truc nao de lam sai. Mot ham
+       tra hai truc tuy nhanh la mot hop dong ⛔ khong ai doc duoc.
 
     ⭐ MOT noi tra loi cau hoi nay, va no tra loi tu mot BAN KHAI:
 
@@ -148,12 +198,18 @@ def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict) -> float:
        vuot tran 5 % ⛔ khong the di qua cong nay bang cach duoc ghi ra tep.
     """
     from . import ke_cat as _kc
+    from .bien_tap import moc_ban_ra
 
     if goi_ke_cat:
         ke = _kc.KeCat.tu_dict(goi_ke_cat)
         _kc.kiem(ke)
+        # ⛔ DA o truc ban ra: `image_finish` cat chinh tep ma `render` giao, va
+        #    tep do da mang `setpts=PTS/toc`. ⛔ Khong doi truc o day.
         return float(ke.ban_do().thoi_luong_ra)
-    return float(ke_hoach.get("tong_ms") or 0) / 1000.0
+    # ⭐ `tong_ms` la do dai NGUON (giai doan 1 ⛔ khong cat), tuc truc BIEN TAP.
+    #    Doi sang truc ban ra o DAY, chu ⛔ khong de nguoi goi doi — nguoi goi
+    #    ⛔ khong biet nhanh nao da chay.
+    return moc_ban_ra(float(ke_hoach.get("tong_ms") or 0) / 1000.0, bien_tap)
 
 
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
@@ -232,10 +288,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    doan 2 giao.
         #
         # ⭐ asv-final: truc bien tap -> ban ra la mot phep chia cho `toc_do`.
-        from .bien_tap import moc_ban_ra
-        mong_doi = moc_ban_ra(
-            _thoi_luong_mong_doi(ke_hoach, goi_kc),
-            (ban_dung.get("hinh") or {}).get("bien_tap"))
+        #
+        # 🔴 Sua 27/09: phep doi truc ay nay nam TRONG `_thoi_luong_mong_doi`, vi
+        #    hai nhanh cua no tra hai TRUC khac nhau va o day ⛔ khong ai biet
+        #    nhanh nao da chay. Ap `moc_ban_ra` o day lam nhanh "co ke cat" bi
+        #    chia `toc_do` LAN THU HAI — T2 hong tren mot ban giao dung. Xem
+        #    docstring cua ham do de co so do.
+        mong_doi = _thoi_luong_mong_doi(
+            ke_hoach, goi_kc, (ban_dung.get("hinh") or {}).get("bien_tap"))
 
         # 🔑 Ly do KHONG do duoc cua tung phep kiem — di vao `tom_tat`, tuc vao
         #    `asv_stage.outputs`. Xem `tom_tat_kem_khong_do`.
@@ -275,13 +335,20 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         # ── T18: VMAF — chi preset cat (ma hoa lai) ──────────────────────────
         vmaf = None
         if cach == cdr.CAT_MA_HOA_LAI:
-            if bao:
-                bao(85, _t('Đang đo chất lượng hình (VMAF)'))
-            vmaf = _do_vmaf(kho, ban_dung.get("hinh") or {}, thu_muc, run=run,
-                            duong_nguon=duong_nguon, duong_ra=duong_ra,
-                            tt_ra=tt_ra, khoang_gd2=khoang_gd2)
-            if vmaf.get("loi"):
-                ly_do_khong_do["T18"] = str(vmaf["loi"])
+            if not t18_bat():
+                # ⛔ TAT co chu dich: ⛔ khong goi `_do_vmaf` (tiet kiem ~32 s), va
+                #    khai RO bang mot khoa rieng. `vmaf = None` se lam `qc.kiem`
+                #    in "chua do VMAF" — mot cau gop *"co y tat"* voi *"⛔ khong
+                #    ro vi sao"*, dung ho loi ma phien nay sua ca ngay.
+                vmaf = {"tat": BIEN_T18}
+            else:
+                if bao:
+                    bao(85, _t('Đang đo chất lượng hình (VMAF)'))
+                vmaf = _do_vmaf(kho, ban_dung.get("hinh") or {}, thu_muc, run=run,
+                                duong_nguon=duong_nguon, duong_ra=duong_ra,
+                                tt_ra=tt_ra, khoang_gd2=khoang_gd2)
+                if vmaf.get("loi"):
+                    ly_do_khong_do["T18"] = str(vmaf["loi"])
 
         bao_cao = qc.kiem(
             tt_ra=tt_ra, tt_nguon=tt_nguon, am_luong=am_luong,
@@ -369,6 +436,10 @@ def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, run, duong_nguon: str,
         ho_so_pd = hinh.get("phu_de") or None
         duong_ass = ""
         if _pd.co_dot_vao_hinh(ho_so_pd):
+            # ⭐ `co_dot_vao_hinh(None)` tra `False`, nen nhanh nay ⛔ khong bao
+            #    gio thay `None`. `assert` de kiem kieu THAY duoc — ⛔ khong doi
+            #    hanh vi.
+            assert ho_so_pd is not None
             khoang_gd2_f = [(float(b), float(k)) for b, k in (khoang_gd2 or ())]
             ban_do = BanDoThoiGian.tu_khoang(
                 khoang_gd2_f,

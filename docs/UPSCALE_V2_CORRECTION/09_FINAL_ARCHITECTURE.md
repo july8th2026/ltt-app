@@ -27,29 +27,42 @@ tách frame KHÔNG chunk trong khi upscale CÓ chunk (`_BATCH_SIZE=360`, cố ý
 đỉnh đĩa của PNG đã ×4 diện tích). Tỉ lệ thời gian I/O so với tầng SR là
 **CHƯA ĐO** — không tối ưu trước khi đo.
 
-## Hai rò rỉ CÒN LẠI đã biết (chưa vá trong đợt sửa này)
+## Rò rỉ ở đường hết-giờ — MỘT đã vá (27/09), MỘT còn mở
 
 1. **Hard-timeout `os._exit` bỏ qua cleanup — `platform_core/job_runner.py:641-672`.**
    Khi job vượt `RUNTIME_LIMIT_S` (2 giờ cho làn `gpu`/`ffmpeg`,
    `job_runner.py:114`), `_het_gio` ghi trạng thái job vào DB rồi gọi
-   `os._exit(3)` để giết cả tiến trình worker (không có cách đáng tin để dừng
-   code C/CUDA đang giữ GIL từ Python). `os._exit` bỏ qua mọi `finally` ⇒
-   `jobs.py`'s `shutil.rmtree(tmp)` và `checkpoint.cleanup_job_checkpoints`
-   **không chạy**. Giảm nhẹ một phần: `checkpoint.don_so_cu(ttl_ngay=7)` dọn sổ
-   tiến độ mồ côi, nhưng KHÔNG dọn thư mục temp khung/segment (có thể tới vài
-   GB) hay tiến trình con.
-2. **Tiến trình engine mồ côi.** Cùng nguyên nhân (1): `realesrgan-ncnn-vulkan.exe`
+   `os._exit(3)` để giết cả tiến trình worker — không có cách đáng tin để dừng
+   code C/CUDA đang giữ GIL từ Python, lý do này **không đổi** sau vá (xem mục
+   2). `os._exit` bỏ qua mọi `finally` ⇒ `jobs.py`'s `shutil.rmtree(tmp)` và
+   `checkpoint.cleanup_job_checkpoints` **không chạy**. Giảm nhẹ một phần:
+   `checkpoint.don_so_cu(ttl_ngay=7)` dọn sổ tiến độ mồ côi, nhưng **thư mục
+   temp khung/segment (có thể tới vài GB) vẫn KHÔNG được dọn** — ⛔ **CHƯA VÁ**,
+   cố ý để lại (lý do ở mục 2).
+2. **Tiến trình engine mồ côi — ⭐ ĐÃ VÁ 27/09 (commit `fbdc7a3c`, nhánh này,
+   CHƯA gộp `main`).** Cùng nguyên nhân (1): `realesrgan-ncnn-vulkan.exe`
    (`engine.py:127`, `subprocess.Popen`) và `ffmpeg.exe` (`ff.py:41`) là tiến
-   trình CON của worker bị `os._exit`. Trên Windows, không có `atexit`, không
-   Job Object nào ràng buộc vòng đời con vào cha (đã grep, không có) ⇒ tiến
-   trình con có thể tiếp tục chạy mồ côi, **giữ GPU** cho tới khi tự kết thúc
-   hoặc bị dọn tay. Huỷ **hợp tác** (khách bấm huỷ, `cancel_check`) thì AN
-   TOÀN: `engine.py:118-141` và `ff.py:36-58` đều poll rồi `kill()+wait()` chủ
-   động — chỉ đường hết-giờ-CỨNG mới rò.
+   trình CON của worker bị `os._exit`. Trên Windows không có `atexit`, không
+   Job Object nào ràng buộc vòng đời con vào cha (đã grep, không có), nên
+   trước vá chúng sống sót và **giữ GPU** cho tới khi tự kết thúc hoặc bị dọn
+   tay. Vá: `_het_gio` giờ gọi `_giet_cay_tien_trinh_con` —
+   `taskkill /T /F /PID <os.getpid()>` (stdlib thuần: `psutil` chỉ ở
+   dev-deps, không có trong phụ thuộc server; bounded 10 s; không bao giờ
+   ném) — **TRƯỚC** `os._exit(3)`, không thay nó (`os._exit` vẫn là lưới cuối
+   nếu `taskkill` giết hụt). ⛔ `taskkill` **không đụng tới thư mục temp** — đó
+   vẫn là khuyết tật ở mục 1, cố ý để lại cho một sweeper định kỳ: `rmtree`
+   trên thư mục cỡ GB có thể chặn trên tệp mà handler treo đang giữ, biến một
+   tiến trình treo thành hai. Huỷ **hợp tác** (khách bấm huỷ, `cancel_check`)
+   vẫn AN TOÀN như trước, không đổi: `engine.py:118-141` và `ff.py:36-58` đều
+   poll rồi `kill()+wait()` chủ động — mục 2 chỉ nói về đường hết-giờ-CỨNG.
 
-Cả hai nằm ở `platform_core/job_runner.py`, dùng chung cho mọi app GPU/ffmpeg
-trên nền tảng — sửa tại đó ngoài phạm vi app `upscalevideo`
-(xem `07_CORRECTION_PLAN.md` mục L).
+Vì sao mục 2 xứng đáng vá dù nằm ở `platform_core/job_runner.py` (dùng chung
+mọi app GPU/ffmpeg, ngoài phạm vi app `upscalevideo`): `gpu_lease.reclaim_orphans`
+xoá lease **ngay khi job kết thúc**, không chờ nhịp đập, nên tiến trình mồ côi
+làm hệ thống tin card đã trống trong khi nó vẫn giữ VRAM — tái lập đúng cuộc
+đua mà `UniqueConstraint` của `GpuLease` sinh ra để chặn (quan sát thật 26/09,
+`12_PLAN_TRIEN_KHAI.md` mục 2). Mục 1 (temp dir) vẫn ngoài phạm vi và vẫn mở
+(xem `07_CORRECTION_PLAN.md` mục L, `12_PLAN_TRIEN_KHAI.md` mục 4).
 
 ## Không còn tồn tại (đã xoá khỏi kiến trúc, không phải "chưa tới lượt")
 

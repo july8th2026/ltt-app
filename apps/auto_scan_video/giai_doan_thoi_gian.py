@@ -424,8 +424,17 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
         #    GIAO, da do bang chinh tham so ma hoa cua `ket_xuat`) va di thang
         #    sang `kiem_ban_ra` — do mot lan, ghi vao ho so giai doan.
         ghim: dict = {}
+        # 🔴 `bien_tap` (27/09): ban ma hoa THU trong `ghim_tran_phoi` phai di qua
+        #    CUNG phep doi toc do voi `ket_xuat` (`atempo=toc`), neu khong no do
+        #    mot tin hieu KHAC tin hieu khach nhan. Do tren `asvr_f997f794`:
+        #    ban phoi -14,86 LUFS, ban giao -15,09 => `atempo` + AAC an 0,23 LU,
+        #    va 0,23 LU ay la dung khoang cach con lai cua T4.
+        from . import cai_dat as _cd
+
+        bt_render = (_cd.doc(run).bien_tap or None)
         am_master.tron_cuoi(nen, cac_lo, dich, tong_giay=tong_giay_ra,
-                            hoi_huy=hoi_huy, am=am, ghim=ghim)
+                            hoi_huy=hoi_huy, am=am, ghim=ghim,
+                            bien_tap=bt_render)
 
         do_duoc = am_master.kiem_ban_ra(
             dich, mong_doi_giay=tong_giay_ra,
