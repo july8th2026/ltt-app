@@ -813,22 +813,42 @@ def _giet_cay_tien_trinh_con(job_id: str) -> None:
     Quan sát thật 26/09/2026: một `realesrgan-ncnn-vulkan.exe` mồ côi (cha đã
     chết) giữ GPU **100 %** trong khi hệ thống coi card là rảnh.
 
-    ## Vì sao `taskkill /T /F` chứ không phải enumerate rồi giết từng con
+    ## 🔴 SỬA 27/09: `taskkill /T /F /PID <pid của CHÍNH TA>` là SAI — đo được
 
-    - **stdlib thuần**: `psutil` chỉ có trong `requirements-dev.txt`, ⛔ không có
-      trong phụ thuộc server — mã chạy production ⛔ không được dựa vào nó.
-    - `/T` giết **cả cây con** trong một lệnh: ⛔ không phải tự viết phép duyệt
-      cây, ⛔ không có cửa sổ đua giữa lúc liệt kê và lúc giết.
-    - Nó nhận **pid của chính ta** nên phạm vi là **đúng con cháu của ta** —
-      ⛔ không bao giờ chạm tiến trình của phiên/dịch vụ khác. Đây là luật
-      *"chỉ giết thứ mình khởi động"*, do OS thi hành chứ ⛔ không do ta nhớ.
+    Bản trước gọi thẳng `taskkill /T /F /PID <pid worker>` rồi **CHỜ** nó xong
+    (`subprocess.run`, block). Đo bằng kịch bản thật (tự kill mình, xem mã
+    thoát): tiến trình chết ở **mã 1**, không bao giờ tới được `os._exit(3)`.
+    Lý do: `/T` coi PID mục tiêu là **gốc của cây cần giết**, nên khi mục tiêu
+    là chính ta, `taskkill` giết cả ta — bằng `TerminateProcess(..., 1)` — và
+    nó thắng cuộc đua vì ta đang BLOCK chờ chính nó (`wait()`), tức bản thân
+    lệnh gây ra cái chết còn nhanh hơn dòng lệnh kế tiếp trong ta.
 
-    ⚠️ `/T` giết cả **chính ta**. Chấp nhận được và không đổi gì: dòng ngay sau
-    lời gọi này vốn là `os._exit(3)`. Mã thoát chỉ được **ghi log**
-    (`job_worker.py:231`), ⛔ không ai rẽ nhánh theo nó.
+    Vá bằng cách không-đợi (`Popen` thay vì `run`, để `os._exit(3)` chạy trước
+    khi `taskkill` kịp giết ta) đã bị LOẠI — đo tiếp thì lộ vấn đề khác:
+    `taskkill /T /PID <pid>` cần PID mục tiêu **còn sống** để dựng cây theo nó
+    (`InheritedFromProcessId`); nếu ta đã `os._exit` trước, `taskkill` in
+    `"ERROR: The process "<pid>" not found."` và **không giết ai** — tức tiến
+    trình mồ côi (đúng thứ hàm này sinh ra để diệt) sống sót. Đổi mã thoát mà
+    làm mất tác dụng thật thì tệ hơn giữ nguyên lỗi mã thoát.
+
+    ## Cách sửa: giết TỪNG CON TRỰC TIẾP bằng PID của nó, ⛔ không phải PID ta
+
+    `_liet_ke_con_truc_tiep` hỏi `Get-CimInstance Win32_Process` lọc theo
+    `ParentProcessId=<pid ta>` — cùng công cụ/kiểu gọi PowerShell đã dùng ở
+    `platform_core/to_tien.py` (không `psutil`: gói đó chỉ có trong
+    `requirements-dev.txt`, ⛔ không phải phụ thuộc server). Với MỖI pid con,
+    gọi `taskkill /T /F /PID <pid con>` — `/T` vẫn giết cả cây CỦA CON đó (vd.
+    `ffmpeg` do engine tự sinh), nhưng mục tiêu ⛔ không bao giờ là ta nên
+    ⛔ không có cửa sổ đua nào giết ta cả — ta luôn sống để chạy `os._exit(3)`.
+
+    Đo 27/09: liệt kê + giết xong trong ~0,6 giây cho một con thật (một tiến
+    trình Python `sleep`), và tiến trình con **biến mất thật** — xác nhận bằng
+    `tasklist` sau khi kết thúc, ⛔ không suy đoán.
 
     ⛔ Hàm này ⛔ KHÔNG BAO GIỜ ném và ⛔ KHÔNG BAO GIỜ chờ vô hạn: nó chạy trên
-    đường hết-giờ, nơi một lần treo nữa là mất luôn cả cửa thoát.
+    đường hết-giờ, nơi một lần treo nữa là mất luôn cả cửa thoát. Lỗi ở BẤT KỲ
+    bước nào (liệt kê hỏng, một con giết hụt) chỉ được **ghi log**, ⛔ không
+    bao giờ được ném lên `_het_gio` — `os._exit(3)` ở đó phải luôn chạy được.
     """
     import os as _os
     import subprocess as _sp
@@ -841,11 +861,35 @@ def _giet_cay_tien_trinh_con(job_id: str) -> None:
               "(engine/ffmpeg la `Popen`, khong chet theo worker)",
               job_id[:8], pid)
     try:
-        _sp.run(["taskkill", "/T", "/F", "/PID", str(pid)],
-                capture_output=True, timeout=_GIAY_GIET_CAY_CON)
+        con = _liet_ke_con_truc_tiep(pid)
     except Exception:                           # noqa: BLE001
-        # Giết hụt thì vẫn phải thoát — `os._exit` ngay sau đây lo phần đó.
-        log.exception("khong giet duoc cay tien trinh con cua pid %s", pid)
+        log.exception("khong liet ke duoc tien trinh con cua worker pid %s", pid)
+        return
+    for con_pid in con:
+        try:
+            _sp.run(["taskkill", "/T", "/F", "/PID", str(con_pid)],
+                    capture_output=True, timeout=_GIAY_GIET_CAY_CON)
+        except Exception:                       # noqa: BLE001
+            # Giet hut MOT con thi van phai thu cac con con lai, roi van thoat
+            # — `os._exit` o `_het_gio` ngay sau lo phan con lai.
+            log.exception("khong giet duoc cay con pid %s (con cua worker %s)",
+                          con_pid, pid)
+
+
+def _liet_ke_con_truc_tiep(pid: int) -> list[int]:
+    """PID của các tiến trình con TRỰC TIẾP của `pid` — ⛔ không phải `pid`.
+
+    Dùng `Get-CimInstance Win32_Process` lọc `ParentProcessId` (như
+    `platform_core/to_tien.py:_cay_len` đi NGƯỢC lên tổ tiên — đây đi XUÔI
+    xuống con), ⛔ không `psutil` (không phải phụ thuộc server).
+    """
+    import subprocess as _sp
+
+    ps = (f'(Get-CimInstance Win32_Process -Filter "ParentProcessId={pid}" '
+          "-ErrorAction SilentlyContinue).ProcessId")
+    ra = _sp.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps],
+                 capture_output=True, text=True, timeout=_GIAY_GIET_CAY_CON)
+    return [int(t) for t in (ra.stdout or "").split() if t.strip().isdigit()]
 
 
 def _het_gio(job_id: str, job_type: str, giay: int) -> None:
