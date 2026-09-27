@@ -58,7 +58,7 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 |---|---|---|---|
 | UX-1 Schedule → Sheets → … → YouTube | ❌ | — | UI-5 + backend trigger (**Q11**) |
 | UX-2 Webhook → Phân tích → Clip → Phụ đề | ❌ | — | backend — **registry chưa có node webhook** |
-| UX-3 Manual → Ảnh → Video → Giọng → Render | ❌ | — | **UI-0** |
+| UX-3 Manual → Ảnh → Video → Giọng → Render | ⚠️ **một phần** | `agent_ui_v2_ui0_nghiem_thu.js` | **UI-0 xong**: node `app.*` nối được và chạy được (đo: 1 cạnh thật, run QUEUED). Còn thiếu trigger thủ công (**Q11**) |
 | UX-4 Sheets → AI Router → nhánh → gộp | ❌ | — | UI-5 + **Q11** (`ai.router` đang `publish_duoc=False`) |
 | UX-5 Parent → Subworkflow → Wait → Human | ❌ | — | **UI-0** + UI-8a |
 
@@ -86,6 +86,38 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 
 _(mới nhất ở trên)_
 
+- `2026-09-27` `ui0` — **Task 6 XONG — nghiệm thu trên TRÌNH DUYỆT THẬT: `status: PASS`**
+  (chế độ A, máy chủ cô lập 8198, sqlite scratchpad; production 8100 vẫn 200 sau đó).
+
+  | Phép đo | Mốc nền 27/09 | Sau UI-0 |
+  |---|---|---|
+  | `core.set` từ palette → Chạy | `node_khong_ton_tai` | **`null`** |
+  | cổng `app.video.generate` | 15 cổng / **1** vị trí / 6×6px | 15 cổng / **15** vị trí / vùng bấm **24px** |
+  | kéo dây cặp hợp lệ `image[]→image[]` | 0 cạnh, im lặng | **1 cạnh** |
+  | kéo dây cặp SAI kiểu `image[]→image` | — | vẫn 1 cạnh (hệ kiểu không thủng) |
+  | nút `+` chết | 2 nút no-op | **0** |
+
+  🔴 **Hai lần phép đo của tôi SAI, không phải mã sai** — ghi lại vì cả hai đều là
+  bẫy thật:
+  1. Kéo `image_keys (image[]) → image_key (image)` trả 0 cạnh. Tra
+     `cap_noi_duoc`: `image[]→image` = **false**. Hệ thống **từ chối đúng**; kịch
+     bản chọn sai cặp. ⇒ luôn tra bảng luật trước khi kết luận "kéo dây hỏng".
+  2. Đo bằng `getBoundingClientRect` thì 15 cổng / 15 vị trí = **xanh**, nhưng vẫn
+     không kéo được. Phép đo THẬT là `elementFromPoint` tại tâm cổng — nó trả
+     `.node-cong-kieu`, tức **nhãn kiểu đè lên cổng** (nhãn đứng sau trong DOM và
+     `opacity:.6` tạo stacking context). ⇒ toạ độ đúng **không** đồng nghĩa với
+     bấm được.
+
+  ⚠️ **Cái giá đã biết:** mỗi hàng cổng `min-height:24px` làm node cao hơn
+  (`app.video.generate` 381px → **525px**). Đó là đánh đổi có chủ ý của UI-0 (bấm
+  được > gọn); **UI-4** phải giải bằng 3 mức mật độ, không phải bằng cách hạ vùng bấm.
+- `2026-09-27` `ui0` — Task 3+4+5 XONG, 156/156 test frontend xanh. Đã **chứng minh
+  test bắt được lỗi** bằng cách tiêm lại mã cũ (`kind:'DATA'` đóng cứng,
+  `BUOC_XEP_X=430`) ⇒ 3 phép kiểm đỏ đúng chỗ, rồi khôi phục.
+  Sửa plan: bước "bump `ASSET_VER`" là **sai** — `ASSET_VER` là hash tự tính của
+  một danh sách tệp tĩnh cố định, **không có** `agent-canvas`; bundle Canvas do
+  Vite đặt tên theo hash nội dung nên tự cache-bust. `server/templating.py` không
+  bị đụng tới.
 - `2026-09-27` `ui0` — Task 2 XONG. `_suy_kind_canh` + đấu vào `cau_truc`.
   `test_5601` 5/5 xanh; lưới hồi quy `1714 + 1719 + 1783 + 4250` = **81 passed**.
   🔴 **ĐỔI HÀNH VI (R3):** cạnh rời cổng `control` của một node có ≥2 cổng control

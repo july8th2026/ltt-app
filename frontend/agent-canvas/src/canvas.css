@@ -348,7 +348,12 @@ body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-bo
  *    `tests/browser/agent_ui_v2_ui0_nghiem_thu.js` dem SO VI TRI KHAC NHAU. */
 .node-cong { position: relative; display: flex; gap: 6px; font-size: 11px;
              min-height: var(--handle-hit, 24px); align-items: center; }
-.node-cong-ra { justify-content: flex-end; }
+/* Chua cho cham tron o hai mep: cong nam o `left:0`/`right:0` va tran nua than
+ * ra ngoai (`translate(±50%,-50%)`). Khong chua cho thi CHU de len CONG — xem
+ * `z-index` ngay duoi. */
+.node-cong-vao { padding-left: calc(var(--handle-hit, 24px) / 2); }
+.node-cong-ra { justify-content: flex-end;
+                padding-right: calc(var(--handle-hit, 24px) / 2); }
 
 /* Vung BAM >= 24px (WCAG 2.2 AA, 2.5.8) trong khi cham TRON van nho.
  *
@@ -357,7 +362,18 @@ body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-bo
  *    "CSS la 44px"; con so do thuoc `.typed-port`, mot lop KHONG con component
  *    nao dung (`NodeKhung.tsx` khong gan class do). Mot tham chieu chet trong
  *    tai lieu an toan la mot lop bao ve TUONG TUONG. */
+/* 🔴 `z-index` KHONG phai trang tri — do 27/09 bang `elementFromPoint` tai TAM
+ * cong: no tra ve `.node-cong-kieu`, tuc NHAN KIEU (`image[]`) de len CONG.
+ *
+ * Vi sao: cong la `position:absolute` z-index AUTO, con nhan la sibling dung
+ * SAU trong DOM va mang `opacity:.6` (opacity < 1 tao mot stacking context).
+ * Hai thu cung tang ve, nen thu dung sau trong DOM ve DE LEN.
+ *
+ * Hau qua: cong da co dung vi tri (15 cong / 15 vi tri) nhung van KHONG keo
+ * duoc — mot cai bay hiem, vi moi phep do toa do deu xanh. Phep do that la
+ * `elementFromPoint`, khong phai `getBoundingClientRect`. */
 .node-cong .react-flow__handle {
+  z-index: 2;
   width: var(--handle-size, 12px); height: var(--handle-size, 12px);
 }
 .node-cong .react-flow__handle::after {
