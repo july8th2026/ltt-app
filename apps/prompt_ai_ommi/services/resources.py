@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from platform_core.i18n import _ as _t
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -28,6 +29,13 @@ from apps.prompt_ai_ommi.tables import (RESOURCE_KINDS, OmmiCollection,
 MAX_NAME = 160
 MAX_TEXT = 8000
 PAGE_MAX = 100
+# Trần bulk-ops trên variant (B-6): MỘT hằng số, mọi chỗ import — ⛔ không gõ
+# lại 200 ở route hay ở test. Khác trần `[:200]` của `set_collection_items`
+# phía trên (đại lượng khác: số tài nguyên trong một bộ sưu tập, không phải
+# số ảnh trong một lượt bulk-ops) nên KHÁC hằng số là đúng, không phải lệch.
+BULK_MAX_IDS = 200
+RATING_MIN = 1
+RATING_MAX = 5
 
 
 class ResourceError(ValueError):
@@ -374,3 +382,62 @@ def set_collection_items(db: Session, *, collection_id: str, owner_id: str,
                                   resource_id=rid, position=index))
     db.flush()
     return ordered
+
+
+# ── bulk ops trên variant (pha 5) ────────────────────────────────────────────
+
+_BULK_ACTIONS = {"favorite", "rating", "delete", "rename"}
+
+
+def bulk_update(db: Session, *, resource_id: str, owner_id: str, action: str,
+                ids: list, value=None) -> dict:
+    """Áp một hành động lên nhiều variant CỦA CÙNG MỘT resource.
+
+    Mỗi id được kiểm `owner_id` NGAY TẠI ĐÂY (không chỉ qua `resource_id`):
+    một id thuộc resource của người khác vô tình lọt vào body sẽ bị BỎ QUA,
+    không được đếm vào `updated` — không ném lỗi, vì đây là dọn dẹp hàng loạt,
+    một id lạ không nên làm hỏng cả lượt.
+
+    ⭐ `ids` bị cắt ở `BULK_MAX_IDS` — TRẦN NÀY chỉ có MỘT cửa (endpoint gọi
+    thẳng hàm này, không qua job/worker), nên không có nguy cơ B-6 (trần cửa
+    khác trần worker): không có "worker" riêng cho bulk-ops trong pha 5.
+    """
+    if action not in _BULK_ACTIONS:
+        raise ResourceError(_t('Operation không hợp lệ.'))
+    get_owned(db, resource_id, owner_id)   # xác nhận resource là của người gọi
+
+    rows = list(db.execute(
+        select(OmmiResourceVariant)
+        .where(OmmiResourceVariant.id.in_(
+                   [str(i) for i in (ids or [])[:BULK_MAX_IDS]]),
+               OmmiResourceVariant.resource_id == resource_id,
+               OmmiResourceVariant.owner_id == owner_id)
+    ).scalars().all())
+
+    updated = 0
+    if action == "favorite":
+        flag = bool(value)
+        for row in rows:
+            row.favorite = flag
+            updated += 1
+    elif action == "rating":
+        rating = value
+        if rating is not None and not (RATING_MIN <= int(rating) <= RATING_MAX):
+            # Tái dùng msgid đã dịch ("Quantity must be between 1 and {tran}.")
+            # — cùng ý "giá trị phải nằm trong khoảng", tránh sinh msgid mới.
+            raise ResourceError(
+                _t('Số lượng phải từ 1 đến {tran}.').format(tran=RATING_MAX))
+        for row in rows:
+            row.rating = int(rating) if rating is not None else None
+            updated += 1
+    elif action == "rename":
+        label = _clean_text(str(value or ""), 160)
+        for row in rows:
+            row.label = label
+            updated += 1
+    elif action == "delete":
+        for row in rows:
+            db.delete(row)
+            updated += 1
+    db.flush()
+    return {"updated": updated}
