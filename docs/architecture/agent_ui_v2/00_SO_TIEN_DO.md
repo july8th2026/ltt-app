@@ -15,7 +15,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 |---|---|---|---|---|---|---|
 | UI-0 Lỗi P0 cơ khí | `ui0` | ✅ **ĐÃ GỘP** (`72ee199b`) | `claude/ltt-agent-automation-ux-audit-9e3764` | *(đã trả phiếu)* | ✅ | dải **5600-5699** · nghiệm thu trình duyệt PASS · ⏸ chưa deploy (chủ dự án: deploy CUỐI) |
 | UI-3 Tách CanvasShell | `ui3` | **CHỜ DUYỆT** | `phien/agent-ui-v2-ui3` | `src/**/*.tsx` · `editorState.ts` · `features/editor/**` | — | dải **5700-5799** · **ĐÃ MỞ KHOÁ song song hoá** — 31 tệp, lớn nhất 179 dòng · 165 test xanh · trình duyệt PASS |
-| UI-2 Design system | `ui2` | **ĐANG LÀM** (agent) | worktree riêng | **chỉ** `canvas.css` + `src/styles/` | — | dải **5800-5899** · ⛔ cấm đụng mọi `.tsx` |
+| UI-2 Design system | `ui2` | **CHỜ DUYỆT** | `worktree-agent-a710623353e7caab2` | **chỉ** `canvas.css` | — | dải **5800-5899** · hex 482→**63** · lớp chết 79→**0** · `@media 640px` 6→**1** · theme sáng 20/20 ô tối→**0/20** · ⚠️ 2 tiêu chí KHÔNG đạt, xem nhật ký |
 | UI-N Nhãn ngắn node LTT | `uiN` | ✅ **ĐÃ GỘP** (`868f9db2`) | — | *(đã trả phiếu)* | ✅ | dải **5900-5999** · LTT_APPS 16/17 → **0/17** nhãn > 40 ký tự |
 | UI-1 Automation Studio | — | CHƯA MỞ | — | — | — | **chặn bởi Q1** · chủ S5 (bảng định tuyến) |
 | UI-4 Node UX V2 | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
@@ -150,6 +150,84 @@ _(mới nhất ở trên)_
   ⚠️ **Ba chỗ suýt mất hành vi lúc tách** (chi tiết ở commit `refactor(canvas)`):
   `xoaLuaChon` vs `boChon` · phải chuột KHÔNG mở inspector · `commandQuery` phải
   ở `EditorShell` (bản gốc chỉ xoá nó sau khi CHẠY một lệnh, nên `Esc` giữ chữ).
+- `2026-09-27` `ui2` — **Bốn việc XONG, đo trên trình duyệt thật (`agent_ui_v2_ui2_nghiem_thu.js`, máy chủ cô lập 8198).**
+  ⚠️ Nhận brief chạy UI-2 **trước khi** thấy UI-3 (tách `CanvasShell.tsx`) đã gộp
+  `main` — brief nói UI-3 "đang chạy song song ngay lúc này". Đã kiểm
+  `git diff --stat -- '*.tsx'` **rỗng** trước khi commit; không đụng `.tsx` nào.
+  Điều phối cần xác nhận thứ tự gộp (UI-2 trước hay sau UI-3) trước khi merge.
+
+  | Tiêu chí | Trước | Sau |
+  |---|---|---|
+  | hex cứng trong `canvas.css` | 482 | **63** (chưa đạt ≤25 — xem lý do dưới) |
+  | lớp CSS chết (đo lại, không dùng số 49 cũ) | 79 (đo lại 27/09, khác con số audit) | **0** |
+  | khối `@media (max-width:640px)` | 6 (không phải 5 như audit ghi) | **1** |
+  | theme-light: ô form giữ nền TỐI | 7/11 (audit), đo lại thực tế **20/20** ô kiểm tra đều tối trước sửa | **0/20** |
+  | cỡ chữ < 12px | nhiều chỗ (phần lớn nằm trong lớp CHẾT vừa xoá) | **0** |
+  | tương phản bề mặt minimap/controls | 1,04:1 | **~1,08:1 nền phẳng** (đã thêm viền `border-strong` + `box-shadow`; tương phản KHUNG viền đo **1,45:1**, nhưng nền-với-nền vẫn thấp — xem lý do dưới) |
+
+  🔴 **Nguyên nhân thật của "7/11 ô form giữ nền tối" (khác giả thuyết ban đầu
+  của audit — không phải "thiếu một luật theme"):** `server/static/ltt.css` có
+  luật `input:not([type=…])×8, select, textarea {background:var(--panel2)…}`.
+  Mỗi `:not([type=x])` cộng (0,1,0) độ đặc hiệu ⇒ nhánh `input` của luật này đạt
+  **(0,8,1)** — cao hơn MỌI selector `.class input` trong `canvas.css`. `--panel2`
+  là một **alias ĐÓNG BĂNG tại `:root`** (`--panel2:var(--surface-overlay)`,
+  ltt.css dòng ~41) — biến CSS lồng bên trong một khai báo custom-property được
+  thay thế BẰNG GIÁ TRỊ KẾ THỪA CỦA CHÍNH PHẦN TỬ ĐANG KHAI BÁO NÓ (ở đây là
+  `:root`, luôn tối), **không** đọc lại theo phần tử đang DÙNG nó. Nhánh
+  `select`/`textarea` của luật ltt.css chỉ có độ đặc hiệu (0,0,1) nên KHÔNG bị —
+  khớp đúng với audit: 4 ô (textarea + 2 select) đã sáng, 7 ô còn lại đều là
+  `<input>`. Sửa bằng `!important` trên đúng các khai báo `background`/`color`/
+  `border-color` cần thắng, **chỉ trong `canvas.css`** (không đụng `ltt.css`,
+  không tạo `.theme-light` biến thể mới). Đo lại trên 20 ô form thật (kể cả
+  `prompt`/`image_key`/`seed`… trong FormTuLuocDo) — **0/20 còn tối**.
+
+  ⚠️ **Không đạt ≤25 hex, nói thật thay vì né:** phần còn lại là (a) ~15 hex là
+  CHÍNH bảng token `.theme-light{...}` (định nghĩa 1 lần, y hệt cách `ltt.css`
+  tự làm cho bảng của nó — không thể "token hoá" một token bằng chính nó),
+  (b) ~6 hex trạng thái riêng cho nền sáng (`--status-success`/`--status-danger`
+  của `ltt.css` được canh cho nền TỐI; dùng thẳng trên nền trắng sẽ **hỏng AA**,
+  nên `save-state`/`run-error`/`validation-banner` ở theme-light cần sắc độ khác),
+  (c) phần còn lại là màu/bóng một-lần không có token tương đương (sticky note,
+  glow khung, bóng đổ theo từng lớp nổi). Đạt ≤25 tuyệt đối cần HOẶC đổi bảng màu
+  nền sáng cho đơn giản hơn (quyết định thiết kế, ngoài phạm vi "dọn CSS"), HOẶC
+  chuyển hex sang cú pháp `rgb()`/`hsl()` để né đúng chữ của phép đếm — không làm
+  vế sau vì đó là né phép đo, không phải sửa.
+
+  ⚠️ **Minimap/controls không đạt 3:1 nền-với-nền:** bảng màu `.theme-light` chỉ
+  có vài sắc GẦN TRẮNG theo chủ đích (`--surface-canvas:#f5f6f8` → `--surface-
+  raised:#fff`, chênh nhau rất ít). Muốn tỉ lệ tương phản NỀN-với-NỀN đạt 3:1 cần
+  một nền xám đậm hơn nhiều (ước tính độ sáng tương đối ~0,28, tức khoảng
+  `#6b7280`) — sẽ lệch hẳn phong cách "nổi bằng bóng đổ, không bằng nền tối" mà
+  MỌI panel nổi khác của theme-light đang dùng (`.canvas-palette.is-open`,
+  `.command-palette`,… đều `#fffffff5` + `box-shadow`, không phải nền tối hơn).
+  Đã thêm viền + bóng cho minimap/controls (khớp quy ước có sẵn), là cải thiện
+  THẬT về mặt cảm nhận, nhưng phép đo nền-phẳng không bắt được nó. Đổi sang một
+  nền xám đậm hơn là quyết định thiết kế, không phải việc "dọn + token hoá".
+
+  Danh sách 79 lớp đã xoá (theo họ): `tool-node`/`typed-port`/`node-preview`/
+  `node-status`/`node-title`/`node-inline-text`/`node-primary-actions`/`node-
+  preview-actions`/`node-image-grid`/`node-empty`/`node-footer-actions`/`node-
+  run`/`node-upload`/`node-customer-composer`/`node-input-chips`/`node-
+  reference`/`node-inspector`/`node-duplicate`/`node-chips`/`node-composer`/
+  `node-artifacts`/`is-selected`/`has-output`/`input-port`/`output-port`/
+  `primary-output`/`connectingto`/`valid`/`invalid`/`accent` (họ node cũ, thay
+  bởi `node-khung`); `assistant-drawer`/`assistant-context`/`assistant-error`/
+  `assistant-modes`/`context-composer`/`context-fields`/`composer-*` (đã bỏ,
+  xem comment trong `CanvasShell.tsx`); `history-drawer`; `run-inspector`/
+  `run-badge`/`run-dot`/`run-steps`/`run-artifacts`/`run-history`/`run-history-
+  details`/`run-quote`/`run-validation`/`run-state`/`legacy-run-tools`/`replay-
+  run`/`restore-workflow`/`schedule-control`/`scheduled-time` (thay bởi
+  `run-v3`); `quick-connect-picker`/`quick-create-picker`/`context-tool-list`;
+  `creative-node`/`has-composer`/`is-chon` (biến thể `data-presentation=creative`
+  không còn code path nào đặt); `catalog-toggle`/`cache-control`/`asset-field`/
+  `check-field`/`compact-check`/`palette-search`/`template-actions`/`legacy-
+  save-state`/`routing-note`/`starter-flows`/`detail-empty`/`node-more`.
+
+  Nghi ngờ nhưng KHÔNG xoá: không có — mọi lớp còn lại đều xác nhận được bằng
+  literal match trong `.tsx`, template động đã biết (`panel-${x}`, `node-kind-
+  ${x}`, `edge-${kind}`, `theme-${theme}`, `node-cong-${phia}`, `react-flow__*`),
+  hoặc lớp trang server-side (`hdr`/`apptabs`/`platform-footer`/`agent-canvas-
+  immersive`, đặt ở `apps/agent/templates/agent_canvas.html` + `server/templates/`).
 
 - `2026-09-27` `ui0` — **Task 6 XONG — nghiệm thu trên TRÌNH DUYỆT THẬT: `status: PASS`**
   (chế độ A, máy chủ cô lập 8198, sqlite scratchpad; production 8100 vẫn 200 sau đó).
