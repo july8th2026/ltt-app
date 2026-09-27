@@ -112,7 +112,7 @@ def test_reorder_requires_the_exact_set_of_scenes(db):
 
 def test_scene_count_is_capped(db):
     board = _board(db)
-    for index in range(svc.MAX_SCENES):
+    for index in range(svc.MAX_KHUNG_HINH):
         svc.add_scene(db, board_id=board.id, owner_id=A, title=str(index))
     db.commit()
     with pytest.raises(svc.StoryboardError):

@@ -24,7 +24,13 @@ MAX_PROMPT = 12000
 # Góp ý là một câu chỉnh sửa, không phải một prompt thứ hai. Chặn ở đây để một
 # ô nhập bị dán nguyên bài không đẩy phần prompt thật ra khỏi trần MAX_PROMPT.
 MAX_FEEDBACK = 600
-MAX_SCENES = 60
+# So KHUNG HINH toi da moi storyboard — ⛔ KHONG phai so canh kich ban.
+#
+# Ten cu la `MAX_SCENES`, trung ten voi `project_schema.MAX_SCENES = 20`
+# la mot dai luong KHAC (so canh kich ban). Hai so deu dung; ten trung moi
+# la con bo: nguoi sau thay 20 canh 60 va "sua cho khop". Spec §4.3
+# (S-1..S-5) da phan quyet `ommi_scene` la KHUNG HINH.
+MAX_KHUNG_HINH = 60
 
 
 class StoryboardError(ValueError):
@@ -126,8 +132,9 @@ def add_scene(db: Session, *, board_id: str, owner_id: str, title: str = "",
     total = db.execute(
         select(func.count()).select_from(OmmiScene)
         .where(OmmiScene.storyboard_id == board_id)).scalar_one()
-    if total >= MAX_SCENES:
-        raise StoryboardError(f"Một storyboard tối đa {MAX_SCENES} cảnh.")
+    if total >= MAX_KHUNG_HINH:
+        raise StoryboardError(
+            f"Một storyboard tối đa {MAX_KHUNG_HINH} khung hình.")
     position = db.execute(
         select(func.coalesce(func.max(OmmiScene.position), -1))
         .where(OmmiScene.storyboard_id == board_id)).scalar_one() + 1
@@ -202,7 +209,8 @@ def reorder(db: Session, *, board_id: str, owner_id: str, scene_ids: list) -> li
     by_id = {row.id: row for row in current}
     wanted = [str(item) for item in (scene_ids or []) if str(item) in by_id]
     if len(wanted) != len(current):
-        raise StoryboardError("Danh sách sắp xếp phải chứa đúng mọi cảnh của storyboard.")
+        raise StoryboardError(
+            "Danh sách sắp xếp phải chứa đúng mọi khung hình của storyboard.")
     for index, scene_id in enumerate(wanted):
         by_id[scene_id].position = index
     db.flush()

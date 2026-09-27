@@ -6,10 +6,14 @@ import math
 
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
+# ⭐ Tran so canh doc TU HANG SO, khong go tay. `jobs.py` da doc no; mot ben
+#    go tay la cach hai ben lech nhau (bat bien B-6, spec §8).
+from apps.prompt_ai_ommi.project_schema import MAX_SCENES
+
 
 def _director_cost(params: dict) -> int:
     try:
-        scenes = max(1, min(20, int(params.get("scene_count", 6))))
+        scenes = max(1, min(MAX_SCENES, int(params.get("scene_count", 6))))
     except (TypeError, ValueError):
         scenes = 6
     return max(4, min(18, 2 + math.ceil(scenes / 3) * 2))
@@ -19,7 +23,7 @@ def _cost(params: dict) -> int:
     kind = str(params.get("operation") or "director")
     if kind == "storyboard":
         try:
-            scenes = max(1, min(20, int(params.get("scene_count", 6))))
+            scenes = max(1, min(MAX_SCENES, int(params.get("scene_count", 6))))
         except (TypeError, ValueError):
             scenes = 6
         return max(3, min(12, 2 + math.ceil(scenes / 4) * 2))
@@ -55,7 +59,7 @@ MANIFEST = AppManifest(
                               "default": "director"},
                 "title": {"type": "string", "required": True, "max_length": 160},
                 "story": {"type": "text", "required": True, "max_length": 12000},
-                "scene_count": {"type": "int", "min": 1, "max": 20, "default": 6},
+                "scene_count": {"type": "int", "min": 1, "max": MAX_SCENES, "default": 6},
                 "duration_seconds": {"type": "int", "min": 3, "max": 600,
                                      "default": 30},
                 "aspect_ratio": {"type": "enum",
@@ -156,7 +160,7 @@ MANIFEST = AppManifest(
                               "default": "storyboard"},
                 "title": {"type": "string", "required": True, "max_length": 160},
                 "story": {"type": "text", "required": True, "max_length": 12000},
-                "scene_count": {"type": "int", "min": 1, "max": 20, "default": 6},
+                "scene_count": {"type": "int", "min": 1, "max": MAX_SCENES, "default": 6},
                 "aspect_ratio": {"type": "enum",
                                  "values": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
                                  "default": "16:9"},
