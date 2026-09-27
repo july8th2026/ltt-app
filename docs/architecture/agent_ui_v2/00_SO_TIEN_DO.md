@@ -16,7 +16,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-0 Lỗi P0 cơ khí | `ui0` | ✅ **ĐÃ GỘP** (`72ee199b`) | `claude/ltt-agent-automation-ux-audit-9e3764` | *(đã trả phiếu)* | ✅ | dải **5600-5699** · nghiệm thu trình duyệt PASS · ⏸ chưa deploy (chủ dự án: deploy CUỐI) |
 | UI-3 Tách CanvasShell | `ui3` | **ĐANG LÀM** (agent) | worktree riêng | mọi `**/*.tsx` · `editorState.ts` · `workflowApi.ts` | — | dải **5700-5799** · ⛔ cấm đụng `canvas.css`, ⛔ cấm đổi `className` |
 | UI-2 Design system | `ui2` | **ĐANG LÀM** (agent) | worktree riêng | **chỉ** `canvas.css` + `src/styles/` | — | dải **5800-5899** · ⛔ cấm đụng mọi `.tsx` |
-| UI-N Nhãn ngắn node LTT | `uiN` | **ĐANG LÀM** (agent) | worktree riêng | `registry.py` · `cong_cu.py` · `nut.py` · ToolSpec trong `apps/*/` | — | dải **5900-5999** · ⛔ cấm đụng `frontend/` |
+| UI-N Nhãn ngắn node LTT | `uiN` | ✅ **ĐÃ GỘP** (`868f9db2`) | — | *(đã trả phiếu)* | ✅ | dải **5900-5999** · LTT_APPS 16/17 → **0/17** nhãn > 40 ký tự |
 | UI-1 Automation Studio | — | CHƯA MỞ | — | — | — | **chặn bởi Q1** · chủ S5 (bảng định tuyến) |
 | UI-4 Node UX V2 | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
 | UI-7 Execution + Runs | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 · chủ S4 (đợt 2) |
@@ -86,6 +86,29 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-27` `uiN` — **XONG, đã gộp `868f9db2`.** LTT_APPS **16/17 → 0/17** nhãn
+  vượt 40 ký tự; các nhóm khác 0/n, không bị đụng. Thêm trường tuỳ chọn `ten_ngan`
+  trên `ToolSpec`/`CongCu` để **chính app tự khai**, `_tieu_de` lùi về hành vi cũ
+  khi vắng. `test_967` (28 test) vẫn xanh ⇒ không phải bảng tra tập trung.
+
+  🔴 **Ba thứ điều phối phải sửa sau agent** — ghi ra vì cả ba đều là bẫy lặp lại:
+  1. **Agent KHÔNG commit** và nhánh của nó **lùi 15 commit** (không có UI-0). Lỗi
+     brief của tôi: chỉ dặn "commit thường xuyên" trong brief UI-3. ⇒ **Brief sau
+     phải luôn có: commit, và rebase/nền là `main` hiện tại.**
+  2. **Hai nhãn TRÙNG `app_name`** (`taovideo`, `video_assembly`). Node hiện `title`
+     ở đầu và `app_name` ở thân (`ThanApp`) ⇒ trùng nghĩa là **cùng một chữ hiện hai
+     lần trên một node**. Agent không thấy vì nó không đọc `NodeRenderer`. Đã đổi;
+     đo lại **0/17** trùng.
+  3. **16 chuỗi mới chưa vào catalog EN** — bánh cóc `ban-dich-thieu` bắt. Đúng cái
+     tôi phê trong audit (§8.4 i18n = 0). Đã thêm **tay** vào `.po`; ⛔ **không** chạy
+     `i18n.py trich` vì `msgmerge` sẽ **đoán** bản dịch — một bản dịch đoán là lỗi im
+     lặng: hiện ra cho khách, đúng ngữ pháp, sai nghĩa.
+
+  ⚠️ **Chưa chắc, cần chủ dự án chốt:** `text.chat` → "Sinh văn bản bằng LLM". Mô tả
+  của nó phủ 4 việc khác nhau (coding/chat/agent/tóm tắt); tên này an toàn nhưng
+  chung chung.
+
 
 - `2026-09-27` `ui0` — **Task 6 XONG — nghiệm thu trên TRÌNH DUYỆT THẬT: `status: PASS`**
   (chế độ A, máy chủ cô lập 8198, sqlite scratchpad; production 8100 vẫn 200 sau đó).
