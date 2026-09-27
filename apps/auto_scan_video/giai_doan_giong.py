@@ -1166,9 +1166,41 @@ def _doan_con_dung(db, kho: Storage, run, khoa: str):
     if assets.kiem_toan_ven(db, kho, row) != ASSET_OK:
         return None
     duong = kho.local_path(khoa) if hasattr(kho, "local_path") else None
-    if not duong:
-        return 0.0      # khong doc duoc duong dan cuc bo: tin ban ghi da kiem
+    if duong:
+        try:
+            return giong_noi.kiem_tep_tieng(duong)
+        except giong_noi.GiongError:
+            return None
+
+    # 🔴 **Ban truoc `return 0.0` o day, va no lam moi luot chay lai HONG tren
+    #    production** — do 27/09 tren mot job THAT sau deploy:
+    #      seg_0004  chu="Lay sung di Quang Tu!"  giay=0.0  tu_cu=True
+    #      tep that: 138.284 byte, ffprobe 1,44 giay, `kiem_tep_tieng()` = 1,44
+    #    `timing_align` doc `giay=0.0` roi nem "Doan seg_0004 chua co tieng" —
+    #    mot thong bao chi tay vao doan tieng, trong khi loi nam o phep DO.
+    #
+    # ⚠️ Chu thich cu noi ro y dinh: *"khong doc duoc duong dan cuc bo: tin ban
+    #    ghi da kiem"*. Y dinh dung, nhung no duoc ma hoa thanh `0.0` — mot GIA
+    #    TRI ma ha nguon doc la **thoi luong bang khong**. Mot gia tri ganh hai
+    #    nghia: *"khong do duoc"* va *"dai 0 giay"*.
+    #
+    # 🔑 **Vi sao no KHONG THE lo ra ngoai mot luot chay that:** kho cuc bo
+    #    (`LocalStorage`) CO `local_path`, nen moi test do dung. Kho production
+    #    la **R2** — khong co `local_path` — nen 100 % doan dung lai nhan `0.0`.
+    #    Dung ho loi "doc thu dai dien": kenh cuc bo co mot thu ma kenh that khong co.
+    #
+    # ⇒ Tai ve tep tam roi DO bang DUNG ham cua san pham. Ta da mo duoc doi tuong
+    #   (`kiem_toan_ven` o tren vua doc no), nen day khong them mot lan tai ve nao
+    #   ma ta chua tra.
     try:
-        return giong_noi.kiem_tep_tieng(duong)
-    except giong_noi.GiongError:
+        with kho.open(khoa) as f:
+            byte = f.read()
+    except Exception:                       # noqa: BLE001 - khong doc duoc = khong cache
         return None
+    with tempfile.TemporaryDirectory(prefix="asv_doan_cu_") as thu_muc:
+        tep = Path(thu_muc) / "doan.wav"
+        tep.write_bytes(byte)
+        try:
+            return giong_noi.kiem_tep_tieng(str(tep))
+        except giong_noi.GiongError:
+            return None

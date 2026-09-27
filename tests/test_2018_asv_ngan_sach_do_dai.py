@@ -762,3 +762,77 @@ def test_CHAN3_hai_ATTEMPT_cho_HAI_ma_dispatch_khac_nhau(db, kho_tam,
         "trung, nen mot luot goi may B DA TRA TIEN bien mat khoi so cai" % (
             len(dong), ma))
     assert any(":a1:" in x for x in ma) and any(":a2:" in x for x in ma), ma
+
+
+def test_2018_kho_KHONG_co_local_path_van_phai_do_THOI_LUONG_THAT(db, tmp_path,
+                                                                 monkeypatch):
+    """🔴 **Bản trước `return 0.0` khi kho ⛔ không có `local_path` — và điều đó làm
+       MỌI lượt chạy lại HỎNG trên production.**
+
+    Đo 27/09 trên một job THẬT sau deploy (`asvr_4b4eb423…`):
+
+        seg_0004   chu = "Lấy súng đi Quang Tử!"   giay = 0.0   tu_cu = True
+        tệp thật   138.284 byte · ffprobe 1,44 giây · `kiem_tep_tieng()` = 1,44
+
+    `timing_align` đọc `giay = 0.0` rồi ném *"Đoạn seg_0004 chưa có tiếng"* — một
+    thông báo chỉ tay vào **đoạn tiếng**, trong khi lỗi nằm ở **phép ĐO**.
+
+    ⚠️ Chú thích cũ nói rõ ý định: *"⛔ không đọc được đường dẫn cục bộ: tin bản ghi
+       đã kiểm"*. Ý định **đúng**, nhưng nó được mã hoá thành `0.0` — một **GIÁ TRỊ**
+       mà hạ nguồn đọc là **thời lượng bằng không**. Một giá trị gánh hai nghĩa:
+       *"⛔ không đo được"* và *"dài 0 giây"*.
+
+    🔑 **Vì sao nó ⛔ KHÔNG THỂ lộ ra ngoài một lượt chạy thật:** `LocalStorage`
+       **có** `local_path` nên mọi test đo đúng; kho production là **R2** —
+       ⛔ không có `local_path` — nên **100 %** đoạn dùng lại nhận `0.0`.
+       ⇒ Bài này dựng đúng cái kho **⛔ không có** `local_path`. Đó là toàn bộ giá
+         trị của nó, và là thứ mà một `LocalStorage` ⛔ không bao giờ đo được.
+    """
+    import io
+    import wave
+
+    from apps.auto_scan_video import assets, giai_doan_giong
+    from apps.auto_scan_video.tables import ASSET_OK, AsvAsset
+
+    # ⭐ CO LAP dung mot thu: phep DO thoi luong. Bat bien TOAN VEN (checksum,
+    #    ban ghi con song) la viec cua bai khac — de no o day thi bai nay do HAI
+    #    thu va khi do se khong noi duoc cai nao vua vo.
+    monkeypatch.setattr(assets, "kiem_toan_ven", lambda *a, **k: ASSET_OK)
+
+    from apps.auto_scan_video import features
+    from tests.conftest import bao_dam_user
+
+    bao_dam_user(db, "uKhoXa")
+    run = features.tao_run(
+        db, owner_id="uKhoXa", source_key="khong-dung",
+        settings={"giong_id": "Minh Đức", "timing_mode": "fit_original"},
+        uoc_luong_credit=0)
+    db.commit()
+
+    tep = tmp_path / "doan.wav"
+    with wave.open(str(tep), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(16000)
+        w.writeframes(bytes([0, 1, 0, 2]) * 8000)      # 16.000 mau = 1,0 giay
+    byte = tep.read_bytes()
+
+    KHOA = "asv/x/y/voice_synthesis/doan-cu.wav"
+    db.add(AsvAsset(owner_id=run.owner_id, run_id=run.id,
+                    created_by_stage="voice_synthesis", kind="audio",
+                    storage_key=KHOA, integrity=ASSET_OK))
+    db.flush()
+
+    class _KhoXa:
+        """Kho GIỐNG R2: mở được, nhưng ⛔ KHÔNG có `local_path`."""
+
+        def open(self, khoa):
+            assert khoa == KHOA, khoa
+            return io.BytesIO(byte)
+
+    giay = giai_doan_giong._doan_con_dung(db, _KhoXa(), run, KHOA)
+
+    assert giay is not None, "kho xa bi doc thanh KHONG CO cache"
+    assert giay > 0.5, (
+        f"kho ⛔ khong co `local_path` tra thoi luong {giay!r} — mot tep dai "
+        f"~1,0 giay bi khai la {giay}; `timing_align` se noi 'chua co tieng'")
