@@ -453,8 +453,26 @@ def test_poll_job_khong_ghi_thang_enum(tep, cu):
 
 
 def test_spa_khong_con_nhan_tieng_anh_chung():
-    canvas = (GOC / "frontend/agent-canvas/src/CanvasShell.tsx").read_text(encoding="utf-8")
-    assert "ariaLabelConfig={NHAN_TRO_NANG_VI}" in canvas and "'controls.zoomIn.ariaLabel': 'Phóng to'" in canvas
+    # 🔴 HAI tệp, và phải là hai — đây là lần thứ HAI trong một ngày một bộ quét
+    #    tệp bị làn UI-3 (tách thư mục) làm mù, sau `test_1728`.
+    #
+    #    Bài này từng đọc `src/CanvasShell.tsx` và tìm cả hai mệnh đề trong đó.
+    #    UI-3 biến tệp ấy thành MỘT dòng `export { CanvasShell } from ...`, nên
+    #    phép đo đỏ — ⛔ không phải vì nhãn tiếng Anh quay lại, mà vì nó đang đọc
+    #    một tệp ⛔ không còn chứa gì. Tệp **vẫn tồn tại**, nên một phép kiểm
+    #    "đường dẫn còn sống" ⛔ KHÔNG bắt được ca này: thứ mất là NỘI DUNG, không
+    #    phải đường dẫn.
+    #
+    # ⚠️ Hai mệnh đề nay ở hai tệp KHÁC nhau, cố ý tách:
+    #    · chỗ GẮN nhãn vào ReactFlow  -> `features/editor/WorkflowCanvas.tsx`
+    #    · bản thân bảng nhãn tiếng Việt -> `features/editor/a11y.ts`
+    #    Đọc gộp một tệp sẽ lại mù ngay lần tách tiếp theo.
+    ve = (GOC / "frontend/agent-canvas/src/features/editor/WorkflowCanvas.tsx"
+          ).read_text(encoding="utf-8")
+    assert "ariaLabelConfig={NHAN_TRO_NANG_VI}" in ve,         "ReactFlow khong con nhan bang nhan tieng Viet"
+    nhan = (GOC / "frontend/agent-canvas/src/features/editor/a11y.ts"
+            ).read_text(encoding="utf-8")
+    assert "'controls.zoomIn.ariaLabel': 'Phóng to'" in nhan,         "bang nhan tieng Viet khong con giu ban dich cho controls"
     autosub = (GOC / "frontend/autosub-studio/src/StudioShell.tsx").read_text(encoding="utf-8")
     for cu in ("'Upload'", ">PROJECT<", "<h2>FILES</h2>", ">Video preview<"):
         assert cu not in autosub, cu

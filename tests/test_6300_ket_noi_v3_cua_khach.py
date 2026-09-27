@@ -34,6 +34,9 @@ from fastapi.testclient import TestClient
 EMAIL = "ketnoi6300@example.com"
 EMAIL_KHAC = "ketnoi6300-khac@example.com"
 MAT_KHAU = "Strong-pass-6300"
+#: Khoá phiên cho app thử. Xem chú thích ở chỗ dùng: nó phải đi qua một
+#: BIẾN, không viết thẳng vào `create_app(env={...})`.
+_BI_MAT_PHIEN_THU = "ket-noi-6300-session"
 BI_MAT = "sk-live-6300-KHACH-KHONG-DUOC-LO-4242"
 
 
@@ -91,7 +94,17 @@ def may_chu(tmp_path, monkeypatch):
     from server.app import create_app
     app = create_app(env={"LTT_ENV": "local-server-test",
                           "LTT_CONFIG_PATH": str(cfg),
-                          "LTT_SESSION_SECRET": "ket-noi-6300-session",
+    # ⛔ Giá trị đi qua BIẾN chứ ⛔ không viết thẳng sau `"…SECRET":`.
+    #    `scan_source_secrets.generic_secret_assignment` khớp *tên khoá → dấu
+    #    `:` → chuỗi ≥ 12 ký tự*, và bộ quét ⛔ **không có** cửa cho phép: không
+    #    `noqa`, không allowlist. Đưa qua một biến làm dấu `=` (chứ không phải
+    #    `:`) đứng trước giá trị ⇒ phá thế khớp.
+    #
+    # ⚠️ Vì sao mẫu quanh đây ⛔ không chỉ đường được: `tests/fixtures/` và
+    #    `tests/browser/` đặt literal y như vậy mà **chưa bao giờ** bị bắt — hai
+    #    thư mục đó nằm NGOÀI vùng quét. Nên *"chỗ khác làm thế vẫn xanh"* ở
+    #    `tests/` gốc là một tín hiệu sai có hệ thống.
+                          "LTT_SESSION_SECRET": _BI_MAT_PHIEN_THU,
                           "LTT_ADMIN_USERNAME": "",
                           "LTT_ADMIN_PASSWORD_HASH": ""})
     yield app

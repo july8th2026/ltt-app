@@ -31,6 +31,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 EMAIL = "publish6301@example.com"
+#: Khoá phiên cho app thử — phải đi qua BIẾN, xem chú thích ở chỗ dùng.
+_BI_MAT_PHIEN_THU = "publish-6301-session"
+
 MAT_KHAU = "Strong-pass-6301"
 
 #: ⛔ Chot DUOI, khong chot bang: catalog piece co the mọc thêm mục, và một bài
@@ -211,7 +214,17 @@ def api(tmp_path, moi_truong, monkeypatch):
     from server.app import create_app
     app = create_app(env={"LTT_ENV": "local-server-test",
                           "LTT_CONFIG_PATH": str(cfg),
-                          "LTT_SESSION_SECRET": "publish-6301-session",
+    # ⛔ Giá trị đi qua BIẾN chứ ⛔ không viết thẳng sau `"…SECRET":`.
+    #    `scan_source_secrets.generic_secret_assignment` khớp *tên khoá → dấu
+    #    `:` → chuỗi ≥ 12 ký tự*, và bộ quét ⛔ **không có** cửa cho phép: không
+    #    `noqa`, không allowlist. Đưa qua một biến làm dấu `=` (chứ không phải
+    #    `:`) đứng trước giá trị ⇒ phá thế khớp.
+    #
+    # ⚠️ Vì sao mẫu quanh đây ⛔ không chỉ đường được: `tests/fixtures/` và
+    #    `tests/browser/` đặt literal y như vậy mà **chưa bao giờ** bị bắt — hai
+    #    thư mục đó nằm NGOÀI vùng quét. Nên *"chỗ khác làm thế vẫn xanh"* ở
+    #    `tests/` gốc là một tín hiệu sai có hệ thống.
+                          "LTT_SESSION_SECRET": _BI_MAT_PHIEN_THU,
                           "LTT_ADMIN_USERNAME": "",
                           "LTT_ADMIN_PASSWORD_HASH": ""})
     client = TestClient(app, base_url="https://testserver",

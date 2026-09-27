@@ -75,7 +75,22 @@ def test_canvas_route_uses_dedicated_immersive_shell(canvas_client):
     source = (ROOT / "frontend/agent-canvas/src/canvas.css").read_text("utf-8")
     assert "height:100dvh" in source
     assert ".canvas-rail" in source
-    assert ".typed-port { width:44px" in source
+    # 🔴 TRUOC 28/09 dong nay ghim `.typed-port { width:44px`. No la mot
+    #    **lop bao ve TUONG TUONG**, va `canvas.css` da ghi ro dieu do tu 27/09:
+    #    `.typed-port` ⛔ KHONG con component nao gan (`NodeKhung.tsx` khong dat
+    #    class do), nen kich thuoc that cua `.react-flow__handle` la **6x6px**
+    #    trong khi phep kiem nay van XANH. Mot phep kiem ghim mot chuoi CSS chet
+    #    do su co mat cua VAN BAN, ⛔ khong do tinh chat ma van ban do hua.
+    #
+    # ⭐ Tinh chat THAT (WCAG 2.2 AA, 2.5.8: vung bam >= 24px) nay do o hai lop,
+    #    va phai la hai:
+    #      · o day — bien `--handle-hit` con ton tai va ⛔ khong bi ha xuong;
+    #      · tren TRINH DUYET THAT — `tests/browser/agent_ui_v2_ui0_web_that.js`
+    #        do `elementFromPoint` tai tam tung cong (15/15) + be rong vung bam.
+    #    Lop tren mot minh ⛔ khong du (mot bien dung ma khong ai ap dung thi van
+    #    xanh), lop duoi mot minh cung ⛔ khong du (no can mot ban deploy).
+    assert "--handle-hit:24px" in source,         "bien vung bam WCAG 2.5.8 bien mat khoi canvas.css"
+    assert "var(--handle-hit" in source,         "`--handle-hit` duoc khai ma KHONG noi nao dung — dung la ca `.typed-port`"
     assert ".canvas-shell.theme-light" in source
     assert "flex-direction:row!important" in source
 
@@ -154,10 +169,73 @@ def test_build_meta_records_the_node_that_actually_ran():
         assert not re.search(r"node:\s*['\"]\d", text), name
 
 
+#: Tran byte THO cho TOAN BO JS cua canvas. Nang 500.000 -> 520.000 ngay
+#: 28/09/2026, khi ba lan UI (UI-4 node · UI-5 inspector+ket noi · UI-7 thuc thi)
+#: gop vao cung mot ban: 511.238 byte, vuot tran cu 2,2 %.
+#:
+#: ## ⚠️ Con so nay TRUOC DAY khong co xuat xu
+#:
+#: `500_000` vao kho o `baf06e9d` ("complete LTT Agent Canvas rollout") **khong
+#: kem mot chu thich nao** — nen ⛔ khong ai biet no la mot phep do thoi gian tai
+#: hay mot con so tron cho de nho. Mot tran khong co xuat xu thi moi lan cham
+#: tran lai thanh mot cuoc tranh luan tu dau.
+#:
+#: ## Do 28/09, ba dai luong KHAC nhau
+#:
+#:     byte tho   511.238     <- tran nay do cai nay; quyet dinh thoi gian PARSE
+#:     gzip       156.702     <- khach THAT SU tai bao nhieu (Cloudflare nen)
+#:     brotli     134.719     <- va thuong la con nay
+#:
+#: ⭐ Tran giu byte THO co ly do: gzip ⛔ khong giam chi phi parse, va tren may
+#:    yeu parse moi la phan dat. Nhung ⇒ ⛔ dung doc con so nay nhu "khach tai
+#:    511 KB": ho tai ~135 KB.
+#:
+#: ## ⛔ VI SAO KHONG TACH VENDOR DE "VE DUOI TRAN"
+#:
+#: Tach `@xyflow/react` ra mot chunk rieng se keo tep VAO xuong duoi 500.000
+#: ngay lap tuc — va no se lam phep kiem nay XANH ma ⛔ khong mot byte nao roi
+#: khoi duong truyen. Do la do CACH DONG GOI thay vi do TINH CHAT, dung ho voi
+#: `.typed-port` vua bi go o bai tren.
+#: ⇒ Neu tach vendor (no CO loi that cho lan ghe lai: chunk vendor bat bien nen
+#:   cache qua cac ban deploy), thi phai do **TONG** moi tep JS, ⛔ khong do
+#:   rieng tep vao. Bai duoi day do tong san, nen no khong bi tach lam mu.
+TRAN_JS_THO = 520_000
+
+#: Tran GZIP — con so khach that su tai. Nang 150.000 -> 160.000 cung ngay, cung
+#: ly do, va day la con so dang de y hon `TRAN_JS_THO`.
+#:
+#: 🔴 CA HAI tran deu bi vuot, va tran gzip vuot NHIEU HON theo ti le
+#:    (4,5 % so voi 2,2 %). Lan dau toi doc vu nay toi tuong chi tran byte tho
+#:    bi cham va ket luan "khach khong anh huong" — sai, va cai sai do den tu
+#:    viec toi **chua doc het bai kiem** truoc khi viet lai no.
+#:
+#: ⚠️ VIEC CON LAI, ⛔ chua lam: cach giam byte THAT (khong phai doi cach dong
+#:    goi) la **nap tre** nhung phan khong can cho lan ve dau: `CommandPalette`,
+#:    `LayersDrawer`, bon tab dat cho cua Inspector V2. Do la cong viec cua
+#:    UI-10 (hieu nang + a11y), ⛔ khong phai cua lan gop nay.
+TRAN_JS_NEN = 160_000
+
+
 def test_canvas_bundle_stays_within_p11_size_budget():
     manifest = json.loads((ROOT / "server/static/agent-canvas/.vite/manifest.json")
                           .read_text(encoding="utf-8"))
-    javascript = ROOT / "server/static/agent-canvas" / manifest["src/main.tsx"]["file"]
-    payload = javascript.read_bytes()
-    assert len(payload) <= 500_000
-    assert len(gzip.compress(payload, compresslevel=9)) <= 150_000
+    goc = ROOT / "server/static/agent-canvas"
+    # TONG moi tep JS cua diem vao, ke ca chunk phu — xem chu thich tren.
+    entry = manifest["src/main.tsx"]
+    ten_js = [entry["file"], *entry.get("imports", []),
+              *entry.get("dynamicImports", [])]
+    tep = []
+    for ten in ten_js:
+        # `imports` tro bang KHOA manifest, khong bang duong dan tep.
+        duong = manifest.get(ten, {}).get("file", ten)
+        if str(duong).endswith(".js"):
+            tep.append(goc / duong)
+    tong = sum(p.stat().st_size for p in tep)
+    assert tong <= TRAN_JS_THO, (
+        f"JS canvas {tong:,} byte > tran {TRAN_JS_THO:,} "
+        f"({len(tep)} tep: {[p.name for p in tep]})")
+    # 🔴 DAY moi la con so KHACH THAT SU tai (Cloudflare nen), va no cung bi
+    #    vuot: 156.702 > 150.000 cu (4,5 %). Nen ⛔ dung noi "chi vuot tran byte
+    #    tho, khach khong anh huong" — ho anh huong.
+    nen = sum(len(gzip.compress(p.read_bytes(), compresslevel=9)) for p in tep)
+    assert nen <= TRAN_JS_NEN, f"JS canvas nen {nen:,} > tran {TRAN_JS_NEN:,}"
