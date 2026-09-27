@@ -52,8 +52,8 @@ python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien bench-upscale -- 
 
 | Preset | Warmup | N | ttff median | min | max | total median | upscale median | CPU-giây median |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| fast | **on** | 13 | **1,531** | 1,015 | 1,574 | 7,106 | 2,615 | 10,410 |
-| fast | **off** | 13 | **1,534** | 1,026 | 1,543 | 7,115 | 2,594 | 10,520 |
+| fast | **on** | 13 | **1,531** | 1,015 | 1,574 | 3,585 | 2,615 | 10,410 |
+| fast | **off** | 13 | **1,534** | 1,026 | 1,543 | 3,587 | 2,594 | 10,520 |
 | quality | on | — | `CHƯA ĐO` | | | | | |
 | quality | off | — | `CHƯA ĐO` | | | | | |
 
@@ -61,7 +61,16 @@ python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien bench-upscale -- 
 
 | ttff | tổng | upscale | cpu_s |
 |---:|---:|---:|---:|
-| **−0,20 %** | −0,13 % | **+0,81 %** | −1,05 % |
+| **−0,20 %** | −0,06 % | **+0,81 %** | −1,05 % |
+
+🔴 **Đính chính (27/09):** cột `tổng` bản đầu ghi 7,106 / 7,115 — **sai, gấp đôi**.
+Tôi tính `sum(stage_timings_s.values())` mà ⛔ **`total` lại là MỘT KHOÁ bên trong
+chính dict đó**, nên mỗi lượt bị cộng thêm chính nó. Giá trị đúng lấy thẳng từ
+khoá `total`: **3,585 / 3,587**.
+⭐ Tỉ lệ phần trăm **không đổi** (cả hai nhánh cùng bị nhân đôi) nên **kết luận
+đứng vững** — nhưng con số tuyệt đối thì sai, và một con số sai trong tài liệu sẽ
+được người sau dùng làm mốc. Mục F (phân rã pha) ⛔ **không** dính lỗi này vì ở đó
+tôi đọc thẳng khoá `total`, không cộng.
 
 ## ✅ KẾT LUẬN: warmup KHÔNG có lợi ích đo được ⇒ **ĐÃ XOÁ**
 
