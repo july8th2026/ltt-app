@@ -94,6 +94,28 @@ KHOA_CAN: dict[str, tuple[str, ...]] = {
                         "so_doan_im_lang", "doan_im_lang"),
     # `giai_doan_thoi_gian.chay` -> `tom_tat["master"] = do_duoc`
     "timing_align": ("master",),
+    # `giai_doan_qc.tom_tat_kem_khong_do` -> `tom_tat` (giai_doan_qc.py:326)
+    #
+    # 🔴 **Ba khoa nay duoc GHI tu truoc ma ⛔ KHONG AI DOC** (do 27/09: khong mot
+    #    cho nao trong `apps/`, `server/`, `platform_core/`, `tools/` doc chung).
+    #    Chung ton tai de tra dung cau hoi *"cong PHAT HANH bao DAT sau khi do
+    #    duoc bao nhieu phep?"* — mot luot thieu `libvmaf`, ffmpeg bam khong noi
+    #    luong hinh, va giai ma het thoi gian se ha T3/T13/T17/T18 xuong
+    #    `KHONG_AP_DUNG` roi in `dat: True, so_muc_hong: 0`. Mot chu DAT dung mot
+    #    minh tren nhung phep do chua he chay.
+    #
+    # ⭐ Va day cung la lan mo rong banh coc hai chieu: truoc hom nay `KHOA_CAN`
+    #    chi phu **2 trong 13** giai doan (`voice_synthesis`, `timing_align`), nen
+    #    `test_408` chi canh duoc hai cho. `qc` la giai doan thu ba, va no la giai
+    #    doan duy nhat co the noi "DAT" ma ⛔ khong do gi.
+    #
+    # ⚠️ Ba khoa nay duoc ghi **vo dieu kien** (ke ca khi rong) nen dat chung o
+    #    day ⛔ khong lam luot binh thuong bao thieu — chung chi thieu khi giai
+    #    doan `qc` chay bang mot duong ⛔ khong di qua `tom_tat_kem_khong_do`.
+    "qc": ("qc_so_muc_khong_do", "qc_muc_khong_do", "qc_ly_do_khong_do",
+           # ⭐ Đ8 doc CA loi tuyen bo LAN pham vi cua no. `qc_ky_thuat_dat` mot
+           #    minh ⛔ khong tra loi duoc *"DAT tren bao nhieu phep do that?"*.
+           "qc_ky_thuat_dat"),
 }
 
 #: 🔴 **Khoa `tom_tat` ma cong cu nay CO Y ⛔ khong doc** — chieu NGUOC cua banh
@@ -129,6 +151,15 @@ KHOA_BO_QUA_CO_Y: dict[str, tuple[str, ...]] = {
         "che_do", "so_doan", "so_doan_bi_cat", "so_doan_tang_toc",
         "he_so_toc_lon_nhat", "ket_cuoi_ms", "troi_toi_da_ms",
     ),
+    "qc": (
+        # Bao cao phang cua chinh cong QC — Đ8 doc `qc_ky_thuat_dat` cong
+        # `qc_so_muc_khong_do`, la cap tra loi duoc cau hoi ve PHAM VI. Hai khoa
+        # duoi dem MUC HONG, mot cau hoi khac va da co nguoi tra loi (bao cao QC
+        # di thang ra man khach), nen o day chung la sieu du lieu.
+        "qc_muc_hong", "qc_so_muc_hong",
+        # Phien ban bo phep kiem — sieu du lieu cua luot chay.
+        "qc_phien_ban",
+    ),
 }
 
 #: Khoa nam TRONG `outputs["master"]` cua `timing_align` — mot cau truc LONG,
@@ -161,6 +192,7 @@ def doi_soat(outputs_theo_giai_doan: dict[str, dict]) -> dict:
     """
     giong = dict(outputs_theo_giai_doan.get("voice_synthesis") or {})
     thoi = dict(outputs_theo_giai_doan.get("timing_align") or {})
+    qc_o = dict(outputs_theo_giai_doan.get("qc") or {})
     master = dict(thoi.get("master") or {})
 
     # ── Đ1/Đ2: sai so thoi luong doc, tren TUNG LUOT DOC ────────────────────
@@ -216,6 +248,25 @@ def doi_soat(outputs_theo_giai_doan: dict[str, dict]) -> dict:
         # Đ6 — nac (c): chap nhan lech nhung ⛔ khong im
         "so_doan_lech_cuoi": master.get("so_doan_lech_cuoi"),
         "giay_lech_cuoi": master.get("giay_lech_cuoi"),
+        # ── Đ8: cong PHAT HANH noi DAT sau khi do duoc bao nhieu phep? ───────
+        #
+        # 🔴 `giai_doan_qc` GHI ba khoa nay tu truoc (`tom_tat_kem_khong_do`), va
+        #    do 27/09: ⛔ KHONG mot cho nao trong `apps/`, `server/`,
+        #    `platform_core/`, `tools/` doc chung. Mot con so duoc ghi ma ⛔ khong
+        #    ai doc thi no la mot bao cao, ⛔ khong phai mot phep kiem.
+        #
+        # ⚠️ Vi sao no dang gia: `dat = not hong`, va `KHONG_AP_DUNG` ⛔ khong
+        #    phai `hong`. Mot luot thieu `libvmaf` + ffmpeg bam khong noi luong
+        #    hinh + giai ma het thoi gian ⇒ T3/T13/T17/T18 deu ha xuong
+        #    `KHONG_AP_DUNG`, va bao cao in `dat: True, so_muc_hong: 0`. Tuc
+        #    **DAT sau khi ⛔ khong do gi** — dung ho loi cua gate o `f4c4f064`.
+        #
+        # ⭐ Doc CA HAI: `qc_ky_thuat_dat` (loi tuyen bo) va `qc_so_muc_khong_do`
+        #    (pham vi cua no). Mot minh cai dau ⛔ khong tra loi duoc cau hoi;
+        #    mot minh cai sau thi ⛔ khong ai biet no co dang lo hay khong.
+        "qc_ky_thuat_dat": qc_o.get("qc_ky_thuat_dat"),
+        "qc_so_muc_khong_do": qc_o.get("qc_so_muc_khong_do"),
+        "qc_muc_khong_do": qc_o.get("qc_muc_khong_do"),
     }
 
 
