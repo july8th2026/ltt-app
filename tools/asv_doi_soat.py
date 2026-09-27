@@ -84,7 +84,14 @@ KHOA_CAN: dict[str, tuple[str, ...]] = {
     # `giai_doan_giong.chay` -> `tom_tat` (phang vao outputs boi `thi_hanh`)
     "voice_synthesis": ("tung_luot_doc", "giay_tts", "giay_llm_nan",
                         # Đ4 — `giai_doan_giong.py` XUAT no o cho `return`
-                        "so_doan_nan_oan"),
+                        "so_doan_nan_oan",
+                        # ⭐ Đ7 — CAI GIA cua quyet dinh "doan khong chu thi BO
+                        #    QUA" (Task 25, 27/09). Quyet dinh do la DUNG cho san
+                        #    pham — phim khach that SE co khe chi nhac — nhung no
+                        #    lam khach MAT mot doan thoai, nen no phai DEM DUOC.
+                        #    ⛔ Mot con so duoc GHI ma ⛔ khong ai DOC thi no chi la
+                        #    mot bao cao; cho nay la cho no duoc doc.
+                        "so_doan_im_lang", "doan_im_lang"),
     # `giai_doan_thoi_gian.chay` -> `tom_tat["master"] = do_duoc`
     "timing_align": ("master",),
 }
@@ -194,6 +201,12 @@ def doi_soat(outputs_theo_giai_doan: dict[str, dict]) -> dict:
         # Đ3 — giai doan giong cham vi cai gi
         "giay_tts": giong.get("giay_tts"),
         "giay_llm_nan": giong.get("giay_llm_nan"),
+        # ⭐ Đ7 — bao nhieu doan bi BO QUA (khoang lang) va la nhung doan nao.
+        #    ⚠️ `0` nghia la "do duoc va ⛔ khong doan nao bi bo"; `None` nghia la
+        #    "giai doan ⛔ khong ghi con so nay" — hai trang thai KHAC nhau, va
+        #    `chan_doan` o duoi noi ro cai nao.
+        "so_doan_im_lang": giong.get("so_doan_im_lang"),
+        "doan_im_lang": giong.get("doan_im_lang"),
         # ⭐ Đ4 — so doan `giay > khe` NHUNG `giay <= ngan_sach`, tuc tung bi
         #    TINH TIEN OAN mot luot LLM nan truoc ban sua thu tu. `0` = do duoc
         #    va khong doan nao; `None` = giai doan chua chay.
