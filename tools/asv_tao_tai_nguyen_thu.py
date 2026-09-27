@@ -21,6 +21,8 @@ import sys
 from pathlib import Path
 
 GOC = Path(__file__).resolve().parents[1]
+if str(GOC) not in sys.path:
+    sys.path.insert(0, str(GOC))
 # ⭐ Khuon chung cua `tools/` (vd `ab_lay_mau_35.py:53`): console Windows mac dinh
 #    la cp1252 va se NEM o mot ky tu nhu "⭐". Mot cong cu trong kho ⛔ khong duoc
 #    doi noi goi phai dat `PYTHONIOENCODING`.
@@ -35,6 +37,27 @@ MAU_LOGO = "0xFF00FF"
 #: bi thu nho theo `rong`.
 CANH = 240
 VIEN = 16
+
+
+def _bao_dam_ffmpeg() -> None:
+    """Dat `ffmpeg`/`ffprobe` len PATH cua tien trinh NAY, mot lan.
+
+    🔴 **Ten TRAN hong duoi `LocalSystem`, va hong IM LANG.** Worker chay duoi
+       `LocalSystem`, noi MACHINE Path ⛔ khong co `ffmpeg` ⇒
+       `FileNotFoundError: [WinError 2]` — va no thuong bi nuot. Bo test bat dieu
+       nay o `tools/check_ffmpeg_tran.py`, va no vua bat CHINH tep nay (27/09).
+
+    ⚠️ Toi da chay cong cu nay **thanh cong trong phien nguoi dung**, noi
+       `ffmpeg` CO tren PATH — nen phep thu cua toi ⛔ khong the phat hien loi.
+       Dung ho *"doc thu dai dien thay vi doc thu that"*: toi hoi "no chay duoc
+       khong" o mot moi truong KHAC moi truong no se chay.
+
+    ⛔ Va ⛔ KHONG go duong dan tuyet doi vao ma: dat may khac thi sai. Can mot
+       duong dan cu the thi dung `media.ffmpeg_bin()`.
+    """
+    from platform_core import media as _media
+
+    _media.bao_dam_ffmpeg_tren_path()
 
 
 def chay(cmd: list[str]) -> None:
@@ -62,6 +85,7 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--ra", default=str(RA_MAC_DINH))
     a = p.parse_args(argv)
+    _bao_dam_ffmpeg()
     ra = Path(a.ra)
     ra.mkdir(parents=True, exist_ok=True)
 
