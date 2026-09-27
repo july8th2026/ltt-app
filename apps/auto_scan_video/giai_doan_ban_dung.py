@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
@@ -32,6 +33,8 @@ from platform_core.storage import Storage
 from . import assets, ban_dung, nhap_media, pipeline, thoi_gian
 from .giai_doan_media import ThieuNguon
 from .tables import ASSET_OK
+
+log = logging.getLogger(__name__)
 
 
 class ThieuDauVao(ThieuNguon):
@@ -73,17 +76,35 @@ def _khoa_master(db, kho, run) -> str:
     return khoa[0]
 
 
-def _co_khung(db, kho: Storage, run) -> tuple[int, int]:
-    """`(rong, cao)` khung NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
+#: Ba LY DO khac nhau lam `_khung_nguon` ⛔ khong biet kich thuoc khung.
+#:
+#: 🔴 Ban truoc tra `(0, 0)` cho ca ba **va nuot ca ngoai le ⛔ khong mot dong
+#:    log**. Ha nguon (`ban_dung.kiem` -> `che_do_render.hinh_hoc_dien_nen`) chi
+#:    con biet noi *"ban dung khong khai no"* — mot **HAU QUA**, va nguoi doc lai
+#:    di tim o ban dung trong khi loi nam o ho so soi cua `media_prepare`.
+#: ⭐ Cung ho loi voi `giay = 0` cua ban ke tieng (`giai_doan_thoi_gian.
+#:    do_dai_tieng`): mot gia tri ganh nhieu trang thai, va thong diep chi sai cho.
+KHUNG_THIEU_HO_SO = "thieu_ho_so_media_prepare"
+KHUNG_HO_SO_HONG = "ho_so_media_prepare_khong_doc_duoc"
+KHUNG_KHONG_KHAI = "ho_so_media_prepare_khong_khai_kich_thuoc"
 
-    ⭐ Tra CA HAI trong mot lan doc. Hai lan doc mot tep de lay hai truong cua
-       cung mot ho so la hai co hoi de chung lech nhau — va o day chung khong
-       duoc lech: mot logo dat theo chieu rong cua khung nay tren mot khung
-       khac la mot logo sai cho.
+
+def _khung_nguon(db, kho: Storage, run) -> tuple[int, int, str]:
+    """`(rong, cao, ly_do)` khung NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
+
+    `ly_do` rong = da do duoc that. Khac rong = mot trong `KHUNG_*` o tren, va
+    khi do `(rong, cao)` la `(0, 0)` — ⛔ nhung ⛔ khong con la mot `(0, 0)` **cam**.
+
+    ⭐ Tra CA HAI kich thuoc trong mot lan doc. Hai lan doc mot tep de lay hai
+       truong cua cung mot ho so la hai co hoi de chung lech nhau — va o day
+       chung khong duoc lech: mot logo dat theo chieu rong cua khung nay tren
+       mot khung khac la mot logo sai cho.
     """
     khoa = _khoa_json(db, run, pipeline.MEDIA_PREPARE)
     if not khoa:
-        return (0, 0)
+        log.warning("asv compose: %s - giai doan media_prepare ⛔ khong de lai "
+                    "ho so soi nao", KHUNG_THIEU_HO_SO)
+        return (0, 0, KHUNG_THIEU_HO_SO)
     try:
         ho_so = _doc(kho, khoa) or {}
         rong, cao = int(ho_so.get("rong") or 0), int(ho_so.get("cao") or 0)
@@ -93,9 +114,73 @@ def _co_khung(db, kho: Storage, run) -> tuple[int, int]:
         #    cat sai truc.
         if int(ho_so.get("xoay") or 0) % 180 == 90:
             rong, cao = cao, rong
-        return (rong, cao)
-    except (OSError, ValueError, TypeError):
-        return (0, 0)
+    except (OSError, ValueError, TypeError) as loi:
+        # ⛔ Van ⛔ khong nem o day: mot lan chay ⛔ khong dung `vung` thi kich
+        #    thuoc khung ⛔ khong rang buoc gi, va nem se giet mot lan chay dung
+        #    duoc. Nhung ⛔ khong con IM: mot dong log + mot `ly_do` di theo.
+        log.warning("asv compose: %s (%s) khoa=%s", KHUNG_HO_SO_HONG,
+                    type(loi).__name__, khoa)
+        return (0, 0, KHUNG_HO_SO_HONG)
+    if rong <= 0 or cao <= 0:
+        log.warning("asv compose: %s - ho so %s doc duoc nhung rong=%r cao=%r",
+                    KHUNG_KHONG_KHAI, khoa, rong, cao)
+        return (0, 0, KHUNG_KHONG_KHAI)
+    return (rong, cao, "")
+
+
+def _doi_khung_cho_vung(vung, rong: int, cao: int, ly_do: str) -> None:
+    """Vung `dien_nen` doi kich thuoc khung NGUON — neu chua do duoc thi noi
+    **DUNG ly do** o day.
+
+    🔑 `che_do_render.hinh_hoc_dien_nen` **cung** nem cho `(0, 0)`, va no nem
+       dung — nhung no chi biet mot su that: *"ban dung khong khai kich thuoc"*.
+       Nguyen nhan (ho so `media_prepare` thieu / hong / khong khai) chi COMPOSE
+       biet, va day la cho duy nhat cau tra loi do con song.
+
+    ⛔ Cac loai `vung` khac (`lam_mo`, danh dau phu de) ⛔ khong can kich thuoc
+       khung, nen ⛔ khong bi chan.
+    """
+    if not ly_do:
+        return
+    from .vung_che import LOAI_DIEN_NEN
+    if not any(str((v or {}).get("loai") or "") == LOAI_DIEN_NEN
+               for v in (vung or ())):
+        return
+    raise ThieuDauVao(_t(
+        'Vùng điền nền cần kích thước khung hình nguồn, nhưng chưa đo được: '
+        '{ly_do}. Hãy chạy lại giai đoạn media_prepare.').format(ly_do=ly_do))
+
+
+def _tong_giay_ke_hoach(ke_hoach) -> float:
+    """`tong_ms` cua ke hoach, tinh GIAY — va NEM khi no ⛔ khong co nghia.
+
+    🔴 **`tong_ms = 0` mo HAI cong fail-open, va ca hai deu im lang:**
+
+      1. `thoi_gian.kiem`: `if tong and int(ke_hoach["ket_cuoi_ms"]) > tong` —
+         cong *"ban long tieng ⛔ khong bao gio dai hon video nguon"* (T2 /
+         D-ASV-03) **tat** khi `tong == 0`.
+      2. `ket_xuat.kiem_tep_ra`: `if mong > 0 and abs(that - mong) > ...` — cong
+         ma chinh no goi la *"phep kiem co y nghia nhat"* (tep ra dai sai = tieng
+         va hinh lech nhau, tuc hong dung thu san pham nay ban) **tat** khi
+         `ra.thoi_luong_giay == 0` — va con so ay chinh la `tong_ms / 1000`.
+
+    ⛔ `ban_dung.kiem` ⛔ khong dat mot rang buoc nao tren `ra.thoi_luong_giay`,
+       nen COMPOSE la cho DUY NHAT con lai de bat. Va no phai bat: ban dung doc
+       lai mot artifact da luu (I8 — *"doc lai thi kiem lai"*), nen mot ke hoach
+       bi cat ngang giua hai giai doan la dung mo hinh de doa ma lop kiem nay
+       dung ra de chan.
+
+    ⭐ Va MOT lan doc `tong_ms`, ⛔ khong hai: truoc 27/09 `chay()` doc truong nay
+       hai cho (`tong_giay_kh` va tham so `tong_giay=`), tuc hai co hoi de chung
+       lech nhau — chinh cai `_khung_nguon` da noi ra o docstring cua no.
+    """
+    ms = int((ke_hoach or {}).get("tong_ms") or 0)
+    if ms <= 0:
+        raise ThieuDauVao(_t(
+            'Kế hoạch thời gian khai tổng thời lượng {ms} ms: hai cổng kiểm độ '
+            'dài (bản lồng tiếng dài hơn nguồn, và tệp kết xuất dài sai) đều tắt '
+            'khi con số này bằng 0.').format(ms=ms))
+    return ms / 1000.0
 
 
 def _khoa_con_dung(db, kho: Storage, run) -> set[str]:
@@ -213,7 +298,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #
     # ⛔ Va day la ly do `thoi_gian.lap_ke_hoach` khong con tham so `ban_do`:
     #    trong giai doan 1, truc ke hoach LA truc nguon cho CA HAI preset.
-    tong_giay_kh = float(ke_hoach.get("tong_ms") or 0) / 1000.0
+    # ⭐ MOT lan doc `tong_ms`, va no ⛔ KHONG duoc bang 0 — xem
+    #    `_tong_giay_ke_hoach`: mot `0` o day tat HAI cong kiem do dai.
+    tong_giay_kh = _tong_giay_ke_hoach(ke_hoach)
     khoang = [(0.0, tong_giay_kh)]
 
     # 🔴 **Doc `ctx.gpu_uuid` O DAY la mot phep do sai cho, va no da lam
@@ -232,8 +319,13 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     bo_ma_hoa = (cdr.chon_bo_ma_hoa(cho_phep_gpu=True)
                  if cach == cdr.CAT_MA_HOA_LAI else "")
 
-    # ⭐ MOT lan doc, hai truong. Xem docstring cua `_co_khung`.
-    _rong_khung, _cao_khung = _co_khung(db, kho, run)
+    # ⭐ MOT lan doc, hai truong + LY DO. Xem docstring cua `_khung_nguon`.
+    _rong_khung, _cao_khung, _ly_do_khung = _khung_nguon(db, kho, run)
+    # 🔴 Noi DUNG cho ngay o day: ha nguon chi con biet noi "ban dung khong khai
+    #    no" — mot hau qua — nen mot ho so `media_prepare` thieu/hong se bi doc
+    #    thanh mot ban dung sai. Chi duong CAT truyen `vung`, nen chi chan o do.
+    if cach == cdr.CAT_MA_HOA_LAI:
+        _doi_khung_cho_vung(cai.vung, _rong_khung, _cao_khung, _ly_do_khung)
     # 🔴 **`bien_tap` GD1 CHI con `toc_do` (gd2-diem-anh, 25/09).**
     #
     #    `cai.bien_tap` co the mang CA `toc_do` LAN `cat_khung`/`zoom`/`khung`/
@@ -251,7 +343,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         ke_hoach=ke_hoach,
         ban_ke_tieng=ban_ke,
         phien_ban_ffmpeg=nhap_media.phien_ban_ffmpeg(),
-        tong_giay=float(ke_hoach.get("tong_ms") or 0) / 1000.0,
+        tong_giay=tong_giay_kh,
         che_do=cach, bo_ma_hoa=bo_ma_hoa, khoang_giu=khoang,
         preset=preset,
         # ⭐ Vung che di tu `run.settings` — noi `routes.tao` da ghi CHUNG SAU

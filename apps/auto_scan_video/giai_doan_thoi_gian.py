@@ -53,57 +53,6 @@ log = logging.getLogger(__name__)
 TRAN_KY_THUAT_ATEMPO = 2.0
 
 
-def he_so_ap(h: float, *, tran_ky_thuat: float) -> float:
-    """He so tang toc THAT SU se ap cho MOT doan (nac cuu (c), Task 4/8/16).
-
-    Ham THUAN — khong doc tep, khong goi ffmpeg, khong cham kho. Chi kep ve
-    `tran_ky_thuat` (tran KY THUAT cua `atempo`, qua do WSOLA ra TIENG RAC).
-    ⛔ KHONG kep ve `thoi_gian.TRAN_TANG_TOC` — do la CHINH SACH SAN PHAM (chu
-    du an chot 26/09: vuot tran do thoai mai, tran chi con la CANH BAO, khong
-    phai mot cong). Vi `h` luon >= 1.0 (`nan_cho_vua.co_gian_du_khong` chi tinh
-    khi giay > khe) nen chi can MOT tran TREN, khong can `max()` cho bien duoi.
-    """
-    return min(float(tran_ky_thuat), float(h))
-
-
-def dem_lech_cuoi(doan: list[dict], he_so_theo_ma: dict[str, float]) -> tuple[int, float]:
-    """Dem so doan CON LECH khoi khe SAU KHI da ap he so toc (nac cuu (c), Task 8/16).
-
-    Ham THUAN — khong doc tep, khong goi ffmpeg, khong cham kho. Nhan danh
-    sach dong ke `doan` (moi dong co the co "ma", "giay", "khe",
-    "he_so_co_gian") va `he_so_theo_ma` — map `ma -> he so THAT SU DA AP`
-    (`h_ap`, gia tri tra ve tu `he_so_ap`).
-
-    Chi dem doan THAT SU bi KEP boi tran ky thuat (tuc `h_ap != he_so_co_gian`
-    cua chinh dong do) VA sau khi ap he so do, tep tieng van dai hon khe cua no
-    (`giay/h_ap > khe`). Doan khong bi kep thi ve mat toan hoc `giay/h_ap`
-    trung khop `khe` (vi `he_so_co_gian = giay/khe`) — dieu kien `h_ap != h`
-    tranh dem nham mot sai so lam tron dau phay dong o bien nhu mot cho LECH.
-
-    Tra `(so_doan_lech_cuoi, giay_lech_cuoi)`.
-    """
-    so_doan_lech_cuoi = 0
-    giay_lech_cuoi = 0.0
-    for d in doan:
-        if nan_thoi_luong.la_dong_theo_sau(d):
-            continue
-        ma = str(d["ma"])
-        h_ap = he_so_theo_ma.get(ma)
-        if h_ap is None:
-            continue
-        h = float(d.get("he_so_co_gian") or 1.0)
-        if h_ap == h:
-            continue
-        giay = float(d.get("giay") or 0.0)
-        khe = float(d.get("khe") or 0.0)
-        if khe > 0 and giay > 0:
-            giay_sau = giay / h_ap
-            if giay_sau > khe:
-                so_doan_lech_cuoi += 1
-                giay_lech_cuoi += giay_sau - khe
-    return so_doan_lech_cuoi, giay_lech_cuoi
-
-
 class ThieuDauVao(ThieuNguon):
     """Chua co ban dich hoac chua co tieng de lap ke hoach."""
 
@@ -140,6 +89,94 @@ def _dau_vao(db, kho: Storage, run) -> tuple[dict, dict, str, str]:
     return tl_vb, ban_ke, cs_vb, cs_ke
 
 
+
+#: Bon KHIEM KHUYET khac loai ma mot `giay <= 0` o ban ke tieng CO THE mang.
+#:
+#: 🔴 **Chung ⛔ KHONG duoc gom vao mot thong diep, va day la mot bai hoc da tra
+#:    gia (27/09).** Mot tep tieng **tot** (138.284 byte, ffprobe **1,44 giay**)
+#:    bi bao la *"Doan seg_0004 chua co tieng"* — vi `giai_doan_giong.
+#:    _doan_con_dung` tra `0.0` khi kho ⛔ khong co `local_path` (kho production
+#:    la R2, `LocalStorage` thi CO, nen moi phep kiem cuc bo do dung). Thong diep
+#:    ay chi tay vao **doan tieng** trong khi loi nam o **phep DO**, va nguoi soat
+#:    duoi sai ba gia thuyet lien tiep truoc khi tim ra.
+#:
+#: ⭐ `timing_align` co du bang chung trong tay de noi that: dong ban ke mang
+#:    `khoa` cua tep tieng. `khoa` CO ma `giay = 0` thi do la **phep do hong**, ⛔
+#:    khong phai *"chua co tieng"* — va hai chuyen do sua o hai noi khac nhau.
+THIEU_DONG = "thieu_dong_ban_ke"
+THIEU_TEP = "thieu_khoa_tep_tieng"
+KHONG_DO_DUOC = "thoi_luong_khong_do_duoc"
+IM_LANG_RONG = "khoang_lang_khong_duoc_sinh"
+
+
+def do_dai_tieng(muc, ban_ke) -> dict[str, float]:
+    """`{ma: giay}` cua ban ke tieng — va NEM dung ten khi mot so `0` vo nghia.
+
+    ⛔ **Khong phai mot dict comprehension.** `float(d.get("giay") or 0.0)` gop
+       *"⛔ khong co khoa `giay`"*, *"`giay = None`"* va *"`giay = 0.0`"* thanh MOT
+       gia tri, roi `thoi_gian.lap_ke_hoach` doc gia tri ay va noi *"Doan {ma}
+       chua co tieng"* cho ca bon khiem khuyet — ba trong bon la loi o cho khac.
+
+    ⭐ Bon thong diep, bon cho sua:
+         `THIEU_DONG`     ban ke va `content.json` lech nhau (thuong nguon)
+         `THIEU_TEP`      dong co ma ⛔ khong co `khoa`  — that su chua co tieng
+         `KHONG_DO_DUOC`  CO `khoa` ma `giay = 0`        — phep DO hong
+         `IM_LANG_RONG`   co `im_lang` ma `giay = 0`     — khoang lang chua sinh
+
+    ⚠️ `im_lang` la co cua `voice_synthesis`: mot doan CO Y im lang van co MOT
+       tep khoang lang **dai dung bang khe** (`giay > 0`), nen `im_lang` + `giay
+       = 0` la mot khiem khuyet **khac han** — khoang lang ⛔ khong duoc sinh.
+    """
+    theo_ma: dict[str, dict] = {}
+    for d in ((ban_ke or {}).get("doan") or []):
+        theo_ma[str(d.get("ma") or "")] = d
+
+    for m in (muc or []):
+        ma = str((m or {}).get("ma") or "")
+        dong = theo_ma.get(ma)
+        if dong is None:
+            raise ThieuDauVao(_t(
+                'Bản kê tiếng thiếu hẳn dòng cho đoạn {ma} ({ly_do}): bản kê và '
+                'bản dịch lệch nhau — đoạn này chưa từng được giao cho máy sinh '
+                'tiếng.').format(ma=ma, ly_do=THIEU_DONG))
+
+        co_khoa_giay = "giay" in dong
+        tho = dong.get("giay")
+        giay = 0.0
+        if co_khoa_giay:
+            try:
+                giay = float(tho or 0.0)
+            except (TypeError, ValueError):
+                giay = 0.0
+        if giay > 0:
+            continue
+
+        mo_ta = repr(tho) if co_khoa_giay else "(thieu khoa 'giay')"
+        khoa = str(dong.get("khoa") or "")
+        if dong.get("im_lang"):
+            raise ThieuDauVao(_t(
+                'Đoạn {ma} được khai CỐ Ý im lặng nhưng bản kê ghi thời lượng '
+                '{tho} ({ly_do}): khoảng lặng dài bằng khe chưa được sinh ở '
+                'voice_synthesis.').format(ma=ma, tho=mo_ta,
+                                           ly_do=IM_LANG_RONG))
+        if khoa:
+            log.error(
+                "asv timing_align: doan %s CO tep tieng %s ma ban ke ghi "
+                "thoi luong %s - phep DO o voice_synthesis hong (kho khong co "
+                "local_path?), KHONG phai doan thieu tieng", ma, khoa, mo_ta)
+            raise ThieuDauVao(_t(
+                'Đoạn {ma} CÓ tệp tiếng {khoa} nhưng bản kê ghi thời lượng '
+                '{tho} ({ly_do}): phép ĐO thời lượng ở voice_synthesis hỏng, '
+                'đoạn tiếng không hề thiếu.').format(
+                    ma=ma, khoa=khoa, tho=mo_ta, ly_do=KHONG_DO_DUOC))
+        raise ThieuDauVao(_t(
+            'Đoạn {ma} chưa có tệp tiếng: bản kê không có khoá nào cho nó '
+            '({ly_do}).').format(ma=ma, ly_do=THIEU_TEP))
+
+    return {str(d.get("ma") or ""): float(d.get("giay") or 0.0)
+            for d in ((ban_ke or {}).get("doan") or [])}
+
+
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     """Doc ban dich + do dai tieng THAT -> ke hoach dat doan."""
     tl_vb, ban_ke, cs_vb, cs_ke = _dau_vao(db, kho, run)
@@ -150,8 +187,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # 🔑 Do dai THAT cua tung tep tieng, khong phai do dai uoc tinh tu so ky tu.
     #    Mot phep uoc o day se lech, va lech tich luy — dung thu ma ca mo hinh
     #    no trong ADR-003 sinh ra de kiem soat.
-    do_dai = {str(d["ma"]): float(d.get("giay") or 0.0)
-              for d in (ban_ke.get("doan") or [])}
+    #
+    # 🔴 **⛔ KHONG mot dict comprehension o day (27/09).** `float(... or 0.0)`
+    #    gop bon khiem khuyet khac loai thanh MOT so `0`, va thong diep ha nguon
+    #    (`thoi_gian.lap_ke_hoach`: *"Doan {ma} chua co tieng"*) chi tay vao doan
+    #    tieng trong khi ba trong bon loi nam o cho khac. Xem `do_dai_tieng`.
+    do_dai = do_dai_tieng(tl_vb.get("muc") or [], ban_ke)
 
     # Thoi luong nguon lay tu ho so soi cua MEDIA_PREPARE.
     from . import features
@@ -250,6 +291,14 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     #    >= 1.0 o day nen chi can mot tran TREN, ⛔ khong can `max()`.
     he_so_theo_ma: dict[str, float] = {}
     he_so_toc_da_ap: list[float] = []
+    # ⭐ Nấc cứu cuối (Task 8, chốt 26/09): chủ dự án chốt thứ tự cứu là
+    #    (b) nới biên lần hai (`thoi_gian.lap_ke_hoach` đã mượn
+    #    `TY_LE_MUON_KHOANG_LANG` — xong ở đó) → (c) CHẤP NHẬN phần còn lệch,
+    #    nhưng ⛔ không được IM. Ở đây ta đang đứng đúng chỗ đã biết cả `h`
+    #    (hệ số cần) và `h_ap` (hệ số THẬT SỰ áp, kẹp ở tran ky thuat), nên đếm
+    #    ngay tại đây thay vì dựng một phép tính thứ hai ở chỗ khác.
+    so_doan_lech_cuoi = 0
+    giay_lech_cuoi = 0.0
     for d in (ban_ke.get("doan") or []):
         # ⛔ Dong DI THEO mang cung `he_so_co_gian` voi dong dau (mot tep, mot
         #    lan `atempo`) — dem no lan thu hai chi lam sai lech thong ke.
@@ -257,26 +306,29 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
             continue
         ma = str(d["ma"])
         h = float(d.get("he_so_co_gian") or 1.0)
-        h_ap = he_so_ap(h, tran_ky_thuat=TRAN_KY_THUAT_ATEMPO)
+        h_ap = min(TRAN_KY_THUAT_ATEMPO, h)
         if h_ap != h:
             log.warning(
                 "asv timing_align: doan %s co he_so_co_gian=%.4f vuot tran KY "
                 "THUAT cua atempo %.2f - ap %.4f de tranh tieng rac",
                 ma, h, TRAN_KY_THUAT_ATEMPO, h_ap)
+            # ⭐ `h_ap` la nac cuu (c): CHAP NHAN thay vi tran, nhung tep tieng
+            #    sau khi ap `h_ap` van DAI HON khe cua no (`h_ap < h` <=>
+            #    `giay/h_ap > khe`, vi `h = giay/khe`). Ghi lai giay THAT su
+            #    con lech, ⛔ khong chi dem so doan.
+            giay = float(d.get("giay") or 0.0)
+            khe = float(d.get("khe") or 0.0)
+            if khe > 0 and giay > 0:
+                giay_sau = giay / h_ap
+                if giay_sau > khe:
+                    so_doan_lech_cuoi += 1
+                    giay_lech_cuoi += giay_sau - khe
         he_so_toc_da_ap.append(float(h_ap))
         if h_ap > nan_cho_vua.tran_co_gian():
             log.warning(
                 "timing_align: doan %s tang toc %.3f vuot tran %.3f",
                 ma, h_ap, nan_cho_vua.tran_co_gian())
         he_so_theo_ma[ma] = h_ap
-
-    # ⭐ Nấc cứu cuối (Task 8, chốt 26/09): chủ dự án chốt thứ tự cứu là
-    #    (b) nới biên lần hai (`thoi_gian.lap_ke_hoach` đã mượn
-    #    `TY_LE_MUON_KHOANG_LANG` — xong ở đó) → (c) CHẤP NHẬN phần còn lệch,
-    #    nhưng ⛔ không được IM. `dem_lech_cuoi` (hàm THUẦN, Task 16) đếm lại
-    #    trên đúng `he_so_theo_ma` (h_ap) vừa dựng ở vòng lặp trên.
-    so_doan_lech_cuoi, giay_lech_cuoi = dem_lech_cuoi(
-        ban_ke.get("doan") or [], he_so_theo_ma)
 
     # ⛔ Loai cac `ma` DI THEO bang mot truong TUONG MINH (`nhom_theo_ma`), ⛔ KHONG
     #    bang "vang mat khoi `khoa_theo_ma`": hai chuyen khac han nhau va chi mot
