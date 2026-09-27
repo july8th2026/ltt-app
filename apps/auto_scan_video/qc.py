@@ -768,7 +768,7 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
                         "preset giu hinh sao chep luong hinh — T3/T14 da chung "
                         "minh giong nguon tung bit, VMAF khong co gi de do",
                         che_do_render=str(che_do_render or SAO_CHEP)))
-    elif vmaf.get("tat") if isinstance(vmaf, dict) else False:
+    elif isinstance(vmaf, dict) and vmaf.get("tat"):
         # ⭐ TAT CO CHU DICH, khac han ba trang thai kia. Khai ten bien de nguoi
         #    doc bao cao biet **ai** tat va **bat lai bang gi** — mot "khong ap
         #    dung" ⛔ khong noi ly do thi ⛔ khong ai bat lai duoc.

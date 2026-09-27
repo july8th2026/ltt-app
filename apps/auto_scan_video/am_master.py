@@ -741,6 +741,12 @@ def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
 
     nhac_nen_idx = None
     if nhac_nen_duong is not None:
+        # ⭐ Bat bien o tren (`bool(nhac_nen) != (nhac_nen_duong is not None)` ->
+        #    NEM) da dam bao `nhac_nen` co that o nhanh nay. `assert` de kiem
+        #    kieu THAY duoc dieu do — ⛔ khong doi hanh vi, chi noi ra mot dieu
+        #    da dung. Neu bat bien kia bi go sau nay thi cho nay do NGAY, thay vi
+        #    nem `AttributeError` o `nhac_nen.get`.
+        assert nhac_nen is not None
         nhac_nen_idx = 1 + len(cac_lo)
         # 🔴 `-stream_loop -1` PHAI dat TRUOC `-i` cua CHINH no (khop Viral
         #    `xu_ly_video.py:1091-1093`) — dat sau se ap cho dau vao KE TIEP,

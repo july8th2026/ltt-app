@@ -436,6 +436,10 @@ def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, run, duong_nguon: str,
         ho_so_pd = hinh.get("phu_de") or None
         duong_ass = ""
         if _pd.co_dot_vao_hinh(ho_so_pd):
+            # ⭐ `co_dot_vao_hinh(None)` tra `False`, nen nhanh nay ⛔ khong bao
+            #    gio thay `None`. `assert` de kiem kieu THAY duoc — ⛔ khong doi
+            #    hanh vi.
+            assert ho_so_pd is not None
             khoang_gd2_f = [(float(b), float(k)) for b, k in (khoang_gd2 or ())]
             ban_do = BanDoThoiGian.tu_khoang(
                 khoang_gd2_f,
