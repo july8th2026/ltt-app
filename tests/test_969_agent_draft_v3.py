@@ -552,8 +552,8 @@ def test_bao_ve_3_DOI_CHUNG_doi_ban_publish_thi_gia_DI_THEO(web):
         db.close()
 
 
-def test_HAI_MUOI_BA_route_v3_deu_duoc_dang_ky():
-    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **hai mươi ba**
+def test_HAI_MUOI_BON_route_v3_deu_duoc_dang_ky():
+    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **hai mươi bốn**
     route.
 
     Lịch sử con số: năm → **tám** (ba route `runs` ra đời cùng kiến trúc V2)
@@ -567,6 +567,10 @@ def test_HAI_MUOI_BA_route_v3_deu_duoc_dang_ky():
        — MỘT cửa báo giá cho CẢ đồ thị, thay `POST /agent/api/tools/{ten}/quote`
        gọi một lần **mỗi node**; đo được 24 → 2 request mỗi phiên).
     → **mười chín** (28/09, điều phối UI: `/luu-tru` và `/mo-lai`).
+    → **hai mươi bốn** (28/09, làn UI-8a: `/nodes/{id}/duyet` — cửa duyệt
+       `core.human`. 🔴 Route này **đã CHẾT trên production một lượt deploy** vì
+       điều phối quên thêm `phe_duyet_v3` vào `routes/__init__.py`; nay có
+       `test_5606` cơ học hoá điều đó, ⛔ không dựa vào ai nhớ).
     → **hai mươi ba** (28/09, làn UI-5: bốn cửa `/ket-noi` — kho kết nối
        của khách, §6 ô kết nối. Bí mật đi qua `platform_core/credential.py`;
        ⛔ không cửa nào trả lại giá trị bí mật, chỉ `ref` + nhãn).
@@ -630,8 +634,10 @@ def test_HAI_MUOI_BA_route_v3_deu_duoc_dang_ky():
         ("POST", "/api/v3/ket-noi"),
         ("DELETE", "/api/v3/ket-noi/{ket_noi_id}"),
         ("GET", "/api/v3/ket-noi/nha-cung-cap"),
+        # UI-8a (28/09): duyet/tu choi mot waitpoint `core.human`.
+        ("POST", "/api/v3/runs/{run_id}/nodes/{node_id}/duyet"),
     }
-    assert len(co) == 23
+    assert len(co) == 24
 
 
 def test_tai_lieu_rong_dung_HINH_DANG_ma_M1_sinh_ra():
