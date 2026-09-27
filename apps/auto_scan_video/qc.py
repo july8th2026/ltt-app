@@ -350,7 +350,7 @@ CHI_SO_LOGO_DAU = 2
 
 def loc_tham_chieu(hinh: dict, *, duong_chu: list[str], duong_ass: str,
                    khoang_giu=None, ds_logo=(), lop_phu=(),
-                   bien_tap=None) -> str:
+                   bien_tap=None, toc_do: float = 1.0) -> str:
     """Chuoi loc hinh cua preset cat, GHEP LAI hai giai doan trong MOT `loc_cat_noi`.
     `test_2012` chot bang chuoi GD2 that (`giai_doan_hinh_anh.dung_lenh`).
 
@@ -387,8 +387,31 @@ def loc_tham_chieu(hinh: dict, *, duong_chu: list[str], duong_ass: str,
     """
     from . import che_do_render as cdr, hinh_hoc as _hh
 
+    # 🔴 **`toc_do` (27/09): thieu no thi T18 bao `hong` tren mot tep ⛔ khong sai
+    #    gi ca.** `duong_nguon` la `run.source_key` — tep NGUON, o toc do goc.
+    #    `duong_ra` la ban giao, da qua GD1 (`setpts=PTS/toc`) roi GD2 (cat). Ban
+    #    tham chieu ⛔ khong ap `toc_do` thi hai ben lech TUNG KHUNG va VMAF do
+    #    mot thu khong ai hoi — dung hau qua ma chinh docstring nay canh bao cho
+    #    `khoang_giu`, chi la o mot chieu khac.
+    #
+    #    Goc: `giai_doan_qc._do_vmaf` truyen `bien_tap=loc_bien_tap_gd2(...)`, va
+    #    ham do **co chu y bo `toc_do`** (no la viec cua GD1). Dung cho hinh hoc
+    #    GD2; sai cho MOC THOI GIAN, vi tep DUOC DO da mang phep doi moc do roi.
+    #
+    # ⭐ **Hai chieu, mot he so** — sua mot chieu thoi thi lech nang hon:
+    #    1. `setpts=PTS/toc` phai CO mat trong chuoi tham chieu (⇒ truyen `toc_do`
+    #       xuong `loc_cat_noi`, no da biet lam tu truoc: `che_do_render.py:818`);
+    #    2. `khoang_giu` nam tren truc BAN RA CUA GD1 (**sau** `toc_do` — xem
+    #       `giai_doan_hinh_anh._khe_thoai_truc_ban_giao`), con `loc_cat_noi` cat
+    #       tep NGUON **truoc** khi ap `setpts`. Doi truc: `t_nguon = t_gd1 * toc`
+    #       (vi `setpts=PTS/toc` cho `t_gd1 = t_nguon / toc`).
+    #
+    #    ⚠️ Thu tu "cat roi setpts" (cua `loc_cat_noi`) va "setpts roi cat" (cua
+    #       duong ong that) cho CUNG ket qua khi va chi khi doi truc o (2) — nen
+    #       hai buoc nay la MOT ban sua, ⛔ khong phai hai.
+    toc = float(toc_do or 1.0)
     tho = khoang_giu if khoang_giu else (hinh.get("khoang_giu") or ())
-    khoang = [(float(b), float(k)) for b, k in tho]
+    khoang = [(float(b) * toc, float(k) * toc) for b, k in tho]
     rong_nguon = int(hinh.get("rong_khung") or 0)
     cao_nguon = int(hinh.get("cao_khung") or 0)
     # ⭐ MOT noi tinh khung BAN RA — `_khung_ra` cua GD2, dung lai o day chu
@@ -406,7 +429,11 @@ def loc_tham_chieu(hinh: dict, *, duong_chu: list[str], duong_ass: str,
         ds_logo=list(ds_logo),
         rong_khung=rong_ra,
         chi_so_logo_dau=CHI_SO_LOGO_DAU, duong_ass=duong_ass,
-        bien_tap=bien_tap,
+        # ⭐ Hinh hoc tinh o TREN tu `bien_tap` (phan GD2). `toc_do` chi them vao
+        #    ho so TRUYEN XUONG, de `loc_cat_noi` phat `setpts` — no ⛔ khong nam
+        #    trong `TRUONG_HINH_HOC` nen ⛔ khong doi khung ban ra.
+        bien_tap=({**(bien_tap or {}), "toc_do": toc} if toc != 1.0
+                  else bien_tap),
         # ⛔ `dien_nen` (V5) tinh bang PIXEL cua khung NGUON — thieu hai truong
         #    nay thi ban tham chieu VMAF nem, hoac te hon: dung mot hinh hoc
         #    khac ban render that va bao mot diem VMAF cua mot chuoi loc KHAC.
