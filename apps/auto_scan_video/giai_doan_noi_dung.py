@@ -70,6 +70,20 @@ from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
 
+#: Lý do đưa vào `y_canh` khi một đoạn dịch còn chữ Hán (B9-3, 28/09).
+#:
+#: ⛔ **Nêu ĐÍCH DANH cụm còn sót, ⛔ không nói chung chung.** Đo trên T1a: hai
+#:    cụm sót đều là **từ lóng game** (`吃鸡`, `狙击`) — model dịch trọn câu rồi
+#:    để nguyên đúng hai từ ấy. Một lời nhắc *"đừng để sót chữ Hán"* ⛔ không nói
+#:    được nó đã sót ở đâu; một lời nhắc mang chính cụm đó thì có.
+#:
+#: ⛔ Và ⛔ KHÔNG kèm ví dụ dịch sẵn: *"một ví dụ trong lời nhắc là một mệnh lệnh
+#:    ngầm"* — bốn ví dụ không dấu từng làm tụt một tên vốn đúng (24/09).
+LY_DO_HAN_LOT = (
+    "Ban dich con SOT chu Han chua dich: {cum}. Hay dich NOT phan do sang "
+    "tieng Viet. Neu do la tu long hay thuat ngu, dung cach nguoi Viet thuc su "
+    "noi ve no. Ban ra ⛔ KHONG duoc con mot ky tu Han nao.")
+
 
 class ThieuBanGhi(ThieuNguon):
     """Giai doan chep loi chua sinh ra ban ghi."""
@@ -409,6 +423,64 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         db.commit()
         lc.xong_mot()
 
+    # ── Vong SUA chu Han lot — chu du an chot 28/09 (B9-3) ──────────────────
+    #
+    # 🔴 Do tren T1a: **5/78 doan (6,4 %)** con chu Han sau khi dich — `吃鸡`
+    #    (an ga = thang tran) va `狙击` (ban tia), hai TU LONG GAME. Khach nhin
+    #    thay chung tren phu de da dot vao hinh.
+    #
+    # ⭐ **⛔ Khong viet duong dich lai thu hai.** Kho nay da co `y_canh`: *"LY
+    #    DO bi che di vao luot dich lai"*, va `long_tieng.loi_nhac` chi chen
+    #    `QUY_TAC_Y_CANH` khi lo that su mang no — nen mot lo sach cho ra loi
+    #    nhac **y het ban nen**. Dung lai co san, ⛔ khong tu viet.
+    #
+    # ⛔ **DUNG mot vong.** Mot vong lap "tra ve cho toi khi sach" se tra tien
+    #    khong tran cho mot dieu model co the ⛔ khong bao gio lam duoc. Con sot
+    #    thi `tom_tat` phia duoi NOI RA, va ban giao van di tiep — chinh sach
+    #    *"DANH DAU, ⛔ KHONG HUY"* o vong lo tren giu nguyen.
+    if dich == ngon_ngu.VI:
+        ban = {m: long_tieng.chu_han_lot(str(v.get("chu") or ""))
+               for m, v in chuyen.items()}
+        ban = {m: t for m, t in ban.items() if t}
+        lo_ban = [d for d in doan_giu if str(d.get("ma") or "") in ban]
+        if lo_ban:
+            log.warning("run %s: %d/%d doan con chu Han, dich lai mot vong",
+                        run.id, len(lo_ban), len(doan_giu))
+            for j, lo in enumerate(long_tieng.chia_lo(lo_ban)):
+                ma_lo = {str(d.get("ma") or "") for d in lo}
+                try:
+                    kq = ai.goi_tinh_tien(
+                        db, run, ai.CHUYEN_LOI_THOAI,
+                        long_tieng.loi_nhac(
+                            lo, tat_ca=doan_giu,
+                            ngon_ngu_goc=str(goc.get("ngon_ngu") or ""),
+                            dac_diem_giong=dac_diem, ngon_ngu_dich=dich,
+                            y_canh={m: LY_DO_HAN_LOT.format(
+                                cum=", ".join(ban[m][:3])) for m in ma_lo},
+                            da_dich=chuyen, ho_so=ho_so),
+                        stage=pipeline.CONTENT_PROCESS,
+                        luoc_do=long_tieng.luoc_do_phan_hoi(lo),
+                        # ⭐ Khoa RIENG: mot lan goi = mot dong so cai, va vong
+                        #    sua ⛔ khong duoc dung lai khoa cua vong thuong —
+                        #    `UNIQUE(run_id, ma_dispatch)` se nuot no im lang.
+                        item_key=f"han_{j:03d}", ctx=ctx)
+                    sua = long_tieng.doc_chuyen(
+                        ai.doc_ket_qua(kq, ai.CHUYEN_LOI_THOAI), ma_lo)
+                except Exception as exc:  # noqa: BLE001
+                    # ⛔ Mot vong SUA hong ⛔ khong duoc lam hong ban giao: ta
+                    #    van co ban dich cu, chi la no con chu Han. Ghi lai roi
+                    #    di tiep — `tom_tat` phia duoi van noi ra con so that.
+                    log.warning("run %s: vong sua chu Han hong: %s", run.id, exc)
+                    break
+                # ⛔ Chi nhan ban sua NEU no THAT SU sach hon: mot model tra ve
+                #    y nguyen (hoac te hon) thi giu ban cu. Thieu ve nay thi mot
+                #    luot sua vo ich van ghi de, va so do "truoc/sau" mat nghia.
+                for m, v in sua.items():
+                    if len(long_tieng.chu_han_lot(str(v.get("chu") or ""))) \
+                            < len(ban.get(m) or []):
+                        chuyen[m] = v
+                db.commit()
+
     tai_lieu = long_tieng.dung(giu, chuyen, ma_giong=ma_giong,
                                van_tay_ban=van_tay_ban,
                                provider=provider, model=model,
@@ -424,6 +496,31 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if ctx is not None and getattr(ctx, "progress", None):
         ctx.progress(95, _t('Đang lưu kết quả'))
 
+    # 🔴 **Chu Han lot: con so DA DUOC DO tu lau, ⛔ nhung chet trong so.**
+    #
+    #    `chu_han_lot` chay tung doan o vong lo tren va ghi ket qua vao
+    #    `AsvWorkItem.outputs["han_lot"]` — dung, day du, kem doan trich. Do
+    #    tren T1a (28/09): **78/78** dong mang khoa, **5** dong khac rong,
+    #    khop chinh xac 5 doan that su con chu Han.
+    #
+    #    ⛔ Nhung `tom_tat` cua giai doan ⛔ KHONG mang mot khoa nao ve chu Han.
+    #    Con so nam lai trong `asv_work_item` va ⛔ khong len bao cao, ⛔ khong
+    #    toi QC, ⛔ khong toi khach. Dung hinh dang *"cho noi hai module vut
+    #    truong im lang"* — phep do DUNG, duong bao cao thi KHONG CO.
+    #
+    # ⚠️ **Va no lam mot gia dinh chinh sach het han.** Chu thich o vong lo
+    #    tren chon *"DANH DAU, ⛔ KHONG HUY"* voi ly do *"0,3 % la hiem"*. T1a
+    #    do **6,4 %** (5/78) tren mot video game — gap **21 lan** tien de ay.
+    #    Con so len bao cao thi lan sau chinh sach duoc chon tren SO DO, ⛔
+    #    khong tren mot tien de ⛔ khong ai kiem lai.
+    #
+    # ⭐ Dung lai tu `tai_lieu` — ban DA GIAO — chu ⛔ khong doc lai diem chot:
+    #    day hoi *"thu vua giao con chu Han khong"*, va thu vua giao la
+    #    `tai_lieu`.
+    han_lot = {str(d.get("ma") or ""): long_tieng.chu_han_lot(str(d.get("chu") or ""))
+               for d in (tai_lieu.get("doan") or [])} if dich == ngon_ngu.VI else {}
+    han_lot = {k: v for k, v in han_lot.items() if v}
+    so_doan = max(1, len(tai_lieu.get("doan") or []))
     return {
         "phan": [{"staging_key": khoa, "kind": "json", "duoi": "json",
                   "van_tay": vt}],
@@ -431,7 +528,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                     "so_doan_goc": len(goc.get("doan") or []),
                     "so_lo": so_lo_truoc + len(lo_lo),
                     "nguon_giong": nguon_giong,
-                    "ho_so_dich": ho_so},
+                    "ho_so_dich": ho_so,
+                    # ⛔ `0` o day la *"da do, ⛔ khong co"*, ⛔ khong phai
+                    #    *"⛔ khong do"* — nhanh ⛔ khong do la `ngon_ngu_dich`
+                    #    khac `vi`, va khi do `ti_le_han_lot` la `None`.
+                    "so_doan_han_lot": len(han_lot),
+                    "ti_le_han_lot": (round(len(han_lot) / so_doan, 4)
+                                      if dich == ngon_ngu.VI else None),
+                    # ⭐ Ma doan, ⛔ khong phai doan trich: tom tat di vao
+                    #    `asv_stage.outputs` va bi doc boi nguoi van hanh; doan
+                    #    trich da nam san o tung `AsvWorkItem`.
+                    "doan_han_lot": sorted(han_lot)[:20] or None},
     }
 
 

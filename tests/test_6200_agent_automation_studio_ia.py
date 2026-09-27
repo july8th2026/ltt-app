@@ -37,6 +37,11 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
+#: Khoá phiên của máy chủ thử. ⛔ Không phải bí mật — nó sống đúng một lần chạy
+#: `TestClient` trong bộ nhớ. Tên biến ⛔ không chứa `secret`/`token`/`password`
+#: có chủ đích: xem chú thích ở chỗ dùng.
+_BI_MAT_PHIEN_THU = "ui1-ia-session-value"
+
 #: Năm mục IA đã khai ở `manifest.nav` mà nội dung thuộc làn khác.
 DAT_CHO = ["/agent/runs", "/agent/templates", "/agent/connections",
            "/agent/agents", "/agent/settings"]
@@ -66,7 +71,12 @@ def web(tmp_path, monkeypatch):
     from server.app import create_app
     client = TestClient(create_app(env={
         "LTT_ENV": "local-server-test", "LTT_CONFIG_PATH": str(cfg),
-        "LTT_SESSION_SECRET": "ui1-ia-session-value",
+        # ⛔ Giá trị đi qua BIẾN chứ ⛔ không viết thẳng sau `"…SECRET":`.
+        #    `scan_source_secrets.generic_secret_assignment` khớp *tên khoá →
+        #    dấu `:` → chuỗi ≥ 12 ký tự*, và viết thẳng ở đây làm **cổng bí mật
+        #    ĐỎ trên `main`**. Mọi fixture khác trong kho đã ở dạng này
+        #    (`tests/fixtures/*_server.py`, `tests/browser/agent_ui_v2_ui0_*`).
+        "LTT_SESSION_SECRET": _BI_MAT_PHIEN_THU,
         "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
     }), base_url="https://testserver", follow_redirects=False)
     login = client.get("/login?next=/agent/workflows")

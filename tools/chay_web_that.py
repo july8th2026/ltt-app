@@ -39,8 +39,11 @@ from pathlib import Path
 # `UnicodeEncodeError` va giet ca luot chay, SAU KHI da lay cookie. Mot loi
 # trinh bay khong duoc phep giet mot phep do.
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    # ⛔ `hasattr` ⛔ KHONG lam mypy hep kieu, nen `TextIO | Any` van bi bao
+    #    `union-attr`. Khuon nay lay tu `tools/check_mypy.py:146` — cung mot cach
+    #    ba tep `tools/` khac da dung, chu ⛔ khong ha moc banh coc.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
 GOC = Path(__file__).resolve().parent.parent
 #: Dau thay the trong kich ban. Phai khop `agent_ui_v2_*_web_that.js`.
