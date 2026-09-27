@@ -89,6 +89,57 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 
 _(mới nhất ở trên)_
 
+- `2026-09-27` `điều phối` — **UI-3 và UI-2 đã KIỂM và GỘP vào nhánh điều phối.**
+  Ba nghiệm thu trình duyệt thật đều `PASS` sau khi gộp cả hai:
+  UI-0 (15 cổng/15 vị trí/vùng bấm 24px, kéo dây ra 1 cạnh) · UI-3 mobile (4 tab
+  đúng, 7/7 ô khoá) · UI-2 (16/16 `elementFromPoint` trả về chính cổng).
+  165/165 vitest xanh.
+
+  🔴 **Điều phối bắt được MỘT LỖI THẬT mà làn UI-3 tự nhận "chưa chắc":** trên
+  mobile, bấm một node rồi đổi tab thì Inspector **dính cứng** — tab "Công cụ" và
+  "Canvas" vẫn hiện nó, đè lên khung vẽ. Đây là **lỗi kế thừa** từ `CanvasShell`
+  cũ (điều kiện `desktopPanel==='inspector' || mobilePanel==='inspector'`), ⛔
+  không phải do UI-3 gây ra — họ giữ nguyên đúng như yêu cầu. Nó chỉ lộ ra vì đây
+  là **phép kiểm đầu tiên ĐỔI TAB**; mốc nền 27/09 chỉ bắt được nửa trước của nó.
+  ⇒ Bài học: *"tự nhận chưa chắc" là một tín hiệu đáng tiền — phải đi kiểm, đừng
+  gật.*
+
+  ⚠️ **Một phép kiểm cũ phải sửa, và đó là LÀM CHẶT:** `CanvasShell.test.tsx`
+  bấm **tab mobile** trong khi jsdom báo bề rộng 1024 — một trạng thái ⛔ không
+  xảy ra được ngoài đời (thanh tab mobile là `display:none` ở màn rộng). Nay đặt
+  bề rộng 390 thật, và khẳng định thêm điều trước đây không ai giữ: **đổi tab
+  phải TẮT Inspector**.
+
+  ⚠️ **Kịch bản nghiệm thu UI-0 có một lỗi phụ thuộc thứ tự:** nó không đặt khung
+  nhìn, nên chạy sau kịch bản mobile thì thừa hưởng 390px ⇒ `readOnly=true` ⇒ nút
+  "Chạy" `disabled` ⇒ treo 30 giây rồi chết với một thông điệp ⛔ không hề nhắc
+  tới khung nhìn. Đã đặt khung nhìn tường minh. *Một phép kiểm phụ thuộc thứ tự
+  chạy là một phép kiểm sẽ đỏ vì lý do sai.*
+
+- `2026-09-27` `điều phối` — **Phán quyết hai tiêu chí UI-2 tự nhận KHÔNG đạt:**
+
+  | Tiêu chí | Đích | Thật | Phán quyết |
+  |---|---|---|---|
+  | hex cứng trong `canvas.css` | ≤ 25 | **63** (482 trước) | ✅ **CHẤP NHẬN** |
+  | tương phản nền minimap/controls | 3:1 | **1,08:1** (viền 1,45:1) | ❌ **ĐỂ MỞ** |
+
+  **Vì sao chấp nhận 63:** đo lại — **20/63 là ĐỊNH NGHĨA token** (`--x: #hex`);
+  ⛔ không thể định nghĩa một token mà không có literal. Phần còn lại chủ yếu là
+  `#fff` và đen-alpha (`#0009`, `#000c`) cho bóng đổ/lớp phủ. Tiêu chí "≤ 25" của
+  tôi đặt **tuỳ tiện**; ép cho đủ chỉ dẫn tới **lách regex bằng `rgb()`** — mà làn
+  UI-2 đã cố ý ⛔ không làm và báo số thật. 482 → 63 là một cải thiện thật.
+
+  **Vì sao KHÔNG chấp nhận 1,08:1:** `09_TARGET_DESIGN.md` §12 đặt đích **WCAG 2.2
+  AA**, và **1.4.11 (Non-text Contrast)** đòi **3:1** cho ranh giới thành phần giao
+  diện. Viền 1,45:1 ⛔ chưa đạt. Lập luận của UI-2 (*"panel nổi khác đều dựa vào
+  bóng, không dựa vào nền"*) là một lập luận **thiết kế**, ⛔ không phải một phép
+  đo đạt chuẩn. ⇒ Chuyển thành **hạng mục MỞ của UI-10 (trợ năng)**, ⛔ không đánh
+  dấu đã xong. Nếu chủ dự án chấp nhận lệch chuẩn ở chỗ này thì đó là một quyết
+  định sản phẩm và phải ghi ra, ⛔ không im lặng.
+
+  ⚠️ Tôi cũng **đếm sai một lần**: báo 2 khối `@media 640px` trong khi chỉ có **1**
+  — dòng thứ hai là một **chú thích** nhắc tới nó. Lời khai của UI-2 đúng.
+
 - `2026-09-27` `uiN` — **XONG, đã gộp `868f9db2`.** LTT_APPS **16/17 → 0/17** nhãn
   vượt 40 ký tự; các nhóm khác 0/n, không bị đụng. Thêm trường tuỳ chọn `ten_ngan`
   trên `ToolSpec`/`CongCu` để **chính app tự khai**, `_tieu_de` lùi về hành vi cũ
