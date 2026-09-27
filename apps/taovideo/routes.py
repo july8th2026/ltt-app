@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from platform_core.i18n import _ as _t
 from platform_core import phat_media
+from platform_core.storage import CLOUDFLARE_BODY_LIMIT
 import base64 as _base64
 from pathlib import PurePath
 
@@ -43,6 +44,12 @@ def _render(request: Request, user: str, *, error: str = "", jobs=None, status_c
         "csrf_token": issue_csrf_token(request),
         "models": models.options(), "reg_ui": reg_ui,
         "default_model": models.DEFAULT_MODEL, "error": error, "jobs": jobs or [],
+        # Tran tai san di ra template tu MOT nguon (`refs`): JS khong duoc
+        # go lai so, lech mot con so la khach bi chan o trinh duyet voi
+        # con so khac con so server cho.
+        "tran_anh": refs.TRAN_ANH, "tran_video": refs.TRAN_VIDEO,
+        "tran_audio": refs.TRAN_AUDIO, "tran_tong": refs.TRAN_TONG,
+        "tran_byte": TRAN_BYTE_MOT_LAN,
     }
     context.update(extra)
     return templates.TemplateResponse(request, "taovideo.html", context, status_code=status_code)
@@ -265,6 +272,18 @@ def prompt_assist(request: Request, prompt: str = Form(""), camera: str = Form("
 
 
 _CAP = {"image": 20 * 1024 * 1024, "video": 60 * 1024 * 1024, "audio": 20 * 1024 * 1024}
+
+#: Tran BYTE cho MOT lan gui form `/queue` — day KHONG phai tran cua engine.
+#: Cloudflare cat body > 100 MB TRUOC khi ma cua ta chay, nen mot phep cong
+#: byte o server KHONG ngan duoc 413: no chi chay khi request DA vao. Cho duy
+#: nhat co tac dung la JS (`templates/taovideo.html`), nen so nay di ra
+#: template qua render context.
+#: Chua bien 10 %: boundary multipart + cac truong form khac cung tinh vao body.
+#: ⛔ Dung ha TRAN_ANH/TRAN_VIDEO/... de "vua byte": 9 anh that thuong 1-3 MB
+#: moi anh nen di qua form binh thuong; ca xau nhat (9x20+3x60+3x20 = 420 MB)
+#: la ca khong dien hinh, va no duoc xu ly o day chu khong phai bang cach
+#: thu hep tran dem cho MOI khach.
+TRAN_BYTE_MOT_LAN = int(CLOUDFLARE_BODY_LIMIT * 0.9)
 
 
 def _loai_ref(f) -> str:
