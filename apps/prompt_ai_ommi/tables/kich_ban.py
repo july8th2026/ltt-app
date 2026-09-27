@@ -49,7 +49,15 @@ class OmmiStoryboard(Base):
 
 
 class OmmiScene(Base):
-    """Một cảnh trong storyboard.
+    """Một KHUNG HÌNH storyboard — ⛔ KHÔNG phải "cảnh kịch bản" (spec §4.3 S-2).
+
+    ⚠️ Hai thứ trong app này cùng mang chữ "cảnh", và trộn chúng là một con bọ
+    thật đã được phán quyết ở spec §4.3:
+
+      · **cảnh kịch bản** — `ommi_canh`, do AI Director sinh, giữ `prompt` đi ra
+        ngoài (giao bài sang app video). Đó là NGUỒN CHÂN LÝ.
+      · **khung hình** — bảng này, có `storyboard_id`/`position`/`image_key`.
+        `prompt`/`camera` ở đây chỉ là bản SAO phục vụ việc sinh ảnh.
 
     `image_key` trỏ thẳng tới Storage thay vì tới `ommi_resource_variant`: ảnh
     của cảnh do job sinh ra và nằm trong namespace của app Tạo ảnh, không phải
@@ -61,6 +69,14 @@ class OmmiScene(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     storyboard_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    # Khung hinh nay ve cho CANH KICH BAN nao (spec §4.3 S-2).
+    #
+    # `nullable` vi hai ca THAT: khung hinh tao truoc pha 3 khong biet canh nao,
+    # va khach duoc ve mot khung roi moi gan vao canh.
+    #
+    # ⛔ Dung doi thanh `nullable=False`: `services/storyboard.py` tao khung hinh
+    #    ma chua biet canh, va mot cot NOT NULL o day se lam vo duong do.
+    canh_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     title: Mapped[str] = mapped_column(String(200), default="", nullable=False)
     prompt: Mapped[str] = mapped_column(Text, default="", nullable=False)
