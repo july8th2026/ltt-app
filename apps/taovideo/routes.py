@@ -14,7 +14,7 @@ from pathlib import PurePath
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
-from apps.taovideo import cost, models, quotes
+from apps.taovideo import cost, models, quotes, refs
 from apps.taovideo.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -267,6 +267,23 @@ def prompt_assist(request: Request, prompt: str = Form(""), camera: str = Form("
 _CAP = {"image": 20 * 1024 * 1024, "video": 60 * 1024 * 1024, "audio": 20 * 1024 * 1024}
 
 
+def _loai_ref(f) -> str:
+    """content_type -> `image`/`video`/`audio`; nem ValueError neu la kieu.
+
+    Tach rieng vi tran nay dem THEO TUNG LOAI (refs.kiem_tran), nen phai
+    biet loai TRUOC khi doc byte — `/queue` cung goi de gop voi tai san da
+    luu ma khong phai doc file len RAM.
+    """
+    ct = (getattr(f, "content_type", "") or "").lower()
+    if ct.startswith("image/"):
+        return "image"
+    if ct in {"video/mp4", "video/quicktime", "video/webm"}:
+        return "video"
+    if ct.startswith("audio/"):
+        return "audio"
+    raise ValueError(f"Định dạng tham chiếu không hỗ trợ: {f.filename}")
+
+
 def _actual_uploads(*groups) -> list[UploadFile]:
     """Gộp ba input file; bỏ dependency marker khi unit test gọi route trực tiếp."""
     out = []
@@ -291,20 +308,15 @@ async def _luu_refs(u_id: str, files, roles, handles=None, *, copies: int = 1,
     storage = get_storage()
     prepared = []
     actual = [f for f in (files or []) if f and getattr(f, "filename", "")]
-    if len(actual) > 4:
-        raise ValueError(_t('Tối đa 4 file tham chiếu.'))
+    # Phan loai TRUOC khi doc byte: tran engine dem theo tung loai roi tong
+    # (`refs.kiem_tran`), va tu choi som thi khong ngon RAM cho file bi loai.
+    kinds = [_loai_ref(f) for f in actual]
+    refs.kiem_tran(kinds)
     for i, f in enumerate(actual):
         if not f or not getattr(f, "filename", ""):
             continue
         ct = (f.content_type or "").lower()
-        if ct.startswith("image/"):
-            kind = "image"
-        elif ct in {"video/mp4", "video/quicktime", "video/webm"}:
-            kind = "video"
-        elif ct.startswith("audio/"):
-            kind = "audio"
-        else:
-            raise ValueError(f"Định dạng tham chiếu không hỗ trợ: {f.filename}")
+        kind = kinds[i]
         data = await f.read()
         if not data:
             raise ValueError(f"File tham chiếu rỗng: {f.filename}")
@@ -354,13 +366,15 @@ async def _luu_refs(u_id: str, files, roles, handles=None, *, copies: int = 1,
     return groups if grouped else groups[0]
 
 
-#: Tran ref prefill. `taovideo` von cho toi da 4 tai san moi job
-#: (`_luu_refs` + `_saved_refs_for_user`), con ben giao bai cho toi 9 anh. Hai
-#: tran KHAC NHAU va day la cho chung gap nhau: ta giu tran 4 cua app nay
-#: (app `lifecycle="released"`, doi tran la doi hanh vi cho khach dang dung),
-#: va tra ve SO anh bi bo (`bo_qua`) de JS noi ro voi khach. Cat am tham la
-#: dung con bo N-1 ma ca pha nay dang chua.
-TRAN_REF_PREFILL = 4
+#: Tran ref prefill = tran ANH cua engine. Duong giao bai chi xu ly ANH
+#: (`kind == "image"` voi `url` dang `data:`), nen o day dung dung
+#: `refs.TRAN_ANH` — KHONG phai `refs.TRAN_TONG`: 9 anh la tran cua loai
+#: anh, con 12 la tran cua ca ba loai cong lai.
+#:
+#: (Truoc 27/09 cho nay giu so 4 rieng cua app va CAT bot anh ben giao bai.
+#: Nay hai ben cung mot nguon: `refs.TRAN_ANH`. Van tra `bo_qua` de JS noi
+#: ro voi khach ve video/audio — chung mang URL http, khong tu tai ve.)
+TRAN_REF_PREFILL = refs.TRAN_ANH
 
 #: Duoi tep theo content-type — ba kieu nay khop `allowed_types` duoi day.
 #: KHONG dung `.bin`: `upload_sessions.promote()` lay duoi cua `filename` lam
@@ -463,8 +477,12 @@ def _saved_refs_for_user(user_id: str, keys: list[str]) -> list[dict]:
     requested = list(dict.fromkeys(str(k) for k in (keys or [])))
     if not requested:
         return []
-    if len(requested) > 4:
-        raise ValueError(_t('Tối đa 4 tài sản đã lưu.'))
+    # Chan som theo TONG truoc khi tra CSDL; tran theo tung loai kiem lai o
+    # duoi, khi da biet `kind` thuc cua tung key.
+    if len(requested) > refs.TRAN_TONG:
+        raise ValueError(
+            _t('Tối đa {n} tài sản tham chiếu cho một video.').format(
+                n=refs.TRAN_TONG))
     data = _jobs_cua_toi_for_user(user_id)
     allowed = {a["storage_key"]: a for a in data}
     from platform_core.storage import get_storage
@@ -483,6 +501,7 @@ def _saved_refs_for_user(user_id: str, keys: list[str]) -> list[dict]:
                          else f"reference_{kind}")
         clean["handle"] = str(clean.get("handle") or "")[:32]
         out.append(clean)
+    refs.kiem_tran(a.get("kind") or "image" for a in out)
     return out
 
 
@@ -552,9 +571,10 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
     try:
         saved_refs = _saved_refs_for_user(u.id, saved_ref_keys)
         actual_files = _actual_uploads(ref_images, ref_videos, ref_audios)
-        new_count = len(actual_files)
-        if len(saved_refs) + new_count > 4:
-            raise ValueError(_t('Tổng tài sản đã lưu và file mới không được vượt quá 4.'))
+        # Gop HAI nguon vao mot phep dem: tran engine ap cho tong tai san
+        # cua mot video, khong phan biet file moi hay tai san da luu.
+        refs.kiem_tran([r.get("kind") or "image" for r in saved_refs]
+                       + [_loai_ref(f) for f in actual_files])
     except ValueError as exc:
         return _render(request, user, error=str(exc), jobs=_jobs_cua_toi(request), status_code=400)
     has_video = any((getattr(f, "content_type", "") or "").lower() in
@@ -623,11 +643,11 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
         jobs = quotes.submit_batch(
             db, user_id=u.id, quote=verified_quote,
             base_params=base_params, fixed_seed=fixed_seed,
-            variant_refs=[saved_refs + refs for refs in staged_ref_groups],
+            variant_refs=[saved_refs + nhom for nhom in staged_ref_groups],
         )
-        for job, refs in zip(jobs, staged_ref_groups):
+        for job, nhom in zip(jobs, staged_ref_groups):
             final_refs = list(saved_refs)
-            for index, ref in enumerate(refs):
+            for index, ref in enumerate(nhom):
                 session = upload_sessions.owned(
                     db, session_id=ref["upload_id"], user_id=u.id,
                     app_slug=MANIFEST.slug)

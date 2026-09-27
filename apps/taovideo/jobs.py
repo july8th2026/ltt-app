@@ -108,8 +108,10 @@ def _reference_specs(params: dict, owner_id: str, storage) -> list[dict]:
                       "role": str(item.get("role") or
                                   ("reference_image" if kind == "image" else f"reference_{kind}")),
                       "handle": str(item.get("handle") or "")})
-    if len(clean) > 4:
-        raise ValueError(_t('Một video chỉ nhận tối đa 4 tài nguyên tham chiếu.'))
+    # ⭐ Tran o WORKER khong bao gio duoc thap hon tran o cua: cho nay chay
+    # SAU khi `/queue` da giu credit, nen mot so nho hon o day nghia la
+    # khach bi tru tien roi job chet. Cung nguon voi routes: `refs`.
+    refs.kiem_tran(c["kind"] for c in clean)
     return clean
 
 

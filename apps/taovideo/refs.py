@@ -14,7 +14,67 @@ from __future__ import annotations
 import base64
 import re
 
+from platform_core.i18n import _ as _t
+
 MAX_INLINE_BYTES = 8 * 1024 * 1024
+
+#: ===== TRAN TAI SAN THAM CHIEU — MOT NGUON CHAN LY =====================
+#: TRAN CUNG CUA ENGINE Seedance 2.0, khong phai lua chon cua app. Nguyen van
+#: ban goc (kho CHI DOC) `D:/BOT GEMINI/app/modules/seedance_video/manifest.py` dong 30:
+#:
+#:     "max_ref_images": 9, "max_ref_videos": 3, "max_ref_audio": 3,
+#:     "max_ref_total": 12,  # Seedance 2.0 hard limits
+#:
+#: SAU cho cuong che deu doc tu day, khong cho nao go lai so:
+#:   `routes._luu_refs` · `routes.TRAN_REF_PREFILL` · `routes._saved_refs_for_user`
+#:   `routes.queue` · `jobs._reference_specs` (WORKER) · JS trong
+#:   `templates/taovideo.html` (nhan qua render context / `data-tran-*`).
+#:
+#: ⭐ TRAN O WORKER KHONG BAO GIO DUOC THAP HON TRAN O CUA.
+#: `jobs._reference_specs` chay SAU khi `/queue` da giu credit, nen mot tran
+#: thap hon o do nghia la khach bi TRU TIEN roi job chet o worker — xau hon
+#: han viec tu choi ngay o cua.
+#:
+#: ⛔ KHONG "hoa giai" voi `platform_core.public_api.invocation
+#: .TRAN_MEDIA_MOT_THAM_SO = 8`. HAI CUA, HAI SO, CA HAI DUNG:
+#:   · Public API qua `image_keys` (kieu `image[]`) => 8. Tran NEN TANG, vi moi
+#:     phan tu la mot luot tra CSDL chay TRUOC khi co bat ky khoan tien nao.
+#:     Khai o `apps/taovideo/manifest.py` dong 201, cuong che o
+#:     `server/api/jobs.py`. KHONG phai tran cua engine.
+#:   · `refs` (kieu json) va `saved_ref_keys` => 9/3/3/12 duoi day. Tran ENGINE.
+TRAN_ANH = 9
+TRAN_VIDEO = 3
+TRAN_AUDIO = 3
+TRAN_TONG = 12
+
+#: Suy ra tu bon hang so tren — KHONG phai ban khai thu hai.
+TRAN_THEO_LOAI = {"image": TRAN_ANH, "video": TRAN_VIDEO, "audio": TRAN_AUDIO}
+
+
+def kiem_tran(kinds) -> dict:
+    """Cuong che tran engine: TUNG LOAI truoc, roi TONG. Tra ve dict dem.
+
+    `kinds` la iterable cac chuoi `image`/`video`/`audio`. Gia tri la khac
+    duoc dem nhu `image` (cung quy uoc voi `routes`/`jobs`: role/kind la khong
+    ro thi ve anh tham chieu).
+
+    Nem `ValueError` voi thong diep neu DUNG con so cua loai bi vuot — mot cau
+    chung ("qua nhieu tai san") khong noi cho khach biet phai bo thu gi.
+    """
+    dem = {"image": 0, "video": 0, "audio": 0}
+    for k in kinds:
+        key = str(k or "image").strip()
+        dem[key if key in dem else "image"] += 1
+    if dem["image"] > TRAN_ANH:
+        raise ValueError(_t('Tối đa {n} ảnh tham chiếu.').format(n=TRAN_ANH))
+    if dem["video"] > TRAN_VIDEO:
+        raise ValueError(_t('Tối đa {n} video tham chiếu.').format(n=TRAN_VIDEO))
+    if dem["audio"] > TRAN_AUDIO:
+        raise ValueError(_t('Tối đa {n} audio tham chiếu.').format(n=TRAN_AUDIO))
+    if sum(dem.values()) > TRAN_TONG:
+        raise ValueError(
+            _t('Tối đa {n} tài sản tham chiếu cho một video.').format(n=TRAN_TONG))
+    return dem
 
 VALID_IMAGE_ROLES = {"reference_image", "first_frame", "last_frame", "mask"}
 _ROLE_REMAP = {"reference": "reference_image", "character": "reference_image",
