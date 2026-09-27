@@ -12,6 +12,90 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-27 (khuya, tiếp) — 🔴 B8: dải CHỮ GỐC ⛔ không đổi trục sang khung RA
+
+Chủ dự án hỏi: *"Tính năng xoá/làm mờ text trong video gốc nó vận hành như thế nào?
+Ta đang lắp nó ở bước nào GĐ1 hay GĐ2? Nó phải xử lý TRƯỚC khi thêm text phụ đề
+mới, nếu không sẽ xung đột vì làm sau thì sẽ xoá phụ đề mới."*
+
+### Câu trả lời: xung đột ấy ⛔ KHÔNG thể xảy ra — nhưng cạnh nó có bug THẬT
+
+| bước | ở đâu | làm gì |
+|---|---|---|
+| xoá/làm mờ chữ cũ | **GĐ1** (`loc_cat_noi(vung=…)`) | nung vào **pixel**, toạ độ **NGUỒN**, **trước** `concat` |
+| đốt phụ đề mới | **GĐ2**, cuối lớp nhìn | `cắt → khung → điểm ảnh → logo → chữ → **phụ đề** → tốc độ` |
+
+⇒ Thứ tự do **chính đường ống** bảo đảm, ⛔ không nhờ một quy ước trong cùng chuỗi.
+Và có cơ chế thứ hai: loại vùng `danh_dau_phu_de` mang **nghĩa ÂM** (*đừng vẽ phụ đề
+ở đây*); `phu_de.vi_tri_tu_dong` đọc nó rồi **dời** phụ đề mới.
+
+### 🔴 Bug: `dai_phu_de_goc` là phân số khung NGUỒN, `margin_v` tính bằng khung RA
+
+Khi hình học GĐ2 cắt theo **chiều dọc**, hai phân số ⛔ không bằng nhau. Đo (nguồn
+1920×1080, dải chữ gốc 0,85–0,95, `da_che=True`):
+
+```
+hình học GĐ2                    margin_v CŨ   đúng phải   lệch
+⛔ không hình học                      54          54        0
+khung 9:16 / 4:5 (cắt BỀ RỘNG)         54          54        0
+cat_khung nửa TRÊN                     27           0      +27 px
+cat_khung nửa DƯỚI                     27          54      −27 px
+khung 1:1 nen_mo (THÊM VIỀN)           54         268     −214 px
+```
+
+⭐ **Bằng chứng sắc nhất: HAI cửa sổ cắt NGƯỢC NHAU cho CÙNG `margin_v` = 27**, khi
+đáp án là 0 và 54. Tức phép tính ⛔ **không hề đọc** cửa sổ cắt — đúng họ `B6`
+(*một toạ độ tính ở khung này dùng ở khung khác*).
+
+Và `nen_mo` lệch **214 px** — ca nặng nhất, vì nó **thêm viền** chứ ⛔ không chỉ cắt.
+Đó là vế tôi đã đánh dấu "dễ quên nhất" **trước khi** đo, và nó đúng là vế tệ nhất.
+
+⚠️ **Mất mát khách THẤY, nhưng ⛔ không phải lỗi tiền**: chữ cũ **vẫn bị làm mờ**
+(làm mờ nung ở GĐ1 trên pixel nguồn) ⇒ ⛔ không chữ cũ nào đọc lại được. Cái sai là
+**vị trí phụ đề mới** — ở ca "nửa dưới" nó đặt **dưới** vệt mờ thay vì phủ lên, nên
+khách thấy một vệt mờ lơ lửng trên chữ.
+
+### Bản sửa: phép TÍNH ở `hinh_hoc`, phép ĐỔI TRỤC ở giai đoạn
+
+- `hinh_hoc.doi_phan_so_doc(buoc, cao_nguon, y)` — phân số dọc NGUỒN → RA, hoặc
+  `None` khi điểm đã bị cắt mất. ⭐ Nó chỉ đọc **đầu ra** của `khung_bien_tap`
+  (`cat`/`phong`/`khung`/`ra`), ⛔ không đọc `ho_so` — nên ⛔ không dựng chỗ thứ hai
+  khai cùng một điều. Hình học là chuỗi **ba** bước và mọi quyết định của nó đã nằm
+  trong `khung_bien_tap`.
+- `phu_de.dai_len_khung_ra` lấy **GIAO** của dải với khung ra, ⛔ không "kẹp cho
+  gần": dải bị cắt **một phần** thì phần còn lại **vẫn có** chữ gốc.
+- `phu_de.doi_truc_dai_phu_de` — vỏ bọc, trả bản **MỚI**. ⛔ Không sửa tại chỗ: cùng
+  `ho_so_pd` còn đi vào `van_tay` và vào báo cáo.
+- `giai_doan_hinh_anh` gọi nó **ngay trước** `viet_tep_ass` — đó là chỗ **duy nhất**
+  biết cả hai khung cùng lúc.
+- Dải mất **hẳn** ⇒ bỏ khoá ⇒ `vi_tri_tu_dong` giữ vị trí preset. ⛔ Không trả một
+  dải ở `0`: thế sẽ đẩy chữ lên **đỉnh** khung — một bản sửa sai theo hướng khác.
+
+### Đo
+
+`test_4891` — 6 phép. **5/5 phép tiêm làm nó ĐỎ**: bỏ hẳn phép đổi trục · `nen_mo`
+bị đọc như một phép cắt · bỏ qua cửa sổ `cat` · `_loc_vung` bỏ qua vùng đánh dấu
+(làm `da_che=True` thành lời nói dối) · GĐ2 nhận `vung` (mở lại đúng xung đột chủ dự
+án lo).
+
+⭐ Bài chốt bằng **tính chất** chứ ⛔ không bằng hằng số: *hai cửa sổ cắt ngược nhau
+phải cho hai số khác nhau*. Một bài chốt `0` và `54` sẽ xanh cả khi ai đó đổi **cả
+hai** theo cùng một hướng sai.
+
+### Và nó xác nhận thiết kế B7
+
+Bug này chỉ nổ khi **cùng lúc** có `danh_dau_phu_de` + hình học cắt dọc +
+`che_do=tu_dong`. ⇒ Đúng loại mà *"một job một tính năng"* ⛔ **không bao giờ** tìm
+thấy, và T1a (bật hết) thì thấy. Ba con bọ đắt nhất hôm nay — `T2`, `T17`, `B6` — và
+nay `B8`, **cả bốn đều là lỗi hợp thành**.
+
+### Một bài học về job đối chứng
+
+`asvr_7e55f87c` kết thúc `error`: *"Worker mất kết nối giữa chừng (job mồ côi)"*. Do
+chính phiên tôi chạy bộ nghiệm thu **nặng** song song với một job thật. ⇒ Cùng họ với
+*"deploy phá phép đo đang bay"*: **hoạt động của chính tôi đã phá phép đo của chính
+tôi**. Một job nghiệm thu cần một cửa sổ **không có lệnh nặng nào khác**.
+
 ## 2026-09-27 (khuya, tiếp) — ⭐ B6: CHUẨN HOÁ GĐ1/GĐ2 — một trục thời gian
 
 Chủ dự án: *"Triển khai kỹ #6"* → *"Cần nghiên cứu logic các bước của GĐ2 cho

@@ -199,3 +199,78 @@ def khung_bien_tap(rong: int, cao: int, ho_so: dict) -> dict:
                 hien_w, hien_h = nw, nh
 
     return {"cat": cat, "phong": phong, "khung": khung, "ra": (hien_w, hien_h)}
+
+
+def doi_phan_so_doc(buoc: dict, cao_nguon: int, y: float) -> float | None:
+    """Phan so DOC tren khung NGUON -> phan so doc tren khung RA. `None` = da bi
+    cat mat.
+
+    🔴 **Vi sao ham nay ton tai (B8, 27/09).** `phu_de.dai_phu_de_goc` ghi dai chu
+       goc bang phan so khung NGUON (khach ve tren nguon). `phu_de.vi_tri_tu_dong`
+       lai tinh `margin_v` voi chieu cao khung **RA**. Khi GD2 cat theo chieu DOC
+       (`cat_khung`, hay `khung` lam khung RONG ra tu mot nguon doc), hai phan so
+       ⛔ khong bang nhau.
+
+       Do 27/09 (nguon 1920x1080, dai chu goc 0,85-0,95):
+
+         hinh hoc GD2                  margin_v tinh   dung phai   lech
+         ⛔ khong hinh hoc                     54          54        0
+         khung 9:16 / 4:5 (cat BE RONG)        54          54        0
+         khung 16:9 tu nguon DOC               30           0      +30 px
+         cat_khung nua TREN                    27           0      +27 px
+         cat_khung nua DUOI                    27          54      -27 px
+
+       ⭐ Hai hang cuoi la bang chung sac nhat: HAI cua so cat **nguoc nhau** cho
+          CUNG mot `margin_v`, trong khi dap an la 0 va 54. Tuc phep tinh ⛔ khong
+          he biet co cua so cat — dung ho loi `B6` (*mot toa do tinh o khung nay
+          dung o khung khac*).
+
+    ⭐ **Ham nay o `hinh_hoc` chu ⛔ khong o `phu_de`, va do la co y.** Hinh hoc la
+       mot chuoi BA buoc (`cat_khung` -> `zoom` -> `khung` cat/nen_mo) va moi
+       quyet dinh cua chuoi ay da nam trong `khung_bien_tap`. Tinh lai o noi khac
+       la dung hai cho khai MOT su that — thu ma kho nay da tra gia nhieu lan.
+       Nen ham nay chi doc **dau ra** cua `khung_bien_tap`, ⛔ khong doc `ho_so`.
+
+    ⚠️ `phong` la mot phep `scale` nen no GIU phan so; `nen_mo` thi **them vien**
+       nen no DOI phan so — va do la ca de quen nhat.
+    """
+    cao_nguon = int(cao_nguon or 0)
+    if cao_nguon <= 0:
+        return None
+    py = float(y) * cao_nguon
+    cao = float(cao_nguon)
+
+    cat = buoc.get("cat")
+    if cat:
+        _, ch, _, cy = (float(v) for v in cat)
+        py -= cy
+        cao = ch
+        if not (0.0 <= py <= cao):
+            return None
+
+    phong = buoc.get("phong")
+    if phong:
+        ph = float(phong[1])
+        if cao <= 0:
+            return None
+        py *= ph / cao
+        cao = ph
+
+    kh = buoc.get("khung")
+    if kh and kh.get("cach") == "cat":
+        _, nh, _, ny = (float(v) for v in kh["cat"])
+        py -= ny
+        cao = nh
+        if not (0.0 <= py <= cao):
+            return None
+    elif kh and kh.get("cach") == "nen_mo":
+        fh = float(kh["hinh"][1])
+        nen_h = float(kh["nen"][1])
+        vt_y = float(kh["vi_tri"][1])
+        if cao <= 0:
+            return None
+        py = py * (fh / cao) + vt_y
+        cao = nen_h
+
+    return None if cao <= 0 else py / cao
+
