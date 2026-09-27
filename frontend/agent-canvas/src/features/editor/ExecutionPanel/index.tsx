@@ -7,6 +7,7 @@ import type { CanvasPage, RunV3, SoSanhRunV3, Workflow } from '../../../workflow
 import { nhanNode, type BangDinhNghia } from '../graph'
 import type { PhaLuu, NganDesktop } from '../kieu'
 import { BaoGiaTruocKhiChay } from './BaoGiaTruocKhiChay'
+import { DuyetNguoi } from './DuyetNguoi'
 
 type Props = {
   moNgan: (ngan: NganDesktop) => void
@@ -86,6 +87,9 @@ export function ExecutionPanel(p: Props) {
       disabled={p.readOnly||!p.workflow||!p.page.nodes.length||p.phase==='saving'||p.dangGui}
       onClick={p.chayWorkflow}>{p.dangGui?'Đang gửi…':'Chạy ngay'}</button>}
     {p.runDaXong&&<button onClick={p.taoBanChayMoi}>Tạo bản chạy mới</button>}
+    {/* Task UI-8a — TRÊN dòng thời gian: đây là hành động khẩn, không phải
+        một dòng lịch sử để cuộn tới. */}
+    <DuyetNguoi run={p.run} tenBuoc={tenBuoc} thamSo={thamSo}/>
     <RunV3Panel run={p.run} onCancel={p.huyRun} onChayLaiTu={p.chayLaiTuNode}
       tenBuoc={tenBuoc} thamSo={thamSo} dauRa={dauRa}/>
     {p.runError && <span className="run-error" role="alert">{p.runError}</span>}
