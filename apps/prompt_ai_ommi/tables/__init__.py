@@ -15,6 +15,11 @@ from apps.prompt_ai_ommi.tables.kich_ban import (
     OmmiStoryboard, OmmiScene, OmmiSceneVersion)
 from apps.prompt_ai_ommi.tables.binding import OmmiBinding
 from apps.prompt_ai_ommi.tables.handoff import OmmiHandoff
+from apps.prompt_ai_ommi.tables.brief import OmmiBrief
+from apps.prompt_ai_ommi.tables.canh import OmmiCanh
+from apps.prompt_ai_ommi.tables.iteration import OmmiIteration
+from apps.prompt_ai_ommi.tables.nhan_vat import (
+    OmmiBackground, OmmiCharacter, OmmiFaceEmbedding, OmmiOutfit, OmmiPose)
 
 __all__ = [
     "RESOURCE_KINDS", "OmmiResource", "OmmiResourceVariant", "OmmiTag",
@@ -22,4 +27,7 @@ __all__ = [
     "OmmiResourceUsage", "OmmiMetaPrompt", "OmmiPromptSnippet",
     "OmmiPromptVersion", "OmmiStyle", "OmmiStoryboard", "OmmiScene",
     "OmmiSceneVersion", "OmmiBinding", "OmmiHandoff",
+    "OmmiBrief", "OmmiCanh", "OmmiIteration",
+    "OmmiBackground", "OmmiCharacter", "OmmiFaceEmbedding", "OmmiOutfit",
+    "OmmiPose",
 ]
