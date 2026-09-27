@@ -41,8 +41,12 @@ thật ngày 26/09 (`12_PLAN_TRIEN_KHAI.md` mục 2, tiến trình mồ côi b�
 rào chắn); (E) warmup có thể chạy sai card trên máy có iGPU — đúng lớp sự cố
 `vulkan_device.py` đã từng vá một lần (commit `7cde3c9d`); (H) egress R2 +
 RAM đọc toàn bộ MP4 trên **mọi** job khách là một khoản phí thật, không phải
-lỗi logic đơn thuần. ISSUE L **vẫn CHƯA VÁ** (nằm ở `platform_core/job_runner.py`,
-ngoài phạm vi app, việc của chủ khu khác — `12_PLAN_TRIEN_KHAI.md` mục 4).
+lỗi logic đơn thuần. ISSUE L **VÁ MỘT PHẦN 27/09** (commit `fbdc7a3c`, nhánh
+này, **CHƯA gộp `main`**): tiến trình mồ côi bị `taskkill /T /F` cả cây con
+trước `os._exit`, khoá bằng 4 test tiêm lỗi. ⛔ Rò **temp dir cỡ GB vẫn CHƯA
+VÁ** — cố ý để lại cho một sweeper định kỳ, không phải đường thoát khẩn (xem
+`09_FINAL_ARCHITECTURE.md` mục 1). Nằm ở `platform_core/job_runner.py`
+(`12_PLAN_TRIEN_KHAI.md` mục 4).
 
 ## 4. Tối ưu giả đã bị gỡ
 
@@ -246,11 +250,16 @@ CHƯA CHẠY trong phiên viết tài liệu này").
 
 ## 24. P0/P1 còn lại
 
-- 🔴 **ISSUE L** (P0 theo rủi ro): `job_runner._het_gio` dùng `os._exit(3)` ⇒
-  bỏ qua `finally` ⇒ rò temp cỡ GB + tiến trình engine mồ côi giữ GPU. Nằm ở
-  `platform_core/job_runner.py` — **dùng chung nhiều app**, ngoài phạm vi sửa
-  của nhánh này, cần chủ khu `platform_core` xử lý. `12_PLAN_TRIEN_KHAI.md`
-  mục 4.
+- 🟡 **ISSUE L — VÁ MỘT PHẦN** (còn lại là P1, hạ từ P0: nửa nguy hiểm hơn —
+  tiến trình mồ côi tranh VRAM qua `reclaim_orphans` — đã vá 27/09, commit
+  `fbdc7a3c`, nhánh này, **CHƯA gộp `main`**): `_het_gio` giờ `taskkill /T /F`
+  cây tiến trình con TRƯỚC `os._exit(3)`, khoá bằng 4 test tiêm lỗi (353
+  passed / 1 skipped, `job_runner`). ⛔ Rò **temp cỡ GB vẫn CHƯA VÁ** — cố ý
+  để lại cho một sweeper định kỳ, không phải đường thoát khẩn (`rmtree` trên
+  thư mục GB có thể chặn trên tệp mà handler treo đang giữ). Nằm ở
+  `platform_core/job_runner.py` — **dùng chung nhiều app**; phần đã vá cần
+  chủ khu `platform_core` xác nhận và gộp `main`, phần temp dir vẫn cần chủ
+  khu xử lý. `12_PLAN_TRIEN_KHAI.md` mục 4.
 - `routes.py`: 10 phát hiện `ruff` cũ + 2 chuỗi tiếng Anh chưa dịch — P2, chưa
   vá, ngoài phạm vi nhánh.
 - `tools/check_i18n.py` đếm cả chuỗi trong `log.*` ⇒ báo tăng oan — lỗi công

@@ -22237,3 +22237,41 @@ lỗi *hai trạng thái gộp thành một*.
 
 ⛔ **KHÔNG CÓ MẪU (vĩnh viễn với bộ test hiện tại)**: portrait · VFR · nguồn
 1080p+ · clip mặt người · clip nhiễu. 4 clip đều ~576p ngang CFR.
+
+## 2026-09-27 — ISSUE L (`job_runner` mồ côi giữ GPU): vá đúng nửa nguy hiểm hơn
+
+`platform_core/job_runner.py::_het_gio` thoát bằng `os._exit(3)` khi job vượt
+giờ. `os._exit` vẫn **ĐÚNG**, không đổi: handler chạy code C/CUDA giữ GIL,
+không có cách đáng tin dừng nó từ Python. Sai ở chỗ khác — engine là
+`subprocess.Popen`, **không** phải con `multiprocessing`, nên nó sống sót
+`os._exit` và thành **mồ côi, vẫn giữ GPU**.
+
+⭐ **Vì sao đáng chạm mã dùng chung `platform_core/` thay vì để ngoài phạm vi
+app**: `gpu_lease.reclaim_orphans` xoá lease **ngay khi job kết thúc**, không
+chờ nhịp đập. Chuỗi thật: `_het_gio` đánh dấu job failed → `os._exit` → con
+VẪN giữ GPU → `reclaim_orphans` thấy "job đã kết thúc" → xoá lease NGAY → hệ
+thống tin card TRỐNG → nhận job mới → tranh VRAM với mồ côi. Đó đúng là cuộc
+đua mà `UniqueConstraint` của `GpuLease` sinh ra để chặn — mồ côi vô hình với
+lease vì nó không phải job. Quan sát thật 26/09: một `realesrgan-ncnn-vulkan.exe`
+mồ côi giữ GPU 100 % trong khi hệ thống coi card là rảnh
+(`docs/UPSCALE_V2_CORRECTION/12_PLAN_TRIEN_KHAI.md` mục 2).
+
+Vá (commit `fbdc7a3c`, nhánh `claude/upscale-video-v2-correction-5fa61a`,
+**CHƯA gộp `main`**): thêm `_giet_cay_tien_trinh_con` —
+`taskkill /T /F /PID <os.getpid()>` (stdlib thuần; `/T` giết cả cây con trong
+MỘT lệnh, không tự viết phép duyệt cây), bounded 10 s, không bao giờ ném — gọi
+TRƯỚC `os._exit(3)`, không thay nó. 4 test mới khoá thứ tự (giết con trước
+`_exit`) + đích danh pid + never-raise; tiêm lỗi (đảo thứ tự ⇒ đỏ, nhắm sai pid
+⇒ đỏ). 353 passed / 1 skipped trên 14 tệp `job_runner`.
+
+⛔ **Không overclaim**: chỉ nửa "tiến trình mồ côi" được vá. **Thư mục temp cỡ
+GB vẫn rò** — `os._exit` vẫn bỏ qua `finally` nên `shutil.rmtree(tmp)` không
+chạy. Cố ý để lại: dọn temp mồ côi thuộc một sweeper định kỳ, không phải đường
+thoát khẩn — `rmtree` trên thư mục GB có thể chặn trên tệp mà handler treo
+đang giữ, biến MỘT tiến trình treo thành HAI. Vẫn là khuyết tật đã biết, chưa
+có chủ.
+
+Cập nhật docs: `00_CURRENT_TRUTH.md` (ISSUE L + bảng phán quyết),
+`09_FINAL_ARCHITECTURE.md` (mục "hai rò rỉ"), `10_FINAL_SCORECARD.md` (hàng
+Reliability 55→65/100), `12_PLAN_TRIEN_KHAI.md` (mục 4), `13_TRA_LOI_27_CAU.md`
+(câu 3, 24).

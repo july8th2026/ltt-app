@@ -15,6 +15,12 @@
 | Bộ đo | dựng xong, `--dry-run` chạy được | `48e779a0` |
 | Tài liệu | 12 báo cáo + gỡ **75** lời khai SAI khỏi docs cũ | `2f6c7f85`, `6d7db805` |
 
+> ⚠️ **ISSUE L (tiến trình mồ côi) đã vá 27/09** (commit `fbdc7a3c`) — nhưng đó
+> là một sửa **RIÊNG, SAU** Phase C, ở `platform_core/job_runner.py` (dùng
+> chung, ngoài phạm vi app `upscalevideo`), **không** đi qua bảng trên và
+> **CHƯA gộp `main`**. Nửa "temp dir" của cùng khuyết tật vẫn mở. Chi tiết ở
+> mục 4 dưới.
+
 ## 2. 🟢 Cửa sổ GPU ĐÃ MỞ (26/09, ~17:4x)
 
 Chủ dự án dừng bot GEMINI. Còn lại **một tiến trình `realesrgan` MỒ CÔI**
@@ -50,9 +56,18 @@ chỉ còn khả năng cache OS/driver, và đó là thứ phải **ĐO** chứ 
 
 ## 4. Còn hở, đã biết, chưa vá
 
-- 🔴 **ISSUE L**: `job_runner._het_gio` dùng `os._exit(3)` ⇒ bỏ qua `finally` ⇒
-  rò temp cỡ GB + **tiến trình engine mồ côi giữ GPU**. Hôm nay đã chứng kiến
-  đúng ca này. Nằm ở `platform_core/` (dùng chung) ⇒ việc riêng, cần chủ khu.
+- 🟡 **ISSUE L — VÁ MỘT PHẦN** (27/09, commit `fbdc7a3c`, nhánh này, **CHƯA gộp
+  `main`**): `_het_gio` giờ `taskkill /T /F` cây tiến trình con TRƯỚC
+  `os._exit(3)` ⇒ nửa nguy hiểm hơn — **tiến trình engine mồ côi giữ GPU** —
+  đã hết. Lý do đáng vá dù nằm ở `platform_core/`: `gpu_lease.reclaim_orphans`
+  xoá lease ngay khi job kết thúc, không chờ nhịp đập, nên mồ côi tái lập đúng
+  cuộc đua mà `UniqueConstraint` của `GpuLease` sinh ra để chặn — xem
+  `00_CURRENT_TRUTH.md` ISSUE L, `09_FINAL_ARCHITECTURE.md` mục 2. ⛔ **Rò temp
+  cỡ GB — VẪN CHƯA VÁ**: `os._exit` vẫn bỏ qua `finally` nên
+  `shutil.rmtree(tmp)` không chạy; cố ý để lại cho một sweeper định kỳ, không
+  cho đường thoát khẩn (`rmtree` trên thư mục GB có thể chặn trên tệp mà
+  handler treo đang giữ, biến một tiến trình treo thành hai). Nằm ở
+  `platform_core/` (dùng chung) ⇒ phần còn lại vẫn là việc riêng, cần chủ khu.
 - `routes.py`: 10 phát hiện `ruff` cũ + 2 chuỗi chưa dịch EN.
 - `tools/check_i18n.py` đếm cả chuỗi trong `log.*` ⇒ báo tăng oan.
 
