@@ -22383,3 +22383,53 @@ msgstr "Client Secret"
 
 msgid "JSON khoá dịch vụ"
 msgstr "Service account JSON key"
+
+# -- Mau workflow (lan UI-9, 28/09/2026) --
+# Tu vung: template (mau) / Use this template (dung mau nay).
+# ⛔ khong 'blueprint', 'preset': ba tu do noi ve mot thu KHONG doi
+#    duoc, con mot mau o day mo ra thanh workflow SUA DUOC cua khach.
+
+msgid "Sinh ảnh nhanh"
+msgstr "Quick image"
+
+msgid "Ý tưởng thành video"
+msgstr "Idea to video"
+
+msgid "Viết rồi đọc thành giọng nói"
+msgstr "Write, then read aloud"
+
+msgid "Bấm Chạy là có ngay một tấm ảnh từ một câu mô tả. Mẫu đơn giản nhất để làm quen với Canvas."
+msgstr "Press Run and you get an image from a single description. The simplest template for getting to know the Canvas."
+
+msgid "Một câu mô tả ⇒ ảnh ⇒ video ngắn ⇒ lồng tiếng ⇒ ghép lại thành một video hoàn chỉnh. Bốn bước AI nối liền — luồng đầy đủ nhất trong danh mục này."
+msgstr "One description becomes an image, a short video, a voice-over, and then a finished video. Four AI steps in a row — the most complete flow in this catalogue."
+
+msgid "AI viết một đoạn văn bản theo yêu cầu, rồi chuyển thẳng thành một bản ghi âm giọng đọc. Hai bước, rẻ, dùng lại được cho mọi chủ đề chỉ bằng cách sửa câu mô tả."
+msgstr "AI writes a passage to your brief, then turns it straight into a voice-over recording. Two steps, cheap, and reusable for any topic just by editing the description."
+
+msgid "Một tấm ảnh minh hoạ đẹp cho ý tưởng của bạn — sửa mô tả này rồi bấm Chạy thử."
+msgstr "A nice illustration for your idea — edit this description, then press Test run."
+
+msgid "Ảnh mở đầu cho video của bạn — sửa mô tả cảnh ở đây."
+msgstr "The opening image for your video — edit the scene description here."
+
+msgid "Đây là lời dẫn cho video của bạn — sửa nội dung này rồi chọn giọng đọc ở tab Cấu hình."
+msgstr "This is the script for your video — edit the wording, then pick a voice on the Settings tab."
+
+msgid "Biến ảnh trên thành một đoạn video ngắn, chuyển động mượt, camera tĩnh."
+msgstr "Turn the image above into a short video with smooth motion and a static camera."
+
+msgid "Dùng mẫu này"
+msgstr "Use this template"
+
+msgid "Chưa có mẫu nào."
+msgstr "There are no templates yet."
+
+msgid "Mở một mẫu ra là một workflow thật của bạn — sửa được ngay, không cần dựng từ đầu."
+msgstr "Opening a template gives you a real workflow of your own — editable straight away, with nothing to build from scratch."
+
+msgid "Không tạo được workflow từ mẫu này. Thử lại, hoặc tải lại trang."
+msgstr "Could not create a workflow from this template. Try again, or reload the page."
+
+msgid "Ước"
+msgstr "Est."
