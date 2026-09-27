@@ -74,3 +74,5 @@ test_74_smoke_playwright.py::pytestmark
 test_821_unaccent_tim_kiem_tieng_viet.py::pg
 test_826_chatltt_tim_doan.py::pg_engine
 test_b3_do_dac_mot_lan.py::test_b3_giai_doan1_mot_video
+test_lan_a_bien_ngoai_media_am_thanh_chep_loi.py::_video_tieng_ngan_hon_hinh
+test_lan_a_bien_ngoai_media_am_thanh_chep_loi.py::test_f0_ly_do_RONG_chi_duoc_nghia_la_DA_DO
