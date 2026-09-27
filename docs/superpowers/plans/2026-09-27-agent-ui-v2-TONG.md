@@ -393,6 +393,43 @@ page.on('response',      r => { if (r.status() >= 500) serverErrors.push({url: r
 3. ⛔ **Không dùng dữ liệu production của khách thật.** Tài khoản thử tự dựng dữ
    liệu của nó.
 
+## 3b.3b 🔴 WORKER CHỈ NẠP MÃ ĐÃ DEPLOY — trần cứng của mọi phép đo qua hàng đợi job
+
+Dữ kiện đo được 27/09 (phiên `Auto Scan Video` chia lại, và nó suýt làm hỏng một
+nghiệm thu của họ):
+
+```
+nssm get LTTStudioWorker AppDirectory   ->   C:\LTTPlatform\app
+```
+
+⇒ Worker chạy **bản đã cài**, ⛔ **không** chạy mã trong cây bạn đang làm. Phiên kia
+chạy một job "thật" tưởng là nghiệm thu tính năng mới của họ; nó **đo bản cũ** (bản
+deploy có **0** lần gọi hàm mới, cây họ có 2).
+
+**Hệ quả cho chương trình này — chia làm hai, đừng lẫn:**
+
+| Phép đo đi qua | Đo mã của ai | Dùng được cho |
+|---|---|---|
+| **tiến trình web** (publish, biên dịch, báo giá, palette, DOM/CSS) | ✅ **cây bạn** (máy chủ cô lập 8198 chạy mã cây) | UI-0, UI-2, UI-3, UI-4, UI-5, UI-6 |
+| **hàng đợi job** (node thật sự chạy xong, output, retry, cost thật) | ❌ **bản ĐÃ DEPLOY** | ⛔ **không** dùng để nghiệm thu nhánh |
+
+✅ **Nghiệm thu UI-0 không dính bẫy này** — đã kiểm lại từng phép đo: biên dịch
+`core.set` xảy ra lúc **publish** (tiến trình web), ba phép còn lại là **DOM trình
+duyệt**, và lượt chạy chỉ được khẳng định tới `QUEUED` (tức *"tạo được run"*), ⛔
+không khẳng định gì về việc node **chạy xong**.
+
+🔴 **Nhưng nó là trần cứng cho UI-7 (Execution UX).** Mọi phép đo kiểu *"chạy một
+workflow thật rồi xem timeline/output/cost"* sẽ đo **bản deploy**, ⛔ không đo nhánh
+UI-7. ⇒ UI-7 phải chọn **một** trong ba, và ghi rõ đã chọn cái nào:
+1. đo lớp **trình bày** bằng dữ liệu run **giả** (đủ cho phần lớn UI-7);
+2. dựng một **worker riêng** trỏ vào cây làm việc (đắt, nhưng đo thật);
+3. nghiệm thu **sau deploy**, chấp nhận vòng phản hồi dài.
+
+⚠️ ⛔ **Không** chọn "chạy job thật rồi tin số" mà không nói mình đang đo bản nào —
+đó đúng là ca *"đo đúng đại lượng, sai câu hỏi"*: job có chạy thật, số có thật, chỉ
+là nó trả lời *"bản deploy hôm nay có đúng không"* chứ ⛔ không phải *"nhánh tôi có
+đúng không"*.
+
 ## 3b.4 Mỗi pha phải nộp gì
 
 ```
