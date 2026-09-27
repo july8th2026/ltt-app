@@ -22069,3 +22069,45 @@ msgstr "The timing plan declares total duration {ms} ms: both length gates (dub 
 #. de khong khang dinh voi khach mot viec chua he lam.
 msgid "— bỏ qua"
 msgstr "— skipped"
+
+msgid "Cần tên nhân vật."
+msgstr "Character name is required."
+
+msgid "Cần mô tả khuôn mặt để khoá nhân vật."
+msgstr "A face description is required to lock the character."
+
+msgid "Thiếu thông tin: "
+msgstr "Missing information: "
+
+msgid "AI không trả khối mô tả nhân vật."
+msgstr "The AI did not return a character description block."
+
+msgid "Tối đa {n} ảnh tham chiếu."
+msgstr "At most {n} reference images."
+
+msgid "Tối đa {n} video tham chiếu."
+msgstr "At most {n} reference videos."
+
+msgid "Tối đa {n} audio tham chiếu."
+msgstr "At most {n} reference audio files."
+
+msgid "Tối đa {n} tài sản tham chiếu cho một video."
+msgstr "At most {n} reference assets per video."
+
+msgid "đang khoá nhân vật"
+msgstr "locking character"
+
+msgid "hoàn tất"
+msgstr "done"
+
+msgid "Chọn lại tài sản từ các job trước. Tổng tài sản cũ và file mới tối đa {t}."
+msgstr "Reuse assets from earlier jobs. Old assets plus new files: at most {t}."
+
+msgid "Không tìm thấy bối cảnh."
+msgstr "Background not found."
+
+msgid "Không tìm thấy nhân vật."
+msgstr "Character not found."
+
+msgid "Tối đa {a} ảnh · {v} video · {u} audio (tổng {t}) · ảnh/audio ≤20MB · video ≤60MB."
+msgstr "At most {a} images · {v} videos · {u} audio (total {t}) · images/audio <=20MB · video <=60MB."
