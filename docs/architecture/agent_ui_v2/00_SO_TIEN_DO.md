@@ -69,9 +69,9 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 
 | # | Câu | Chốt | Ngày | Ai |
 |---|---|---|---|---|
-| Q1 | Kiến trúc thông tin (khuyến nghị **B** Automation Studio, độ tin CAO) | **CHƯA** | | |
+| Q1 | Kiến trúc thông tin | ✅ **B — Automation Studio** | 28/09 | điều phối (bằng chứng đã quyết) |
 | Q4 | Tầng OAuth (khuyến nghị **C**, độ tin **THẤP** — cần chủ dự án) | **CHƯA** | | |
-| Q11 | Trigger: mở `trigger.manual`? schedule/webhook? | **CHƯA** | | |
+| Q11 | Trigger: mở `trigger.manual`? | ✅ **ĐÃ MỞ** — `ba51c9f0` | 28/09 | đo được sau UI-0; schedule/webhook vẫn là plan backend RIÊNG |
 | Q2 | UI-0 làm thành phase riêng, deploy độc lập | **CHƯA** | | khuyến nghị A, độ tin CAO |
 | — | Giữ `@xyflow/react` | ✅ CHỐT | 27/09 | bằng chứng: dùng 11/30 API |
 | — | Sửa P0-1 ở **cổng biên dịch**, ⛔ không di trú dữ liệu | ✅ CHỐT | 27/09 | `…-TONG.md` §1.5 |
@@ -88,6 +88,39 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-28` `điều phối` — **CHỐT Q1 = B (Automation Studio).** ⛔ Không hỏi lại:
+  bằng chứng đã quyết và độ tin CAO (`08_DECISION_QUESTIONS.md` Q1).
+  **Lý do rút gọn:** 11 hạng mục chấm **0**, phần lớn vì *"tính năng này không có
+  nhà"* (Run history, Templates, Connections, Version UX). Backend **đã** hỗ trợ
+  nhiều workflow / phiên bản / credential / so sánh run; giao diện chỉ có **hai**
+  trang HTML và luôn mở `items[0]`. B là việc **nối dây cái đã có**, ⛔ không phải
+  xây mới.
+  **Cái giá nếu sai:** ~3 pha cho điều hướng + 5 trang. Nếu sau này đo được rằng
+  khách chỉ muốn gõ một câu rồi nhận kết quả (hướng C, Agent-first), công ấy
+  **⛔ không mất** — C dùng lại toàn bộ Runs/Connections/Templates của B và chỉ
+  đổi **trang mặc định**. Chiều ngược lại mới là một lần viết lại.
+  ⇒ **UI-1 và UI-9 hết chặn.**
+
+- `2026-09-28` `điều phối` — **Q11 trả lời được vì UI-0 đã sửa đúng cái chặn nó.**
+  Lúc lập plan tôi để Q11 ở độ tin **THẤP** với lý do *"cần một người đọc
+  `bien_dich` xác nhận `core.*` đã compile được chưa"*. UI-0 Task 1 chính là việc
+  đó ⇒ câu hỏi thành **đo được**, ⛔ không còn là câu hỏi ý kiến.
+
+  🔴 **Và phép đo cứu tôi khỏi một bản vá tệ hơn bệnh.** Lật cờ `publish_duoc`
+  một mình sẽ cho ra node **publish sạch rồi FAILED lúc chạy**
+  (`dong_co._chay_mot_inline`: thiếu bộ thi hành ⇒ `loi_he_thong`). Hiện trạng ít
+  ra chặn **trước** khi khách bấm Chạy và giữ tiền. ⇒ Đăng ký bộ thi hành trước,
+  mở cờ sau.
+
+  | | Trước | Sau |
+  |---|---|---|
+  | trigger dùng được | **0/7** | **1/7** |
+  | tổng node dùng được | 35/72 | **36/72** |
+
+  ⚠️ Còn chặn vì `publish_duoc`: `ai.llm`, `ai.extract`, `ai.router` (plan 10).
+  `trigger.schedule` / `trigger.webhook` **⛔ không tồn tại trong registry** — đó
+  là một plan **backend riêng**, ⛔ không nhét vào plan UI.
 
 - `2026-09-27` `điều phối` — **UI-3 và UI-2 đã KIỂM và GỘP vào nhánh điều phối.**
   Ba nghiệm thu trình duyệt thật đều `PASS` sau khi gộp cả hai:
