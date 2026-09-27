@@ -131,6 +131,67 @@ bằng kiểm hợp chuẩn thật (`MP4Box -info` / `mediainfo` + kiểm mốc 
 từ `ffprobe -show_packets`), và hỏi chủ dự án việc `qc` đỏ nên **chặn cứng** hay
 **giao kèm cảnh báo** cho những mục ⛔ không phải an toàn.
 
+### Ba lượt job test THẬT trên production — 4 → 3 → 2 mục đỏ
+
+| lượt | SHA production | mục đỏ | thứ đã khỏi |
+|---|---|---|---|
+| `asvr_3059dc3d` | `47b277ca` | T2 · T4 · T17 · T18 | — |
+| `asvr_f997f794` | `a171522e` | T4 · T17 · T18 | **T2** (`lech = 0,0`) |
+| `asvr_3c5a11c4` | `0d6d0aed` | T17 · T18 | **T4** (`lufs = −14,75`) |
+
+⭐ **T4 cần HAI bản sửa, và bản thứ hai mới là bản đúng chỗ.** Bản đầu
+(`BIEN_CHO_CODEC_DB 2,0 → 0,5`) cải thiện đúng 0,37 LU như bảng dự đoán nhưng
+**vẫn hỏng, thiếu 0,09 LU**. Chỗ thiếu ấy có tên: `do_ban_giao` mã hoá **thử**
+để trả lời *"khách nhận bao nhiêu"*, nhưng nó ⛔ **không áp `atempo`** — và
+docstring của chính nó đã khai phạm vi: *"cùng một con số (cả hai preset **khi
+⛔ không đổi tốc độ**)"*. Ngoài phạm vi ấy nó đo một tín hiệu **khác**.
+
+Đo: `atempo` + AAC ăn **0,21 LU** (lượt thật: bản phối −14,86 → bản giao −15,09,
+tức 0,23 LU). ⇒ Đúng khoảng cách còn lại.
+
+🔑 Và `do_ban_giao` **đã** đo `lufs` từ trước — chỉ `dinh_that` được đọc, `lufs`
+bị **vứt**. Một con số đã trả tiền để đo mà ⛔ không ai dùng, trong khi nó là
+**đúng** đại lượng T4 đo. Họ lỗi *"có được ghi mà ⛔ không ai đọc"*, lần thứ tư
+trong hai ngày.
+
+⚠️ `BIEN_CHO_CODEC_DB = 0,25` ⛔ **không** phải bản sửa bền vững. Bền vững là một
+vòng **đo-và-sửa cho ĐỘ TO**, đối xứng với `ghim_tran_phoi` của ĐỈNH — và sau bản
+vá trên thì **con số để sửa đã có sẵn**. ⛔ Chưa làm vì hai vòng **tranh nhau**
+(tăng gain để lên −14,0 thì đẩy đỉnh lên, vòng ghim lại hạ xuống); một vòng hội
+tụ chung cần **thiết kế**, ⛔ không cần một hằng số.
+
+### 🔴 T17 và T18 vẫn MỞ — và tôi đã LÙI một bản sửa
+
+Tôi đổi `-fps_mode passthrough → vfr` với lý lẽ **có nguồn** (`ffmpeg.texi`:
+`vfr` = *"dropped so as to prevent 2 frames from having the same timestamp"*).
+Nguồn đúng, **tiền đề của tôi sai** — tôi *giả định* mốc trùng là nguyên nhân
+T18 mà ⛔ chưa đo. Đo bằng chính bộ đo của sản phẩm:
+
+| bản | VMAF tb | trôi A/V | lỗi DTS |
+|---|---|---|---|
+| **`passthrough`** | **53,783** | **15,9 ms** | 269 |
+| `vfr` | 48,031 | 55,9 ms | 0 |
+| `cfr` | 37,102 | 95,9 ms | 0 |
+
+⇒ `passthrough` **tốt nhất cả hai cột** dù nó gây mốc trùng. Và `vfr` phá cổng
+`test_2064` (trôi ≤ 40 ms) — một cổng **đúng**, tôi ⛔ không nới nó. Đã lùi.
+
+**Năm giả thuyết bị phép đo bác trong một buổi** — ghi lại vì đó là phần đáng giá:
+
+| giả thuyết | phép đo bác nó |
+|---|---|
+| `passthrough` là lỗi ⇒ bỏ | `vfr`/`cfr` tệ hơn ở **cả** VMAF lẫn trôi |
+| mốc trùng ⇒ VMAF lệch | `vfr` hết mốc trùng mà VMAF **tụt** 53,8 → 48,0 |
+| xung đột −14 LUFS vs −3,5 dBTP | nới trần chỉ được 0,1 LU… vì tôi đo **bản đã chuẩn âm** (thứ đại diện); chuỗi thật: 0,6 LU |
+| hai mất mát xếp chồng | bộ hạn đỉnh cost **0,00 LU** |
+| timescale mp4 chia hết | 269 lỗi **⛔ không đổi**, VMAF **bit-identical** |
+
+⭐ **Chỗ đi tiếp cho T18, đã đo**: tham chiếu VMAF có **1083 khung / 30 fps**, bản
+giao có **1351 khung / 37,5 fps** — hai bên dùng **hai chính sách nhịp khác nhau**.
+Đó là khiếm khuyết của **phép so sánh**, độc lập với chế độ nào thắng. Và
+`libvmaf` chạy `n_subsample=5` (`qc.py:111`) nên nó lấy mẫu **theo chỉ số trong
+từng dòng**; hai dòng khác số khung thì chỉ số *i* là hai thời điểm khác nhau.
+
 ### Thứ ⛔ chưa đo được
 
 - `edit_plan` **cắt 0 cảnh** trên lượt này — ⛔ chưa đo được là đúng hay sai.
