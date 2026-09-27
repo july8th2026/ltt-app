@@ -282,3 +282,62 @@ còn nhỏ hơn, không lớn hơn.
 Đây là con số **tỉ lệ giữa các pha trong CÙNG một lượt chạy**, nên tranh chấp
 bên ngoài kéo dài **cả** tử số lẫn mẫu số — tỉ lệ 96,7 % bền với nhiễu, khác
 với con số **tuyệt đối** (xem mục A, đã bị nhiễu làm hỏng).
+
+---
+
+# G. ⭐ ĐÃ ĐO (2026-09-27) — Baseline **Fast** × 3 đích, và một lời khai giá bị bác
+
+Nguồn **v3** (836×576, 30 fps, 3205 khung, 106,8 s) · preset **fast** ·
+`tile=384 threads=4:4:4` · 3 lượt mỗi đích, lấy **trung vị**.
+
+| Đích | total (tv) | khung/s | tầng SR % | tách khung | VRAM đỉnh | GPU% tb | đầu ra |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 1080 | 321,4 s | 9,97 | 96,6 | 10,2 s | 2378 MiB | 83,4 | 1568×1080 |
+| 1440 | 345,4 s | 9,28 | 96,8 | 10,5 s | 6389 MiB | 86,1 | 2090×1440 |
+| 2160 | 330,7 s | 9,69 | 96,1 | 10,8 s | 4771 MiB | 83,3 | 3136×2160 |
+
+## G.1 ⭐ Độ phân giải ĐÍCH gần như KHÔNG ảnh hưởng thời gian
+
+Chênh lệch **±4 %**, và **không đơn điệu** (1440 *chậm hơn* 2160). Giải thích từ
+chính kiến trúc: `ENGINE_SCALE = 4` — engine **luôn** upscale ×4 từ nguồn
+(836×576 → 3344×2304) **bất kể đích**; đích chỉ đổi khâu co lại + encode. Nên chi
+phí GPU tỉ lệ với **NGUỒN**, ⛔ không phải với **ĐÍCH**.
+
+⚠️ Cột **VRAM đỉnh ⛔ KHÔNG dùng để kết luận**: nó cũng không đơn điệu
+(2378 → 6389 → 4771) và là **đỉnh lấy mẫu** nên dễ bắt trượt. Muốn nói về VRAM
+thì phải đo riêng. Ghi lại để người sau ⛔ đừng trích nó làm bằng chứng.
+
+## G.2 🔴 Lời khai lý do tính giá trong `cost.py` bị BÁC
+
+`apps/upscalevideo/cost.py` docstring khai:
+
+> *"theo phút video × độ phân giải đích × preset (chi phí ~ **thời gian GPU** ~
+> số frame × diện tích × độ nặng model)"* — hệ số 1080=1.0 · 1440=1.8 · 2160=4.0
+
+Đo được:
+
+| Đích | thời gian GPU | kích thước đầu ra | hệ số GIÁ |
+|---|---:|---:|---:|
+| 1080 | 1,00× | 164,8 MB → 1,00× | 1,0 |
+| 1440 | **1,07×** | 264,9 MB → **1,61×** | 1,8 |
+| 2160 | **1,03×** | 518,9 MB → **3,15×** | 4,0 |
+
+⇒ **Thời gian GPU ⛔ KHÔNG phải cơ sở của hệ số giá** — lệch tới **3,9×** ở 2160.
+
+⭐ Nhưng **giá bản thân nó ⛔ KHÔNG vô lý**: nó bám khá sát **kích thước đầu ra**,
+tức lưu trữ + băng thông giao hàng — một chi phí **có thật** và **có** tỉ lệ với
+đích. ⚠️ Việc hệ số giá *tương quan* với kích thước ⛔ không chứng minh đó là **ý
+định** ban đầu; tôi chỉ đo được tương quan, ⛔ không đọc được ý định.
+
+**Vì sao điều này đáng ghi thay vì bỏ qua:** một người sau đọc lý do "chi phí ~
+thời gian GPU", rồi đo thời gian GPU và thấy **phẳng**, sẽ kết luận nhầm rằng giá
+đang chặt chém — hoặc tệ hơn, "tối ưu" hệ số giá theo một cơ sở không có thật.
+Tôi **suýt** kết luận đúng như vậy trước khi đi đo kích thước đầu ra.
+
+⛔ **Tôi KHÔNG đổi giá** — "tính gì tiền" là đánh đổi **sản phẩm**, thuộc quyền
+chủ dự án (`CLAUDE.md` luật 2). Việc cần làm là sửa **lời khai lý do** cho khớp
+số đo, và chỉ chủ dự án mới chốt được lý do thật là gì.
+
+⚠️ Phạm vi: **một** nguồn 836×576, preset **fast**, ⛔ không stabilize/smooth.
+Nguồn có độ phân giải khác sẽ đổi chi phí tầng SR (vì SR tỉ lệ với **nguồn**),
+nhưng kết luận "đích không điều khiển chi phí GPU" ⛔ không phụ thuộc điều đó.
