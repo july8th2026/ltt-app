@@ -56,6 +56,113 @@ lực"*, tức nó đo một **hằng số trong mã** chứ ⛔ không đo lư�
 dùng thật** — đúng bài học `doc-thu-dai-dien-thay-vi-doc-thu-that`.
 
 
+## 2026-09-27 (đêm) — ASV khép GĐ1: **bốn ổ khoá**, và một gate ĐỎ mà chủ dự án chốt deploy
+
+Phiên `Auto Scan Video final closure`. Gộp Task 19 → 26 vào `main` (`251bfc26`).
+
+### 🔴 Quyết định của chủ dự án: DEPLOY với gate ĐỎ (phương án C)
+
+Gate đầy đủ trên cây riêng ghim `251bfc26`: **FAIL 1/37** — đúng một bước đỏ, là bộ
+test. Điều phối nêu rõ C đi ngược luật *"deploy cần gate XANH trên đúng SHA deploy"*;
+chủ dự án chốt C, và đây là bản ghi để lượt sau đọc đúng.
+
+Bốn bài đỏ, **đã đo phân loại từng bài** (⛔ không suy):
+
+| bài | app | gate (song song) | `main` tuần tự | mốc `0e4f1783` | kết luận |
+|---|---|---|---|---|---|
+| `test_2091` | ASV tải lên | ĐỎ | **XANH** | — | nhiễu song song |
+| `test_143` | ommi storyboard | ĐỎ | **XANH** | — | nhiễu song song |
+| `test_970` | canvas | ĐỎ | ĐỎ | **ĐỎ** | **có sẵn** |
+| `test_975` | cmc | ĐỎ | ĐỎ | **ĐỎ** | **có sẵn** |
+
+⇒ Việc của phiên này đưa vào **0 bài đỏ mới**. Hai bài thật đều ⛔ không thuộc ASV và
+**đã đỏ tại mốc trước khi plan bắt đầu** — đo bằng cây tạm ở `0e4f1783`, ⛔ không phải
+bằng lập luận.
+
+⚠️ **Nợ còn lại, ⛔ không ai sửa:** `test_970` chốt một ràng buộc **tương thích ngược**
+ở lớp canvas — thứ mà quyết định 07/09 của chủ dự án (*"chưa có khách ở lớp
+Agent/Canvas/Workflow, ⛔ đừng viết lớp tương thích"*) có thể đã làm **lỗi thời**.
+`test_975` là một **băm chép tay đã trôi** khỏi giá trị tính được. Cả hai thuộc app của
+làn khác nên điều phối ⛔ không tự xoá chốt của họ.
+
+### ⭐ Lượt gate ĐẦU TIÊN ⛔ không phải một gate — và nó suýt lừa được điều phối
+
+Lượt `--doi --tu 0e4f1783` in `FAIL (2/33)`, kèm một dòng dễ bỏ qua:
+
+```
+HA CAP: luot `--doi` khong thu hep duoc (cham tep dung chung).
+=> ho so `nhanh`: GIU moi buoc tinh, BO bo test day du.
+RESULT: FAIL (2/33)  [HA CAP tu `--doi` xuong `nhanh` - BO TEST KHONG CHAY]
+```
+
+Việc phiên này chạm `platform_core/`, `tools/`, `tests/conftest.py` — **tệp dùng
+chung** — nên gate theo diff ⛔ **không thể** thu hẹp, và cấp đúng là **đầy đủ**.
+🔴 Nếu hai bước kia đã xanh thì lượt ấy in **PASS** mà ⛔ không phủ một bài test nào.
+
+### Bốn ổ khoá — cùng MỘT triệu chứng *"treo, CPU 0, tái hiện được"*
+
+| # | ổ | gốc thật |
+|---|---|---|
+| 1 | lease GPU ⛔ không nhả ⇒ mỗi giai đoạn GPU chờ **mồ côi 10 phút** | `DELETE` bị `database is locked` (worker giữ khoá ghi vì `jobs.complete()` chỉ `flush`) rồi **lỗi bị nuốt** |
+| 2 | nền tảng cấp card cho tiến trình ⛔ không dùng được CUDA, rồi hoãn **vô hạn** | hoãn ⛔ không tính là một lần thử ⇒ ⛔ không bao giờ hỏng hẳn để lộ ra |
+| 3 | bọc `pytest` trong `chay_nang.py` = **tự khoá chính mình** | `conftest` tự xin `cpu_nhieu` khi ≥20 tệp; `chay_nang.py` sống **ngoài kho** nên ⛔ không được miễn. Lỗ thứ hai cùng họ: `do_phu_diff.py` |
+| 4 | `singleton_leases` mồ côi | **⛔ KHÔNG BAO GIỜ** được dọn (`reclaim_expired` chỉ nhắm *một tên*) |
+
+Điều phối chẩn đoán **sai sáu lần** trong phiên, và cả sáu lần cứu được là vì đi **đo**
+thay vì tin — kể cả khi phép đo bác chính giả thuyết vừa viết vào brief.
+
+### Ba ca "đọc bản GIẢ thành sự thật sản phẩm"
+
+1. Job test đầu đo **bản ĐÃ CÀI** (`C:/LTTPlatform/app`, `edit_plan` còn ở GĐ1) —
+   điều phối tưởng là bug thứ tự giai đoạn.
+2. *"Hồi quy preset CẮT"* (`so_cat` 1→0): cảnh bị cắt hôm 25/09 bị cắt vì **bản thay
+   thế VLM** trả `de_xuat="bo"` cho **mọi** cảnh không thoại. Luật *"không thoại ⇒
+   cắt"* **chưa từng có trong mã**. Kỳ vọng của bài kiểm là **chính sách của bản giả**.
+3. `voice_synthesis` chết trên phim khách thật: ⛔ không đoạn nào rỗng (0/95) — bản dịch
+   **chưa dịch** (chữ Trung nguyên văn) + SAPI en-US trả **46 byte/0,000 s** cho CJK,
+   **byte-y-hệt** thứ nó trả cho `''`.
+   🔴 Và với **engine THẬT** thì `doan_ngon_ngu(<chữ Trung>)` trả `None` ⇒ `quyet_dinh`
+   **CHO QUA** ⇒ giọng Việt đọc chữ Hán, ⛔ không cửa nào chặn. Hôm nay bắt được
+   **nhờ may** (SAPI trả 0 byte), ⛔ không nhờ một cửa.
+
+### Môi trường + bằng chứng
+
+- `torch 2.11.0+cpu` → **`+cu128`** (chủ dự án chốt A). Đo qua đường sản phẩm:
+  `demucs_runner --buoc-gpu` → `"thiet_bi": "cuda"`, `f0_trung_vi = 101,91`.
+- Bằng chứng nghiệm thu **04/09 và 25/09 → 27/09**, sinh từ lượt thật, **13/13** giai đoạn.
+  🔴 Vì sao nó cũ tới 22 ngày mà ⛔ không ai thấy: người **GHI** đọc `LTT_ASV_*_RA` và
+  mặc định ghi vào `tmp_path` (rồi mất), người **ĐỌC** thì ghim cứng `docs/.../evidence/`.
+  Hai mặc định **lệch nhau** ⇒ mọi lượt nghiệm thu trước **⛔ chưa bao giờ** cập nhật.
+- ⚠️ **Phạm vi chữ "nghiệm thu"**: `giong_that = False`, `model_that = False` — khoá
+  provider và `LTT_VOICE_SIDECAR_TOKEN` nằm trong `secrets\` (ACL chặn **cố ý**). Lượt
+  đó chạy **thật** ffmpeg/whisper/demucs/CSDL/hàng đợi/lease/sổ credit, **giả** LLM và
+  toàn bộ đường sinh tiếng — đúng hai chỗ phiên này thiết kế lại.
+
+### ⚠️ Lượt deploy này mang BA thay đổi HÀNH VI KHÁCH THẤY ĐƯỢC của app `upscalevideo`
+
+Phiên `upscale-video-v2-correction [5fa61a]` khai khi được báo trước, và ghi ra đây để
+lượt sau ⛔ **không đọc nhầm triệu chứng**:
+
+1. **Job có đầu ra HỎNG nay ĐỎ thay vì XANH.** Trước đây thành công chỉ dựa
+   `os.path.isfile()`, nên một tệp hỏng-mà-khác-rỗng vẫn báo `SUCCEEDED` **và vẫn thu
+   tiền**. Nay có cổng kỹ thuật chạy **trước upload**: sai chiều cao / sai tỉ lệ nguồn /
+   codec thật khác encoder đã dùng / `ffprobe` ⛔ không đọc được / tệp < 10 KB ⇒ job đỏ.
+   Thiếu tiếng chỉ **cảnh báo**, ⛔ không làm đỏ.
+   ⇒ 🔑 Sau deploy, một job upscale ĐỎ **khả năng cao là cổng mới bắt được đầu ra hỏng**,
+     ⛔ không phải deploy làm hỏng. Tắt khẩn cấp: `LTT_UPSCALE_TECH_GATE=0`.
+2. **Hết dính cảnh báo chất lượng GIẢ.** Cổng cũ gọi `ffprobe` để lấy PSNR/SSIM/VMAF —
+   ba đại lượng chỉ `ffmpeg` tính được — nên nó **luôn** thất bại, dán cảnh báo sai lên
+   **mọi** job thành công và `.read()` cả MP4 từ R2 vào RAM mỗi lượt. Đã bỏ.
+3. **Xin HEVC mà máy ⛔ không có NVENC-HEVC ⇒ báo lỗi rõ**, thay vì lặng lẽ giao H.264
+   rồi khai là HEVC. Máy A **có** `hevc_nvenc` chạy được nên production ⛔ không đổi.
+
+### Việc của chủ dự án
+
+- 🔴 **Xoay `LTT_CF_DNS_TOKEN`** (vẫn treo từ 26/09).
+- Tuỳ chọn, để bộ test trong tiến trình chạy chế độ **thật**: `LTT_ASV_GIONG_THAT=1` +
+  `LTT_VOICE_SIDECAR_TOKEN`, và `LTT_ASV_MODEL_THAT=1` + `LTT_ASV_POOL_URL=postgresql://…`
+  (⛔ **không** phải `LTT_DATABASE_URL` — fixture ghi đè biến đó bằng SQLite dùng-một-lần).
+
 ## 2026-09-26 (tối) — TCN nextgen: sửa 6 lỗi mypy + tiếp nhận 3 ratchet, FF-merge `main` (`0b2ae6f6`)
 
 Nhánh `phien/tcn-nextgen` (worktree `D:\LTTSTUDIOSAPP-tcn-nextgen`) khép lại phần
