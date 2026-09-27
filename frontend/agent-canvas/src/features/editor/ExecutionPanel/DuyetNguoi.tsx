@@ -31,12 +31,23 @@ type Props = {
   run: RunV3 | null
   /** Tên bước hiển thị — cùng hàm `nhanNode` mà toàn bộ ngăn kéo dùng. */
   tenBuoc: (nodeId: string) => string
-  /** Tham số KHAI trong đồ thị (bản đang soạn) — dùng để đọc `cau_hoi` và chế
-   *  độ `het_han` của CHÍNH node `core.human` đó. ⚠️ Đây là tham số của bản
-   *  ĐANG SOẠN, không phải của phiên bản đã publish mà run đang chạy — nếu
-   *  workflow bị sửa tiếp sau khi run bắt đầu, câu hỏi hiện ra có thể lệch
-   *  một chút so với câu hỏi máy chủ đã hỏi. Xem báo cáo cuối làn UI-8a. */
-  thamSo: (nodeId: string) => Record<string, unknown> | undefined
+  // 🔴 ⛔ KHÔNG có prop `thamSo` ở đây, và đó là một lựa chọn CÓ Ý.
+  //
+  //    Bản đầu của component này đọc `cau_hoi`/`het_han` từ **tham số của bản
+  //    ĐANG SOẠN** (`thamSo(nodeId)`), kèm một chú thích nói rằng câu hỏi *"có
+  //    thể lệch một chút"*. Nó ⛔ không lệch một chút — nó là một lỗi ĐỒNG THUẬN:
+  //
+  //        publish `cau_hoi = "Đăng bài này lên kênh chính?"` -> chạy -> chờ
+  //        ai đó sửa bản nháp thành `"Xoá toàn bộ playlist?"`
+  //        người duyệt đọc câu MỚI, bấm Duyệt
+  //        động cơ đi nhánh `approve` của bản CŨ  ->  đăng bài
+  //
+  //    ⇒ Người duyệt đồng ý với một câu hỏi họ **chưa từng được hỏi**.
+  //
+  // ⭐ Nay câu hỏi đi ra từ CHÍNH payload của run (`runs_v3._tham_so_human_da_ghim`
+  //    đọc `version.graph` — bản BẤT BIẾN mà động cơ đang thi hành). Một run và
+  //    một bản nháp là hai bản ghi khác nhau; chỉ bản ghim mới là thứ sẽ chạy.
+  //    Bất biến này được canh ở `tests/test_5605_cau_hoi_duyet_den_tu_ban_da_GHIM.py`.
 }
 
 //: Danh sách ĐÓNG — khớp NGUYÊN `han_cho.CHE_DO_HET_HAN` phía máy chủ. Một
@@ -129,21 +140,18 @@ function coCho(waitingKind: string, loai: string): boolean {
  *  `core.delay`/`core.wait` (waiting_kind là `DELAY`/`WEBHOOK`/`EVENT`, không
  *  có `HUMAN`) không được hiện ở đây — đọc `waiting_kind`, ⛔ không suy từ
  *  `status`. */
-export function DuyetNguoi({ run, tenBuoc, thamSo }: Props) {
+export function DuyetNguoi({ run, tenBuoc }: Props) {
   if (!run) return null
   const choDuyet = run.nodes.filter(n => n.status === 'WAITING' && coCho(n.waiting_kind, 'HUMAN'))
   if (!choDuyet.length) return null
   return (
     <section className="run-duyet-nguoi" aria-label="Đang chờ người duyệt">
-      {choDuyet.map(n => {
-        const p = thamSo(n.node_id) ?? {}
-        return (
-          <TheDuyet key={n.node_id} runId={run.id} nodeId={n.node_id}
-            ten={tenBuoc(n.node_id)}
-            caseHoi={typeof p.cau_hoi === 'string' ? p.cau_hoi : ''}
-            hetHan={nhanHetHan(p.het_han)} />
-        )
-      })}
+      {choDuyet.map(n => (
+        <TheDuyet key={n.node_id} runId={run.id} nodeId={n.node_id}
+          ten={tenBuoc(n.node_id)}
+          caseHoi={n.cau_hoi ?? ''}
+          hetHan={nhanHetHan(n.het_han_che_do)} />
+      ))}
     </section>
   )
 }
