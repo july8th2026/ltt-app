@@ -256,3 +256,67 @@ def test_4890_CHO_GOI_khong_doi_truc_lan_nua():
     assert len(g.args) + len(g.keywords) >= 3, (
         "`_thoi_luong_mong_doi` duoc goi ma ⛔ khong truyen `bien_tap` — nhanh "
         "'⛔ khong co ke cat' se doi truc bang he so 1,0")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Bug 3 — bien du cho codec an mat do chinh xac cua `loudnorm` (T4)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_4890_bien_cho_codec_KHONG_an_het_do_chinh_xac_cua_loudnorm():
+    """🔴 T4 hong tren lan chay that `asvr_3059dc3d` vi `BIEN_CHO_CODEC_DB = 2,0`.
+
+    Bien do ha tran ban phoi xuong `-1,5 - 2,0 = -3,5 dBTP`, va tran ay RANG BUOC
+    `loudnorm ... linear=true`: mot gain tuyen tinh nao lam vuot `TP` thi loudnorm
+    **lui ve che do dong**, va che do dong sai ~1 LU. Ket qua: ban phoi ra
+    `-15,24 LUFS` / dich `-14,0 ± 1,0` ⇒ **ngoai khoang**.
+
+    ⭐ Do tren CHINH ba luot cua san pham voi du lieu THAT cua lan chay do:
+
+        BIEN   tran phoi   LUFS ra   dinh giao   so vong ghim
+         2,0      -3,5      -15,0      -3,35          1        <- HONG T4
+         1,0      -2,5      -14,8      -2,38          1
+         0,5      -2,0      -14,6      -1,92          1        <- dang dung
+         0,0      -1,5      -14,5      -1,78          2
+
+    🔑 **Bat bien duoc chot o day, va no la LY DO chu ⛔ khong phai con so:**
+       moi dB bien du la mot dB **do chinh xac am luong bi danh doi truoc khi do
+       bat cu thu gi**. Va ta ⛔ khong can danh doi no, vi `ghim_tran_phoi` MA HOA
+       THU roi **do** vot lo that va ha tran dung phan can — do la co che, bien du
+       chi la mot phep toi uu SO VONG.
+
+       ⇒ Bien du phai nho hon `1,0 dB`. Lon hon the la quay lai danh doi T4 cho
+         mot thu da co nguoi do.
+
+    ⚠️ Bai nay ⛔ **khong** chot `BIEN_CHO_CODEC_DB == 0,5`: con so dung phu thuoc
+       vot lo cua bo ma hoa, va do la thu **do duoc** chu ⛔ khong phai hang so cua
+       ta. No chot cai da hong: bien du an het dai luong ma T4 dang do.
+    """
+    from apps.auto_scan_video import am_master, tach_tieng
+
+    assert am_master.BIEN_CHO_CODEC_DB > 0, (
+        "bien du = 0 lam vong ghim phai chay them mot vong tren hau het lan chay")
+    assert am_master.BIEN_CHO_CODEC_DB < 1.0, (
+        f"bien du {am_master.BIEN_CHO_CODEC_DB} dB an qua nhieu do chinh xac am "
+        f"luong: no ep `loudnorm ... linear=true` lui ve che do dong (sai ~1 LU) "
+        f"va T4 (dich {tach_tieng.LUFS_DICH} ± {tach_tieng.LUFS_DUNG_SAI}) hong "
+        f"tren mot ban phoi khong sai gi. Vot lo THAT do bang "
+        f"`ghim_tran_phoi`, ⛔ khong doan truoc bang hang so nay.")
+
+    # ⭐ Ve DOI CHUNG: luoi an toan phai TON TAI, neu khong thi ha bien du la
+    #    danh cuoc. `ghim_tran_phoi` phai co du vong de sua mot vot lo lon.
+    assert am_master.SO_VONG_GHIM >= 2, (
+        "ha bien du chi an toan khi vong ghim con cho de sua; mot vong thi "
+        "⛔ khong con co che nao bat vot lo")
+    assert am_master.GHIM_LUI_THEM_DB > 0, (
+        "vong ghim ⛔ khong lui them thi no co the dung mai tren bien")
+
+
+def test_4890_tran_phoi_luon_THAP_hon_tran_giao():
+    """⛔ Doi chung cho bai tren: neu ai do ha `BIEN_CHO_CODEC_DB` ve so AM de lam
+    bai tren xanh thi tran ban phoi se CAO hon tran giao — vong ghim khi do bat
+    dau tu mot cho da vuot, va T5 thanh trong tai duy nhat."""
+    from apps.auto_scan_video import am_master
+
+    assert am_master.dinh_that_phoi_db() < am_master.dinh_that_db(), (
+        f"tran ban phoi {am_master.dinh_that_phoi_db()} ⛔ khong duoc cao hon hay "
+        f"bang tran giao {am_master.dinh_that_db()}")
