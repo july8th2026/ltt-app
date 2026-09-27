@@ -133,8 +133,27 @@ def tom_tat_kem_khong_do(bao_cao: dict, ly_do: dict) -> dict:
     return tt
 
 
-def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict) -> float:
-    """Do dai (giay) ma TEP DUOC DO phai co, truoc phep chia `toc_do`.
+def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict, bien_tap=None) -> float:
+    """Do dai (giay) ma TEP DUOC DO phai co, **tren TRUC BAN RA** (sau `toc_do`).
+
+    🔴 **Sua 27/09 — truoc do ham nay tra HAI TRUC KHAC NHAU tuy nhanh, va nguoi
+       goi ap `moc_ban_ra` cho CA HAI:**
+
+         co ke cat  -> `ke.ban_do().thoi_luong_ra` cua `image_finish`. Giai doan do
+                       cat **ban ra cua render**, tuc con so nay DA o tren truc SAU
+                       `toc_do`.  ⇒ chia them mot lan nua la ap `toc_do` HAI LAN.
+         ⛔ khong    -> `tong_ms` cua ke hoach = do dai NGUON, tuc TRUOC `toc_do`.
+                       ⇒ o nhanh nay phep chia la DUNG.
+
+       Do tren lan chay that `asvr_3059dc3d` (nguon 45,121 s, `toc_do = 1,25`):
+         tep giao        = 36,077 s
+         compose hua     = 36,097 s   (= 45,121 / 1,25 — DUNG)
+         T2 mong doi     = 28,862 s   (= 36,077 / 1,25 — SAI, chia lan hai)
+         ⇒ `lech = 7,215 s`, va T2 **hong tren mot ban giao dung**.
+
+    ⭐ Ban va: ham TU dua ca hai nhanh ve **mot truc** — truc cua tep ma cong nay
+       dang do — nen nguoi goi ⛔ khong con phep doi truc nao de lam sai. Mot ham
+       tra hai truc tuy nhanh la mot hop dong ⛔ khong ai doc duoc.
 
     ⭐ MOT noi tra loi cau hoi nay, va no tra loi tu mot BAN KHAI:
 
@@ -148,12 +167,18 @@ def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict) -> float:
        vuot tran 5 % ⛔ khong the di qua cong nay bang cach duoc ghi ra tep.
     """
     from . import ke_cat as _kc
+    from .bien_tap import moc_ban_ra
 
     if goi_ke_cat:
         ke = _kc.KeCat.tu_dict(goi_ke_cat)
         _kc.kiem(ke)
+        # ⛔ DA o truc ban ra: `image_finish` cat chinh tep ma `render` giao, va
+        #    tep do da mang `setpts=PTS/toc`. ⛔ Khong doi truc o day.
         return float(ke.ban_do().thoi_luong_ra)
-    return float(ke_hoach.get("tong_ms") or 0) / 1000.0
+    # ⭐ `tong_ms` la do dai NGUON (giai doan 1 ⛔ khong cat), tuc truc BIEN TAP.
+    #    Doi sang truc ban ra o DAY, chu ⛔ khong de nguoi goi doi — nguoi goi
+    #    ⛔ khong biet nhanh nao da chay.
+    return moc_ban_ra(float(ke_hoach.get("tong_ms") or 0) / 1000.0, bien_tap)
 
 
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
@@ -232,10 +257,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    doan 2 giao.
         #
         # ⭐ asv-final: truc bien tap -> ban ra la mot phep chia cho `toc_do`.
-        from .bien_tap import moc_ban_ra
-        mong_doi = moc_ban_ra(
-            _thoi_luong_mong_doi(ke_hoach, goi_kc),
-            (ban_dung.get("hinh") or {}).get("bien_tap"))
+        #
+        # 🔴 Sua 27/09: phep doi truc ay nay nam TRONG `_thoi_luong_mong_doi`, vi
+        #    hai nhanh cua no tra hai TRUC khac nhau va o day ⛔ khong ai biet
+        #    nhanh nao da chay. Ap `moc_ban_ra` o day lam nhanh "co ke cat" bi
+        #    chia `toc_do` LAN THU HAI — T2 hong tren mot ban giao dung. Xem
+        #    docstring cua ham do de co so do.
+        mong_doi = _thoi_luong_mong_doi(
+            ke_hoach, goi_kc, (ban_dung.get("hinh") or {}).get("bien_tap"))
 
         # 🔑 Ly do KHONG do duoc cua tung phep kiem — di vao `tom_tat`, tuc vao
         #    `asv_stage.outputs`. Xem `tom_tat_kem_khong_do`.
