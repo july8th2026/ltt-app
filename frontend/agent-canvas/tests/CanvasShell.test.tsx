@@ -894,6 +894,42 @@ describe('Chạy workflow trên v3', () => {
       .toBe('tạo video')
   })
 
+  // 🔴 A3 + lỗi lịch sử hoàn tác. "Soạn bằng AI" GHI ĐÈ cả đồ thị người dùng
+  //    đang dựng. Trước bản sửa, `case 'replace'` trả `past: []` ⇒ Ctrl+Z
+  //    KHÔNG cứu được và người dùng mất việc, không cách nào lấy lại.
+  it('A3: "Soạn bằng AI" ghi đè NHƯNG Ctrl+Z trả lại đồ thị đang dựng', async () => {
+    mockRunV3(url => url.endsWith('/soan')
+      ? new Response(JSON.stringify({ workflow_id: 'w1', revision: 5,
+          document: { version: 3, goal: 'tạo video', budget_max_credit: 0,
+            active_page_id: 'page-1',
+            pages: [{ id: 'page-1', name: 'Page 1',
+              nodes: [{ id: 'n_soan', type: 'tool', position: { x: 0, y: 0 },
+                data: { tool: 'app.text.chat' } }], edges: [],
+              viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] },
+          hop_le: true, loi: [], bao_gia: { credit_max: 10, credit_estimate: 5 } }),
+        { status: 200 })
+      : undefined)
+    render(<CanvasShell />)
+    // Người dùng tự dựng HAI node — đây là "việc đang làm" mà AI sẽ ghi đè.
+    await themVanBan()
+    fireEvent.click(screen.getByRole('button', { name: 'Mở công cụ' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Sinh ảnh/ }))
+    await waitFor(() => expect(soNode()).toBe(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở mẫu và thiết lập' }))
+    fireEvent.change(screen.getByLabelText('Mục tiêu workflow'),
+      { target: { value: 'tạo video' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Soạn bằng AI' }))
+    // Bản AI soạn có đúng MỘT node ⇒ hai node kia đã bị ghi đè.
+    await waitFor(() => expect(soNode()).toBe(1))
+
+    // ⭐ Phép đo CHỐT: nút Hoàn tác phải SỐNG, và bấm nó trả lại hai node.
+    const hoanTac = screen.getByRole('button', { name: 'Hoàn tác' })
+    expect(hoanTac).toBeEnabled()
+    fireEvent.click(hoanTac)
+    await waitFor(() => expect(soNode()).toBe(2))
+  })
+
   it('A3: thiếu mục tiêu thì KHÔNG gọi /soan, hiện lỗi tại chỗ', async () => {
     const fetchMock = vi.mocked(globalThis.fetch)
     render(<CanvasShell />)

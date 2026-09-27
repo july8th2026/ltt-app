@@ -578,7 +578,9 @@ function Editor() {
     setDangSoan(true);setSoanLoi('')
     void soanWorkflowV3(workflow.id,goal,undefined,csrf)
       .then(kq=>{
-        dispatch({type:'replace',document:fromV3(kq.document)})
+        // ⭐ `giuLichSu` — cửa này GHI ĐÈ đồ thị người dùng đang dựng. Không
+        //    có nó thì Ctrl+Z không cứu được và họ mất việc (xem `EditorAction`).
+        dispatch({type:'replace',document:fromV3(kq.document),giuLichSu:true})
         setWorkflow(truoc=>truoc?{...truoc,revision:kq.revision}:truoc)
         if(!kq.hop_le&&kq.loi.length)
           setSoanLoi(kq.loi.map(l=>l.thong_diep).join(' · '))
