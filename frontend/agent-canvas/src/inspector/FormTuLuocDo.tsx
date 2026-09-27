@@ -147,12 +147,45 @@ function MotO({ ten, luat, bat_buoc, gia, readOnly, goiY, onChange }: {
   </>)
 }
 
+/** `true` khi `gia` chua la mot lua chon that.
+ *
+ *  ⛔ KHONG dung `!gia`: `0` va `false` la gia tri HOP LE cua mot tham so, va
+ *     coi chung la "chua chon" se an cac o phu thuoc dung luc cha da co gia
+ *     tri — dung hinh dang "hai trang thai gop thanh mot gia tri". */
+const chuaChon = (gia: unknown) =>
+  gia === undefined || gia === null || gia === ''
+
 export function FormTuLuocDo({ luocDo, giaTri, readOnly, goiY, onChange }: Props) {
   const muc = Object.entries(luocDo.properties ?? {})
   if (!muc.length) return <p className="form-trong">Node này không có tham số.</p>
+
+  // 🔴 §6 LUAT 1 — TRUONG PHU THUOC PHAI AN, ⛔ KHONG HIEN XAM.
+  //
+  //    Do duoc 27/09 tren trinh duyet that: mot buoc vua tha xuong hien BA
+  //    dropdown "— chưa có lựa chọn nào —" cung luc, vi ca ba `depends_on`
+  //    `model` ma `model` chua chon. Ba o chet trong y het ba o hong, va nguoi
+  //    dung khong co cach nao biet phai chon `model` TRUOC.
+  //
+  // ⭐ Thay vao do: MOT dong noi ro dieu kien, cho moi tham so cha con trong.
+  //    ⛔ Khong im lang hoan toan — mot o bien mat khong dau vet thi khach
+  //    tuong node thieu tham so, va ta doi mot loi HIEN THI thanh mot loi
+  //    KHONG CO GI DE THAY.
+  const an = new Map<string, string[]>()
+  const hien = muc.filter(([ten, luat]) => {
+    const cha = luat['x-ltt-dong']?.prop
+    if (!cha || !chuaChon(giaTri[cha])) return true
+    an.set(cha, [...(an.get(cha) ?? []), ten])
+    return false
+  })
+
   return <div className="form-luoc-do">
-    {muc.map(([ten, luat]) => <MotO key={ten} ten={ten} luat={luat} goiY={goiY}
+    {hien.map(([ten, luat]) => <MotO key={ten} ten={ten} luat={luat} goiY={goiY}
       bat_buoc={(luocDo.required ?? []).includes(ten)} gia={giaTri[ten]}
       readOnly={readOnly} onChange={v => onChange(ten, v)} />)}
+    {[...an.entries()].map(([cha, con]) =>
+      <p key={cha} className="o-cho-phu-thuoc">
+        <small className="o-dong">Tuỳ theo: {cha}</small>
+        <small className="o-mo-ta">Chọn {cha} để hiện thêm {con.length} ô.</small>
+      </p>)}
   </div>
 }

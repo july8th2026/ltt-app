@@ -1,0 +1,114 @@
+/* Kieu rieng cua Inspector V2 (lan UI-5).
+ *
+ * ⛔ TEP NAY TON TAI de KHONG phai sua `src/canvas.css` — do la so dung chung
+ *    S1, chu la lan UI-2. Vite gop moi CSS cua entry vao MOT tep, nen
+ *    `manifest.json` van chi co mot muc `css` va `bundle_assets` khong doi.
+ *
+ * ⭐ Chi khai lop MOI. Moi o trong `.canvas-inspector` da thua kieu tu
+ *    `canvas.css` (`.o-truong`, `.o-loi`, `.o-mo-ta`, input/select/textarea),
+ *    nen ⛔ khong khai lai chung o day — hai cho khai cung mot dieu thi co ngay
+ *    chung lech nhau.
+ */
+
+/* ── Nam tab (§6) ───────────────────────────────────────────────────────── */
+.inspector-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 0 0 10px;
+  border-bottom: 1px solid var(--border-subtle, #2a303b);
+}
+.inspector-tabs button {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary, #c2c8d0);
+  font-size: 11px;
+  cursor: pointer;
+}
+.inspector-tabs button.active {
+  border-bottom-color: var(--brand-primary, #dc2f2a);
+  color: var(--text-primary, #f2f4f7);
+}
+.inspector-than { display: grid; gap: 4px; }
+
+/* Bon tab dat cho phai TRONG NHU dat cho. ⛔ Khong duoc trong giong mot tab
+ * da hoat dong ma rong — nguoi dung se ket luan tinh nang nay hong. */
+.inspector-dat-cho {
+  padding: 12px;
+  border: 1px dashed var(--border-strong, #3a424f);
+  border-radius: 8px;
+  background: var(--surface-interactive, #1d222c);
+}
+.inspector-dat-cho strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-secondary, #c2c8d0);
+  font-size: 12px;
+}
+.inspector-dat-cho p { margin: 0; font-size: 11px; }
+
+/* ── O ket noi + form tao tai cho ───────────────────────────────────────── */
+.o-ket-noi {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 11px;
+  padding: 9px;
+  border: 1px solid var(--border-subtle, #2a303b);
+  border-radius: 8px;
+  background: var(--surface-interactive, #1d222c);
+}
+.o-ket-noi > label { margin: 0; }
+.o-ket-noi-trong { font-size: 11px; color: var(--text-muted, #858e9b); }
+
+/* Form nam NGAY DUOI o chon, trong cung mot khoi — do la ca diem cua no:
+ * nguoi dung khong roi ngu canh dang cau hinh (luong Activepieces, MIT). */
+.o-ket-noi-form {
+  display: grid;
+  gap: 7px;
+  margin-top: 7px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border-subtle, #2a303b);
+}
+.o-ket-noi-tang {
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--border-subtle, #2a303b);
+  border-radius: 7px;
+}
+.o-ket-noi-tang legend { padding: 0 4px; font-size: 11px; }
+.o-ket-noi-tang label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 4px;
+}
+.o-ket-noi-tang input { width: 18px; min-height: 18px; }
+.o-ket-noi-nut { display: flex; gap: 6px; }
+.o-ket-noi-nut button { flex: 1; }
+
+/* Mot dong THAY CHO cac o phu thuoc dang bi an (§6 luat 1). */
+.o-cho-phu-thuoc {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 11px;
+  padding: 7px 9px;
+  border-left: 2px solid var(--border-strong, #3a424f);
+  background: var(--surface-interactive, #1d222c);
+}
+
+/* ── Sticky action o chan panel (§6 luat 4) ─────────────────────────────── */
+.inspector-hanh-dong {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 9px 0 0;
+  border-top: 1px solid var(--border-subtle, #2a303b);
+  background: var(--surface-overlay, #1a1f29);
+}
+.inspector-hanh-dong button { flex: 1; min-height: 36px; }
+.inspector-hanh-dong button.danger { color: var(--nguy-hiem, #f87171); }

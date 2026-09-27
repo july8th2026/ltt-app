@@ -22228,3 +22228,40 @@ msgstr "A short-lived ticket used to send one scene to another app (for example 
 
 msgid "Vector đặc trưng khuôn mặt, suy từ ảnh nhân vật do khách tải lên, dùng để giữ đúng một mặt qua nhiều cảnh. Là dữ liệu sinh trắc học nên ⛔ không ra API; đi cùng nhân vật khi nhân vật bị xoá."
 msgstr "A facial feature vector derived from a character image the customer uploaded, used to keep the same face across scenes. It is biometric data, so it never leaves through the API; it goes with the character when the character is deleted."
+
+# Cua ket noi cua khach (lan UI-5, apps/agent/routes/ket_noi_v3.py)
+msgid "Loại kết nối không được hỗ trợ."
+msgstr "That connection type is not supported."
+
+msgid "Thiếu thông tin bí mật."
+msgstr "The secret details are missing."
+
+msgid "Nhà cung cấp không hợp lệ."
+msgstr "That provider is not valid."
+
+msgid "Tầng xác thực không hợp lệ."
+msgstr "That authentication tier is not valid."
+
+msgid "LTT chưa cấu hình cho nhà cung cấp này. Hãy tự mang ứng dụng của bạn."
+msgstr "LTT has not configured this provider yet. Please bring your own app."
+
+msgid "Thông tin kèm theo không hợp lệ."
+msgstr "The accompanying details are not valid."
+
+msgid "Không tạo được kết nối."
+msgstr "The connection could not be created."
+
+msgid "Không tìm thấy kết nối."
+msgstr "Connection not found."
+
+msgid "Token"
+msgstr "Token"
+
+msgid "Client ID"
+msgstr "Client ID"
+
+msgid "Client Secret"
+msgstr "Client Secret"
+
+msgid "JSON khoá dịch vụ"
+msgstr "Service account JSON key"

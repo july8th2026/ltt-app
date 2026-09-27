@@ -15,7 +15,7 @@ import { CanvasEdgeView } from './CanvasEdgeView'
 import { NODE_TYPES } from './nodes/NodeRenderer'
 import { AnnotationNode, FrameNode } from './nodes/TrangTri'
 import { MIME_NODE, PaletteV2 } from './palette/PaletteV2'
-import { FormTuLuocDo } from './inspector/FormTuLuocDo'
+import { StepInspector } from './inspector/StepInspector'
 import { noiDuoc, slugCongCu, timNut, typeTuSlug } from './nodeDefinition'
 import type { LuatNoiDay, NhomPalette, NodeDefinition } from './nodeDefinition'
 import { taiPalette } from './paletteApi'
@@ -891,24 +891,27 @@ function Editor() {
       </aside>}
       {(desktopPanel==='inspector'||mobilePanel==='inspector')&&
         <aside className={`canvas-inspector${desktopPanel==='inspector'?' is-open':''}`} aria-label="Chi tiết node">
-          {selectedNode&&selectedDinhNghia
-            ? <><small>THAM SỐ</small><h2>{selectedDinhNghia.title}</h2>
-                <p className="inspector-type">{selectedDinhNghia.type}@{selectedDinhNghia.type_version}</p>
-                {selectedDinhNghia['x-ltt-loi']&&<p className="inspector-loi" role="status">
-                  Một phần lựa chọn của node này chưa tải được — các ô ấy bị khóa.</p>}
-                <input aria-label="Tên hiển thị của node" disabled={readOnly}
-                  value={selectedNode.label??''} placeholder={selectedDinhNghia.title}
-                  onChange={event=>dispatch({type:'nodeLabel',id:selectedNode.id,label:event.target.value})}/>
-                <FormTuLuocDo luocDo={selectedDinhNghia.tham_so}
-                  giaTri={(selectedNode.data.params ?? {}) as Record<string, unknown>}
-                  readOnly={readOnly} goiY={goiY}
-                  onChange={(ten, v) => dispatch({type:'update',id:selectedNode.id,data:{ params: {
-                    ...(selectedNode.data.params as Record<string, unknown>), [ten]: v } }})} />
-                <footer className="inspector-gia">{liveQuotes[selectedNode.id]===undefined
-                  ? 'Chi phí do server xác nhận'
-                  : `Tối đa ${liveQuotes[selectedNode.id]} credit`}</footer>
-              </>
-            : <p>Chọn một node để xem tham số.</p>}
+          {/* Inspector V2 (§6) song trong `src/inspector/StepInspector.tsx` —
+              lan UI-5. Cho nay chi TRUYEN, khong dung form: nam tab, o ket noi
+              va luat "truong phu thuoc phai an" deu thuoc mot mo-dun. */}
+          <StepInspector buoc={selectedNode ?? null}
+            dinhNghia={selectedDinhNghia ?? null}
+            nodes={page.nodes} edges={page.edges} csrf={csrf}
+            readOnly={readOnly} goiY={goiY}
+            gia={selectedNode?liveQuotes[selectedNode.id]:undefined}
+            onLabel={label=>selectedNode&&dispatch({type:'nodeLabel',id:selectedNode.id,label})}
+            onParam={(ten,v)=>selectedNode&&dispatch({type:'update',id:selectedNode.id,data:{params:{
+              ...(selectedNode.data.params as Record<string, unknown>), [ten]: v }}})}
+            // ⛔ `credential_ref` o MUC TREN CUNG cua buoc, khong duoi `data`:
+            //    `bien_dich._node_tu_dinh_nghia` doc dung khoa top-level. Dung
+            //    action `graph` DA CO — ⛔ khong them action vao `editorState.ts`
+            //    (so S3, chu la UI-3).
+            onKetNoi={ref=>selectedNode&&dispatch({type:'graph',
+              nodes:page.nodes.map(node=>node.id===selectedNode.id
+                ?{...node,credential_ref:ref||undefined}:node) as CanvasNode[],
+              edges:page.edges})}
+            onNhanBan={selectedNode?()=>duplicateNode(selectedNode.id):undefined}
+            onXoa={selectedNode?()=>{dispatch({type:'delete',ids:[selectedNode.id]});setSelected([])}:undefined}/>
         </aside>}
     </div>
     {/* Ngan keo Assistant (AI) va ngan keo "Phien ban & chia se" da bo.
