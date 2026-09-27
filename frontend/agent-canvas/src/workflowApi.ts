@@ -469,7 +469,22 @@ export type RunV3Node = { node_id: string; status: string; attempt: number
   // han", P9b task 5). Khong co co nay thi mot node tu di nhanh `reject` vi
   // het gio hien Y HET mot node vua duoc nguoi duyet bam: cung `SUCCEEDED`,
   // cung `waiting_kind` rong.
-  het_han: boolean }
+  het_han: boolean
+  /** Câu hỏi người duyệt phải đọc, và chế độ hết hạn — CHỈ có ở node
+   *  `core.human`, và **đến từ đồ thị ĐÃ GHIM** của run
+   *  (`runs_v3._tham_so_human_da_ghim` đọc `version.graph`).
+   *
+   *  🔴 ⛔ KHÔNG đọc hai thứ này từ bản nháp. Một lượt chạy thi hành một
+   *     `workflow_version` BẤT BIẾN, còn bản nháp sửa được bất kỳ lúc nào ⇒
+   *     nếu giao diện đọc từ bản nháp thì người duyệt có thể đọc *"Xoá toàn bộ
+   *     playlist?"* rồi bấm Duyệt, trong khi động cơ đi nhánh `approve` của
+   *     câu *"Đăng bài này lên kênh chính?"*. Họ đồng ý với một câu hỏi họ
+   *     **chưa từng được hỏi**.
+   *
+   *  ⚠️ `het_han_che_do` (`fail|route|approve|reject`) KHÁC `het_han`
+   *     (boolean: *đã* hết hạn chưa). Hai thứ khác loại ⇒ hai tên. */
+  cau_hoi?: string
+  het_han_che_do?: string }
 export type RunV3Event = { seq: number; loai: string; node_id: string
   du_lieu: Record<string, unknown>; created_at: string }
 export type RunV3 = { id: string; workflow_id: string; version_id: string

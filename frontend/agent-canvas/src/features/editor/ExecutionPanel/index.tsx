@@ -89,7 +89,9 @@ export function ExecutionPanel(p: Props) {
     {p.runDaXong&&<button onClick={p.taoBanChayMoi}>Tạo bản chạy mới</button>}
     {/* Task UI-8a — TRÊN dòng thời gian: đây là hành động khẩn, không phải
         một dòng lịch sử để cuộn tới. */}
-    <DuyetNguoi run={p.run} tenBuoc={tenBuoc} thamSo={thamSo}/>
+    {/* ⛔ KHONG truyen `thamSo`: cau hoi duyet den tu payload cua RUN (ban da
+        ghim), ⛔ khong tu ban nhap. Xem `DuyetNguoi.tsx` + `test_5605`. */}
+    <DuyetNguoi run={p.run} tenBuoc={tenBuoc}/>
     <RunV3Panel run={p.run} onCancel={p.huyRun} onChayLaiTu={p.chayLaiTuNode}
       tenBuoc={tenBuoc} thamSo={thamSo} dauRa={dauRa}/>
     {p.runError && <span className="run-error" role="alert">{p.runError}</span>}
