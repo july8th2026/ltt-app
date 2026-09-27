@@ -21,6 +21,7 @@ from apps.prompt_ai_ommi.tables.canh import OmmiCanh
 from apps.prompt_ai_ommi.tables.iteration import OmmiIteration
 from apps.prompt_ai_ommi.tables.nhan_vat import (
     OmmiBackground, OmmiCharacter, OmmiFaceEmbedding, OmmiOutfit, OmmiPose)
+from apps.prompt_ai_ommi.tables.chia_se import OmmiShareCode
 
 __all__ = [
     "RESOURCE_KINDS", "OmmiResource", "OmmiResourceVariant", "OmmiTag",
@@ -33,5 +34,5 @@ __all__ = [
     "OmmiSceneVersion", "OmmiBinding", "OmmiHandoff",
     "OmmiBrief", "OmmiCanh", "OmmiIteration",
     "OmmiBackground", "OmmiCharacter", "OmmiFaceEmbedding", "OmmiOutfit",
-    "OmmiPose",
+    "OmmiPose", "OmmiShareCode",
 ]
