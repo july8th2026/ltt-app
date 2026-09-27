@@ -22138,3 +22138,6 @@ msgstr "normalizing the result"
 
 msgid "đang ghép góp ý vào brief"
 msgstr "merging feedback into the brief"
+
+msgid "Chưa chọn prompt meta."
+msgstr "No meta prompt selected."
