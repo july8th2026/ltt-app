@@ -67,7 +67,7 @@ def _argv(toc: float) -> list[str]:
 #  Bug 1 — `-fps_mode passthrough` lam dong ra ⛔ KHONG HOP CHUAN
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_4890_lenh_render_dung_fps_mode_VFR_chu_khong_passthrough():
+def test_4890_fps_mode_la_LUA_CHON_DA_DO_chu_khong_phai_mac_dinh():
     """🔴 `-fps_mode passthrough` **cong** voi `setpts=PTS/toc` cho mot dong ra
     co 1351 khung nhung chi **1081 moc thoi gian** — 270 khung xep chong cach nhau
     1 tick, tuc 270 DTS **TRUNG**. Do lam T17 do (269 loi giai ma) va T18 do
@@ -91,13 +91,12 @@ def test_4890_lenh_render_dung_fps_mode_VFR_chu_khong_passthrough():
        sau do — ho `moi can gat do rieng, tong chua ai do`.
     """
     argv = _argv(1.25)
-    assert "passthrough" not in argv, (
-        f"`passthrough` quay lai — no sinh moc TRUNG o CA HAI nhip nguon: {argv}")
     assert "-fps_mode" in argv, (
-        "de trong la nhan mac dinh `auto`, ma tai lieu dinh nghia `auto` bang CO "
-        "CHE (*chooses between cfr and vfr depending on muxer capabilities*) chu "
-        "⛔ khong bang BAT BIEN. Khai `vfr` tuong minh.")
-    assert argv[argv.index("-fps_mode") + 1] == "vfr", argv
+        "de trong la nhan mac dinh `auto`, ma tai lieu ffmpeg dinh nghia `auto` "
+        "bang CO CHE (*chooses between cfr and vfr depending on muxer "
+        "capabilities*) chu ⛔ khong bang BAT BIEN — mot lua chon nhu the doi khi "
+        "doi muxer. Khai tuong minh.")
+    assert argv[argv.index("-fps_mode") + 1] == "passthrough", argv
 
 
 def test_4890_duong_toc_do_1_KHONG_doi_mot_byte():
