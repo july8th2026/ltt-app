@@ -92,6 +92,20 @@ def director_prompt(params: dict) -> tuple[str, str]:
         system = f"{system}\n\nSELECTED META DIRECTOR:\n{meta_prompt}"[:30000]
     resources = resource_lines(list(params.get("resources") or []))
     existing = list(params.get("existing_scenes") or [])
+    resources_text = "\n".join(resources) if resources else "- none"
+    # X-5 / spec Sec 8: khoi chu khoa nhan vat/boi canh PHAI di vao prompt gui
+    # LLM -- luu `fixed_prompt_block` ma khong chen vao day thi tinh nang khoa
+    # nhan vat khong lam gi ca (test_5342). Di TRUOC danh sach tai nguyen: LLM
+    # doc tu tren xuong, va day la mot RANG BUOC phai giu o MOI canh, khong
+    # phai mot goi y giua danh sach tham chieu.
+    khoi = []
+    for nhan, ten in (("CHARACTER LOCK (must match in EVERY scene)",
+                       "character_block"),
+                      ("BACKGROUND LOCK", "background_block")):
+        gia_tri = str(params.get(ten) or "").strip()
+        if gia_tri:
+            khoi.append(f"{nhan}:\n{gia_tri}")
+    resources_block = "\n\n".join(khoi + [resources_text])
     user = (PROMPTS / "director_user.txt").read_text(encoding="utf-8").format(
         operation=params.get("operation", "director"),
         title=params.get("title", ""), story=params.get("story", ""),
@@ -99,7 +113,7 @@ def director_prompt(params: dict) -> tuple[str, str]:
         duration=params.get("duration_seconds", 30), scenes=params.get("scene_count", 6),
         aspect=params.get("aspect_ratio", "16:9"), style=params.get("style", "cinematic"),
         language=params.get("language", "vi"),
-        resources="\n".join(resources) if resources else "- none",
+        resources=resources_block,
         existing=json.dumps(existing[:20], ensure_ascii=False),
     )
     style_negative = str(params.get("style_negative") or "").strip()
