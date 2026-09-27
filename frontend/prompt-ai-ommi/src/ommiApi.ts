@@ -769,10 +769,10 @@ export function bundleBrief(
   return request(`/briefs/${id}/bundle`, { method: 'POST', body: JSON.stringify(body) })
 }
 
-export type Quote = { credit: number; free_left: number }
+export type BriefQuote = { credit: number; free_left: number }
 
 /** Giá cho LƯỢT TIẾP THEO. Đọc thẳng con số máy chủ trả, không tính lại. */
-export function quoteBrief(id: string): Promise<Quote> {
+export function quoteBrief(id: string): Promise<BriefQuote> {
   return request(`/briefs/${id}/quote`, { method: 'POST', body: JSON.stringify({}) })
 }
 

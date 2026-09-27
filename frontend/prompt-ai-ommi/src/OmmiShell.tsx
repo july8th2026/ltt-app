@@ -17,6 +17,7 @@ import { OverviewScreen } from './OverviewScreen'
 import { ProjectScreen } from './ProjectScreen'
 import { ResourceLibrary } from './ResourceLibrary'
 import { StoryboardScreen } from './StoryboardScreen'
+import { StudioShell } from './StudioShell'
 
 type Screen = { key: string; label: string; icon: string; built: boolean }
 type Group = { title: string; items: Screen[] }
@@ -25,6 +26,9 @@ const GROUPS: Group[] = [
   {
     title: 'KHÔNG GIAN',
     items: [
+      // Lối vào mặc định (Q-3, 26/09): 2-pane Studio Kịch bản. Đứng đầu danh
+      // sách vì `MAN_MAC_DINH` bên dưới trỏ vào đúng khoá này.
+      { key: 'studio', label: 'Studio Kịch bản', icon: '✎', built: true },
       { key: 'overview', label: 'Tổng quan', icon: '▦', built: true },
       { key: 'projects', label: 'Dự án', icon: '▤', built: true },
     ],
@@ -61,7 +65,7 @@ const KHOA_HOP_LE = new Set(
   GROUPS.flatMap((g) => g.items.filter((i) => i.built).map((i) => i.key)),
 )
 
-const MAN_MAC_DINH = 'overview'
+const MAN_MAC_DINH = 'studio'
 
 function docHash(): string {
   const h = (window.location.hash || '').replace(/^#\/?/, '')
@@ -155,6 +159,7 @@ export function OmmiShell({ csrfToken }: { csrfToken: string }) {
       </nav>
 
       <section className="ommi-main">
+        {screen === 'studio' ? <StudioShell /> : null}
         {screen === 'overview' ? <OverviewScreen onGo={setScreen} /> : null}
         {screen === 'projects' || screen === 'brief' ? (
           <ProjectScreen key={screen} mode={screen} />
