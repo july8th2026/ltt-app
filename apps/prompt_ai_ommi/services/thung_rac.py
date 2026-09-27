@@ -15,6 +15,7 @@ ho mot truong, va no chi lo khi co nguoi thu roundtrip that (`test_5502`).
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 from platform_core.i18n import _ as _t
@@ -22,6 +23,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apps.prompt_ai_ommi.services import resources as rsvc
+
+_log = logging.getLogger(__name__)
 from apps.prompt_ai_ommi.services.resources import ResourceNotFound
 from apps.prompt_ai_ommi.tables import OmmiResource, OmmiResourceVariant, OmmiTrash
 
@@ -153,7 +156,16 @@ def purge_expired(db: Session, *, now: datetime | None = None,
                     storage.delete(key)
                     xoa_anh += 1
                 except Exception:              # noqa: BLE001
-                    pass
+                    # Y dinh GIU NGUYEN (xem docstring): mot loi xoa tep khong
+                    # duoc lam vo ca luot purge -- dong CSDL da di roi, mot tep
+                    # thua nam lai vo hai hon dung giua chung.
+                    #
+                    # ⛔ Nhung `pass` lam loi BIEN MAT hoan toan: mot kho luu tru
+                    #    hong MOI luot xoa se bao `da_xoa_anh: 0` mai ma khong de
+                    #    lai dau nao. Ghi log giu ca hai: vong lap di tiep, va
+                    #    cai hong van doc duoc.
+                    _log.warning("thung rac: khong xoa duoc tep %s", key,
+                                 exc_info=True)
         db.delete(row)
         xoa_ban += 1
     db.flush()
