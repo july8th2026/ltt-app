@@ -44,7 +44,7 @@ from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
 from . import assets, ban_ghi, nhap_media, pipeline
-from .giai_doan_media import ThieuNguon
+from .giai_doan_media import ThieuNguon, _duong_doc_duoc
 
 log = logging.getLogger(__name__)
 
@@ -108,11 +108,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     with tempfile.TemporaryDirectory(prefix="asv-asr-") as tam:
         thu_muc = Path(tam)
-        duong = kho.local_path(khoa_tieng) if hasattr(kho, "local_path") else None
-        if not duong:
-            duong = str(thu_muc / "tieng.wav")
-            with kho.open(khoa_tieng) as f:
-                Path(duong).write_bytes(f.read())
+        # 🔴 **MOT cua duy nhat de lay mot artifact ve dia.** Truoc 27/09 cho nay
+        #    tu viet lai nhanh do bang `Path(duong).write_bytes(f.read())` — dung
+        #    khuon ma `_duong_doc_duoc` ton tai de khong lam (xem chu thich cua no
+        #    va `test_429`). Va nhanh do la nhanh DUY NHAT production di qua:
+        #    `LocalStorage` co `local_path` nen moi test cuc bo tra duong that,
+        #    con `R2Storage` **khong ghi de** `Storage.local_path` (luon `None`)
+        #    ⇒ 100 % luot that nap ca `audio_full.wav` vao RAM worker. PCM 16 kHz
+        #    mono = 32 kB/s, nen mot phim 2 gio (tran chinh sach) la 230 MB.
+        duong = _duong_doc_duoc(kho, khoa_tieng, thu_muc)
 
         if ctx is not None and getattr(ctx, "progress", None):
             ctx.progress(5, _t('Đang chép lời'))
@@ -130,7 +134,6 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         if che_do != nl.ASR:
             if not run.source_key:
                 raise ThieuNguon(_t('Phiên chạy không có tệp nguồn.'))
-            from .giai_doan_media import _duong_doc_duoc
             video = _duong_doc_duoc(kho, run.source_key, thu_muc)
             try:
                 tho, dinh_tuyen = nl.dinh_tuyen(
