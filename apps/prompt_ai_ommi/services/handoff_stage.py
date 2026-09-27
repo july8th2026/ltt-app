@@ -75,7 +75,7 @@ _STYLE_TU_KHOA = (("realistic", "realistic"), ("that", "realistic"),
                   ("cinematic", "cinematic"))
 
 
-def _doan_enum(text: str, values: tuple, tu_khoa: tuple) -> str:
+def _doan_enum(text: str | None, values: tuple, tu_khoa: tuple) -> str:
     """Doan gia tri enum gan nhat tu van ban tu do — TAT DINH (khop dau tien
     thang tren mot bang co thu tu co dinh, khong LLM, khong duyet dict).
 
@@ -200,6 +200,11 @@ def _refs_tu_binding(db, owner_id: str, project, scene: dict
         if bo_qua is not None:
             skipped.append(bo_qua)
             continue
+        # Bat bien cua `_mot_ref_anh`: DUNG MOT trong `(ref, bo_qua)` khac None.
+        # Kieu `tuple[dict|None, dict|None]` khong dien dat duoc dieu do, nen
+        # neu ai doi ham ay tra `(None, None)` thi mot `None` se vao `refs` va
+        # no chi no o ben NHAN, xa cho gay ra. `assert` giu bat bien o BIEN.
+        assert ref is not None
         refs.append(ref)
 
     return refs, skipped, bool(image_bindings)
@@ -296,6 +301,8 @@ def dung_payload(db, *, project, scene: dict, owner_id: str,
             if bo_qua is not None:
                 skipped.append(bo_qua)
                 continue
+            # Bat bien nhu tren (`_mot_ref_anh`/`_mot_ref_video`).
+            assert ref is not None
             refs.append(ref)
 
     for binding in bi_cat:

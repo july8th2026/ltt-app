@@ -17,7 +17,8 @@ from sqlalchemy.orm import Session
 
 from platform_core.i18n import _ as _t
 from apps.prompt_ai_ommi.routes._shared import (
-    _csrf, _require_run_enabled, _user, get_db, require_login, router)
+    _csrf, _require_run_enabled, _user, body_khong_bat_buoc, get_db,
+    require_login, router)
 from apps.prompt_ai_ommi.services import briefs as bf
 from apps.prompt_ai_ommi.services import iterate as it
 from apps.prompt_ai_ommi.services.bundle import dung_bundle
@@ -91,10 +92,7 @@ async def sua(request: Request, bid: str,
 async def xoa(request: Request, bid: str,
              _identity: str = Depends(require_login),
              db: Session = Depends(get_db)):
-    try:
-        body = await request.json()
-    except Exception:  # noqa: BLE001 -- DELETE thuong khong co body
-        body = {}
+    body = await body_khong_bat_buoc(request)
     _csrf(request, body)
     b = _lay(db, bid, _user(request))
     b.archived_at = datetime.now(timezone.utc); db.commit()

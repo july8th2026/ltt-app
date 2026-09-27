@@ -43,7 +43,13 @@ def _integer(value, default: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(number, maximum))
 
 
-def _id(value: str, prefix: str) -> str:
+def _id(value: str | None, prefix: str) -> str:
+    """`None` la dau vao HOP LE — than ham coi no la chuoi rong.
+
+    Chu ky cu khai `str` trong khi dong dau tien la `str(value or "")`, tuc no
+    CO Y nhan `None`. Moi cho goi truyen `payload.get(...)` (`Any | None`), nen
+    chu ky cu la mot ban khai SAI ve chinh hanh vi cua no.
+    """
     value = str(value or "")[:64]
     return value if re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", value) else f"{prefix}_{uuid.uuid4().hex[:12]}"
 
