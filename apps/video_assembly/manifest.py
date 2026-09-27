@@ -63,6 +63,7 @@ MANIFEST = AppManifest(
         name="video_assembly.run",
         job_type="video_assembly.run",
         description=N_('Dựng một video hoàn chỉnh từ clip thô và nhạc.'),
+        ten_ngan=N_('Ghép clip và nhạc'),
         params_schema={
             "clips": {"type": "video[]", "required": True},
             "music": {"type": "audio", "required": False},

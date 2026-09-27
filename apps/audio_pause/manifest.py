@@ -47,6 +47,7 @@ MANIFEST = AppManifest(
         name="audio_pause.run",
         job_type="audio_pause.run",
         description=N_('Chèn khoảng lặng vào một bản thu tại các mốc văn bản.'),
+        ten_ngan=N_('Chèn khoảng lặng vào bản thu'),
         params_schema={
             "audio": {"type": "audio", "required": True},
             "pause_plan": {"type": "json", "required": True},

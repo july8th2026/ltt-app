@@ -106,6 +106,7 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="image.thumbnail", job_type="thumbnail.generate",
         description=N_('Sinh ảnh nền thumbnail YouTube theo phong cách và bố cục.'),
+        ten_ngan=N_('Sinh ảnh nền Thumbnail'),
         admission_theo_model=KHAI_CU_TRU_ANH,      # cư trú 3090 — xem đầu tệp
         # 🔴 BỐN THAM SỐ ĐÃ GỠ Ở PHA 06.3: `title`, `subtitle`, `text_style`,
         #    `ngon_ngu`. Cả bốn chỉ phục vụ chữ vẽ trong ảnh — thứ model nhà

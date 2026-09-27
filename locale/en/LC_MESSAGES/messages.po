@@ -22150,3 +22150,51 @@ msgstr "Speed cannot be changed on the passthrough copy path: that path has no f
 
 msgid "Tốc độ áp ở giai đoạn 2 (hoàn thiện hình), không phải ở render."
 msgstr "Speed is applied in stage 2 (picture finishing), not in render."
+
+msgid "Chèn khoảng lặng vào bản thu"
+msgstr "Insert silence into a recording"
+
+msgid "Nghiên cứu tài liệu"
+msgstr "Research documents"
+
+msgid "Trích văn bản từ tài liệu"
+msgstr "Extract text from a document"
+
+msgid "Sinh lô ảnh đồng nhất"
+msgstr "Generate a consistent image batch"
+
+msgid "Sinh ảnh từ mô tả"
+msgstr "Generate images from a prompt"
+
+msgid "Tạo ảnh bằng model nội bộ"
+msgstr "Generate images on the in-house model"
+
+msgid "Sinh ảnh nền Thumbnail"
+msgstr "Generate a thumbnail background"
+
+msgid "Sinh prompt cảnh từ một kịch bản"
+msgstr "Build scene prompts from a script"
+
+msgid "Chuyển văn bản thành giọng"
+msgstr "Turn text into speech"
+
+msgid "Dựng storyboard câu chuyện"
+msgstr "Build a story storyboard"
+
+msgid "Sinh văn bản bằng LLM"
+msgstr "Generate text with an LLM"
+
+msgid "Soạn gói prompt nhiều cảnh"
+msgstr "Compose a multi-scene prompt pack"
+
+msgid "Phiên âm có mốc thời gian"
+msgstr "Transcribe with timestamps"
+
+msgid "Sinh video từ mô tả"
+msgstr "Generate video from a prompt"
+
+msgid "Cắt clip ngắn từ video dài"
+msgstr "Cut short clips from a long video"
+
+msgid "Ghép clip và nhạc"
+msgstr "Assemble clips and music"

@@ -291,6 +291,7 @@ MANIFEST = AppManifest(
             name="speech.ltt",
             job_type="ltt_voice.synthesize",
             description=N_('Chuyển văn bản thành giọng nói tiếng Việt.'),
+            ten_ngan=N_('Chuyển văn bản thành giọng'),
             params_schema={
                 "text": {"type": "string", "required": True,
                          "max_length": TRAN_KY_TU_CONG_KHAI},

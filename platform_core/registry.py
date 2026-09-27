@@ -308,6 +308,13 @@ class ToolSpec:
     params_schema: dict
     returns: dict
     verifiable: tuple = ()
+    # Tên NGẮN, tuỳ chọn, app tự khai cạnh chính nó — KHÔNG phải một bảng tra
+    # cứu thứ hai trong nền tảng (đó là thứ `test_967` cấm, xem `nut._tieu_de`).
+    # Rỗng ⇒ `_tieu_de` lùi về hành vi cũ (câu đầu của `description`, cắt ở
+    # 60 ký tự). App LTT có mô tả dài một câu không dấu chấm (vd
+    # `taovideo.generate`) bị cắt GIỮA TỪ ở 60 ký tự — `ten_ngan` là lối ra
+    # cho đúng app đó tự đặt tên, không phải nền tảng đoán hộ.
+    ten_ngan: str = ""
     # False = giữ runtime/schema để workflow cũ chạy, nhưng không mời khách
     # tạo node mới từ palette. Đây là soft-retire, không phải xoá capability.
     customer_visible: bool = True
