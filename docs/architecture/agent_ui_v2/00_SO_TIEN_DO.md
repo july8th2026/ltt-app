@@ -146,3 +146,34 @@ _(mới nhất ở trên)_
   P0-1 **an toàn hơn** bản audit đề xuất: sửa ở cổng biên dịch (1 tệp backend, không
   di trú, mọi bản nháp production tự chạy được) thay vì sửa `nextNode` + di trú dữ
   liệu. Rủi ro R1 (di trú hỏng dữ liệu production) **bị loại bỏ hoàn toàn**.
+
+## Điều phối liên phiên (27/09)
+
+| Việc | Trạng thái |
+|---|---|
+| Phiên `Auto Scan Video final closure` định deploy HEAD `main` | ⏸ **đã dừng theo yêu cầu** — chốt phương án **A** |
+| UI-0 đã ở trên `main` (`72ee199b`) | ✅ nhưng **CHƯA deploy** |
+| Chủ dự án quyết deploy | ⏳ **đang chờ** — cả hai phiên cùng báo |
+
+🔴 **Vì sao phải chặn.** Phiên kia chạy `git diff --name-only eb0335f5..HEAD`, thấy
+thuần `docs/`, rồi kết luận deploy vô hại. Phép đo ấy đúng **lúc nó chạy**; vài phút
+sau tôi ff-merge UI-0 (có mã, và có **đổi hành vi bút toán**) vào `main`.
+⇒ **Một phép đo trên `main` có HẠN DÙNG.** `main` là trạng thái chia sẻ đang đổi;
+phép đo phải chạy **ngay trước hành động**, ⛔ không phải trước đó mười phút.
+
+⛔ **Phương án B (deploy từ `eb0335f5`) đã bị loại — có lý do kỹ thuật, đã tự kiểm:**
+`setup/2-cai-dat.ps1:252` đóng cứng `git -C $src rev-parse HEAD` (đường deploy
+**không nhận SHA**), và dòng ~272 chép `$VAN_CHUYEN` = `apps\*\vendor` + `yolov8n.pt`
+từ **cây sống** — nhị phân vendor gitignored có chủ ý. Một worktree mới không có
+chúng, và chú thích tại chỗ ghi hậu quả: app `upscalevideo` **chết IM LẶNG** trên
+production (EXITCODE=0, `/health/ready` 200, `nghiem_thu_deploy` báo *thiếu 0* vì nó
+**chỉ đếm tệp `.py`**).
+⚠️ Phiên kia còn kể `axe.min.js` trong nhóm sẽ thiếu — **sai**: nó cố ý **không** nằm
+trong `$VAN_CHUYEN` (người đọc duy nhất là `tools/check_a11y.py`, chạy từ cây nguồn
+**trước** deploy). Không đổi kết luận, nhưng một mục sai trong một danh sách an toàn
+sẽ khiến lần sau có người đi kiểm thứ vô hại và bỏ qua thứ thật — cùng họ với cái bẫy
+`.typed-port "44px"` ở §Task 4.
+
+**Gate:** một lượt gate XANH trên đúng SHA sẽ deploy (SHA đó chứa cả UI-0) **chính là**
+bằng chứng cho UI-0. ⛔ Tôi không chạy lượt thứ hai: `l3_lai_bi_chan` khoá theo
+(nhánh, cây), và "cuối plan" của tôi là sau **UI-11** — còn xa, trên mã mới hơn nhiều.
