@@ -104,6 +104,71 @@ def test_loc_tham_chieu_TRUNG_KHOP_THAM_SO_HINH_HOC_cua_GD2_that(tmp_path, bo_di
     assert (manh_logo in tham) is co_logo, (manh_logo, "tham")
 
 
+def _cua_so_trim(chuoi: str) -> list[tuple[float, float]]:
+    """Cac cua so `trim=` doc TU chuoi loc — mot phep do, ⛔ khong phai mot ky vong
+    ve cach go. Bai duoi chot TONG THOI LUONG, nen no con dung khi `loc_cat_noi`
+    doi cach viet cua so (vd sang `between(t,..)`), chi hong khi CON SO sai."""
+    import re
+
+    return [(float(b), float(k)) for b, k in
+            re.findall(r"trim=start=([\d.]+):end=([\d.]+)", chuoi)]
+
+
+def test_2012_tham_chieu_MANG_toc_do_va_cua_so_o_TRUC_NGUON():
+    """🔴 `duong_nguon` la tep NGUON (`run.source_key`), `duong_ra` la ban giao —
+    **da** qua `setpts=PTS/toc` cua GD1. Ban tham chieu ⛔ khong ap `toc_do` thi hai
+    ben lech tung khung, VMAF do mot thu khong ai hoi, va **T18 bao `hong` tren mot
+    tep khong sai gi ca** — dung hau qua ma docstring cua `loc_tham_chieu` da canh
+    bao cho `khoang_giu`, chi la o mot chieu khac.
+
+    Goc: `_do_vmaf` truyen `bien_tap=loc_bien_tap_gd2(...)`, va ham ay **co chu y
+    bo `toc_do`** (no la viec cua GD1). Dung cho hinh hoc GD2; sai cho MOC THOI
+    GIAN, vi tep DUOC DO da mang phep doi moc do roi.
+
+    ⭐ Chot CA HAI chieu, vi sua mot chieu thoi con lech NANG hon mot chieu:
+      1. chuoi tham chieu phai CO `setpts` cua toc do;
+      2. cua so cat phai o **truc NGUON** (`loc_cat_noi` cat nguon TRUOC roi moi
+         ap `setpts`), trong khi `khoang_giu` cua `image_finish` nam tren truc
+         BAN RA CUA GD1 — tuc `t_nguon = t_gd1 * toc`.
+
+    ⚠️ Chot bang TONG THOI LUONG, ⛔ khong bang chuoi ky tu: mot bai chot
+       `"start=3.125000"` la mot banh coc do CACH GO — no do khi ai do doi dinh dang
+       so, va no im khi he so sai ma dinh dang dung.
+    """
+    toc = 1.25
+    khoang_gd1 = [(0.0, 2.0), (2.5, 4.0)]      # truc BAN RA cua GD1
+    hinh = {"khoang_giu": [list(k) for k in khoang_gd1], "vung": (),
+            "rong_khung": 640, "cao_khung": 360}
+
+    mot = qc.loc_tham_chieu(hinh, duong_chu=[], duong_ass="", toc_do=1.0)
+    nhanh = qc.loc_tham_chieu(hinh, duong_chu=[], duong_ass="", toc_do=toc)
+
+    # (1) `setpts` cua toc do: vang khi toc = 1, co khi toc != 1.
+    assert "setpts=PTS/" not in mot, (
+        "toc_do = 1 ma tham chieu van ap mot phep doi moc: " + mot)
+    assert "setpts=PTS/" in nhanh, (
+        f"toc_do = {toc} ma tham chieu ⛔ khong ap phep doi moc — T18 se bao hong "
+        f"tren mot tep khong sai gi: {nhanh}")
+
+    # (2) Cua so o truc NGUON. Do bang TONG, va doi chung voi ca hai phia:
+    #     tong nguon = tong GD1 * toc, va tong GD1 = tong nguon / toc.
+    tong_gd1 = sum(k - b for b, k in khoang_gd1)
+    tong_mot = sum(k - b for b, k in _cua_so_trim(mot))
+    tong_nhanh = sum(k - b for b, k in _cua_so_trim(nhanh))
+
+    assert tong_mot == pytest.approx(tong_gd1), (
+        f"toc_do = 1: cua so phai giu nguyen, {tong_mot} != {tong_gd1}")
+    assert tong_nhanh == pytest.approx(tong_gd1 * toc), (
+        f"cua so ⛔ khong doi ve truc nguon: doc {tong_nhanh} giay tu tep nguon, "
+        f"can {tong_gd1 * toc} (= {tong_gd1} giay ban ra * toc {toc})")
+
+    # ⭐ Ve DOI CHUNG: sau khi ap `setpts`, tham chieu phai dai DUNG bang tep
+    #    duoc do. Day la tinh chat ma T18 that su can, va no chot CA HAI buoc
+    #    tren cung mot luc — mot buoc dung mot buoc sai thi so nay lech.
+    assert tong_nhanh / toc == pytest.approx(tong_gd1), (
+        "tham chieu sau setpts ⛔ khong dai bang ban giao")
+
+
 def test_lenh_vmaf_dau_vao_DUNG_thu_tu_va_ban_bi_mo_DI_TRUOC():
     """libvmaf: dau vao 1 = ban bi mo (distorted), 2 = tham chieu. Dao nguoc la
     do mot thu khac. Logo o chi so 2.. nhu render, nen `[2:v]` trong chuoi loc

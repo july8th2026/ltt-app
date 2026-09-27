@@ -165,6 +165,56 @@ def test_bo_do_khong_kha_dung_KHONG_bi_doc_thanh_da_dat(moi_truong, tmp_path):
     assert theo_ma["dich"]["nhan_trang_thai"] != theo_ma["giong"]["nhan_trang_thai"]
 
 
+def test_2101_khach_thay_so_doan_DO_DUOC_chu_khong_so_doan_CHUAN_BI(moi_truong,
+                                                                    tmp_path):
+    """🔴 `asv_chi_tiet.html` in *"N doan da do"* tu `so_doan_do` — ma khoa ay dem
+    doan **DA CHUAN BI**, ⛔ khong doan **DO DUOC**.
+
+    Voi bo do `giong` `khong_kha_dung` (thieu qc-venv / model / card) thi `ket_qua`
+    rong ⇒ `so_giong_khong_dat = 0`. Canh mot `so_doan_do = 18`, hai con so ay doc
+    thanh *"da do 18 doan, ⛔ khong doan nao sai"* trong khi ⛔ KHONG doan nao duoc
+    do. Ho `hai trang thai gop thanh mot gia tri`, va lan nay no di ra **cho khach**.
+
+    ⭐ `giai_doan_qc_do_luong.tom_tat_do_luong` DA sinh `so_doan_da_do` de tra loi
+       dung cau ay, va CO Y ⛔ khong doi nghia khoa cu vi cho khac doc no. Nhung ⛔
+       khong ai doi NGUOI DOC sang khoa moi, nen con bo van o nguyen cho no dang o
+       — dung ho *"co duoc ghi ma ⛔ khong ai doc"*.
+
+    ⚠️ Chot bang TINH CHAT, ⛔ khong bang mot con so go cung: con so khach thay
+       ⛔ khong bao gio duoc LON HON so doan that su do duoc. Neu ai do doi bo so
+       gieo thi bai nay van dung.
+    """
+    import platform_core.db as dbmod
+    from apps.auto_scan_video import quan_sat, tables as T
+
+    _app, a, csrf, _b, _cb = moi_truong
+    run_id = _tao(a, csrf, tmp_path)
+    # 18 doan CHUAN BI, 3 doan THAT SU do duoc — dung hinh dang cua mot luot ma
+    # bo do giong ⛔ khong chay duoc.
+    _gieo(run_id, {**GIEO, "qc_do_luong": {**GIEO["qc_do_luong"],
+                                           "so_doan_da_do": 3}})
+
+    db = next(dbmod.get_session())
+    try:
+        bc = quan_sat.bang_chung_chat_luong(db, db.get(T.AsvRun, run_id))
+    finally:
+        db.close()
+
+    dl = bc["do_luong"]
+    assert dl["so_doan_da_do"] == 3, (
+        "`bang_chung_chat_luong` ⛔ khong mang con so DO DUOC ra man khach")
+    assert dl["so_doan_da_do"] <= dl["so_doan_do"], (
+        "so doan DO DUOC ⛔ khong the nhieu hon so doan CHUAN BI")
+
+    # ⭐ Va man khach phai in con so DO DUOC. `3` chu ⛔ khong `18`.
+    van = a.get(f"/auto-scan-video/run/{run_id}").text
+    assert "3 đoạn đã đo" in van, (
+        f"man khach ⛔ khong in so doan do duoc; trang co chua '18 đoạn đã đo'? "
+        f"{'18 đoạn đã đo' in van}")
+    assert "18 đoạn đã đo" not in van, (
+        "man khach khang dinh da do 18 doan trong khi chi 3 doan duoc do")
+
+
 def test_do_phu_bang_chung_la_PHAN_TRAM_doc_duoc(moi_truong, tmp_path):
     """⚠️ `0,6667` tren man hinh cua khach la mot con so khong ai doc duoc
     thanh mot cau."""

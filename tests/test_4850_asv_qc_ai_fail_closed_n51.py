@@ -151,3 +151,65 @@ def test_QcAiError_duoc_PHAN_LOAI_la_khong_thu_lai_cho_qua():
     from apps.auto_scan_video import loi
 
     assert loi.phan_loai(qc_ai.QcAiError("x")) != loi.TAM_THOI
+
+
+def test_4850_ban_gia_phu_HET_thao_tac_AI():
+    """🔴 **N-51 lan nua, va lan nay do duoc TRUOC khi no can.**
+
+    N-51: thieu nhanh cho `QC_NGU_NGHIA` trong `phan_hoi_ngoai_dich` lam moi loi
+    goi no roi xuong ban gia DICH chung — mot phan hoi **sai hinh dang hoan
+    toan** — va `qc_ai._loc_loi` NUOT no lang le roi cham `dat=True`. Con bug di
+    qua mot BAN GIA, ⛔ khong qua model that, nen ⛔ khong phep kiem nao thay no.
+
+    ⚠️ Do 27/09: `ai` co **8** thao tac, `phan_hoi_ngoai_dich` xu ly **4**. Ba
+       thao tac con lai dang o dung vi tri ma `QC_NGU_NGHIA` da o truoc N-51 —
+       trong do `HO_SO_DICH` la mot duong **TRA TIEN** chua bao gio duoc do cuc bo.
+
+    ⭐ Bai nay ⛔ khong doi ban gia phai co nhanh cho ca 8: mot so thao tac THAT
+       SU dung luoc do dich. No doi lua chon ay duoc **KHAI**, nen mot thao tac AI
+       moi ⛔ khong the vao im lang nua.
+
+    ⚠️ Doc nhanh bang AST, ⛔ khong bang mot danh sach go tay thu hai: hai cho
+       khai cung mot dieu thi ⛔ khong ai bat khop (`hai-cho-khai-cung-mot-dieu`).
+    """
+    import ast
+
+    from apps.auto_scan_video import ai
+    from tests.fixtures import asv_media as fx
+
+    # ── Nhanh THAT SU co trong ham — doc tu AST cua chinh no ─────────────────
+    cay = ast.parse(inspect.getsource(fx.phan_hoi_ngoai_dich))
+    xu_ly = {n.value.attr for n in ast.walk(cay)
+             if isinstance(n, ast.Attribute) and n.attr == "ma"
+             and isinstance(n.value, ast.Attribute)
+             and isinstance(n.value.value, ast.Name) and n.value.value.id == "ai"}
+    xu_ly_ma = {getattr(ai, ten).ma for ten in xu_ly}
+
+    moi_thao_tac = {v.ma for v in vars(ai).values()
+                    if isinstance(v, ai.ThaoTac)}
+    assert len(moi_thao_tac) >= 8, (
+        f"⛔ khong tim thay cac thao tac AI ({moi_thao_tac}) — phep do nay dang "
+        f"soi mot cai gi khac")
+
+    chua_quyet = sorted(moi_thao_tac - xu_ly_ma - fx.DUNG_LUOC_DO_DICH)
+    assert not chua_quyet, (
+        "thao tac AI %s ⛔ khong co nhanh trong `phan_hoi_ngoai_dich` va cung ⛔ "
+        "khong duoc khai la co y dung luoc do DICH — do dung la cho ma N-51 da "
+        "roi vao: ban gia tra sai hinh dang, va nguoi goi nuot lang le. Them "
+        "nhanh, hoac them vao `DUNG_LUOC_DO_DICH`." % (chua_quyet,))
+
+    # ⭐ Chieu con lai: mot ten trong `DUNG_LUOC_DO_DICH` ma DA co nhanh rieng la
+    #    mot loi khai sai — nguoi doc se tin no di qua luoc do dich.
+    ca_hai = sorted(xu_ly_ma & fx.DUNG_LUOC_DO_DICH)
+    assert not ca_hai, (
+        "%s vua co nhanh rieng vua duoc khai la dung luoc do DICH" % (ca_hai,))
+
+    # ⛔ Va mot ten khong con la thao tac nao thi lam con so do phu trong hon
+    #    thuc te.
+    da_chet = sorted(fx.DUNG_LUOC_DO_DICH - moi_thao_tac)
+    assert not da_chet, f"`DUNG_LUOC_DO_DICH` con {da_chet} ma `ai` ⛔ khong co"
+
+    # ⭐ Mon no phai la TAP CON cua danh sach khai — mot mon no cho mot thao tac
+    #    da co nhanh rieng la mot mon no da tra roi ma van ghi trong so.
+    du = sorted(set(fx.MON_NO_HINH_DANG) - fx.DUNG_LUOC_DO_DICH)
+    assert not du, f"`MON_NO_HINH_DANG` con {du} ma ⛔ khong con la mon no"

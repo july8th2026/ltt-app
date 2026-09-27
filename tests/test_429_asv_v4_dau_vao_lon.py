@@ -320,6 +320,36 @@ def test_nguon_soi_duoc_tra_URL_khi_kho_khong_co_dia(tmp_path):
     assert kho.da_mo == [], "da mo tep de doc — dang tai ve thay vi soi tai cho"
 
 
+def test_429_bo_qua_soi_media_tren_R2_phai_NOI_RA_chu_khong_im(tmp_path, caplog):
+    """🔴 `_kiem_media` tra `None` cho CA *"da kiem, sach"* LAN *"⛔ khong kiem gi"*
+    — mot gia tri ganh hai trang thai, o mot ham ten la `_kiem_media`. Nguoi goi
+    (`ghi_artifact`) ⛔ khong the phan biet, nen tren R2 no bao **da ghi va da
+    kiem** trong khi phep kiem chua he chay.
+
+    ⭐ Co hoan cua no la mot PHEP DO that: cho ay duoc chot o
+       `giai_doan_ket_xuat.py:198` (`ket_xuat.kiem_tep_ra(..., soi=nhap_media.soi)`).
+       ⚠️ Nhung cho ay chi phu **TEP CUOI**, ⛔ khong phu artifact TRUNG GIAN — va
+       do phu con phu thuoc CAU HINH (`LTT_STORAGE_LOCAL_PREFIXES=voice/` tren
+       production). Nen lan bo qua phai **DEM DUOC**, ⛔ khong duoc im.
+
+    ⚠️ Bai nay ⛔ **khong** doi `_kiem_media` phai chay tren R2 — tai ve moi
+       artifact chi de soi la dung cai gia ma docstring cua no tu choi tra. No chi
+       doi rang lan KHONG soi de lai mot dau vet.
+    """
+    import logging as _lg
+
+    kho = _KhoR2Gia(tmp_path)
+    khoa = "asv/u/nguon/x.mp4"
+
+    with caplog.at_level(_lg.INFO, logger="apps.auto_scan_video.assets"):
+        assets._kiem_media(kho, khoa, kind="video")
+
+    dau_vet = [r for r in caplog.records if khoa in r.getMessage()]
+    assert dau_vet, (
+        "bo qua phep soi media ma ⛔ khong de lai dau vet nao: mot luot chay THAT "
+        "tren R2 ⛔ khong noi duoc bao nhieu artifact di qua ma chua ai soi")
+
+
 def test_nguon_soi_duoc_NEM_khi_kho_khong_tra_loi_duoc():
     """Im lang tai ca tep ve la dung hanh vi ham nay ton tai de khong lam."""
     class KhoCam:

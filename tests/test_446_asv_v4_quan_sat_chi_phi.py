@@ -161,6 +161,62 @@ def test_dong_thoi_gian_NOI_bao_nhieu_viec_da_lam(
         assert g["don_vi"]["tong"] >= g["don_vi"]["xong"]
 
 
+def test_446_giai_doan_BI_TAT_khong_duoc_khang_dinh_da_lam_voi_KHACH():
+    """🔴 `qc_ai` **mac dinh TAT** (`LTT_ASV_QC_AI`); khi tat no chay qua tuc thi
+    roi bao `succeeded`, va nhan cua no tren man khach la *"Soat lai nghia ban
+    dich"*. Tuc khach doc duoc mot dong khang dinh ban dich DA DUOC SOAT trong khi
+    ⛔ khong mot cau nao duoc doc.
+
+    ⇒ Cung ho loi voi `"VLM de xuat bo"` (`123285ae`): mot **ban khai sai xuat xu
+      di ra cho KHACH**. Va con so tra loi da nam san trong `outputs` tu truoc
+      (`giai_doan_qc_ai.py:140` ghi `qc_ai_bat: False`) — chi la ⛔ khong ai doc.
+
+    ⭐ Chot BA trang thai, ⛔ khong hai. Gop *"da chay va ⛔ khong lam"* voi *"⛔
+       khong khai gi"* thi 12 trong 13 giai doan deu bi in ra la "bo qua" — mot
+       bao dong gia, va bao dong gia lam nguoi ta TAT cong.
+    """
+    assert quan_sat._da_lam("qc_ai", {"qc_ai_bat": False}) is False, (
+        "giai doan tu khai la ⛔ khong lam gi ma `_da_lam` ⛔ khong noi ra")
+    assert quan_sat._da_lam("qc_ai", {"qc_ai_bat": True}) is True
+    # ⚠️ Ve DOI CHUNG: mot giai doan ⛔ khong co bang khai phai tra `None`, ⛔
+    #    khong phai `False` — neu khong thi moi giai doan deu bi in la "bo qua".
+    assert quan_sat._da_lam("render", {"gi_cung_duoc": 1}) is None, (
+        "giai doan ⛔ khong khai gi bi doc thanh 'da bo qua'")
+    assert quan_sat._da_lam("qc_ai", {}) is None, (
+        "`qc_ai` chua ghi bang khai ma da bi ket luan la bo qua")
+
+
+def test_446_man_KHACH_phan_biet_DA_SOAT_voi_BO_QUA():
+    """⭐ Ve con lai cua bai tren: mot bang khai DUNG ma template ⛔ khong doc thi
+    con bo van nguyen o cho no dang o. RENDER that, ⛔ khong quet van ban ma nguon
+    (ho `banh-coc-do-cach-go-thay-vi-do-tinh-chat`).
+    """
+    from apps.auto_scan_video import routes
+    from server.templating import templates
+
+    tep = templates.get_template("asv_tien_do.html")
+
+    def _ve(da_lam):
+        return tep.render(
+            run=type("R", (), {"status": "done", "id": "r1"})(),
+            dong={"giai_doan": [{"giai_doan": pipeline.QC_AI,
+                                 "trang_thai": "succeeded", "da_lam": da_lam}]},
+            nhan_giai_doan=routes.NHAN_GIAI_DOAN,
+            loi_khach=None, co_ket_qua=False, co_phu_de=False,
+            _=lambda s: s, asset_ver="t")
+
+    van_tat, van_bat = _ve(False), _ve(True)
+    nhan = str(routes.NHAN_GIAI_DOAN[pipeline.QC_AI])
+
+    assert nhan in van_tat and nhan in van_bat, "mat han nhan giai doan"
+    assert van_tat != van_bat, (
+        f"khach thay Y HET NHAU du mot lan DA soat va mot lan ⛔ khong soat gi — "
+        f"nhan {nhan!r} khang dinh mot viec chua he lam")
+    assert "bỏ qua" in van_tat, f"lan bi tat ⛔ khong noi ra: {van_tat!r}"
+    assert "bỏ qua" not in van_bat, (
+        f"lan DA soat lai bi in la bo qua: {van_bat!r}")
+
+
 def test_dem_don_vi_cua_giai_doan_KHONG_co_viec_thi_khong_hien(
         tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
     """Mot khoi rong trong bao cao la nhieu; khong co viec thi khong noi gi."""

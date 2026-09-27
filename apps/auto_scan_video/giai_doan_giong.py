@@ -1216,10 +1216,21 @@ def _do_tu_kho(kho: Storage, khoa: str):
        DUY NHAT** tren production. `LocalStorage` CO `local_path`, nen moi phep
        kiem cuc bo di nhanh con lai va ⛔ khong bao gio do duoc nhanh nay.
     """
+    # ⛔ `return None` o day di vao nhanh "⛔ khong co cache" cua nguoi goi, nen mot
+    #    loi doc THAT (R2 nhay mang, khoa bi doi, quyen) bi doc thanh "chua tung
+    #    sinh doan nay" va ta tra tien TTS lai — im lang. Hai trang thai KHAC nhau
+    #    tren mot gia tri, va gia cua chung khac nhau.
+    #
+    # ⭐ ⛔ Khong doi `None` thanh mot ngoai le: di tiep bang cach sinh lai LA hanh
+    #    vi dung (mot doan cache ⛔ khong doc duoc thi sinh lai la cach duy nhat di
+    #    tiep). Thu thieu la **dau vet** — nen log, roi moi `return None`.
     try:
         with kho.open(khoa) as f:
             byte = f.read()
-    except Exception:                       # noqa: BLE001 - khong doc duoc = khong cache
+    except Exception as exc:                # noqa: BLE001 - khong doc duoc = khong cache
+        log.warning("asv: ⛔ khong doc duoc doan cache %s (%s: %s) — coi nhu chua "
+                    "co cache va SINH LAI (tra tien TTS lai)",
+                    khoa, type(exc).__name__, exc)
         return None
     with tempfile.TemporaryDirectory(prefix="asv_doan_cu_") as thu_muc:
         tep = Path(thu_muc) / "doan.wav"

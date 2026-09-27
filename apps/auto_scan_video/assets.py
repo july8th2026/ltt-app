@@ -40,6 +40,7 @@ ve rieng tu, khong phai mot toi uu.
 from __future__ import annotations
 
 import hashlib
+import logging
 from pathlib import Path
 import json
 import re
@@ -53,6 +54,8 @@ from platform_core.storage import CLOUDFLARE_BODY_LIMIT, Storage, StorageError
 
 from .tables import (ASSET_CORRUPT, ASSET_EXPIRED, ASSET_MISSING, ASSET_OK,
                      KINDS, KIND_ANH, KIND_PHU_DE, AsvAsset)
+
+log = logging.getLogger(__name__)
 
 #: Han luu tru mac dinh cua artifact TRUNG GIAN. Ngan hon vong doi mot du an,
 #: vi chung la vat lieu chu khong phai san pham; ban giao cho khach la
@@ -424,14 +427,41 @@ def _kiem_media(kho: Storage, khoa: str, *, kind: str) -> None:
 
     Chi chay duoc khi kho cho ra mot duong dan tren dia (`LocalStorage`). Voi R2
     thi khong tai ve chi de kiem — do la mot lan tai ve cho MOI artifact, va no
-    doi mot phep kiem thanh mot khoan chi phi bang thong. Cho do se duoc chot
-    bang phep kiem cua chinh giai doan render (pha 15), noi tep von da o tren dia.
+    doi mot phep kiem thanh mot khoan chi phi bang thong.
+
+    ⭐ **Co hoan nay la mot PHEP DO, ⛔ khong phai mot cau noi** (do 27/09, dieu
+       phoi): cho do that su duoc chot o `giai_doan_ket_xuat.py:198` —
+       `ket_xuat.kiem_tep_ra(duong_ra, ban, soi=nhap_media.soi)` soi tep tren dia
+       sau khi render.
+
+    ⚠️ **Nhung cho ay chi phu TEP CUOI**, ⛔ khong phu artifact TRUNG GIAN. Tuc
+       tren R2 thi mot phan artifact di qua day ⛔ khong he duoc kiem, va **do phu
+       phu thuoc CAU HINH**: production dat `LTT_STORAGE_LOCAL_PREFIXES=voice/`
+       nen chi tien to `voice/` co duong dan cuc bo.
+
+    🔴 **Con `hasattr(kho, "local_path")` la mot NO-OP** (lan B, 27/09):
+       `local_path` la phuong thuc cua LOP NEN `Storage`, nen `hasattr` LUON dung;
+       thu that su phan biet la GIA TRI tra ve (`R2Storage` tra `None`). Giu lai
+       `hasattr` thi vo hai nhung no khien nguoi doc tin rang co mot nhanh "kho
+       khong ho tro" — ⛔ khong co nhanh do. Bo di, chi con phep thu THAT.
+
+    ⛔ Va phep bo qua tung IM LANG: ham tra `None` cho CA "da kiem, sach" LAN
+       "⛔ khong kiem gi" — mot gia tri ganh hai trang thai, o mot ham ten la
+       `_kiem_media`. Nguoi goi (`ghi_artifact`) ⛔ khong the phan biet. Nay no
+       ghi log, nen mot luot chay THAT noi ra duoc bao nhieu artifact di qua ma
+       ⛔ khong ai soi.
     """
     from apps.auto_scan_video import nhap_media
 
-    duong = kho.local_path(khoa) if hasattr(kho, "local_path") else None
+    duong = kho.local_path(khoa)
     if not duong:
-        return      # xem docstring: khong tai ve chi de kiem
+        # ⛔ Bo qua thi phai NOI RA. Xem docstring: cho nay chi duoc chot cho TEP
+        #    CUOI o pha 15, nen mot artifact trung gian di qua day la mot artifact
+        #    ⛔ chua ai soi.
+        log.info("assets: ⛔ khong soi media artifact %s (kind=%s) — kho ⛔ khong "
+                 "cho duong dan cuc bo; cho nay chi duoc chot cho TEP CUOI o pha 15",
+                 khoa, kind)
+        return
     try:
         tt = nhap_media.soi(duong)
     except nhap_media.MediaError as exc:

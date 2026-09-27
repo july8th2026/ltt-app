@@ -120,6 +120,25 @@ def phien_ban_ffmpeg() -> str:
     tham so. Neu phien ban khong nam trong van tay thi sau khi nang cong cu, moi
     lan chay lai se **dung lai ket qua cu** ma khong ai biet — dung kieu hong ma
     O13 sinh ra de chan.
+
+    🔴 **Nhanh loi tung tra hang so `"khong-ro"` (sua 27/09), va no pha DUNG cai
+       ma doan tren noi nay de chan.** `"khong-ro"` giong nhau cho MOI ban ffmpeg,
+       nen hai ban khac nhau ma phep soi truot deu ra CUNG mot khoa cache: nang
+       cong cu xong, `van_tay_chuan_hoa` khong doi, va lan chay sau dung lai ban
+       tieng cua cong cu CU. Ho loi *"mot gia tri ganh hai trang thai"* — o day
+       la *"phien ban X"* va *"⛔ khong biet phien ban"*.
+
+       Phep soi truot that su xay ra: `timeout=30` tren may dang 100 % CPU, va
+       stdout rong khi worker chay duoi `LocalSystem` (PATH khac phien nguoi dung).
+
+    ⭐ **Truot thi lui ve DANH TINH CUA TEP, ⛔ khong ve mot hang so.** `size` +
+       `mtime` + duong dan da phan biet duoc hai ban dung: cache VAN trung khi
+       cong cu khong doi (nen ta ⛔ khong tra tien tinh lai vo co), va no TU khac
+       khi cong cu doi — dung viec ma truong nay ton tai de lam.
+
+    ⛔ Va khi ca `stat` cung khong duoc thi tra mot gia tri **DUY NHAT cho moi
+       lan goi**: cache truot han. Huong hong la "tinh lai", ⛔ khong bao gio la
+       "dung lai mot ket qua ta khong the chung minh la cung cong cu".
     """
     try:
         r = subprocess.run([media.ffmpeg_bin(), "-version"],
@@ -128,7 +147,24 @@ def phien_ban_ffmpeg() -> str:
         m = re.match(r"ffmpeg version (\S+)", dong)
         return m.group(1) if m else dong[:64]
     except (OSError, subprocess.SubprocessError, IndexError):
-        return "khong-ro"
+        return _danh_tinh_tep_ffmpeg()
+
+
+def _danh_tinh_tep_ffmpeg() -> str:
+    """Danh tinh ban dung khi `ffmpeg -version` khong chay duoc. Xem
+    `phien_ban_ffmpeg`. Tien to `khong-ro-` giu lai cho nguoi doc log biet day la
+    duong LUI, ⛔ khong phai mot so phien ban that."""
+    import hashlib
+    import uuid
+
+    try:
+        p = Path(media.ffmpeg_bin())
+        st = p.stat()
+        mau = f"{p.resolve()}|{st.st_size}|{int(st.st_mtime)}"
+        return "khong-ro-" + hashlib.sha256(mau.encode("utf-8")).hexdigest()[:16]
+    except (OSError, MediaError, ValueError):
+        # ⛔ Khong chung minh duoc la cung cong cu => khong duoc dung lai cache.
+        return "khong-ro-" + uuid.uuid4().hex[:16]
 
 
 # ══════════════════════════════════════════════════════════════════════════════

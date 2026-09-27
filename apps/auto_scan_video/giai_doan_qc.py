@@ -385,9 +385,14 @@ def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, run, duong_nguon: str,
         # ⭐ Tham chieu chay qua CUNG phep cat cua giai doan 2 — xem
         #    `qc.loc_tham_chieu`. Thieu no thi hai ben lech tung khung va T18
         #    bao `hong` du bo ma hoa khong lam gi sai.
+        # 🔴 `toc_do` (27/09): `bt_gd2` da **co chu y bo** `toc_do` (viec cua GD1),
+        #    nhung `duong_ra` DA mang phep doi moc do, con `duong_nguon`
+        #    (`run.source_key`) thi chua. Truyen RIENG, ⛔ khong nhet lai vao
+        #    `bt_gd2` — hinh hoc GD2 phai giu dung phan cua no.
         loc = qc.loc_tham_chieu(hinh, duong_chu=duong_chu, duong_ass=duong_ass,
                                 khoang_giu=khoang_gd2, ds_logo=ds_logo,
-                                lop_phu=lop_phu_ds, bien_tap=bt_gd2)
+                                lop_phu=lop_phu_ds, bien_tap=bt_gd2,
+                                toc_do=_bt.toc_do(cai.bien_tap))
         return qc.do_vmaf(duong_nguon=duong_nguon, duong_ra=duong_ra,
                           loc_hinh=loc, duong_logo=duong_logo,
                           rong=int(tt_ra.get("rong") or 0),

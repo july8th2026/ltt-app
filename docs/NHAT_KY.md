@@ -12,6 +12,129 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-27 — Soát một vòng code VẬN HÀNH của ASV: 5 làn, 13 bug, và ba lời khai sai đi ra CHO KHÁCH
+
+Chủ dự án: *"Có lẽ hệ thống lttstudiosapp đang bị chồng chéo khoá, logic vận
+hành. Bạn nên rà soát lại 1 vòng fix các bug triệt để rồi test job."* Năm làn
+agent soi năm nhóm giai đoạn trên **code vận hành** (⛔ không đọc test rồi suy),
+mỗi làn một worktree, dùng chung một bảng bẫy gồm mười họ lỗi **đã đo được
+trong 24 giờ trước đó**.
+
+### 🔴 Lỗi của điều phối, ghi trước: chép TỆP thay vì gộp DIFF
+
+Làn C ⛔ không commit được (hook `ban-dich-thieu`) và ⛔ không merge được (cây
+bẩn), nên điều phối **chép tệp byte-cho-byte** từ cây nó vào `main`. Gốc của
+làn C là `0b2ae6f6` — **cũ hơn `main` 61 commit** ở vùng đó, và nó
+**predate Task 16**. Cú chép làm `giai_doan_thoi_gian.he_so_ap` **biến mất**,
+tức một lần **lùi Task 16 mà ⛔ không ai khai báo**. Bốn phép kiểm đỏ
+(`test_2018`×3, `test_2023`×1) với `AttributeError`.
+
+⇒ **Luật:** một làn ⛔ không commit được thì lấy **DIFF của nó so với GỐC RIÊNG
+của nó** (`git diff --cached` trong cây nó → `git apply -3` trên `main`), ⛔ không
+bao giờ lấy TỆP. Sau bản sửa, diff thực tế khớp **đúng** patch của làn C
+(239 thêm / 24 bớt) — ⛔ không thêm không bớt. Hai làn A/E chép trùng khớp nên
+⛔ không bị ảnh hưởng; đã đo bằng cách quét mọi commit gộp làn tìm `def` bị xoá.
+
+### Ba lời khai SAI đi ra cho KHÁCH — cùng một họ, ba chỗ khác nhau
+
+`123285ae` từng vá *"VLM đề xuất bỏ"* trên đường tất định. Hôm nay tìm thêm ba
+ca **cùng họ**, và cả ba đều là *"con số ĐÚNG đã được ghi, ⛔ không ai đọc"*:
+
+| chỗ | khách đọc được | sự thật |
+|---|---|---|
+| `ban_bien_tap` hai nhánh **GIỮ** | *"VLM đề xuất giữ"* | tỉ lệ đo bằng **ffmpeg**; `123285ae` chỉ vá nhánh CẮT — và nhánh GIỮ là nhánh **đông dòng nhất** |
+| `asv_tien_do.html` | *"Soát lại nghĩa bản dịch"* trong danh sách đã xong | `qc_ai` **mặc định TẮT**, chạy qua tức thì; `qc_ai_bat: False` đã ghi sẵn |
+| `asv_chi_tiet.html` | *"N đoạn đã đo"* | `so_doan_do` đếm đoạn **đã chuẩn bị**; làn E đã thêm `so_doan_da_do` đúng nhưng ⛔ không ai đổi người đọc |
+
+⭐ Bài học chung: một khoá được ghi mà ⛔ không ai đọc ⛔ **không** trung tính —
+nó biến thành một lời khai sai ở nơi khác, vì người viết UI sẽ dùng khoá **có
+sẵn** thay vì khoá **đúng**.
+
+### Bốn cổng chất lượng tự khai sai phạm vi của chính mình
+
+- **Bánh cóc hai chiều `test_408` soi 2 / 13 giai đoạn** mà docstring khai
+  *"⛔ không có đường thứ ba để một khoá im lặng"*. Đường thứ ba là *"thuộc một
+  giai đoạn ⛔ không có trong literal gõ tay"*, và **11 trong 13** đang đi đường
+  đó. Chứng minh trực tiếp: bỏ mục `qc` khỏi `KHOA_CAN` trước khi mở rộng ⇒
+  bánh cóc **vẫn xanh**.
+  ⇒ Bản vá ⛔ không phải *"soi hết 13 ngay"* mà là làm chỗ **TRỐNG được ĐẾM**:
+  `CHUA_SOI_CO_Y` (10 giai đoạn, kèm người đo + ngày) + một cổng chốt ba chiều.
+  Mỗi dòng là một **món nợ**, ⛔ không phải một quyết định thiết kế.
+- **`test_doi_soat_KHONG_doc_khoa_cua_dong_thoi_gian`** quét chuỗi trong **văn
+  bản mã nguồn**, nên một **chú thích** nhắc `tom_tat_kem_khong_do` làm cổng đỏ.
+  Báo động giả trên một câu văn ⛔ không hề là một phép đọc. Đổi sang đọc chuỗi
+  hằng trong thân hàm qua AST, bỏ docstring — và đã đo rằng cổng **vẫn** bắt
+  một lần đọc thật.
+- **`_kiem_media` bỏ qua phép soi IM LẶNG trên R2.** Cớ hoãn của nó (*"pha 15
+  render sẽ chốt"*) **có thật** (`giai_doan_ket_xuat.py:198`) — nhưng chỉ phủ
+  **tệp CUỐI**, ⛔ không phủ artifact trung gian, và độ phủ còn phụ thuộc
+  `LTT_STORAGE_LOCAL_PREFIXES`. Nay lần bỏ qua **đếm được**.
+  Kèm: `hasattr(kho, "local_path")` là một **no-op** (làn B) — `local_path` là
+  phương thức của **lớp nền**, thứ phân biệt là **giá trị** trả về.
+- **Bản giả AI phủ 4 / 8 thao tác** — đúng chỗ **N-51** đã cắn. `HO_SO_DICH` là
+  một đường **TRẢ TIỀN**: nó rơi xuống lược đồ DỊCH, `_doc` ném, `dung` **nuốt**
+  (`except Exception`, cố ý), và hồ sơ **LUÔN rỗng** trong mọi phép kiểm
+  đầu-cuối. Đã trả nợ (nhánh riêng, giá trị khác rỗng) + dựng cổng độ phủ.
+
+### Hai bug vận hành có thể làm khách mất tiền hoặc mất tệp
+
+- **T18 báo `hong` trên một tệp ⛔ không sai gì** khi `toc_do ≠ 1`.
+  `_do_vmaf` truyền `bien_tap=loc_bien_tap_gd2(...)`, và hàm đó **cố ý bỏ**
+  `toc_do` (việc của GD1). Đúng cho **hình học**, sai cho **mốc thời gian**, vì
+  `duong_ra` đã mang `setpts=PTS/toc` còn `duong_nguon` (`run.source_key`) thì
+  chưa. **Hai chiều của một hệ số**: thiếu `setpts`, *và* `khoang_giu` nằm trên
+  trục BAN RA của GD1 trong khi `loc_cat_noi` cắt tệp NGUỒN trước. Sửa một nửa
+  còn lệch **nặng hơn** — đã tiêm riêng từng nửa, cả ba lần đều đỏ.
+- **`phien_ban_ffmpeg()` trượt ⇒ mọi bản ffmpeg dùng MỘT khoá cache.** Nhánh
+  lỗi trả hằng `"khong-ro"`, và giá trị ấy đi thẳng vào `van_tay_chuan_hoa` —
+  khoá cache của bản tiếng cho ASR. Nâng công cụ xong, lượt sau **dùng lại** bản
+  tiếng của công cụ CŨ. Chính docstring của nó nói trường này tồn tại để chặn
+  đúng việc đó. Phép soi trượt **thật sự xảy ra**: `timeout=30` khi máy 100 %
+  CPU, và stdout rỗng khi worker chạy dưới `LocalSystem`. Nay trượt thì lùi về
+  **danh tính của TỆP** (đường dẫn + size + mtime), nên cache **vẫn trùng** khi
+  công cụ không đổi và **tự khác** khi nó đổi.
+
+### Hai phát hiện đã ĐO và kết luận ⛔ KHÔNG phải bug — ghi để ⛔ không soi lại
+
+- *"`compose` soi nvenc ngoài lease"*: `media.detect_gpu_encoder` **cache theo
+  vòng đời tiến trình**, chạy tối đa một lần mỗi worker; và
+  `giai_doan_ban_dung.py:310` đã khai rõ đây là **trần khai báo** mà RENDER chỉ
+  được **HẠ** xuống.
+- *"`loi.py` xếp `ThieuCard` là tạm thời"*: `TAM_THOI` là **THỬ LẠI**
+  (`attempts++`) và có **trần** từ Task 23 (`job_runner.py:68`), khác hẳn
+  **HOÃN** (`attempts` ⛔ không tăng). ⛔ Không có vòng lặp vô hạn.
+
+### Trùng số test, và hai phép đỏ chặn gate
+
+- Làn D và làn E **cùng lấy số `4870`**. Mỗi làn xanh **riêng**; số trùng chỉ lộ
+  khi **GỘP**. `tools/check_so_test.py` bắt đúng và exit 1. Làn D đổi sang `4871`.
+- Bước đỏ duy nhất của gate 03:54 (`251bfc26`) là `bo test (song song)`, và hai
+  phép đỏ thật đều **ngoài ASV**, cả hai là **sổ sách cũ**:
+  `test_970` chốt `saveWorkflow` v2 *"vẫn còn vì Plan v1 cần"* — nhưng
+  `a5559e36` đã **cố ý** gỡ cụm v2 và ⛔ không ai gọi nó nữa, nên bài là một bánh
+  cóc **sót lại canh mã đã bị xoá có chủ ý**; đã **đổi chiều** nó (⛔ không xoá,
+  để lần sau ai thêm lại v2 vẫn có cửa cản). `test_975` có bản khai `sha256` cũ
+  của `shared_ltt_css`; `DUPLICATES.md` đã ghi sẵn quy trình, và đã đo: hai bản
+  **vẫn byte-identical với nhau** ⇒ nhánh *"cập nhật bản khai"*. Lần này thay
+  đổi đến từ **chính app của ta** (`5d68da91`, `9d6d8d31` asv-gui).
+  ⭐ Hai lần trong ba ngày ⇒ quy trình đúng nhưng **nhịp** thì không: một mã băm
+  gõ tay canh một tệp hai app cùng sửa sẽ còn cũ tiếp.
+
+### Bằng chứng nghiệm thu "hiện hành" là bằng bản GIẢ
+
+`nghiem_thu_hien_hanh.json` sinh `2026-09-27T01:10:40` nhưng
+**`giong_that = False`, `model_that = False`**; `asr_cuda_hien_hanh.json` từ
+**04/09** (23 ngày). Chúng trung thực về chính mình, nhưng một người đọc coi
+chúng là *"đường ống chạy được"* thì đang đọc sai. ⛔ Xoá chúng đi thì người đọc
+⛔ không còn gì và cổng cũ-quá của `test_450` sẽ đỏ — đường đúng là **sinh lại
+bằng chính lượt job test thật**. Bật chế độ thật cần `LTT_ASV_GIONG_THAT=1` +
+`LTT_VOICE_SIDECAR_TOKEN` và `LTT_ASV_MODEL_THAT=1` + `LTT_ASV_POOL_URL`, cả hai
+nằm sau ACL ⇒ **chỉ chủ dự án đặt được**.
+
+⚠️ Và lượt job test đầy đủ **nên có một lượt `smart_localize` + `toc_do = 1,25`**
+(làn D đo): đó là cấu hình **duy nhất** phơi bày cả bug trục của `edit_plan` lẫn
+bản sửa T18 ở trên. Một lượt `toc_do = 1` ⛔ không chạm hai đường ấy.
+
 ## 2026-09-26 (Task 21) — MỘT đường duy nhất: voice → voice. Bỏ `ocr`/`embedded`/`auto`
 
 Chủ dự án chốt: *"Hệ thống của ta chỉ đi theo đúng 1 đường là voice to voice,
