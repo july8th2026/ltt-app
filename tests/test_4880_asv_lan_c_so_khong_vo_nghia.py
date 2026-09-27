@@ -118,17 +118,35 @@ def test_khung_nguon_phan_biet_BA_ly_do_KHONG_DO_DUOC(monkeypatch):
             return ho_so
         monkeypatch.setattr(gd, "_doc", _doc)
 
-    _dat("")                                    # 1) ⛔ khong co ho so MEDIA_PREPARE
-    assert gd._khung_nguon(None, None, None) == (0, 0, gd.KHUNG_THIEU_HO_SO)
+    # ⚠️ Doc theo TEN, ⛔ khong so sanh ca tuple: tu 27/09 `_khung_nguon` tra
+    #    `NguonHinh` va mang them ba truong nhip (`fps`, `fps_tb`, `vfr`) cho
+    #    `-r` o dau ra (T17). Mot phep so sanh theo VI TRI se do moi lan ai do
+    #    them mot truong — do la do CACH GO chu ⛔ khong do dieu bai nay chot.
+    def _ba(ho_so=None, no=None, khoa="k.json"):
+        _dat(khoa, ho_so=ho_so, no=no)
+        r = gd._khung_nguon(None, None, None)
+        return (r.rong, r.cao, r.ly_do)
 
-    _dat("k.json", no=ValueError("json hong"))  # 2) ho so co ma ⛔ khong doc duoc
-    assert gd._khung_nguon(None, None, None) == (0, 0, gd.KHUNG_HO_SO_HONG)
+    assert _ba(khoa="") == (0, 0, gd.KHUNG_THIEU_HO_SO)          # 1) ⛔ khong ho so
+    assert _ba(no=ValueError("json hong")) == (0, 0, gd.KHUNG_HO_SO_HONG)  # 2) hong
+    assert _ba(ho_so={"rong": 0, "cao": 0}) == (0, 0, gd.KHUNG_KHONG_KHAI)  # 3) rong
+    assert _ba(ho_so={"rong": 1920, "cao": 1080, "xoay": 90}) == (1080, 1920, "")
 
-    _dat("k.json", ho_so={"rong": 0, "cao": 0})  # 3) ho so co ma ⛔ khong khai
-    assert gd._khung_nguon(None, None, None) == (0, 0, gd.KHUNG_KHONG_KHAI)
+    # ⭐ Va ba LY DO kia phai keo theo `nhip_giao() == 0.0`: mot ho so ⛔ khong
+    #    doc duoc thi cung ⛔ khong biet nhip, va `ket_xuat` phai thay `0.0` de
+    #    ⛔ KHONG khai mot `-r` bia ra.
+    _dat("", ho_so=None)
+    assert gd._khung_nguon(None, None, None).nhip_nguon() == 0.0
 
-    _dat("k.json", ho_so={"rong": 1920, "cao": 1080, "xoay": 90})
-    assert gd._khung_nguon(None, None, None) == (1080, 1920, "")
+    # ⭐ Nguon CFR: `nhip_giao()` lay `fps`. Nguon VFR: lay `fps_tb` — vi
+    #    `r_frame_rate` la nhip DANH DINH va khai no se bat nhan ban khung.
+    _dat("k.json", ho_so={"rong": 640, "cao": 360, "fps": 30.0,
+                          "fps_tb": 30.0, "vfr": False})
+    assert gd._khung_nguon(None, None, None).nhip_nguon() == 30.0
+    _dat("k.json", ho_so={"rong": 640, "cao": 360, "fps": 60.0,
+                          "fps_tb": 24.5, "vfr": True})
+    assert gd._khung_nguon(None, None, None).nhip_nguon() == 24.5, (
+        "nguon VFR ma lay nhip DANH DINH thi bo ma hoa se nhan ban khung")
 
 
 def test_vung_dien_nen_ma_chua_do_duoc_khung_thi_noi_dung_LY_DO():

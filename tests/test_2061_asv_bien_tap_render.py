@@ -36,7 +36,12 @@ def _ban(bien_tap=None, **them):
         ke_hoach=KE_HOACH, ban_ke_tieng={"doan": [{"ma": "s1", "khoa": "v/s1.wav"}]},
         phien_ban_ffmpeg="n8", tong_giay=8.0, che_do=cdr.CAT_MA_HOA_LAI,
         bo_ma_hoa="libx264", khoang_giu=[(0.0, 8.0)], preset="smart_localize",
-        rong_khung=1280, cao_khung=720, bien_tap=bien_tap, **them)
+        rong_khung=1280, cao_khung=720, bien_tap=bien_tap,
+        # ⭐ Nhip NGUON — `ket_xuat` nhan voi `toc_do` de khai `-r`. Fixture phai
+        #    khai no nhu production (`giai_doan_ban_dung` doc tu ho so
+        #    `media_prepare`); thieu no thi lenh nhan mac dinh `auto` va noi dung
+        #    lech 40 ms. 25 x 1,25 = 31,25.
+        fps_nguon=them.pop("fps_nguon", 25.0), **them)
 
 
 def _lenh(ban, **kw):
@@ -109,14 +114,22 @@ def test_toc_do_hinh_va_tieng_CUNG_he_so_trong_MOT_do_thi():
     fc = _fc(cmd)
     assert "setpts=PTS/1.2500[ra]" in fc and "[1:a]atempo=1.2500[a_ra]" in fc
     assert cmd[cmd.index("[a_ra]") - 1] == "-map" and "1:a:0" not in cmd
-    # 🔴 `passthrough` -> `vfr` (27/09). Ban 22/09 do TROI va thay `passthrough`
-    # tot hon — dung o 25 fps (2,0 vs 15,0 ms). Nhung no ⛔ khong do MOC TRUNG:
-    # `passthrough` sinh 100 moc trung o 25 fps va 269 o 30 fps, lam dong ra
-    # ⛔ khong hop chuan va T17/T18 do tren MOI ban giao co doi toc do.
-    # `FFmpeg/doc/ffmpeg.texi` dinh nghia `vfr` la che do "dropped so as to
-    # prevent 2 frames from having the same timestamp" — dung bat bien ta thieu.
-    # So do day du: `tests/test_4890_asv_toc_do_truc_va_hop_chuan.py`.
-    assert cmd[cmd.index("-fps_mode") + 1] == "passthrough"
+    # 🔴 `-fps_mode passthrough` -> `-r nguon x toc` (27/09, chu du an chi ra).
+    #
+    # `setpts` doi MOC; `-r` moi bao bo ma hoa SAP LAI thanh nhip DEU. Thieu no
+    # thi moc bi lam tron va nhieu khung roi vao cung mot moc — do duoc 269 moc
+    # TRUNG tren mot luot 30 fps, 100 tren 25 fps (T17 do).
+    #
+    # ⭐ Do tren fixture `test_2064` (nguon 25 fps, chop sang phai ra 3,200 s),
+    #    do CA BA cot — vi hai cot thoi da lam toi chon sai hai lan:
+    #      nhip khai (-r)        lech chop   troi A/V   loi DTS   khung
+    #      passthrough             15,9 ms     15,9        40      199
+    #      ⛔ khong khai            40,0 ms     55,9         0      159
+    #      25 = nguon              80,0 ms     95,9         0      159
+    #      **31,25 = nguon x toc**  **0,0**   **15,9**   **0**    **199**
+    #    ⇒ `nguon x toc` la cau tra loi DUY NHAT xanh ca ba, VA giu het khung.
+    assert cmd[cmd.index("-r") + 1] == "31.25", cmd
+    assert "-fps_mode" not in cmd, cmd
     assert "-fps_mode" not in _lenh(_ban())
     assert [cmd[i + 1] for i, x in enumerate(cmd) if x == "-c:v"] == ["libx264"]
 

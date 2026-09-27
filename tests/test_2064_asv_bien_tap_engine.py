@@ -195,7 +195,21 @@ def test_toc_do_1_25_hinh_tieng_phu_de_cung_roi_vao_3_2s_va_QC_dat(tmp_path):
         ban_ke_tieng={"doan": [{"ma": "s1", "khoa": "s1"}]}, phien_ban_ffmpeg="8",
         tong_giay=8.0, che_do=cdr.CAT_MA_HOA_LAI, bo_ma_hoa="libx264",
         khoang_giu=[(0.0, 8.0)], preset="smart_localize", rong_khung=640,
-        cao_khung=360, phu_de=pd, bien_tap={"toc_do": 1.25})
+        cao_khung=360, phu_de=pd, bien_tap={"toc_do": 1.25},
+        # 🔴 **`fps_giao` (T17, 27/09) — fixture phai KHAI nhip nhu production.**
+        #    `giai_doan_ban_dung` doc nhip tu ho so `media_prepare` va truyen no
+        #    xuong; `ket_xuat` khai `-r` tu no. Thieu no thi lenh nhan mac dinh
+        #    `auto`, va `auto` cho troi 55,9 ms tren chinh fixture nay — vuot
+        #    nguong mot khung 25 fps ma bai duoi chot.
+        #
+        # ⭐ Do tren fixture nay, do CA HAI cot:
+        #      cach              hinh s   troi ms   loi DTS
+        #      passthrough        3,200     15,9        40
+        #      auto               3,240     55,9         0
+        #      **-r 25**          3,200    **0,0**    **0**
+        #    ⇒ Chi `-r` xanh ca hai. Nguon cua fixture la 25 fps (`r=25` o
+        #      `color=...:r=25` ben tren), nen khai dung 25.
+        fps_nguon=25.0)
     ra = tmp_path / "ra.mp4"
     cmd = ket_xuat.dung_lenh(ban, ffmpeg_bin="ffmpeg", duong_video=str(video),
                              duong_master=str(master), duong_lop=[str(master)],
@@ -209,6 +223,30 @@ def test_toc_do_1_25_hinh_tieng_phu_de_cung_roi_vao_3_2s_va_QC_dat(tmp_path):
     assert t_hinh == pytest.approx(3.2, abs=0.05), t_hinh
     assert t_tieng == pytest.approx(3.2, abs=0.05), t_tieng
     assert abs(t_hinh - t_tieng) <= 0.04, (t_hinh, t_tieng)
+
+    # ── T17: tep ra phai HOP CHUAN — ⛔ khong moc nao trung ──────────────────
+    #
+    # 🔴 **⛔ Khong phep kiem nao canh dieu nay truoc 27/09, va do la vi sao T17
+    #    do tren BA luot chay that ma bo test van xanh.**
+    #
+    #    `setpts=PTS/toc` nen moc cua tung khung. Neu ⛔ khong ai khai NHIP RA thi
+    #    nhieu khung roi vao CUNG mot moc: do duoc **40** moc trung tren fixture
+    #    nay (nguon 25 fps) va **269** tren mot luot 30 fps that.
+    #
+    # ⚠️ Va khang dinh TROI o tren ⛔ KHONG bat duoc no: `passthrough` cho troi
+    #    15,9 ms — **duoi** nguong 40 ms — nen bai nay van xanh voi 40 moc trung.
+    #    Do dung ho `pham vi phep do hep hon loi tuyen bo`: ten bai noi "hinh
+    #    tieng phu de cung roi vao 3,2 s va QC dat", nhung no ⛔ khong he do tinh
+    #    HOP CHUAN cua tep.
+    #
+    # ⭐ Dem bang chinh cach T17 dem: giai ma ca tep va bat dong loi cua muxer.
+    _gm = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-v", "error", "-i", str(ra), "-f", "null", "-"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    _trung = [d for d in (_gm.stderr or "").splitlines() if "monotonic" in d]
+    assert not _trung, (
+        f"{len(_trung)} moc thoi gian TRUNG trong tep ra — `setpts` da nen moc ma "
+        f"⛔ khong ai khai nhip ra (`-r`). Vi du: {_trung[0][:120]}")
 
     bc = qc.kiem(tt_ra=tt, tt_nguon=nhap_media.soi(str(video)),
                  am_luong={"lufs": -14.0, "dinh_that": -2.0}, ke_hoach=ke_hoach,

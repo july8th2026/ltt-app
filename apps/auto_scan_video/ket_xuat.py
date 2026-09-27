@@ -317,7 +317,32 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
             #
             # ⚠️ Khoi nay CHI chay khi `ve_tieng` (tuc `toc_do != 1`), nen no
             #    ⛔ khong doi mot byte nao cua duong `toc_do = 1`.
-            cmd += ["-fps_mode", "passthrough"]
+            # ⭐ **`-r` THAY cho `-fps_mode passthrough` (T17, 27/09).**
+            #    `setpts` doi MOC; `-r` bao bo ma hoa SAP LAI thanh nhip DEU.
+            #    Thieu no thi moc bi lam tron va nhieu khung roi vao cung mot
+            #    moc — do duoc 269 moc trung tren mot luot 30 fps.
+            # 🔑 Nhip ra = nhip NGUON x `toc`. Do la nhip ma noi dung von da
+            #    co sau khi `setpts` nen moc, nen khai no thi ⛔ khong bo khung
+            #    nao va moc roi dung luoi. Khai nhip NGUON thi CFR phai bo khung
+            #    va noi dung TRE 80 ms — do duoc, te hon ca viec ⛔ khong khai gi.
+            # ⭐ Doc he so bang CHINH ham ma `loc_toc_do_tieng` dung
+            #    (`bien_tap.toc_do`) — mot nguon, ⛔ khong mot ban chep.
+            from . import bien_tap as _bt
+
+            _toc = _bt.toc_do(bien_tap)
+            _fps_nguon = float(hinh.get("fps_nguon") or 0.0)
+            if _fps_nguon > 0:
+                cmd += ["-r", f"{_fps_nguon * _toc:g}"]
+            else:
+                # ⛔ ⛔ Khong biet nhip nguon (ho so `media_prepare` thieu/hong)
+                #    ⇒ ⛔ KHONG doan mot con so. De trong tuc nhan mac dinh
+                #    `auto`, va `auto` do duoc la 0 loi DTS (troi toi 33 ms) —
+                #    te hon `-r` nhung tot hon `passthrough` (40-48 loi), va tot
+                #    hon han viec ep video cua khach ve mot nhip ta bia ra.
+                log.warning(
+                    "asv ket_xuat: toc_do != 1 ma ban dung ⛔ khong khai "
+                    "`fps_nguon` — ⛔ khong khai `-r`, nhan mac dinh `auto`. Moc "
+                    "co the troi toi mot khung.")
         cmd += list(cdr.tham_so(bo))
 
     # ── Tieng: BAN PHOI cua pha 16, khong tron lai ───────────────────────

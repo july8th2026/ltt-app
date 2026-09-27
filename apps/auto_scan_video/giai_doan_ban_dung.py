@@ -26,6 +26,7 @@ from __future__ import annotations
 import io
 import json
 import logging
+from typing import NamedTuple
 
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
@@ -89,8 +90,44 @@ KHUNG_HO_SO_HONG = "ho_so_media_prepare_khong_doc_duoc"
 KHUNG_KHONG_KHAI = "ho_so_media_prepare_khong_khai_kich_thuoc"
 
 
-def _khung_nguon(db, kho: Storage, run) -> tuple[int, int, str]:
-    """`(rong, cao, ly_do)` khung NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
+class NguonHinh(NamedTuple):
+    """Ho so hinh NGUON doc tu `MEDIA_PREPARE` — MOT lan doc, moi truong.
+
+    ⭐ `NamedTuple` chu ⛔ khong tuple tran: nguoi doc lay theo TEN, nen them mot
+       truong ⛔ khong lam lech moi cho dang so sanh theo vi tri.
+    """
+
+    rong: int
+    cao: int
+    ly_do: str
+    #: Nhip DANH DINH (`r_frame_rate`). `0.0` = ⛔ khong doc duoc.
+    fps: float = 0.0
+    #: Nhip TRUNG BINH THAT (`avg_frame_rate`) — dung cho nguon VFR.
+    fps_tb: float = 0.0
+    #: `True` khi hai nhip tren lech > 1 %, tuc nguon nhip BIEN THIEN.
+    vfr: bool = False
+
+    def nhip_nguon(self) -> float:
+        """Nhip THAT cua luong hinh nguon, hay `0.0` khi ⛔ khong biet.
+
+        🔴 **Vi sao truong nay ton tai (T17, 27/09).** `setpts=PTS/toc` doi MOC
+           cua tung khung; neu ⛔ khong ai khai NHIP RA thi bo ma hoa giu nguyen
+           nhung moc ⛔ khong bieu dien duoc va sinh moc TRUNG (do: 269 cai tren
+           mot luot 30 fps, 100 tren 25 fps). Do tren hai nhip nguon, `-r` cho
+           **0 troi VA 0 loi DTS** o ca hai — `passthrough` cho 40-48 loi.
+
+        ⭐ Nguon VFR thi lay `fps_tb`, ⛔ khong `fps`: `r_frame_rate` la nhip
+           DANH DINH va voi VFR no thuong cao hon han nhip that, nen khai no se
+           bat bo ma hoa NHAN BAN khung. Chinh `nhap_media.soi` da canh bao dieu
+           nay: *"moc thoi gian se troi neu giai doan ha nguon gia dinh nhip co
+           dinh"* — nay ta ⛔ khong gia dinh nua, ta doc `vfr` ma no da ghi.
+        """
+        nhip = self.fps_tb if self.vfr else self.fps
+        return float(nhip) if nhip and nhip > 0 else 0.0
+
+
+def _khung_nguon(db, kho: Storage, run) -> NguonHinh:
+    """Ho so hinh NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
 
     `ly_do` rong = da do duoc that. Khac rong = mot trong `KHUNG_*` o tren, va
     khi do `(rong, cao)` la `(0, 0)` — ⛔ nhung ⛔ khong con la mot `(0, 0)` **cam**.
@@ -104,7 +141,7 @@ def _khung_nguon(db, kho: Storage, run) -> tuple[int, int, str]:
     if not khoa:
         log.warning("asv compose: %s - giai doan media_prepare ⛔ khong de lai "
                     "ho so soi nao", KHUNG_THIEU_HO_SO)
-        return (0, 0, KHUNG_THIEU_HO_SO)
+        return NguonHinh(0, 0, KHUNG_THIEU_HO_SO)
     try:
         ho_so = _doc(kho, khoa) or {}
         rong, cao = int(ho_so.get("rong") or 0), int(ho_so.get("cao") or 0)
@@ -114,18 +151,23 @@ def _khung_nguon(db, kho: Storage, run) -> tuple[int, int, str]:
         #    cat sai truc.
         if int(ho_so.get("xoay") or 0) % 180 == 90:
             rong, cao = cao, rong
+        # ⭐ CUNG lan doc: nhip nguon. Doc rieng o mot lan thu hai la hai co hoi
+        #    de chung lech nhau — dung ly le docstring nay da noi cho rong/cao.
+        _fps = float(ho_so.get("fps") or 0.0)
+        _fps_tb = float(ho_so.get("fps_tb") or 0.0)
+        _vfr = bool(ho_so.get("vfr"))
     except (OSError, ValueError, TypeError) as loi:
         # ⛔ Van ⛔ khong nem o day: mot lan chay ⛔ khong dung `vung` thi kich
         #    thuoc khung ⛔ khong rang buoc gi, va nem se giet mot lan chay dung
         #    duoc. Nhung ⛔ khong con IM: mot dong log + mot `ly_do` di theo.
         log.warning("asv compose: %s (%s) khoa=%s", KHUNG_HO_SO_HONG,
                     type(loi).__name__, khoa)
-        return (0, 0, KHUNG_HO_SO_HONG)
+        return NguonHinh(0, 0, KHUNG_HO_SO_HONG)
     if rong <= 0 or cao <= 0:
         log.warning("asv compose: %s - ho so %s doc duoc nhung rong=%r cao=%r",
                     KHUNG_KHONG_KHAI, khoa, rong, cao)
-        return (0, 0, KHUNG_KHONG_KHAI)
-    return (rong, cao, "")
+        return NguonHinh(0, 0, KHUNG_KHONG_KHAI)
+    return NguonHinh(rong, cao, "", _fps, _fps_tb, _vfr)
 
 
 def _doi_khung_cho_vung(vung, rong: int, cao: int, ly_do: str) -> None:
@@ -320,7 +362,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                  if cach == cdr.CAT_MA_HOA_LAI else "")
 
     # ⭐ MOT lan doc, hai truong + LY DO. Xem docstring cua `_khung_nguon`.
-    _rong_khung, _cao_khung, _ly_do_khung = _khung_nguon(db, kho, run)
+    _nguon_hinh = _khung_nguon(db, kho, run)
+    _rong_khung = _nguon_hinh.rong
+    _cao_khung = _nguon_hinh.cao
+    _ly_do_khung = _nguon_hinh.ly_do
     # 🔴 Noi DUNG cho ngay o day: ha nguon chi con biet noi "ban dung khong khai
     #    no" — mot hau qua — nen mot ho so `media_prepare` thieu/hong se bi doc
     #    thanh mot ban dung sai. Chi duong CAT truyen `vung`, nen chi chan o do.
@@ -367,7 +412,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    Xem `_ho_so_phu_de`.
         phu_de=_ho_so_phu_de(db, kho, run, ke_hoach, cai, cach),
         bien_tap=(_bt_gd1 if cach == cdr.CAT_MA_HOA_LAI else None),
-        rong_khung=_rong_khung, cao_khung=_cao_khung)
+        rong_khung=_rong_khung,
+        # ⭐ Nhip cua LUONG HINH NGUON. `nhip_nguon()` tu chon `fps_tb` khi
+        #    nguon VFR — xem docstring cua no. `ket_xuat` nhan voi `toc_do`.
+        fps_nguon=_nguon_hinh.nhip_nguon(), cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.
     if ctx is not None and getattr(ctx, "progress", None):

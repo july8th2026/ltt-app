@@ -32,6 +32,8 @@ BAN = {
         "bo_ma_hoa": "h264_nvenc",
         "cach_render": "cat_ma_hoa_lai",
         "cao_khung": 1080, "rong_khung": 1920,
+        #: Nguon 30 fps => nhip ra = 30 x 1,25 = 37,5.
+        "fps_nguon": 30.0,
         "che_do": "copy",
         "khoa": "asv/u/nguon/x.mp4",
         "khoang_giu": [[0.0, 45.121]],
@@ -91,12 +93,15 @@ def test_4890_fps_mode_la_LUA_CHON_DA_DO_chu_khong_phai_mac_dinh():
        sau do — ho `moi can gat do rieng, tong chua ai do`.
     """
     argv = _argv(1.25)
-    assert "-fps_mode" in argv, (
+    assert "-fps_mode" not in argv, (
+        f"`-fps_mode` da duoc thay bang `-r` (27/09): {argv}")
+    assert "-r" in argv, (
         "de trong la nhan mac dinh `auto`, ma tai lieu ffmpeg dinh nghia `auto` "
         "bang CO CHE (*chooses between cfr and vfr depending on muxer "
-        "capabilities*) chu ⛔ khong bang BAT BIEN — mot lua chon nhu the doi khi "
-        "doi muxer. Khai tuong minh.")
-    assert argv[argv.index("-fps_mode") + 1] == "passthrough", argv
+        "capabilities*) chu ⛔ khong bang BAT BIEN. Va do duoc: `auto` lam noi "
+        "dung lech 40 ms tren fixture test_2064. Khai `-r` tuong minh.")
+    # ⭐ Nhip ra = nhip NGUON x toc — giu HET khung, moc roi dung luoi.
+    assert argv[argv.index("-r") + 1] == "37.5", argv
 
 
 def test_4890_duong_toc_do_1_KHONG_doi_mot_byte():
