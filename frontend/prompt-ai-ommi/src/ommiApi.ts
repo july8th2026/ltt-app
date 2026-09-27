@@ -666,3 +666,219 @@ export function savePreferences(body: {
     body: JSON.stringify(body),
   })
 }
+
+// ── PROMPT AI OMMI pha 3: brief · cảnh · iterate · nhân vật / bối cảnh ──────
+//
+// Hình dạng lấy THẲNG từ `apps/prompt_ai_ommi/routes/briefs.py`,
+// `routes/iterate.py`, `routes/nhan_vat.py` — KHÔNG suy từ plan (spec §6.4,
+// §6.5), vì mã đã sống thật trong cây và có thể lệch plan viết trước.
+//
+// ⛔ Giá (`credit`, `free_left`) là của backend (`authoritative: true`,
+// `services/iterate.py::bao_gia`/`con_mien_phi`). Không hàm nào ở đây tự
+// tính lại "2 - free_iterations_used" hay cộng/nhân credit — chỉ chuyển tiếp
+// nguyên giá trị máy chủ trả.
+
+export type Brief = {
+  id: string
+  title: string
+  story_vi: string
+  goal: string
+  audience: string
+  target_duration_sec: number
+  target_scenes: number
+  aspect_ratio: string
+  language: string
+  style_id: string
+  meta_prompt_id: string
+  character_id: string
+  background_id: string
+  status: string
+  free_iterations_used: number
+  project_id: string
+  updated_at: string | null
+}
+
+export type Canh = {
+  id: string
+  position: number
+  title: string
+  prompt: string
+  camera: string
+  lighting: string
+  mood: string
+  duration_seconds: number
+}
+
+/** Máy chủ: `GET /api/briefs` (`routes/briefs.py::liet_ke`). */
+export function listBriefs(
+  params: { archived?: boolean; q?: string } = {},
+): Promise<{ briefs: Brief[]; total: number }> {
+  const query = new URLSearchParams()
+  if (params.archived) query.set('archived', 'true')
+  if (params.q) query.set('q', params.q)
+  return request(`/briefs?${query.toString()}`)
+}
+
+/** Máy chủ: `POST /api/briefs` (`routes/briefs.py::tao`). */
+export function createBrief(body: Partial<Brief>): Promise<{ brief: Brief }> {
+  return request('/briefs', { method: 'POST', body: JSON.stringify(body) })
+}
+
+export function getBrief(id: string): Promise<{ brief: Brief; canh: Canh[] }> {
+  return request(`/briefs/${id}`)
+}
+
+export function updateBrief(
+  id: string,
+  body: Partial<Brief> & { canh?: Canh[] },
+): Promise<{ brief: Brief }> {
+  return request(`/briefs/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+}
+
+export function cloneBrief(id: string): Promise<{ brief: Brief }> {
+  return request(`/briefs/${id}/clone`, { method: 'POST', body: JSON.stringify({}) })
+}
+
+/** Xoá mềm — máy chủ chỉ đặt `archived_at`, không xoá bản ghi. */
+export function archiveBrief(id: string): Promise<{ brief: Brief }> {
+  return request(`/briefs/${id}`, { method: 'DELETE', body: JSON.stringify({}) })
+}
+
+export type Preflight = {
+  checklist: Array<{ id: string; label: string; passed: boolean }>
+  passed: boolean
+}
+
+/** Miễn phí — không giữ chỗ credit, không bị khoá bởi rollout. */
+export function preflightBrief(id: string): Promise<Preflight> {
+  return request(`/briefs/${id}/preflight`, { method: 'POST', body: JSON.stringify({}) })
+}
+
+export type Bundle = {
+  rendered: string
+  asset_list: unknown[]
+  bindings: unknown[]
+  missing_placeholders: string[]
+}
+
+/** Miễn phí (Q-6) — khách xem/copy để tự dán sang LLM riêng. */
+export function bundleBrief(
+  id: string,
+  body: { meta_prompt_id?: string } = {},
+): Promise<Bundle> {
+  return request(`/briefs/${id}/bundle`, { method: 'POST', body: JSON.stringify(body) })
+}
+
+export type Quote = { credit: number; free_left: number }
+
+/** Giá cho LƯỢT TIẾP THEO. Đọc thẳng con số máy chủ trả, không tính lại. */
+export function quoteBrief(id: string): Promise<Quote> {
+  return request(`/briefs/${id}/quote`, { method: 'POST', body: JSON.stringify({}) })
+}
+
+export type GenerateResult = {
+  confirmed: boolean
+  credit?: number
+  free_left?: number
+  job_id?: string
+  iteration_id?: string
+  was_free?: boolean
+}
+
+export function generateBrief(
+  id: string,
+  body: { confirmed: boolean; feedback?: string },
+): Promise<GenerateResult> {
+  return request(`/briefs/${id}/generate`, { method: 'POST', body: JSON.stringify(body) })
+}
+
+export type Iteration = {
+  id: string
+  seq: number
+  feedback: string
+  credit_charged: number
+  was_free: boolean
+  verdict: string
+  job_id: string
+  created_at: string | null
+}
+
+/** ⛔ `verdict="rejected"` không hoàn credit — máy chủ từ chối, không phải lỗi. */
+export function setVerdict(
+  iterationId: string,
+  verdict: 'kept' | 'rejected',
+): Promise<{ iteration: { id: string; verdict: string; credit_charged: number } }> {
+  return request(`/iterations/${iterationId}/verdict`, {
+    method: 'POST',
+    body: JSON.stringify({ verdict }),
+  })
+}
+
+export function listIterations(
+  briefId: string,
+): Promise<{ iterations: Iteration[]; free_left: number }> {
+  return request(`/briefs/${briefId}/iterations`)
+}
+
+export type Character = {
+  id: string
+  name: string
+  gender: string
+  age_range: string
+  face_description: string
+  body_description: string
+  hair_description: string
+  outfit_description: string
+  personality: string
+  expression_style: string
+  movement_style: string
+  fixed_prompt_block: string
+  negative_notes: string
+  reference_variant_ids: string[]
+  share_level: string
+  created_at: string
+  updated_at: string
+}
+
+/** Máy chủ: `GET /api/characters` (`routes/nhan_vat.py::list_characters`). */
+export function listCharacters(): Promise<{ characters: Character[] }> {
+  return request('/characters')
+}
+
+export function createCharacter(body: Partial<Character>): Promise<Character> {
+  return request('/characters', { method: 'POST', body: JSON.stringify(body) })
+}
+
+/** Gọi LLM dựng `fixed_prompt_block` từ mô tả — nộp job, không trả kết quả ngay. */
+export function lockCharacter(
+  id: string,
+  body: { model?: string } = {},
+): Promise<{ id: string; status: string; job_url: string }> {
+  return request(`/characters/${id}/lock`, { method: 'POST', body: JSON.stringify(body) })
+}
+
+export type Background = {
+  id: string
+  name: string
+  location_type: string
+  environment_description: string
+  lighting_description: string
+  color_palette: string
+  camera_feel: string
+  important_objects: string
+  fixed_prompt_block: string
+  negative_notes: string
+  reference_variant_ids: string[]
+  share_level: string
+  created_at: string
+  updated_at: string
+}
+
+/** Máy chủ: `GET /api/backgrounds` (`routes/nhan_vat.py::list_backgrounds`). */
+export function listBackgrounds(): Promise<{ backgrounds: Background[] }> {
+  return request('/backgrounds')
+}
+
+export function createBackground(body: Partial<Background>): Promise<Background> {
+  return request('/backgrounds', { method: 'POST', body: JSON.stringify(body) })
+}
