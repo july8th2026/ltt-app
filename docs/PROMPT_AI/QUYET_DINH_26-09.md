@@ -24,6 +24,15 @@ Sổ ghi quyết định cho việc thiết kế lại `apps/prompt_ai_ommi`. B�
 | Q-13 | **Giao bài sang video: MỘT bài MỘT lần, y như bản gốc** | Không làm hàng đợi nhiều bài ở `taovideo`. Giá: kịch bản 12 cảnh là 12 lần đi qua lại |
 | Q-14 | **8 tính năng đo được là "xây mà chưa ai dùng" VẪN xây** (Profiles, `characters`/`outfits`/`poses`/`backgrounds`, `face_embeddings`, kế thừa style, budget cap) | Điều phối đã nêu bằng chứng 0 dòng (§8.2) và khuyến nghị bỏ; chủ dự án chốt vẫn cần. Giá: thêm mặt phải bảo trì không có bằng chứng ai cần |
 | Q-15 | **Ảnh khách TỰ TẢI LÊN đi sang `taovideo` bằng đường D**: khai cạnh `("prompt_ai_ommi","taovideo")` trong `tools/lint_app_contract.py:85 APP_DUOC_DUNG_APP`, dùng lại `apps/taovideo/refs.py` | ⛔ KHÔNG sửa `platform_core`/`server`. Ảnh **sinh bằng AI** đã đi được sẵn qua artifact id (`server/api/uploads.py:314` cố ý không khoá theo app). Giá: hai app dính vào nhau; app thứ ba muốn nhận ảnh phải khai thêm một cạnh. Giảm thiểu: cạnh giới hạn ở **đúng một module** `apps.taovideo.refs` |
+| Q-16 | **Mang cơ chế CHIA LÔ của `prompt_canh` sang `prompt_ai_ommi`** — chia lô sinh cảnh + lịch sử chống trôi ngữ cảnh — rồi MỚI xoá `prompt_canh`. ⇒ thêm **pha 6** vào plan; **E5 bị chặn cho tới khi pha 6 xong** | Đo thật **2 lần** ở `scene_count=20` (làn E, 27/09): cả hai lần trả **19/20 cảnh**, và độ dài trường `prompt` **co dần theo thứ tự cảnh** (159→87 và 165→~90 ký tự) khi chỉ dùng 67 %/69 % của `_MAX_TOKENS = 8192` ⇒ **chất lượng suy TRƯỚC khi chạm trần cứng**, nên nâng trần token ⛔ không phải thuốc. App cũ chia lô (`LO_BUOC2=10`, `LO_BUOC3=5`, `LICH_SU_CANH=5`) đỡ tới **250 cảnh**. Giá: mỗi job gọi LLM **2–5 lượt** thay vì 1 ⇒ giá vốn tăng thật, bảng giá phải tính theo số lô; thêm một pha vào plan. ⛔ Không chọn "giữ cả hai app": hai đường làm cùng một việc là đúng thứ chủ dự án yêu cầu loại bỏ |
+| Q-17 | **Giữ trần bán 20 cảnh, KHÔNG hạ tạm về 15** — thêm cảnh báo trên giao diện rằng kịch bản trên 15 cảnh có thể phải chạy lại từng cảnh | ⛔ **Không có khoản thu sai**: bậc giá `2 + ceil(n/3)*2` thô nên **19 và 20 cảnh CÙNG giá 16 credit** (đo bằng `manifest._director_cost`, không suy từ số lượng). Cảnh thiếu thì `jobs.py:34` chèn một cảnh **tự khai** *"Cảnh chưa được AI tạo; cần chỉnh hoặc tạo lại."* ⇒ ⛔ không phải cắt âm thầm. Hạ 20→15 rồi nâng lại sau pha 6 là công thừa. Giá: khách chọn 20 vẫn có thể nhận một cảnh placeholder cho tới khi pha 6 xong |
+
+⚠️ **Một kết luận đã bị RÚT LẠI, ghi ở đây để không ai dùng lại nó.** Làn E báo
+*"khách trả tiền cho 20 cảnh mà nhận 19 cảnh thật + 1 placeholder"*. Sai: kiểm
+bằng chính hàm tính giá cho **0 credit lệch**. ⭐ Một câu về **tiền** phải kiểm
+bằng **hàm tính giá**, ⛔ không suy từ số lượng — một bậc giá thô làm hai số
+lượng khác nhau cùng giá. Làn E đã tự rút lại sau khi tôi đưa số.
+
 
 ## Hệ quả kỹ thuật buộc phải có (không phải lựa chọn)
 
