@@ -52,8 +52,15 @@ Lệnh in ra hai thứ phải chép lại ngay:
 - **`DAI SO TEST cua cay nay: <đầu>-<đầu+99>`**.
 
 🔴 Mọi tệp test mới trong pha này phải mang số **trong dải đó**. Dải được cấp lúc
-tạo cây nên hai làn không thể chọn trùng. Bốn tệp test của pha này dùng bốn số đầu
-tiên còn trống trong dải, theo thứ tự task: `<N>`, `<N+1>`, `<N+2>`, `<N+3>`.
+tạo cây nên hai làn không thể chọn trùng.
+
+✅ **Đã cấp cho làn UI-0 (27/09/2026): dải `5600-5699`.** Quét 193 cây trên đĩa, số
+cao nhất đang dùng là `5562`. Hai tệp test của pha này:
+
+```
+tests/test_5600_wf_node_palette_bien_dich.py    (Task 1)
+tests/test_5601_wf_canh_dieu_khien_suy_ra.py    (Task 2)
+```
 
 - [ ] **Bước 2: Tạo sổ tiến độ theo khuôn ở `…-TONG.md` §4.2**
 
@@ -77,7 +84,7 @@ git commit -m "docs(agent-ui): mo lan UI-0, so tien do + dai so test"
 
 **Files:**
 - Modify: `platform_core/workflow/bien_dich.py` (hàm `_node`, quanh dòng 597–629)
-- Test: `tests/test_<N>_wf_node_palette_bien_dich.py`
+- Test: `tests/test_5600_wf_node_palette_bien_dich.py`
 
 **Interfaces:**
 - Consumes: `_node_loi(n: dict, nid: str, loai: str) -> dict` (đã có, dòng ~572)
@@ -96,7 +103,7 @@ nối nó sang đường palette. Đây là một phép kiểm XANH đã tái hi
 
 - [ ] **Bước 1: Viết phép kiểm ĐỎ**
 
-Tạo `tests/test_<N>_wf_node_palette_bien_dich.py`:
+Tạo `tests/test_5600_wf_node_palette_bien_dich.py`:
 
 ```python
 """UI-0 Task 1 — node do PALETTE Canvas tao phai bien dich duoc.
@@ -170,7 +177,7 @@ Nếu lệch, sửa `_tham_so_toi_thieu` cho khớp — ⛔ không sửa `nut_lo
 - [ ] **Bước 2: Chạy để xác nhận ĐỎ**
 
 ```bash
-python -m pytest tests/test_<N>_wf_node_palette_bien_dich.py -q
+python -m pytest tests/test_5600_wf_node_palette_bien_dich.py -q
 ```
 
 Kỳ vọng: **FAIL**, ba ca `core.*` ném `LoiBienDich(ma="node_khong_ton_tai")`.
@@ -203,7 +210,7 @@ Thay bằng:
         #
         # 🔴 Nhanh nay la thu duy nhat cho 55/67 loai buoc keo tu palette bien
         #    dich duoc. Xoa no la lam chet lai ca palette —
-        #    `tests/test_<N>_wf_node_palette_bien_dich.py` giu cho nay.
+        #    `tests/test_5600_wf_node_palette_bien_dich.py` giu cho nay.
         if loai == "tool" and ten:
             return _node_loi({**n, "type": ten, "params": params,
                               "settings": settings}, nid, ten)
@@ -213,7 +220,7 @@ Thay bằng:
 - [ ] **Bước 4: Chạy để xác nhận XANH**
 
 ```bash
-python -m pytest tests/test_<N>_wf_node_palette_bien_dich.py -q
+python -m pytest tests/test_5600_wf_node_palette_bien_dich.py -q
 ```
 
 Kỳ vọng: **PASS**, 5 passed.
@@ -231,7 +238,7 @@ tại chỗ rồi chạy lại **đúng** lệnh này.
 - [ ] **Bước 6: Commit**
 
 ```bash
-git add platform_core/workflow/bien_dich.py tests/test_<N>_wf_node_palette_bien_dich.py
+git add platform_core/workflow/bien_dich.py tests/test_5600_wf_node_palette_bien_dich.py
 git commit -m "fix(wf): cong bien dich nhan node hinh dang palette (type:'tool' + data.tool)"
 ```
 
@@ -241,7 +248,7 @@ git commit -m "fix(wf): cong bien dich nhan node hinh dang palette (type:'tool' 
 
 **Files:**
 - Modify: `platform_core/workflow/bien_dich.py` (hàm `cau_truc`, quanh dòng 709–726)
-- Test: `tests/test_<N+1>_wf_canh_dieu_khien_suy_ra.py`
+- Test: `tests/test_5601_wf_canh_dieu_khien_suy_ra.py`
 
 **Interfaces:**
 - Consumes: `nut.tat_ca(cong_cu=cc)` → `dict[str, NodeDefinition]`;
@@ -254,9 +261,31 @@ nhưng `workflowApi.edgeToV3()` **đóng cứng `kind:'DATA'` và không gửi `
 Động cơ (`dong_co.py:150`) xử: `if not dk: return True` ⇒ **mọi nhánh của `core.if`
 đều kích hoạt**. Người dùng vẽ một rẽ nhánh và nhận một phân đôi — trên tiền thật.
 
-Spec §5.4: *"Cạnh CONTROL mang `condition = <tên nhánh>`"*, và với `core.if`/`core.switch`
-**tên nhánh chính là tên cổng ra** (`true`/`false`, hoặc tên nhánh khai trong tham số).
-⇒ Suy ra được từ kiểu cổng, **không cần người dùng khai thêm gì và không cần di trú**.
+Spec §5.4: *"Cạnh CONTROL mang `condition = <tên nhánh>`"*. Với `core.if`, **tên nhánh
+chính là tên cổng ra** (`true`/`false`) ⇒ suy ra được từ kiểu cổng, không cần người
+dùng khai thêm gì và không cần di trú.
+
+🔴 **`core.switch` KHÔNG suy ra được — và suy bừa sẽ làm HỎNG NẶNG HƠN.**
+Đo bằng `nut_loi.tat_ca()` ngày 27/09:
+
+```
+core.if      cong_ra = [('true','control'), ('false','control')]   ← 2 cong control
+core.switch  cong_ra = [('nhanh','control')]                        ← 1 cong, TEN CHUNG
+```
+
+Tên các nhánh của `core.switch` nằm trong **tham số** `nhanh: array`, không phải tên
+cổng. Nếu suy `condition='nhanh'` thì động cơ so `_nhanh_da_chon(...) == "nhanh"` —
+mà hàm đó trả **giá trị nhánh thật** (`"a"`, `"b"`…) ⇒ **không nhánh nào khớp ⇒ MỌI
+nhánh chết ⇒ mọi node sau switch SKIPPED.** Hôm nay switch chạy cả các nhánh (sai
+nhưng chạy); sau một bản suy bừa nó sẽ **không chạy gì** — hồi quy tệ hơn hiện trạng.
+
+⇒ **Luật đúng: chỉ suy khi node nguồn có ≥ 2 cổng ra kiểu `control`.** Khi đó tên
+cổng mới thật sự định danh một nhánh. Node một-cổng-control (`core.switch`) **giữ
+nguyên** như hôm nay, và phải có một phép kiểm ghim rằng ta **không** đụng vào nó.
+
+⚠️ **Khoảng trống còn lại, ghi ra chứ không giấu:** `core.switch` vẫn chạy mọi nhánh.
+Sửa nó cần một cửa giao diện đặt tên nhánh lên cạnh — thuộc **UI-4**, không thuộc pha
+này. Ghi vào sổ tiến độ ở Bước 6.
 
 🔴 **Đây là một THAY ĐỔI HÀNH VI** (sổ rủi ro R3): workflow hôm nay chạy cả hai
 nhánh, sau bản vá sẽ chạy một nhánh. Đó là hành vi **đúng**, nhưng phải báo chủ dự
@@ -264,7 +293,7 @@ nhánh, sau bản vá sẽ chạy một nhánh. Đó là hành vi **đúng**, nh
 
 - [ ] **Bước 1: Viết phép kiểm ĐỎ**
 
-Tạo `tests/test_<N+1>_wf_canh_dieu_khien_suy_ra.py`:
+Tạo `tests/test_5601_wf_canh_dieu_khien_suy_ra.py`:
 
 ```python
 """UI-0 Task 2 — canh roi mot cong CONTROL phai mang kind=CONTROL + condition.
@@ -325,6 +354,27 @@ def test_canh_du_lieu_thuong_khong_bi_doi():
     assert ct.edges[0]["condition"] == ""
 
 
+def test_core_switch_KHONG_bi_suy_bua():
+    """🔴 Hoi quy: `core.switch` co DUNG MOT cong control ten `nhanh`, con ten
+    cac nhanh nam trong THAM SO. Suy `condition='nhanh'` se lam MOI nhanh cua
+    switch chet (dong co so `_nhanh_da_chon(...) == "nhanh"`, khong bao gio
+    khop). Canh cua switch phai di qua NGUYEN VEN.
+    """
+    doc = {"version": 3, "goal": "", "active_page_id": "p1",
+           "pages": [{"id": "p1", "name": "Page 1", "nodes": [
+               {"id": "n-sw", "type": "tool", "position": {"x": 0, "y": 0},
+                "data": {"tool": "core.switch",
+                         "params": {"bieu_thuc": "1", "nhanh": ["a", "b"]}}},
+               {"id": "n-set", "type": "tool", "position": {"x": 300, "y": 0},
+                "data": {"tool": "core.set", "params": {"bien": {}}}},
+           ], "edges": [
+               {"id": "e", "source_node": "n-sw", "target_node": "n-set",
+                "source_port": "nhanh", "target_port": "in", "kind": "DATA"},
+           ]}]}
+    ct = bien_dich.cau_truc(doc)
+    assert ct.edges[0]["condition"] == "", "da suy bua cho core.switch"
+
+
 def test_tai_lieu_KHAI_TUONG_MINH_thi_giu_nguyen_khong_suy():
     """Tai lieu da khai `condition` thi may chu KHONG duoc ghi de."""
     doc = _tai_lieu_if()
@@ -339,7 +389,7 @@ def test_tai_lieu_KHAI_TUONG_MINH_thi_giu_nguyen_khong_suy():
 - [ ] **Bước 2: Chạy để xác nhận ĐỎ**
 
 ```bash
-python -m pytest tests/test_<N+1>_wf_canh_dieu_khien_suy_ra.py -q
+python -m pytest tests/test_5601_wf_canh_dieu_khien_suy_ra.py -q
 ```
 
 Kỳ vọng: **FAIL** ở `test_canh_tu_cong_control_mang_kind_va_ten_nhanh`
@@ -353,21 +403,28 @@ Trong `bien_dich.py`, đặt ngay **trước** `def cau_truc(`:
 def _suy_kind_canh(loai_nguon: str, cong: str, so: dict) -> tuple[str, str]:
     """`(kind, condition)` SUY RA cho mot canh tai lieu khong khai.
 
-    ⭐ Spec §5.4: *"Canh CONTROL mang `condition = <ten nhanh>`"*, va voi
-       `core.if`/`core.switch` ten nhanh CHINH LA ten cong ra. Nen mot canh roi
-       mot cong kieu `control` la mot canh CONTROL mang ten cong do.
+    ⭐ Spec §5.4: *"Canh CONTROL mang `condition = <ten nhanh>`"*. Voi `core.if`,
+       ten nhanh CHINH LA ten cong ra (`true`/`false`), nen suy duoc.
 
-    ⛔ Khong suy theo TEN node (`loai_nguon.startswith("core.if")`): mot node
-       moi co cong control se im lang khong duoc suy. Hoi KIEU CONG — do la thu
-       `he_kieu` so huu.
+    🔴 CHI suy khi node nguon co >= 2 cong ra kieu `control`. Do la phep thu
+       duy nhat phan biet "ten cong LA ten nhanh" voi "ten cong chi la mot cai
+       ong". `core.switch` co DUNG MOT cong control ten `nhanh`, con ten cac
+       nhanh nam trong THAM SO `nhanh: array` — suy `condition='nhanh'` cho no
+       thi dong co se so `_nhanh_da_chon(...) == "nhanh"`, khong bao gio khop,
+       va MOI nhanh cua switch chet. Hom nay switch chay ca cac nhanh (sai
+       nhung chay); mot ban suy bua bien no thanh khong chay gi — te hon.
+
+    ⛔ Khong suy theo TEN node (`loai_nguon == "core.if"`): mot node moi co hai
+       cong control se im lang khong duoc suy. Hoi CAU TRUC CONG — do la thu
+       `he_kieu` so huu, giong het luat noi day.
     """
     nd = so.get(loai_nguon)
     if nd is None:
         return ("DATA", "")
-    for ten, c in nd.cong_ra:
-        if ten == cong and c.type == "control":
-            return ("CONTROL", ten)
-    return ("DATA", "")
+    cong_control = [ten for ten, c in nd.cong_ra if c.type == "control"]
+    if len(cong_control) < 2 or cong not in cong_control:
+        return ("DATA", "")
+    return ("CONTROL", cong)
 ```
 
 - [ ] **Bước 4: Gọi nó trong `cau_truc()`**
@@ -427,7 +484,7 @@ ràng buộc đã có (`canh_khac_trang`), nên không sinh ca mới.
 - [ ] **Bước 5: Chạy để xác nhận XANH**
 
 ```bash
-python -m pytest tests/test_<N+1>_wf_canh_dieu_khien_suy_ra.py -q
+python -m pytest tests/test_5601_wf_canh_dieu_khien_suy_ra.py -q
 python -m pytest tests/test_1714_wf_bien_dich.py tests/test_1719_wf_dong_co.py tests/test_1783_wf_nut_dieu_huong.py -q
 ```
 
@@ -447,7 +504,7 @@ Thêm vào phần *Nhật ký* của `00_SO_TIEN_DO.md`:
 - [ ] **Bước 7: Commit**
 
 ```bash
-git add platform_core/workflow/bien_dich.py tests/test_<N+1>_wf_canh_dieu_khien_suy_ra.py docs/architecture/agent_ui_v2/00_SO_TIEN_DO.md
+git add platform_core/workflow/bien_dich.py tests/test_5601_wf_canh_dieu_khien_suy_ra.py docs/architecture/agent_ui_v2/00_SO_TIEN_DO.md
 git commit -m "fix(wf): suy kind=CONTROL + condition tu kieu cong ra (re nhanh chay dung mot nhanh)"
 ```
 
@@ -984,7 +1041,7 @@ git commit -m "test(browser): nghiem thu UI-0 tren trinh duyet that (4 phep do)"
 - [ ] **Bước 1: Chạy trọn bộ test nhắm**
 
 ```bash
-python -m pytest tests/test_<N>_wf_node_palette_bien_dich.py tests/test_<N+1>_wf_canh_dieu_khien_suy_ra.py tests/test_1714_wf_bien_dich.py tests/test_1719_wf_dong_co.py tests/test_1783_wf_nut_dieu_huong.py tests/test_4250_wf_v3_soan_data_tool_shape.py -q
+python -m pytest tests/test_5600_wf_node_palette_bien_dich.py tests/test_5601_wf_canh_dieu_khien_suy_ra.py tests/test_1714_wf_bien_dich.py tests/test_1719_wf_dong_co.py tests/test_1783_wf_nut_dieu_huong.py tests/test_4250_wf_v3_soan_data_tool_shape.py -q
 cd frontend/agent-canvas && npm test
 ```
 
@@ -1147,8 +1204,16 @@ git commit -m "test(browser): chot UI-0 tren web that qua cookie tai khoan thu"
 **Quét placeholder.** Không có "TBD"/"xử lý lỗi phù hợp"/"tương tự Task N". Chỗ duy
 nhất chưa có mã đầy đủ là Task 6 Bước 4 (kéo dây), và nó được viết thành **một bước
 riêng có hướng dẫn cụ thể + mốc nền + tiêu chí đỏ/xanh**, không phải một lời hứa.
-`<N>` là số tệp test, do `cay_rieng.py` cấp ở Task 0 — một thủ tục xác định, không
-phải chỗ trống.
+Số tệp test đã được cấp thật (`5600`, `5601`) ở Task 0 và ghim vào mọi lệnh, không
+còn chỗ trống nào.
+
+**Sửa sau khi lập plan (27/09, trước khi viết dòng mã đầu tiên).** Bước xác minh
+`nut_loi.tat_ca()` mà chính Task 1 dặn chạy đã bắt một **lỗi thiết kế trong Task 2**:
+luật suy `(CONTROL, tên cổng)` cho *mọi* cổng `control` sẽ gán `condition='nhanh'`
+cho `core.switch` (node đó có **một** cổng control tên chung, tên nhánh nằm trong
+tham số) ⇒ **mọi nhánh switch chết**, hồi quy tệ hơn hiện trạng. Luật đã thu hẹp
+thành *"chỉ suy khi node nguồn có ≥ 2 cổng control"*, và thêm một phép kiểm hồi quy
+ghim rằng `core.switch` đi qua nguyên vẹn.
 
 **Nhất quán kiểu.** `_suy_kind_canh(loai_nguon, cong, so) -> (kind, condition)` khai
 ở Task 2 và không có task nào khác gọi. `CanvasEdgeKind` mở rộng ở Task 3 và

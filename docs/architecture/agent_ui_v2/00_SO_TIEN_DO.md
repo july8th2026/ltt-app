@@ -13,7 +13,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 
 | Pha | Làn | Trạng thái | Nhánh | Tệp SỞ HỮU | Gộp main | Ghi chú |
 |---|---|---|---|---|---|---|
-| UI-0 Lỗi P0 cơ khí | — | **CHƯA MỞ** | — | — | — | ⭐ plan đã viết, **mở được ngay**, không chặn bởi câu hỏi nào |
+| UI-0 Lỗi P0 cơ khí | `ui0` | **ĐANG LÀM** | `claude/ltt-agent-automation-ux-audit-9e3764` | `bien_dich.py` · `workflowApi.ts` · `canvas.css` · `NodeKhung.tsx` · `editorState.ts` · `CanvasEdgeView.tsx` | — | dải test **5600-5699** |
 | UI-3 Tách CanvasShell | — | CHƯA MỞ | — | — | — | chặn bởi UI-0. **Mở khoá song song hoá** |
 | UI-2 Design system | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 · chủ S1 (`canvas.css`) |
 | UI-1 Automation Studio | — | CHƯA MỞ | — | — | — | **chặn bởi Q1** · chủ S5 (bảng định tuyến) |
@@ -31,7 +31,13 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 
 | Làn | Tệp | Từ lúc | Sổ dùng chung? |
 |---|---|---|---|
-| _(trống)_ | | | |
+| ui0 | `platform_core/workflow/bien_dich.py` | 27/09 | — |
+| ui0 | `frontend/agent-canvas/src/workflowApi.ts` | 27/09 | **S4** |
+| ui0 | `frontend/agent-canvas/src/editorState.ts` | 27/09 | **S3** (bàn giao UI-3) |
+| ui0 | `frontend/agent-canvas/src/canvas.css` | 27/09 | **S1** (bàn giao UI-2) |
+| ui0 | `frontend/agent-canvas/src/nodes/NodeKhung.tsx` | 27/09 | — |
+| ui0 | `frontend/agent-canvas/src/CanvasEdgeView.tsx` | 27/09 | — |
+| ui0 | `server/templating.py` (chỉ `ASSET_VER`) | 27/09 | — |
 
 **Sáu sổ dùng chung và chủ của chúng** — đụng vào thì DỪNG và báo điều phối:
 
@@ -79,6 +85,20 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-27` `ui0` — 🔴 **Sửa lỗi THIẾT KẾ trong plan trước khi viết mã.** Bước
+  xác minh `nut_loi.tat_ca()` mà Task 1 dặn chạy đã bắt được: luật suy
+  `(CONTROL, tên cổng)` của Task 2 sẽ gán `condition='nhanh'` cho `core.switch`
+  (đo được: `core.switch` có **1** cổng control tên `nhanh`; tên nhánh nằm trong
+  tham số `nhanh: array`) ⇒ động cơ so `_nhanh_da_chon(...) == "nhanh"`, không bao
+  giờ khớp ⇒ **mọi nhánh switch chết**. Hôm nay switch chạy cả các nhánh (sai nhưng
+  chạy) ⇒ bản suy bừa là **hồi quy tệ hơn**. Luật thu hẹp: **chỉ suy khi node nguồn
+  có ≥ 2 cổng control** (`core.if` = 2 ✓, `core.switch` = 1 ✗). Thêm phép kiểm hồi
+  quy ghim switch đi qua nguyên vẹn.
+  ⚠️ **Khoảng trống còn lại:** `core.switch` vẫn chạy mọi nhánh — cần cửa đặt tên
+  nhánh lên cạnh, thuộc **UI-4**, không thuộc UI-0.
+- `2026-09-27` `ui0` — Mở làn. Dải số test **5600-5699** (quét 193 cây, cao nhất
+  đang dùng `5562`). Dùng chính worktree audit làm làn, không tạo cây thứ hai.
 
 - `2026-09-27` `điều phối` — Audit xong: 25,7/100 có trọng số, 0/5 luồng dựng được,
   7 điểm chặn. Plan TỔNG + plan UI-0 đã viết. ⭐ Trong lúc lập plan tìm ra cách sửa
