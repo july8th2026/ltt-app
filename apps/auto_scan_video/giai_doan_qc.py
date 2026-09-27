@@ -1,28 +1,42 @@
-"""Giai doan QC — cong PHAT HANH, khong phai mot buoc ghi chu.
+"""Giai doan QC — BO DO va BAO CAO. ⛔ KHONG phai cong cam phat hanh.
 
 Mot artifact ra:
 
     qc_report.json    bao cao muoi hai dung sai   (kind=json)
 
-## Vi sao QC duoc phep lam HONG ca lan chay (Prompt 18 muc 2)
+## 🔴 Doi huong 27/09/2026 (chu du an chot)
 
-Neu QC chi ghi lai roi de lan chay ve `done`, no khong phai mot cong — no la mot
-loi binh luan. Khach nhan mot video khong dat chuan kem mot tep JSON noi rang no
-khong dat chuan, va khong ai doc tep do.
+Ban truoc: QC hong ⇒ giai doan hong ⇒ ca lan chay ve `error` ⇒ khach nhan **⛔
+khong gi ca**. Ly le cu — *"mot cong khong chan thi khong phai cong"* — dung ve
+nguyen tac, nhung nguyen tac ay chi dung khi **con so cua cong dang tin**.
 
-⇒ QC hong ⇒ giai doan hong ⇒ `_advance` cho ca run ve `error`. Va vi QC la giai
-  doan **cuoi**, dieu do dung nghia la: mot lan chay chi `done` khi ban ra da
-  qua cong (Prompt 16 muc 9).
+⚠️ Va do duoc rang chung ⛔ KHONG dang tin. Ba luot chay THAT (27/09) bi chan boi
+   bon roi ba roi hai muc, trong do:
 
-⚠️ QC hong la `LoiNguoiGoi` chu khong phai loi tam thoi: chay lai cung mot ban
-   render se cho cung mot ket qua do. Thu lai ba lan mot phep do tat dinh la ba
-   lan cho vo ich.
+     T2  — SAI: chinh QC chia `toc_do` HAI LAN (`_thoi_luong_mong_doi` tra hai
+           truc khac nhau tuy nhanh). Da sua.
+     T18 — SAI: tham chieu 1083 khung / 30 fps vs ban giao 1351 khung / 37,5 fps
+           ⇒ phep SO SANH lech, ⛔ khong phai hinh kem. Nay TAT mac dinh.
+     T17 — THAT nhung vo hai voi nguoi xem: moc DTS trung, moi trinh phat bo qua.
 
-## Vi sao no van GHI bao cao khi hong
+⇒ Mot cong chan bang nhung con so nhu the ⛔ khong bao ve khach — no **giu hang
+  cua khach lai**.
 
-Bao cao duoc promote **truoc** khi giai doan bao hong. Do la thu khac biet giua
-"lan chay cua ban hong" va "lan chay cua ban hong vi tieng to hon chuan 3 dB o
-muc T5" — va nguoi can cau thu hai nhat la nguoi ho tro, chu khong phai khach.
+## Nen QC nay GHI va DI TIEP
+
+`thi_hanh` doc `_qc_hong`, ghi mot dong `warning`, va lan chay **di tiep**. Thu
+KHONG duoc mat la **phat hien**:
+
+    ket_qua["qc_muc_hong"]      danh sach ma
+    ket_qua["qc_ky_thuat_dat"]  `False` khi co muc hong
+    qc_report.json              bao cao day du (promote TRUOC, nhu cu)
+    mot dong log `warning`      cho nguoi van hanh
+
+⭐ Mot bo do bi tat cong van la mot bo do; mot bo do bi **xoa so** thi ⛔ khong
+   con gi. Do la khac biet duy nhat phai giu.
+
+⛔ Va `_qc_hong` + `QcChan` GIU lai: chung la cho de chan lai MOT SO muc (vd
+   T17) neu chu du an muon, ⛔ khong phai ma chet.
 """
 from __future__ import annotations
 
@@ -138,9 +152,13 @@ def tom_tat_kem_khong_do(bao_cao: dict, ly_do: dict) -> dict:
        Mot luot ma thieu `libvmaf`, ffmpeg bam khong noi luong hinh, va luot
        giai ma ca tep het thoi gian ⇒ T3, T13, T17, T18 deu ha xuong
        `KHONG_AP_DUNG`, va bao cao in ra `dat: True`, `so_muc_hong: 0`,
-       `qc_ky_thuat_dat: True`. Tuc **cong PHAT HANH bao DAT sau khi ⛔ khong do
-       gi** — dung ho loi cua gate o `f4c4f064`: *mot chu PASS dung mot minh
-       tren mot phep do chua he chay*.
+       `qc_ky_thuat_dat: True`. Tuc **bao DAT sau khi ⛔ khong do gi** — dung ho
+       loi cua gate o `f4c4f064`: *mot chu PASS dung mot minh tren mot phep do
+       chua he chay*.
+
+    ⭐ Va tu 27/09 (QC thoi lam cong chan) truong nay QUAN TRONG HON, ⛔ khong
+       kem hon: khi ⛔ khong con gi chan thi mot chu `dat: True` la thu DUY NHAT
+       nguoi doc thay, nen no phai noi duoc *"DAT tren bao nhieu phep do THAT"*.
 
     ⭐ `ly_do` la thu CHINH CHO NEM ra ghi lai (`_bam_hai_ben`,
        `_do_hinh_hai_ben`, `_do_vmaf`), ⛔ khong phai suy nguoc tu chuoi `mo_ta`

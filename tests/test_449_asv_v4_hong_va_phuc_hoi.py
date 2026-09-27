@@ -627,11 +627,21 @@ def test_render_hong_HET_LUOT_thi_run_ket_thuc_nhung_artifact_van_con(
     assert features.lay_run(db, run.id, "uA").status == "error"
 
 
-def test_QC_chan_thi_run_HONG_nhung_bao_cao_QC_van_con(db, kho_tam, tmp_path,
-                                                       asr_gia, dich_gia,
-                                                       giong_gia, monkeypatch):
-    """🔑 QC la mot CONG, va mot cong phai CHAN duoc — nhung no phai de lai
-    **bang chung ve vi sao**, vi nguoi can cau tra loi do la nguoi ho tro."""
+def test_QC_hong_KHONG_chan_nhung_bao_cao_QC_van_con(db, kho_tam, tmp_path,
+                                                     asr_gia, dich_gia,
+                                                     giong_gia, monkeypatch):
+    """🔴 **DAO CHIEU 27/09/2026 — chu du an chot: QC la BO DO, ⛔ khong phai cong.**
+
+    Ban truoc chot `gd.status in ("failed", "failed_terminal")` va
+    `run.status == RUN_ERROR`. Ly le cu (*"mot cong phai chan duoc"*) dung ve
+    nguyen tac nhung chi dung khi con so cua cong **dang tin** — va ba luot chay
+    THAT 27/09 cho thay chung ⛔ khong (T2 SAI do chinh QC tinh nham, T18 SAI do
+    phep so sanh lech nhip, T17 THAT nhung vo hai voi nguoi xem).
+
+    ⭐ Ve thu hai cua bai cu — *"no phai de lai bang chung ve vi sao"* — VAN
+       DUNG va van duoc chot o day. Do la thu duy nhat phai giu: mot bo do bi tat
+       cong van la mot bo do; mot bo do bi **xoa so** thi ⛔ khong con gi.
+    """
     from apps.auto_scan_video import pipeline, qc
     from apps.auto_scan_video.tables import RUN_ERROR
 
@@ -650,12 +660,22 @@ def test_QC_chan_thi_run_HONG_nhung_bao_cao_QC_van_con(db, kho_tam, tmp_path,
     _chay_het_hang_doi(db, nang_luc=NANG_LUC)
 
     gd = _giai_doan(db, run, pipeline.QC)
-    assert gd.status in ("failed", "failed_terminal"), gd.status
-    assert (gd.outputs or {}).get("khoa_asset"), (
-        "bao cao QC khong duoc luu — lan chay hong ma khong noi duoc vi sao")
+    # ── Ve 1: giai doan VA lan chay ⛔ KHONG bi lam hong ──────────────────────
+    assert gd.status not in ("failed", "failed_terminal"), (
+        f"QC hong ma giai doan ve {gd.status!r} — QC ⛔ khong phai cong nua")
     db.expire_all()
     from apps.auto_scan_video import features
-    assert features.lay_run(db, run.id, "uA").status == RUN_ERROR
+    assert features.lay_run(db, run.id, "uA").status != RUN_ERROR, (
+        "QC hong ma ca lan chay ve error — khach ⛔ khong nhan duoc hang")
+
+    # ── Ve 2: bang chung VAN con, ca artifact LAN con so ────────────────────
+    out = dict(gd.outputs or {})
+    assert out.get("khoa_asset"), (
+        "bao cao QC ⛔ khong duoc luu — tat cong roi vut luon phat hien thi "
+        "⛔ khong con bo do nao")
+    assert out.get("qc_muc_hong") == ["T99"], (
+        f"ma muc hong bien mat khoi outputs: {out}")
+    assert out.get("qc_ky_thuat_dat") is False, out
 
 
 # ══════════════════════════════════════════════════════════════════════════════
