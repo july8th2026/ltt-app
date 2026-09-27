@@ -13,9 +13,10 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 
 | Pha | Làn | Trạng thái | Nhánh | Tệp SỞ HỮU | Gộp main | Ghi chú |
 |---|---|---|---|---|---|---|
-| UI-0 Lỗi P0 cơ khí | `ui0` | **ĐANG LÀM** | `claude/ltt-agent-automation-ux-audit-9e3764` | `bien_dich.py` · `workflowApi.ts` · `canvas.css` · `editorState.ts` · `CanvasEdgeView.tsx` · `CanvasEdgeView.tsx` | — | dải test **5600-5699** |
-| UI-3 Tách CanvasShell | — | CHƯA MỞ | — | — | — | chặn bởi UI-0. **Mở khoá song song hoá** |
-| UI-2 Design system | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 · chủ S1 (`canvas.css`) |
+| UI-0 Lỗi P0 cơ khí | `ui0` | ✅ **ĐÃ GỘP** (`72ee199b`) | `claude/ltt-agent-automation-ux-audit-9e3764` | *(đã trả phiếu)* | ✅ | dải **5600-5699** · nghiệm thu trình duyệt PASS · ⏸ chưa deploy (chủ dự án: deploy CUỐI) |
+| UI-3 Tách CanvasShell | `ui3` | **ĐANG LÀM** (agent) | worktree riêng | mọi `**/*.tsx` · `editorState.ts` · `workflowApi.ts` | — | dải **5700-5799** · ⛔ cấm đụng `canvas.css`, ⛔ cấm đổi `className` |
+| UI-2 Design system | `ui2` | **ĐANG LÀM** (agent) | worktree riêng | **chỉ** `canvas.css` + `src/styles/` | — | dải **5800-5899** · ⛔ cấm đụng mọi `.tsx` |
+| UI-N Nhãn ngắn node LTT | `uiN` | **ĐANG LÀM** (agent) | worktree riêng | `registry.py` · `cong_cu.py` · `nut.py` · ToolSpec trong `apps/*/` | — | dải **5900-5999** · ⛔ cấm đụng `frontend/` |
 | UI-1 Automation Studio | — | CHƯA MỞ | — | — | — | **chặn bởi Q1** · chủ S5 (bảng định tuyến) |
 | UI-4 Node UX V2 | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
 | UI-7 Execution + Runs | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 · chủ S4 (đợt 2) |

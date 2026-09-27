@@ -267,6 +267,44 @@ GATE ĐỎ         sửa tại chỗ -> chạy lại đúng phép đỏ (gate in
                 -> KHÉP: python tools\gate.py --doi --tu <sha của lượt gate>
 ```
 
+## 3.1 ⭐ Gate CÓ HẠN DÙNG — chạy NGAY TRƯỚC deploy, không sớm hơn
+
+Rút ra từ một trao đổi liên phiên 27/09, và nó sửa một chỗ mơ hồ của plan này.
+
+Một lượt gate XANH là bằng chứng cho **đúng SHA nó đo**, và **chỉ** SHA ấy. Cộng với
+luật **một L3 mỗi nhánh** (`gate.py` từ chối lượt thứ hai, **kể cả sau một lượt
+XANH**), hệ quả là:
+
+> ⛔ **Đốt gate sớm không phải "làm trước cho xong" — nó là tiêu một lá bài dùng một
+> lần vào một SHA sẽ không còn tồn tại lúc cần.**
+
+`main` là trạng thái **đang chuyển động**: gate hôm nay trên `72ee199b` sẽ **không
+phủ** SHA được deploy sau UI-3…UI-11, và lúc đó **không còn lượt thứ hai để sửa**.
+
+⇒ Gate nằm **ngay trước deploy**, trên **đúng SHA deploy**. Cho tới đó, mọi pha sống
+trên `main` với test nhắm xanh + `pre-commit run --all-files`, ⛔ chưa ra production.
+
+Đây là cùng một bài học với *"phép đo trên `main` có hạn dùng"* (§4.2), áp vào một
+công cụ khác.
+
+## 3.2 ⭐ Giao ước liên phiên: BÁO KHI GỘP, không chỉ khi deploy
+
+Chốt với phiên `Auto Scan Video` ngày 27/09, sau một lần suýt hỏng thật.
+
+| Ai | Khi nào | Báo gì |
+|---|---|---|
+| Phiên sắp **deploy** | trước khi bấm | "tôi sắp deploy HEAD `main`" + `git diff --name-only <SHA đang chạy>..HEAD` **chạy ngay lúc đó** |
+| Phiên vừa **gộp `main` một thay đổi ĐỔI HÀNH VI CHẠY THẬT** | **lúc gộp**, ⛔ không chờ ai hỏi | cái gì đổi, đổi theo chiều nào, đã được duyệt deploy chưa |
+
+"Đổi hành vi chạy thật" = bút toán · credit · job sinh ra · quyền · dữ liệu khách.
+
+🔴 **Vì sao vế thứ hai mới là vế cứu được việc.** Hôm 27/09 cái cứu ta là phiên kia
+*báo trước khi deploy*, ⛔ không phải tôi *báo sau khi gộp* — tôi đã gộp mã đổi bút
+toán vào `main` mà không báo ai, và nếu họ không hỏi thì nó đã ra production.
+
+> **Gộp một commit đổi hành vi vào `main` là đặt nó lên ĐƯỜNG RAY DEPLOY CỦA MỌI
+> PHIÊN.** Nên đó là một loại **thông báo**, ⛔ không phải một loại im lặng.
+
 **Ba điều dễ làm sai, ghi ra để không ai làm:**
 
 1. 🔴 **"Xong UI-4" KHÔNG phải cuối plan.** Hết một pha/task/nhánh/lần gộp `main`
