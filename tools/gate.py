@@ -443,10 +443,23 @@ TEP_KHONG_DUOC_DOC_SONG_SONG = {
 class Step:
     def __init__(self, name: str, argv: list[str], cwd: Path,
                  nhom: str = "tinh", tai_nguyen: tuple[str, ...] = (),
-                 so_loi: int = 1, giay_toi_thieu: float = 0.0):
+                 so_loi: int = 1, giay_toi_thieu: float = 0.0,
+                 tep_test: tuple[str, ...] = ()):
         assert nhom in NHOM, nhom
         self.name = name
         self.argv = argv
+        #: Tep test buoc nay se chay, khi danh sach ⛔ KHONG nam tren `argv`.
+        #:
+        #: 🔴 Vi sao can truong nay thay vi doc `argv`. Truoc 28/09 phep kiem
+        #:    `test_1500` doi soat pham vi bang `{x for x in argv if
+        #:    x.startswith("tests/")}` — tuc no do **CACH GO** chu khong do
+        #:    **TINH CHAT**. Khi danh sach phai roi khoi `argv` (tran 32 767 ky
+        #:    tu cua Windows), phep kiem do chuyen sang do MOT TAP RONG va bao
+        #:    xanh/do vi mot ly do khong con lien quan gi den pham vi.
+        #:
+        #: ⭐ Mot cong chat luong phai hoi *"nhung tep nao SE CHAY"*, va cau do
+        #:    can mot cho de tra loi khong phu thuoc vao hinh dang dong lenh.
+        self.tep_test = tuple(tep_test)
         self.cwd = cwd
         self.nhom = nhom
         #: So LOI buoc nay chiem khi chay — khong phai so tien trinh.
@@ -1095,11 +1108,33 @@ def _steps_pham_vi(tep_test: list[str]) -> list[Step]:
     #    Va `_ap_ngan_sach_thuc` tim buoc bang `-n` trong argv — khong co `-n` thi
     #    no bo qua buoc nay luon. Cung mot nguon so voi `bo test (song song)`.
     loi = loi_cho_bo_test()
+    duong = sorted(tep_test)
+
+    # 🔴 SU CO 28/09/2026. Ban cu truyen ca danh sach vao dong lenh. Voi mot diff
+    #    cham `governance.py`/`manifest.py` — hai tep ca nen tang tieu thu — pham
+    #    vi len **1067** tep = **41 335 ky tu**, vuot tran 32 767 cua Windows
+    #    `CreateProcess` => `[WinError 206]`, va buoc nay in `FAIL` sau **0,0
+    #    giay** ma pytest CHUA HE CHAY.
+    #
+    # ⭐ Day la cai bay ac nhat trong ca tep: `FAIL 0.0s` doc y het mot phep kiem
+    #    do, nen nguoi ta di tim con bo trong MA. Hai cua L1 va L2 cung dan tOi
+    #    mot ket cuc **khong co do phu** — L1 im lang qua `[HA CAP]`, L2 on ao
+    #    qua mot dong FAIL sai nguyen nhan.
+    #
+    # ⛔ Va ⛔ KHONG "sua" bang cach thu hep pham vi cho vua tran: pham vi la
+    #    thu `thanh_phan.py` do duoc, ⛔ khong phai thu ta chon cho vua cong cu.
+    #    Thu hep no lam **loi tuyen bo rong hon phep do** — dung hinh dang ma
+    #    `docs/BAY_TRONG_CONG_CHAT_LUONG.md` goi la "pham vi hep hon loi".
+    ds = ROOT / ".gate" / "pham-vi-bo-test.txt"
+    ds.parent.mkdir(exist_ok=True)
+    ds.write_text("\n".join(duong) + "\n", encoding="utf-8",
+                   newline="\n")
     return [Step("bo test (pham vi)",
-                 [sys.executable, "tools/test_nhanh.py", "-n", str(loi), *sorted(tep_test)],
+                 [sys.executable, "tools/test_nhanh.py", "-n", str(loi),
+                  "--tep-danh-sach", str(ds)],
                  ROOT, nhom="nang",
                  tai_nguyen=("cpu_nhieu", "postgres_test"), so_loi=loi,
-                 giay_toi_thieu=3.0)]
+                 giay_toi_thieu=3.0, tep_test=tuple(duong))]
 
 
 #: Tai nguyen KHONG BAO GIO duoc bo qua bang `--khong-khoa` hay bang chen qua han.

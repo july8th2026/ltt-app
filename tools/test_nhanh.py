@@ -90,6 +90,51 @@ TEP_NOI_TIEP = (
 
 BO_QUA = ("--ignore=tmp", "--ignore=test-results")
 
+#: Tran do dai MOT dong lenh cua Windows (`CreateProcess`): 32 767 ky tu.
+#:
+#: 🔴 DO THAT 28/09/2026. `gate.py --pham-vi` voi 23 thanh phan sinh **1067**
+#:    duong test = **41 335 ky tu** => `[WinError 206] The filename or extension
+#:    is too long`, va buoc `bo test (pham vi)` in `FAIL` sau **0,0 giay**.
+#:    Trong y het mot phep kiem do, trong khi pytest **chua he chay** — cung
+#:    hinh dang voi `[HA CAP ... BO TEST KHONG CHAY]` cua L1: hai cua khac nhau,
+#:    cung mot ket cuc **khong co do phu**, ca hai deu in ra mot dong co ve
+#:    nhu mot phan quyet.
+#:
+#: ⭐ Thuoc la `@tep` (pytest bat `fromfile_prefix_chars="@"` cua argparse), chu
+#:    ⛔ KHONG phai chia lo: chia lo bien mot pass/fail thanh nhieu luot phai
+#:    gop tay, con `@tep` giu DUNG mot lenh pytest — dung ke hoach hai pha,
+#:    dung cach dem, dung `--deselect`.
+#:
+#: ⚠️ Nguong dat THAP hon tran that rat nhieu, vi `goc`, cac tuy chon, ba
+#:    `--deselect` va duong TUYET DOI cua tep tam deu an vao cung dong do.
+NGUONG_GOM_DUONG = 8000
+
+
+def gom_duong_qua_dai(duong: list[str], *, nhan: str = "phamvi") -> list[str]:
+    """Danh sach duong dai -> MOT doi so `@tep` khi vuot `NGUONG_GOM_DUONG`.
+
+    ⛔ Kiem tung duong CO THAT **truoc** khi ghi. Do 28/09: pytest doc mot
+       `@tep` chua duong khong ton tai thi in `no tests collected` va **khong
+       bao loi** — mot duong go sai lam pham vi TEO LAI im lang, dung hinh dang
+       loi ma cong chat luong sinh ra de chan. Doi chung da chay: `@tep` mot
+       duong = 4 test, hai duong = 9 test, duong khong ton tai = 0 va IM.
+    """
+    if sum(len(d) + 1 for d in duong) <= NGUONG_GOM_DUONG:
+        return duong
+    thieu = [d for d in duong if not (GOC / d.split("::", 1)[0]).is_file()]
+    if thieu:
+        raise SystemExit(
+            f"[duong test] {len(thieu)}/{len(duong)} duong KHONG ton tai va se "
+            f"bi pytest bo qua IM LANG: {thieu[:3]}")
+    thu_muc = GOC / ".gate"
+    thu_muc.mkdir(exist_ok=True)
+    tep = thu_muc / f"duong-test-{nhan}-{os.getpid()}.txt"
+    tep.write_text("\n".join(duong) + "\n", encoding="utf-8")
+    print(f"  [duong test] {len(duong)} tep = "
+          f"{sum(len(d) + 1 for d in duong)} ky tu > nguong "
+          f"{NGUONG_GOM_DUONG} => gom vao @{tep.name}")
+    return [f"@{tep}"]
+
 
 def _ep_utf8() -> None:
     """Cho phep tieng Viet trong nhan buoc ngay ca khi stdout bi HUNG.
@@ -556,7 +601,29 @@ def main() -> int:
                    help="phut cho khoa truoc khi CHEN (mac dinh 15, y het gate)")
     p.add_argument("--khong-khoa", action="store_true",
                    help="chay ma khong xin khoa — chi dung khi biet ro vi sao")
+    p.add_argument("--tep-danh-sach", default="",
+                   help="tep chua danh sach duong test, MOT duong moi dong "
+                        "— dung khi danh sach dai qua tran dong lenh")
     args, con_lai = p.parse_known_args()
+
+    # ⭐ Bung ra thanh duong THAT ngay o day, truoc moi thu khac. Ke hoach
+    #    hai pha phai BIET ba tep ghi cay co trong danh sach hay khong, nen
+    #    no ⛔ khong lam viec duoc voi mot doi so `@tep` chua bung. Pha 1 se
+    #    gom lai bang `gom_duong_qua_dai` khi goi pytest.
+    if args.tep_danh_sach:
+        _ds = Path(args.tep_danh_sach)
+        if not _ds.is_file():
+            print(f"[tep danh sach] KHONG thay {_ds}")
+            return 2
+        _duong = [d.strip() for d in
+                  _ds.read_text(encoding="utf-8").splitlines() if d.strip()]
+        if not _duong:
+            # ⛔ RONG thi NOI RA: khong co duong nao = pytest chay CA KHO,
+            #    tuc mot pham vi thu hep bien thanh mot luot day du im lang.
+            print(f"[tep danh sach] {_ds} RONG — tu choi chay")
+            return 2
+        print(f"  [tep danh sach] {len(_duong)} duong tu {_ds.name}")
+        con_lai = [*con_lai, *_duong]
 
     # Cung ly do nhu trong `gate.py`: NOI RA ai khac dang ban, roi van chay.
     # Khoa `cua_so_yen` xep hang; dong nay chi lam cho thay thu khoa khong thay.
@@ -645,7 +712,11 @@ def ke_hoach_pha(con_lai: list[str], n: str, *,
     loai = [f"--deselect={t}" for t in TEP_NOI_TIEP]
     if duong and all(ghi_cay(d) for d in duong):
         return None, [*goc, *co]
-    pha1 = [*goc, *pha1_duong, "-n", str(n), "--dist", "loadfile", *loai]
+    # ⭐ `gom_duong_qua_dai` o DAY chu khong o cho goi: moi duong di toi
+    #    `subprocess` deu qua ham nay, nen tran khong the quay lai qua mot
+    #    loi goi moi ai quen boc.
+    pha1 = [*goc, *gom_duong_qua_dai(pha1_duong), "-n", str(n),
+            "--dist", "loadfile", *loai]
     return pha1, ([*goc, *co] if co else None)
 
 
