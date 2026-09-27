@@ -14,10 +14,13 @@ duoc dang ky vao router truoc khi nen tang gan vao FastAPI.
     library.py        Thu vien meta prompt, doan prompt va phong cach.
     storyboard.py     Storyboard, canh va phien ban theo tung canh.
     overview.py       So lieu Tong quan va chi tieu credit.
+    briefs.py         Brief, canh kich ban, preflight, bundle va bao gia.
+    iterate.py        Vong lap sua kich ban va phan quyet tung luot.
+    nhan_vat.py       Nhan vat, trang phuc, dang, boi canh va buoc khoa.
 """
 from apps.prompt_ai_ommi.routes._shared import router
 from apps.prompt_ai_ommi.routes import (  # noqa: F401  (import de dang ky route)
     pages, projects, handoff, bindings, assets_catalog, resources, library,
-    storyboard, overview)
+    storyboard, overview, briefs, iterate, nhan_vat)
 
 __all__ = ["router"]

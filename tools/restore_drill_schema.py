@@ -153,6 +153,15 @@ def main() -> int:
                     "uq_ommi_prompt_version_target",
                     "uq_ommi_tag_owner_name",
                     "uq_ommi_usage_resource_project_scene",
+                    # pha 1-3 PROMPT AI: ba rang buoc moi. Thieu chung thi
+                    # lan khoi phuc sau khong ai kiem, va mat chung khong
+                    # bao loi ngay -- no hien ra thanh du lieu trung:
+                    #   binding_tag  -> mot the @IMG_k tro hai variant
+                    #   canh_vitri   -> hai canh cung vi tri trong mot brief
+                    #   iteration_seq-> hai luot cung so thu tu mot brief
+                    "uq_ommi_binding_tag",
+                    "uq_ommi_canh_vitri",
+                    "uq_ommi_iteration_seq",
                     # Public API (Q92): mat rang buoc nay = mat co che chong
                     # double-charge. Hai request cung Idempotency-Key se cung
                     # tao job va cung giu credit, va khong co gi bao dong.

@@ -24,6 +24,7 @@ class OmmiCanh(Base):
     __tablename__ = "ommi_canh"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     brief_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     title: Mapped[str] = mapped_column(String(200), default="", nullable=False)

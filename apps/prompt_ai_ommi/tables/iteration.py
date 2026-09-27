@@ -21,6 +21,7 @@ class OmmiIteration(Base):
     __tablename__ = "ommi_iteration"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     brief_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     seq: Mapped[int] = mapped_column(Integer, nullable=False)
     feedback: Mapped[str] = mapped_column(Text, default="", nullable=False)

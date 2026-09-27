@@ -111,7 +111,8 @@ def test_canh_id_truyen_vao_duoc_giu_nguyen(db_session):
     """
     from apps.prompt_ai_ommi.tables import OmmiCanh
 
-    canh = OmmiCanh(id="scene_abc123", brief_id="brief_1", position=0)
+    canh = OmmiCanh(id="scene_abc123", owner_id="u_1", brief_id="brief_1",
+                    position=0)
     db_session.add(canh)
     db_session.commit()
     db_session.refresh(canh)

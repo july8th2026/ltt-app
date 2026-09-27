@@ -26,7 +26,10 @@ LUOT_MIEN_PHI = 2
 #: cung KHONG phai tran KHUNG HINH storyboard (`storyboard.MAX_KHUNG_HINH`,
 #: 60) -- ba dai luong nay tung dung chung mot con so `20`/`60` roi lech
 #: nhau, nen dat ten rieng thay vi go tay `20` tai cho dung.
-TOI_THIEU_KY_TU_BRIEF = 20
+# ⭐ Hang so nay da doi nha sang `project_schema` (canh `MAX_SCENES`) vi SAU
+#    cho trong app khai cung nguong nay — trong do co mot cho o CUA va mot
+#    cho o WORKER (bat bien B-6). Giu ten cu o day de cho goi khong doi.
+from apps.prompt_ai_ommi.project_schema import TOI_THIEU_KY_TU_BRIEF
 
 _PHAN_QUYET = {"kept", "rejected"}
 
@@ -109,6 +112,7 @@ def mo_luot(db, brief, feedback: str, prompt_sent: str) -> OmmiIteration:
     free = con_mien_phi(brief) > 0
     gia = bao_gia(db, brief)
     lt = OmmiIteration(
+        owner_id=brief.owner_id,
         brief_id=brief.id, seq=_seq_ke_tiep(db, brief.id),
         feedback=str(feedback or "")[:4000],
         prompt_sent=str(prompt_sent or "")[:60000],

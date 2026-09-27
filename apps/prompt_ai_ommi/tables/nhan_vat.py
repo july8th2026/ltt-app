@@ -52,6 +52,7 @@ class OmmiOutfit(Base):
     __tablename__ = "ommi_outfit"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     character_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
@@ -107,6 +108,7 @@ class OmmiFaceEmbedding(Base):
     __tablename__ = "ommi_face_embedding"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     character_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     variant_id: Mapped[str] = mapped_column(String(36), nullable=False)
     vector_json: Mapped[dict] = mapped_column(JSON, nullable=False)

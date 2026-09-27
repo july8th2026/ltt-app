@@ -110,6 +110,7 @@ def nhan_ban(db, brief: OmmiBrief) -> OmmiBrief:
     db.add(ban_sao)
     for c in doc_canh(db, brief):
         db.add(OmmiCanh(
+            owner_id=ban_sao.owner_id,
             brief_id=ban_sao.id, position=c.position, title=c.title,
             duration_seconds=c.duration_seconds, summary=c.summary,
             prompt=c.prompt, negative_prompt=c.negative_prompt,
@@ -137,6 +138,7 @@ def dat_canh(db, brief: OmmiBrief, canh: list[dict]) -> list[OmmiCanh]:
         item = item if isinstance(item, dict) else {}
         row = OmmiCanh(
             id=str(item.get("id") or "").strip() or _id_moi("scene"),
+            owner_id=brief.owner_id,
             brief_id=brief.id, position=vi_tri,
             title=str(item.get("title") or "")[:200],
             duration_seconds=max(1, min(60, int(item.get("duration_seconds") or 5))),

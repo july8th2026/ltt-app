@@ -8,6 +8,18 @@ import uuid
 
 SCHEMA_VERSION = 1
 MAX_SCENES = 20
+#: Do dai toi thieu cua `story` de mot brief duoc coi la du dieu kien.
+#:
+#: ⭐ SAU cho tung khai rieng con so nay (jobs.py, routes/projects.py,
+#:    services/briefs.py, services/composer.py x2, services/iterate.py).
+#:    `routes/projects.py` la CUA (truoc khi tinh tien) va `jobs.py` la
+#:    WORKER (sau khi credit da giu) => doi mot ben la khach bi thu tien roi
+#:    job chet (bat bien B-6, spec paragraph 8). Moi cho phai IMPORT hang so nay.
+#:
+#: ⛔ Day la DO DAI VAN BAN, khong phai so canh. Dung lan voi
+#:    `MAX_SCENES` (canh kich ban) hay `storyboard.MAX_KHUNG_HINH` (khung
+#:    hinh) -- ba dai luong khac nhau tung cung dung con so 20/60.
+TOI_THIEU_KY_TU_BRIEF = 20
 MAX_RESOURCES = 24
 MAX_VERSIONS = 8
 ASPECTS = ("16:9", "9:16", "1:1", "4:3", "3:4", "21:9")

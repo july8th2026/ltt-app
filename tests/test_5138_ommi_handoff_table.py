@@ -25,7 +25,7 @@ def db_session(tmp_path, monkeypatch):
 def test_roundtrip_insert_and_read_back(db_session):
     from apps.prompt_ai_ommi.tables import OmmiHandoff
     now = datetime.now(timezone.utc)
-    row = OmmiHandoff(project_id="proj_1", scene_id="scene_1",
+    row = OmmiHandoff(owner_id="u_1", project_id="proj_1", scene_id="scene_1",
                       target_app_slug="taovideo",
                       payload={"prompt": "xin chao", "refs": [], "skipped": [],
                                "skipped_over_limit": 0,

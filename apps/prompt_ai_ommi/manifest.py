@@ -33,6 +33,13 @@ def _cost(params: dict) -> int:
         except (TypeError, ValueError):
             count = 1
         return _director_cost(params) * count
+    if kind == "iterate":
+        # Sua mot kich ban DA CO: gui lai brief + feedback, khong dung lai tu
+        # dau. Dat bang mot nua director, san 3..9.
+        return max(3, min(9, math.ceil(_director_cost(params) / 2)))
+    if kind == "character_lock":
+        # Sinh MOT khoi chu co dinh cho nhan vat — khong lien quan so canh.
+        return 3
     return _director_cost(params)
 
 

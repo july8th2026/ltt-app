@@ -92,7 +92,18 @@ def liet_ke_boi_canh(db, owner_id: str) -> list[OmmiBackground]:
 
 
 def tao_trang_phuc(db, character_id: str, du_lieu: dict) -> OmmiOutfit:
-    row = OmmiOutfit(character_id=character_id,
+    """`owner_id` TRA TU nhan vat, ⛔ khong nhan qua tham so.
+
+    Nhan qua tham so la mot cho de truyen SAI chu, va mot hang sai chu trong
+    bang nay thi moi phep loc theo owner se bo qua no hoac tra no cho nguoi
+    khac. Tra tu chinh nhan vat thi hai gia tri KHONG THE lech nhau.
+    Nhan vat khong ton tai => no ngay, ⛔ khong tao hang mo coi.
+    """
+    chu = db.execute(select(OmmiCharacter.owner_id)
+                     .where(OmmiCharacter.id == character_id)).scalar()
+    if not chu:
+        raise KeyError(character_id)
+    row = OmmiOutfit(owner_id=chu, character_id=character_id,
                      name=str(du_lieu.get("name") or "")[:160],
                      description=str(du_lieu.get("description") or ""))
     if "reference_variant_ids" in du_lieu:

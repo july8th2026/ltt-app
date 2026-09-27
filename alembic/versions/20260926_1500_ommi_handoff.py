@@ -27,6 +27,7 @@ def upgrade() -> None:
     op.create_table(
         "ommi_handoff",
         sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("owner_id", sa.String(36), nullable=False),
         sa.Column("project_id", sa.String(36), nullable=False),
         sa.Column("scene_id", sa.String(36), nullable=False),
         sa.Column("target_app_slug", sa.String(64), nullable=False),
@@ -35,6 +36,7 @@ def upgrade() -> None:
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False))
     op.create_index("ix_ommi_handoff_project_id", "ommi_handoff", ["project_id"])
+    op.create_index("ix_ommi_handoff_owner_id", "ommi_handoff", ["owner_id"])
     op.create_index("ix_ommi_handoff_scene_id", "ommi_handoff", ["scene_id"])
     op.create_index("ix_ommi_handoff_expires_at", "ommi_handoff", ["expires_at"])
 

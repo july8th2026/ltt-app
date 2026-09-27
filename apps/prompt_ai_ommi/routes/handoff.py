@@ -131,7 +131,7 @@ async def handoff_video(request: Request, project_id: str,
                  if khoa in body}
     payload = hs.dung_payload(db, project=project, scene=scene,
                               owner_id=user.id, overrides=overrides)
-    ve = hs.tao_ve(db, project_id=project.id,
+    ve = hs.tao_ve(db, owner_id=user.id, project_id=project.id,
                    scene_id=str(scene.get("id") or ""), payload=payload)
     db.commit()
     return {"ticket_id": ve.id, "expires_at": ve.expires_at.isoformat(),

@@ -29,6 +29,7 @@ class OmmiHandoff(Base):
     __tablename__ = "ommi_handoff"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     project_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     scene_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     target_app_slug: Mapped[str] = mapped_column(String(64), nullable=False)

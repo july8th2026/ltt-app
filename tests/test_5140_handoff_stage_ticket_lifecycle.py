@@ -30,7 +30,7 @@ def _payload():
 def test_doc_lan_hai_bi_tu_choi(bienh):
     db = bienh
     from apps.prompt_ai_ommi.services import handoff_stage as hs
-    ve = hs.tao_ve(db, project_id="proj_1", scene_id="scene_1",
+    ve = hs.tao_ve(db, owner_id="u_1", project_id="proj_1", scene_id="scene_1",
                    payload=_payload())
     db.commit()
 
@@ -57,7 +57,7 @@ def test_ve_het_han_bi_tu_choi(bienh):
     db = bienh
     from apps.prompt_ai_ommi.services import handoff_stage as hs
     from apps.prompt_ai_ommi.tables import OmmiHandoff
-    ve = hs.tao_ve(db, project_id="proj_1", scene_id="scene_1",
+    ve = hs.tao_ve(db, owner_id="u_1", project_id="proj_1", scene_id="scene_1",
                    payload=_payload())
     db.commit()
     row = db.get(OmmiHandoff, ve.id)
@@ -76,7 +76,7 @@ def test_han_mac_dinh_dung_ba_muoi_phut(bienh):
     db = bienh
     from apps.prompt_ai_ommi.services import handoff_stage as hs
     truoc = datetime.now(timezone.utc)
-    ve = hs.tao_ve(db, project_id="proj_1", scene_id="scene_1",
+    ve = hs.tao_ve(db, owner_id="u_1", project_id="proj_1", scene_id="scene_1",
                    payload=_payload())
     db.commit()
     assert hs.VE_HET_HAN_PHUT == 30
@@ -93,7 +93,7 @@ def test_moc_gio_khong_mui_khong_lam_no_type_error(bienh):
     """
     db = bienh
     from apps.prompt_ai_ommi.services import handoff_stage as hs
-    ve = hs.tao_ve(db, project_id="proj_1", scene_id="scene_1",
+    ve = hs.tao_ve(db, owner_id="u_1", project_id="proj_1", scene_id="scene_1",
                    payload=_payload())
     db.commit()
     ve.expires_at = datetime.now() + timedelta(minutes=10)  # naive, co y

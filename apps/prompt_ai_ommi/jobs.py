@@ -6,7 +6,9 @@ import uuid
 from datetime import datetime, timezone
 
 from apps.prompt_ai_ommi import provider
-from apps.prompt_ai_ommi.project_schema import MAX_SCENES, clean_scene
+from apps.prompt_ai_ommi.project_schema import (MAX_SCENES,
+                                                TOI_THIEU_KY_TU_BRIEF,
+                                                clean_scene)
 from apps.prompt_ai_ommi.services.composer import director_prompt
 
 
@@ -49,12 +51,24 @@ def _normalize_result(raw: dict, params: dict) -> dict:
 
 
 def handle(params: dict, ctx=None) -> dict:
-    story = str(params.get("story") or "").strip()
-    if len(story) < 20:
-        raise ValueError(_t('Nội dung brief tối thiểu 20 ký tự.'))
     operation = str(params.get("operation") or "director")
-    if operation not in {"director", "storyboard"}:
+    if operation not in {"director", "storyboard", "iterate",
+                         "character_lock"}:
         raise ValueError(_t('Operation không hợp lệ.'))
+    # ⚠️ Hai nhanh nay dung TRUOC phep kiem `story`: `character_lock` KHONG co
+    #    `story` (no nhan mo ta nhan vat), nen kiem story truoc se chan nham
+    #    mot viec hop le. Thu tu o day la mot phan cua hop dong, khong phai
+    #    tinh co (plan pha 3, Task M3 buoc 4).
+    if operation == "iterate":
+        from apps.prompt_ai_ommi.services.iterate import chay_iterate
+        return chay_iterate(params, ctx)
+    if operation == "character_lock":
+        from apps.prompt_ai_ommi.services.nhan_vat import chay_khoa_nhan_vat
+        return chay_khoa_nhan_vat(params, ctx)
+    story = str(params.get("story") or "").strip()
+    if len(story) < TOI_THIEU_KY_TU_BRIEF:
+        raise ValueError(_t('Nội dung brief tối thiểu {n} ký tự.')
+                         .format(n=TOI_THIEU_KY_TU_BRIEF))
     if ctx is not None:
         ctx.progress(10, "đang kiểm tra brief và consistency anchors")
     system, prompt = director_prompt(params)

@@ -253,8 +253,12 @@ async def generate_project(request: Request, project_id: str,
         payload, operation=operation,
         model=_chat_model(str(body.get("model") or "")),
         prompt_context=_prompt_context(db, user.id, payload))
-    if len(params["story"].strip()) < 20:
-        raise HTTPException(status_code=422, detail=_t('Nội dung brief tối thiểu 20 ký tự.'))
+    from apps.prompt_ai_ommi.project_schema import TOI_THIEU_KY_TU_BRIEF
+    if len(params["story"].strip()) < TOI_THIEU_KY_TU_BRIEF:
+        raise HTTPException(
+            status_code=422,
+            detail=_t('Nội dung brief tối thiểu {n} ký tự.')
+            .format(n=TOI_THIEU_KY_TU_BRIEF))
     params["project_id"] = project_id; params["owner_id"] = user.id
     from platform_core import credit
     from platform_core.job_submit import dedupe_key_for, submit_with_credit

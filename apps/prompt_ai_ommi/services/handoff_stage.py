@@ -393,10 +393,20 @@ def _co_mui_gio(dt: datetime) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
-def tao_ve(db, *, project_id: str, scene_id: str, payload: dict,
+def tao_ve(db, *, owner_id: str, project_id: str, scene_id: str,
+           payload: dict,
            target_app_slug: str = "taovideo") -> OmmiHandoff:
+    """`owner_id` la tham so BAT BUOC, khong phai tuy chon.
+
+    ⛔ Dung dat `= ""` cho no. `tests/test_135_ommi_ownership.py` ton tai vi
+    module goc (kho tham chieu BOT GEMINI) co mot loi P0 THAT: moi truy van loc theo mot
+    `master_user_id` dung chung nen moi khach nhin chung mot kho -- loi "khong
+    lo ra khi thu mot minh". Mot mac dinh rong o day tai tao dung lop lo hong
+    do: hang khong chu se lot vao bang va moi phep loc theo owner se bo qua no.
+    """
     now = datetime.now(timezone.utc)
-    row = OmmiHandoff(project_id=project_id, scene_id=scene_id,
+    row = OmmiHandoff(owner_id=owner_id, project_id=project_id,
+                      scene_id=scene_id,
                       target_app_slug=target_app_slug, payload=payload,
                       expires_at=now + timedelta(minutes=VE_HET_HAN_PHUT))
     db.add(row)

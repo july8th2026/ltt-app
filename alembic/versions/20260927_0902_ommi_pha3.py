@@ -64,6 +64,7 @@ def upgrade() -> None:
     op.create_table(
         "ommi_canh",
         sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("owner_id", sa.String(36), nullable=False),
         sa.Column("brief_id", sa.String(36), nullable=False),
         sa.Column("position", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("title", sa.String(200), nullable=False, server_default=""),
@@ -80,10 +81,12 @@ def upgrade() -> None:
         sa.UniqueConstraint("brief_id", "position", name="uq_ommi_canh_vitri"),
     )
     op.create_index("ix_ommi_canh_brief_id", "ommi_canh", ["brief_id"])
+    op.create_index("ix_ommi_canh_owner_id", "ommi_canh", ["owner_id"])
 
     op.create_table(
         "ommi_iteration",
         sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("owner_id", sa.String(36), nullable=False),
         sa.Column("brief_id", sa.String(36), nullable=False),
         sa.Column("seq", sa.Integer(), nullable=False),
         sa.Column("feedback", sa.Text(), nullable=False, server_default=""),
@@ -97,6 +100,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("brief_id", "seq", name="uq_ommi_iteration_seq"),
     )
     op.create_index("ix_ommi_iteration_brief_id", "ommi_iteration", ["brief_id"])
+    op.create_index("ix_ommi_iteration_owner_id", "ommi_iteration", ["owner_id"])
 
     op.create_table(
         "ommi_character",
@@ -125,6 +129,7 @@ def upgrade() -> None:
     op.create_table(
         "ommi_outfit",
         sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("owner_id", sa.String(36), nullable=False),
         sa.Column("character_id", sa.String(36), nullable=False),
         sa.Column("name", sa.String(160), nullable=False),
         sa.Column("description", sa.Text(), nullable=False, server_default=""),
@@ -132,6 +137,7 @@ def upgrade() -> None:
         sa.Column("created_at", _TS, nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
     )
     op.create_index("ix_ommi_outfit_character_id", "ommi_outfit", ["character_id"])
+    op.create_index("ix_ommi_outfit_owner_id", "ommi_outfit", ["owner_id"])
 
     op.create_table(
         "ommi_pose",
@@ -171,12 +177,14 @@ def upgrade() -> None:
     op.create_table(
         "ommi_face_embedding",
         sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("owner_id", sa.String(36), nullable=False),
         sa.Column("character_id", sa.String(36), nullable=False),
         sa.Column("variant_id", sa.String(36), nullable=False),
         sa.Column("vector_json", sa.JSON(), nullable=False),
         sa.Column("backend", sa.String(32), nullable=False),
         sa.Column("created_at", _TS, nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
     )
+    op.create_index("ix_ommi_face_embedding_owner_id", "ommi_face_embedding", ["owner_id"])
     op.create_index("ix_ommi_face_embedding_character_id", "ommi_face_embedding",
                     ["character_id"])
 
