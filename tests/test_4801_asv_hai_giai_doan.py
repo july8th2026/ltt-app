@@ -291,6 +291,22 @@ CON_DUNG = {
     "giai_doan_qc.py": "_do_vmaf doi moc su kien phu de sang truc GD2 (T18)",
     # 🔑 Phan loai ngoai le. ⛔ Khong phai mot nguoi dung phep doi moc.
     "loi.py": "phan loai `BanDoError`",
+    # 🔴 **B9-4 (28/09) — nguoi dung MOI, va ly do no phai o day.**
+    #
+    #    T15 hoi *"moi dong phu de co nam tron trong ban ra khong"*. No doc
+    #    `hinh.phu_de.su_kien` cua BAN DUNG (truc GD1) roi chi chia `toc_do`.
+    #    Giua ban dung va tep khach nhan con MOT phep bien doi nua — ban do cua
+    #    GD2 — nen moi su kien nam trong phan DA CAT van bi dem.
+    #
+    #    Do tren T1a: 78 su kien vao, **71** ra. T15 dem ca 78 va bao 3 dong
+    #    "ngoai bien" tren mot tep ⛔ khong sai gi; frame `t=190` va `t=197,5`
+    #    cua ban giao sach tron.
+    #
+    # ⭐ Va no dung LAI `BanDoThoiGian` + `doi_moc_su_kien` chu ⛔ khong doc lai
+    #    ket qua cua `image_finish`: hai lan tinh doc lap tu CUNG ban khai la
+    #    mot phep kiem; doc lai ket qua cua chinh giai doan vua lam la mot phep
+    #    TU XAC NHAN.
+    "qc.py": "T15 doi moc su kien phu de sang truc BAN GIAO (B9-4)",
 }
 
 #: ⛔ Module DA THOI doc no o b4 — do TRUC TIEP tren cay o diem re (`df71c094`):
