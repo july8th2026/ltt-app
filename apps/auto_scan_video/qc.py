@@ -517,11 +517,18 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
          che_do_thoi_gian: str = "fit_original",
          che_do_render: str = "", thoi_luong_mong_doi: float = 0.0,
          hinh_ra: dict | None = None, hinh_nguon: dict | None = None,
-         vmaf: dict | None = None, ban_hinh: dict | None = None) -> dict:
+         vmaf: dict | None = None, ban_hinh: dict | None = None,
+         khoang_giu: tuple | list = (), thoi_luong_vao: float = 0.0) -> dict:
     """Do het cac dung sai T1-T18.
 
     `hinh_ra`/`hinh_nguon` = `do_hinh(...)` cua ban ra / nguon (T13, T17).
     `vmaf` = `do_vmaf(...)`, hoac `{"loi": "..."}` khi khong do duoc (T18). Tra ve bao cao; KHONG nem khi co muc hong.
+
+    `khoang_giu`/`thoi_luong_vao` = ban khai cua `image_finish` (B9-4): cac
+    khoang THUC SU duoc giu, va do dai ban ra GD1 ma chung do tren. T15 can
+    chung de doi su kien phu de sang truc BAN GIAO — xem chu thich o T15. Bo
+    trong thi T15 lui ve hanh vi truoc B9 (chi chia `toc_do`), dung cho moi lan
+    chay ⛔ khong co phep cat nao.
 
     ⭐ Khong nem la mot quyet dinh, khong phai mot thieu sot: mot bao cao QC liet
        ke **moi** muc hong co ich hon mot ngoai le noi ve muc dau tien. Nguoi
@@ -860,12 +867,63 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
     #    tai* ma chuong trinh nay lien tuc gap.
     #
     # ⭐ Doc su kien DA CHOT trong ban dung, khong tinh lai tu ke hoach: cho
-    #    nay hoi *"thu da giao co dung khong"*, va thu da giao la ban dung.
+    #    nay hoi *"thu da giao co dung khong"*.
+    #
+    # 🔴 **Sua 28/09 (B9-4): ban dung ⛔ KHONG con la "thu da giao".**
+    #
+    #    Cau tren tung dung tung chu vao ngay no duoc viet, va sai tu ngay GD2 ra
+    #    doi. `image_finish` CAT ban dung roi moi giao, nen giua `hinh.phu_de.
+    #    su_kien` va tep khach nhan con MOT phep bien doi nua:
+    #
+    #        su kien (truc GD1)  --ban do GD2-->  su kien trong `.ass`  --/toc-->
+    #
+    #    Do T1a (28/09): 78 su kien vao, **71** ra — 7 su kien nam trong phan
+    #    khach cat ⛔ KHONG duoc dot vao hinh. T15 doc 78 cai va bao 3 cai
+    #    *"ngoai bien"* tren mot tep ⛔ khong sai gi. Frame `t=190` va `t=197,5`
+    #    cua ban giao sach tron.
+    #
+    # ⭐ Nen o day dung LAI dung phep ma `giai_doan_hinh_anh` dung — cung lop
+    #    `BanDoThoiGian`, cung ham `doi_moc_su_kien` — chu ⛔ khong doc lai ket
+    #    qua cua no. Hai lan tinh doc lap tu CUNG ban khai la mot phep kiem; doc
+    #    lai ket qua cua chinh giai doan vua lam la mot phep tu xac nhan.
     ho_pd = hinh.get("phu_de") or {}
-    su_kien = list(ho_pd.get("su_kien") or [])
-    if not su_kien:
+    #: Danh sach GOC, giu rieng: xem chu thich `so_bi_cat` ngay duoi.
+    su_kien_goc = list(ho_pd.get("su_kien") or [])
+    su_kien = list(su_kien_goc)
+    if su_kien and khoang_giu:
+        from .ban_do_thoi_gian import BanDoThoiGian
+        from .giai_doan_hinh_anh import doi_moc_su_kien
+
+        # ⚠️ `thoi_luong_vao` = do dai ban ra GD1, tuc CUNG con so `image_finish`
+        #    dung lam `thoi_luong` khi dung ban do. Thieu no thi lui ve moc cuoi
+        #    cua khoang giu — du de xep cac khoang, va ⛔ khong bao gio noi RONG
+        #    ra (mot ban do hep hon chi co the LOAI them su kien, ⛔ khong the
+        #    tao ra mot su kien ngoai bien gia).
+        _dai_vao = float(thoi_luong_vao or 0.0) or max(
+            float(k) for _b, k in khoang_giu)
+        su_kien = doi_moc_su_kien(
+            su_kien, BanDoThoiGian.tu_khoang(khoang_giu,
+                                             thoi_luong_nguon=_dai_vao))
+    # 🔴 **Hoi danh sach GOC, ⛔ khong hoi danh sach da doi truc.** Sau phep doi
+    #    truc, hai tinh huong khac han nhau deu cho mot danh sach rong:
+    #
+    #        ban dung ⛔ KHONG co phu de nao     -> khach ⛔ khong dat phu de
+    #        phu de roi HET vao phan da cat      -> khach dat, va ⛔ khong thay gi
+    #
+    #    Gop chung lam mot `khong_ap_dung` la vut mat kha nang phan biet — dung
+    #    hinh dang loi ma `qc_ly_do_khong_do` sinh ra de chan.
+    so_bi_cat = len(su_kien_goc) - len(su_kien)
+    if not su_kien_goc:
         muc.append(_muc("T15", KHONG_AP_DUNG,
                         "ban dung khong mang su kien phu de nao"))
+    elif not su_kien:
+        # ⭐ ⛔ Khong phai `hong`: bien phu de la dieu T15 do, va mot ban ra ⛔
+        #    khong co dong nao thi ⛔ khong dong nao ra ngoai bien. Nhung con so
+        #    phai co mat de nguoi doc bao cao thay.
+        muc.append(_muc("T15", KHONG_AP_DUNG,
+                        "moi dong phu de nam trong phan da cat — ban giao ⛔ "
+                        "khong mang dong nao",
+                        so_dong_goc=len(su_kien_goc), so_bi_cat=so_bi_cat))
     elif d_ra <= 0:
         muc.append(_muc("T15", KHONG_AP_DUNG,
                         "chua biet thoi luong ban ra de doi chieu"))
@@ -897,7 +955,8 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
         t15 = not ngoai and not xuoi_nguoc
         muc.append(_muc("T15", DAT if t15 else HONG,
                         "moi dong phu de nam trong ban ra",
-                        so_dong=len(su_kien), thoi_luong_ra=round(d_ra, 3),
+                        so_dong=len(su_kien), so_bi_cat=so_bi_cat,
+                        thoi_luong_ra=round(d_ra, 3),
                         toc_do=toc_do(bt),
                         dung_sai=BIEN_PHU_DE_DUNG_SAI_S,
                         ngoai_bien=ngoai or None,
