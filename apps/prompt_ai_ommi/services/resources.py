@@ -246,7 +246,7 @@ def clone_from_catalog(db: Session, *, resource_id: str, owner_id: str) -> OmmiR
 def add_variant(db: Session, *, resource_id: str, owner_id: str,
                 storage_key: str, label: str = "", thumb_key: str = "",
                 width: int = 0, height: int = 0,
-                bytes_size: int = 0) -> OmmiResourceVariant:
+                bytes_size: int = 0, file_hash: str = "") -> OmmiResourceVariant:
     resource = get_owned(db, resource_id, owner_id)
     if not (storage_key or "").strip():
         raise ResourceError("Thiếu khoá lưu trữ của ảnh.")
@@ -258,7 +258,8 @@ def add_variant(db: Session, *, resource_id: str, owner_id: str,
         resource_id=resource_id, owner_id=owner_id, label=_clean_text(label, 160),
         storage_key=storage_key.strip(), thumb_key=(thumb_key or "").strip(),
         width=int(width or 0), height=int(height or 0),
-        bytes_size=int(bytes_size or 0), position=position)
+        bytes_size=int(bytes_size or 0), position=position,
+        file_hash=(file_hash or "").strip() or None)
     db.add(row)
     db.flush()
     if not resource.cover_variant_id:

@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from apps.prompt_ai_ommi.tables.tai_nguyen import (
     RESOURCE_KINDS, OmmiResource, OmmiResourceVariant, OmmiTag,
-    OmmiResourceTag, OmmiCollection, OmmiCollectionItem, OmmiResourceUsage)
+    OmmiResourceTag, OmmiCollection, OmmiCollectionItem, OmmiResourceUsage,
+    OmmiTrash, OmmiImageJob)
 from apps.prompt_ai_ommi.tables.thu_vien import (
     OmmiMetaPrompt, OmmiPromptSnippet, OmmiPromptVersion, OmmiStyle,
     OmmiImageTemplate, OmmiStoryboardFramework, OmmiSample, OmmiProfile)

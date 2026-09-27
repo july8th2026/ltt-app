@@ -29,7 +29,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (DateTime, Index, Integer, JSON, String, Text,
+from sqlalchemy import (Boolean, DateTime, Index, Integer, JSON, String, Text,
                         UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -104,6 +104,12 @@ class OmmiResourceVariant(Base):
     height: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     bytes_size: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Pha 5 — dedupe + kho sâu.
+    file_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True)
+    favorite: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false", default=False)
+    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False)
 
@@ -181,4 +187,52 @@ class OmmiResourceUsage(Base):
         UniqueConstraint("resource_id", "project_id", "scene_ref",
                          name="uq_ommi_usage_resource_project_scene"),
     )
+
+
+class OmmiTrash(Base):
+    """Thùng rác: bản chờ purge, khôi phục được nguyên id.
+
+    Khác `archived_at` trên `OmmiResource` (lưu trữ TẠM, bản gốc vẫn còn
+    trong bảng sống): ở đây bản gốc bị XOÁ THẬT khỏi bảng sống, snapshot đủ
+    để dựng lại y hệt nằm trong `payload`. Đây là "xoá" thật sự của khách,
+    không phải "ẩn đi".
+    """
+
+    __tablename__ = "ommi_trash"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    target_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    deleted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False)
+    purge_after: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+
+class OmmiImageJob(Base):
+    """Một lượt sinh ảnh composite — theo dõi phiên bản để revert/retry.
+
+    `parent_id` trỏ lượt sinh trước đó khi đây là một retry; `version` tăng
+    dần trong cùng một chuỗi retry của cùng `resource_id`.
+    """
+
+    __tablename__ = "ommi_image_job"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    template_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    resource_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    params: Mapped[dict] = mapped_column(JSON, nullable=False)
+    job_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    parent_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="queued")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
 
