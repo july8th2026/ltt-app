@@ -22181,8 +22181,8 @@ msgstr "Turn text into speech"
 msgid "Dựng storyboard câu chuyện"
 msgstr "Build a story storyboard"
 
-msgid "Sinh văn bản bằng LLM"
-msgstr "Generate text with an LLM"
+msgid "Sinh văn bản từ hội thoại"
+msgstr "Generate text from a chat"
 
 msgid "Soạn gói prompt nhiều cảnh"
 msgstr "Compose a multi-scene prompt pack"
