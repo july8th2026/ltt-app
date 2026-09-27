@@ -1,0 +1,135 @@
+/* Mặt THỰC THI (làn UI-7): dòng thời gian · Inspector bước · báo giá · lỗi.
+ *
+ * ⛔ TỆP NÀY KHÔNG SỬA `canvas.css`. `canvas.css` là của làn UI-2 (token hoá
+ *    design system) và hai làn cùng sửa một tệp CSS thì lần gộp nào cũng là
+ *    một lần giải xung đột bằng tay.
+ *
+ * ⭐ Chỉ dùng token của `canvas.css` (`--surface-*`, `--text-*`, `--border-*`,
+ *    `--status-*`), MỖI token kèm giá trị lui. Làn UI-2 đang đổi bảng token
+ *    ngay lúc này; đặt màu cứng ở đây thì sang chế độ sáng là chữ trắng trên
+ *    nền trắng, và ⛔ không phép kiểm jsdom nào bắt được (jsdom không tính màu).
+ */
+
+/* ── Dòng thời gian ────────────────────────────────────────────────────── */
+.run-timeline { width: 100%; border-collapse: collapse; font-size: 10px; }
+.run-timeline caption { text-align: left; }
+.run-timeline th {
+  padding: 4px; text-align: left; font-weight: 600; font-size: 9px;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-muted, #927f79);
+  border-bottom: 1px solid var(--border-subtle, #382422);
+}
+.run-timeline td {
+  padding: 6px 4px; vertical-align: middle;
+  border-top: 1px solid var(--border-subtle, #382422);
+  color: var(--text-secondary, #c9bbb7);
+}
+/* Tên bước: cột rộng nhất, và là chỗ duy nhất bấm được để mở Inspector. */
+.run-timeline-ten { position: relative; width: 44%; }
+.run-timeline-ten > button {
+  position: relative; width: 100%; min-height: 32px; padding: 0 6px;
+  text-align: left; font-size: 11px; font-weight: 600;
+  border: 0; border-radius: 6px; background: none; cursor: pointer;
+  color: var(--text-primary, #f4f4f5);
+}
+.run-timeline-ten > button:hover { background: var(--surface-interactive, #241a19); }
+.run-timeline-ten > button:focus-visible {
+  outline: 2px solid var(--focus-ring, #ef3731); outline-offset: 1px;
+}
+/* Thanh thời lượng: NỀN của ô tên, không phải một cột riêng — một cột riêng ăn
+ * mất chiều ngang mà ngăn kéo 390px không có để cho. */
+.run-timeline-thanh {
+  position: absolute; inset: 3px auto 3px 0; border-radius: 6px;
+  background: var(--surface-interactive, #241a19);
+}
+.run-timeline tr[data-chon] .run-timeline-thanh { background: var(--brand-soft, #2a1513); }
+.run-timeline tr[data-chon] > td { border-top-color: var(--brand-primary, #ef3731); }
+.run-timeline-thoi-luong, .run-timeline-chi-phi,
+.run-timeline-attempt { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.run-timeline-thoi-luong em, .run-timeline-thoi-luong span { color: var(--text-muted, #927f79); }
+.run-timeline tr[data-node-status='RUNNING'] .run-timeline-trang-thai { color: var(--status-warning, #efb84f); }
+.run-timeline tr[data-node-status='SUCCEEDED'] .run-timeline-trang-thai { color: var(--status-success, #62d889); }
+.run-timeline tr[data-node-status='FAILED'] .run-timeline-trang-thai { color: var(--status-danger, #ff6b63); }
+.run-timeline tr[data-node-status='WAITING'] .run-timeline-trang-thai { color: var(--status-warning, #efb84f); }
+
+/* ── Inspector một bước: 12 trường CÓ NHÓM ─────────────────────────────── */
+.run-node-inspector {
+  display: grid; gap: 8px; padding: 10px; border-radius: 10px;
+  border: 1px solid var(--brand-primary, #ef3731);
+  background: var(--surface-overlay, #1b1413);
+}
+.run-node-inspector > header { display: flex; gap: 8px; align-items: baseline; }
+.run-node-inspector > header strong { font-size: 12px; color: var(--text-primary, #f4f4f5); }
+.run-node-inspector > header span { font-size: 10px; color: var(--text-secondary, #c9bbb7); }
+.run-nhom { display: grid; gap: 4px; }
+.run-nhom > h4 {
+  margin: 0; font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-muted, #927f79);
+}
+.run-nhom > dl { margin: 0; display: grid; gap: 3px; }
+/* Hai cột trên ngăn kéo rộng, một cột khi hẹp — nhãn trên giá trị. */
+.run-truong {
+  display: grid; grid-template-columns: 94px 1fr; gap: 6px;
+  padding: 3px 0; border-top: 1px solid var(--border-subtle, #382422);
+}
+.run-truong > dt { font-size: 10px; color: var(--text-muted, #927f79); }
+.run-truong > dd { margin: 0; font-size: 10px; color: var(--text-secondary, #c9bbb7); min-width: 0; }
+.run-truong > dd small { display: block; color: var(--text-muted, #927f79); font-size: 9px; }
+.run-truong > dd code { word-break: break-all; }
+/* "Chưa có cửa dữ liệu" phải đọc KHÁC một giá trị thật, chứ không chỉ khác ô
+ * trắng: nghiêng + mờ hơn, để mắt không nhận nó là số liệu. */
+.run-truong-trong { color: var(--text-muted, #927f79); font-style: italic; }
+@media (max-width: 520px) {
+  .run-truong { grid-template-columns: 1fr; gap: 1px; }
+}
+
+/* ── Nhật ký có dấu thời gian ──────────────────────────────────────────── */
+.run-nhat-ky {
+  margin: 0; padding-left: 14px; display: grid; gap: 2px;
+  color: var(--text-muted, #927f79); font-size: 9px;
+}
+.run-nhat-ky time {
+  font-variant-numeric: tabular-nums; color: var(--text-secondary, #c9bbb7);
+}
+.run-nhat-ky-loai { color: var(--text-primary, #f4f4f5); }
+
+/* ── Lỗi đọc được, mã máy gập lại ──────────────────────────────────────── */
+.run-loi { display: grid; gap: 3px; }
+.run-loi-cau { margin: 0; color: var(--status-danger, #ff6b63); font-size: 10px; }
+.run-loi details > p, .run-ky-thuat p { margin: 2px 0; }
+.run-loi summary, .run-ky-thuat summary, .run-v3-inspector > summary {
+  cursor: pointer; font-size: 9px; letter-spacing: .06em;
+  color: var(--text-muted, #927f79);
+}
+.run-loi-chi-tiet code { word-break: break-all; font-size: 9px; }
+.run-ky-thuat, .run-v3-inspector {
+  border-top: 1px solid var(--border-subtle, #382422); padding-top: 4px;
+}
+.run-ky-thuat dl { margin: 0; display: grid; gap: 2px; }
+.run-v3-inspector h4 {
+  margin: 4px 0 2px; font-size: 9px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-muted, #927f79);
+}
+
+/* ── Báo giá TRƯỚC khi bấm Chạy ────────────────────────────────────────── */
+.run-bao-gia {
+  grid-column: 1/-1; display: grid; gap: 3px; padding: 12px;
+  border: 1px solid var(--border-subtle, #382422); border-radius: 10px;
+  background: var(--surface-overlay, #1b1413);
+}
+.run-bao-gia > small {
+  font-size: 9px; letter-spacing: .08em; color: var(--text-muted, #927f79);
+}
+/* Con số là thứ NẶNG NHẤT trong khối này: nó là lý do khối tồn tại. */
+.run-bao-gia > strong {
+  font-size: 20px; line-height: 1.1; font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #f4f4f5);
+}
+.run-bao-gia > strong[data-bao-gia-tong=''] {
+  font-size: 13px; color: var(--text-muted, #927f79);
+}
+.run-bao-gia > span { font-size: 10px; color: var(--text-secondary, #c9bbb7); }
+
+/* Ngăn kéo là lưới 2 cột (`canvas.css`); các khối của mặt chạy chiếm cả hàng. */
+.operation-drawer :is(.run-bao-gia, .run-node-inspector, .run-timeline,
+                      .run-nhat-ky, .run-v3-inspector) { grid-column: 1/-1; }
