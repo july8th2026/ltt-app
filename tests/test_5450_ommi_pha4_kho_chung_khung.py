@@ -31,15 +31,34 @@ def db(tmp_path, monkeypatch):
 
 # ── Alembic: mot head duy nhat (G-5) ────────────────────────────────────────
 
-def test_alembic_van_dung_mot_head_sau_khi_them_migration_pha4():
+def test_alembic_mot_head_va_migration_pha4_NAM_TRONG_CHUOI():
+    """Hai bat bien, va ca hai phai la TINH CHAT chu khong phai mot GIA TRI.
+
+    ⚠️ Ban dau bai nay khang dinh `"pha 4" in rev.doc` cua HEAD — tuc no khang
+    dinh *"pha 4 la migration MOI NHAT"*, mot su that chi dung vao dung luc viet.
+    Pha 5 them mot migration va bai DO ngay, du ⛔ khong co gi sai.
+
+    ⭐ Cung lop loi voi `test_5152` (khang dinh tran anh `== 4`, do khi tran len 9):
+    **mot phep kiem khang dinh mot GIA TRI cua mot quyet dinh se do khi quyet dinh
+    doi.** Dieu dang bao ve o day la *migration pha 4 duoc NOI vao chuoi*, ⛔ khong
+    phai *no dung cuoi chuoi*.
+    """
     from alembic.config import Config
     from alembic.script import ScriptDirectory
 
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
     heads = scripts.get_heads()
-    assert len(heads) == 1, heads
-    rev = scripts.get_revision(heads[0])
-    assert "pha 4" in (rev.doc or "").lower()
+    assert len(heads) == 1, f"mong DUNG MOT head, thay {heads}"
+
+    # Bat bien 2: migration pha 4 la TO TIEN cua head (tuc no nam trong chuoi,
+    # ⛔ khong treo lo lung), bat ke bao nhieu pha duoc them sau no.
+    to_tien = {r.revision for r in scripts.iterate_revisions(heads[0], "base")}
+    pha4 = [r.revision for r in scripts.walk_revisions()
+            if "pha 4" in (r.doc or "").lower()]
+    assert len(pha4) == 1, f"mong DUNG MOT migration pha 4, thay {pha4}"
+    assert pha4[0] in to_tien, (
+        f"migration pha 4 ({pha4[0]}) KHONG nam trong chuoi tu head "
+        f"{heads[0]} ve base — no dang treo lo lung")
 
 
 # ── Cot share_level: DA CO tu Pha 3 tren 3 bang, THEM MOI tren 3 bang ───────
