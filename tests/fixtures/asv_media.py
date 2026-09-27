@@ -251,6 +251,26 @@ def phan_hoi_ngoai_dich(thao_tac, messages):
         return {"noi_dung": json.dumps(
             {"dat": True, "do_tin": 0.9, "ly_do": ""}, ensure_ascii=False),
             "su_dung": None}
+    if ma == ai.HO_SO_DICH.ma:
+        # 🔴 **Mon no da tra (27/09).** Thieu nhanh nay thi moi loi goi
+        #    `HO_SO_DICH` roi xuong ban gia DICH chung (`{"doan": {...}}`) — sai
+        #    hinh dang so voi `ho_so_dich._doc`, no NEM `HoSoDichLoi`, va
+        #    `ho_so_dich.dung` NUOT ngoai le ay roi di tiep voi **ho so RONG**.
+        #
+        # ⇒ Duong nay CO chay va CO tinh tien trong moi phep kiem dau-cuoi, nhung
+        #   ket qua cua no LUON rong, nen ⛔ khong phep kiem nao tung do duoc
+        #   rang ho so that su nan ban dich. Dung ho `ban gia tra dung thu ma ma
+        #   muon nhan` cong `loi bi NUOT` — hai ho gap nhau o mot cho.
+        #
+        # ⭐ Tra dung hop dong cua `ho_so_dich.KHOA`, va tra gia tri KHAC RONG:
+        #    mot ban gia tra rong lai lam bai kiem xanh ma ⛔ khong chung minh gi.
+        return {"noi_dung": json.dumps({
+            "the_loai": "phim truyen",
+            "so_nguoi_noi": 2,
+            "bang_dai_tu": {"我": "tôi", "你": "bạn"},
+            "bang_ten_rieng": {"小明": "Tiểu Minh"},
+            "giong_van": "trung tinh, cau ngan",
+        }, ensure_ascii=False), "su_dung": None}
     if ma == ai.QC_NGU_NGHIA.ma:
         # ⭐ N-51 (25/09): TRUOC day, thieu nhanh nay lam moi loi goi
         #    `QC_NGU_NGHIA` roi xuong ban gia DICH chung o `cua_ai_gia`
@@ -316,7 +336,12 @@ def _canh_gia(messages) -> dict:
 
     ⚠️ Tin nhan co the la da phuong thuc (mot phan van ban + N phan anh). Gop
        cac phan van ban lai roi doc doi tuong JSON dau tien — do la `tin_hieu`
-       ma `loi_nhac_canh` gui.
+       ma loi nhac `doc_canh` gui.
+
+    ⚠️ **26/09/2026 (Task 22) — NGU DONG, co y giu.** `hieu_canh.loi_nhac_canh`
+       da bi xoa (Task 10 thay VLM bang phep do tat dinh o `edit_plan`), nen ⛔
+       khong luot E2E nao con goi `DOC_CANH`. Ban gia o lai vi ban khai
+       `ai.DOC_CANH` o lai; ⭐ dieu kien xoa: ngay no roi khoi `ai.THAO_TAC`.
     """
     import json
 
@@ -347,3 +372,33 @@ def _canh_gia(messages) -> dict:
                   else "canh khong co loi thoai nao"),
         "canh_bao": [],
     }
+
+#: Thao tac AI **CO Y** di qua luoc do DICH chung cua `cua_ai_gia`, ⛔ khong can
+#: mot nhanh rieng trong `phan_hoi_ngoai_dich`.
+#:
+#: 🔴 **Vi sao hang so nay phai ton tai.** N-51 (25/09) la dung ca nay: thieu
+#:    nhanh cho `QC_NGU_NGHIA` lam moi loi goi no roi xuong ban gia DICH — mot
+#:    phan hoi SAI HINH DANG hoan toan — va `qc_ai._loc_loi` NUOT no lang le roi
+#:    cham `dat=True`. Bug di qua mot BAN GIA, ⛔ khong qua model that, nen ⛔
+#:    khong phep kiem nao thay.
+#:
+#: ⚠️ Do 27/09: `ai` co **8** thao tac, `phan_hoi_ngoai_dich` xu ly **4**. Ba
+#:    thao tac con lai dang o dung vi tri ma `QC_NGU_NGHIA` da o truoc N-51 —
+#:    trong do `HO_SO_DICH` la mot duong **TRA TIEN** chua bao gio duoc do cuc bo.
+#:
+#: ⭐ Ban va ⛔ khong phai "viet nhanh cho ca 8" — mot so thao tac THAT SU dung
+#:    luoc do dich (chung tra `{"doan": {...}}`). Ban va la lam cho lua chon ay
+#:    duoc **KHAI**: tu day, them mot thao tac AI ma ⛔ khong xep no vao mot trong
+#:    hai o se lam `test_4850_ban_gia_phu_HET_thao_tac_AI` do.
+DUNG_LUOC_DO_DICH: frozenset[str] = frozenset({
+    "dich_thuat",        # chinh no la luoc do dich
+    "chuyen_loi_thoai",  # tra `{"doan": {ma: {chu, cam_xuc}}}` — cung hinh dang
+    "rut_ngan_cho_vua",  # tra `{"doan": {ma: {chu, ...}}}` — cung hinh dang
+})
+
+#: Thao tac o `DUNG_LUOC_DO_DICH` ma THAT SU ⛔ khong cung hinh dang voi luoc do
+#: dich — tuc mot MON NO da biet, kem nguoi do va ngay.
+#: ⭐ RONG tu 27/09: mon no `ho_so_dich` da tra (nhanh rieng o
+#:    `phan_hoi_ngoai_dich`). Giu hang so lai vi `test_4850` chot rang no la TAP
+#:    CON cua `DUNG_LUOC_DO_DICH` — mot cai bay da co cua de canh.
+MON_NO_HINH_DANG: dict[str, str] = {}

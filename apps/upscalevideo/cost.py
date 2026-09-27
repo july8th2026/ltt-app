@@ -9,6 +9,27 @@ giải đích × preset** (chi phí ~ thời gian GPU ~ số frame × diện tí
   hệ_số_preset: fast=1.0 · quality=2.5
   motion: stabilize=1.2 · smooth_motion_2x=2.2 (benchmark 2026-08-03)
 Tỉ giá Q31: 1 credit = 100đ. Preview (~8s đầu) tính theo thời lượng thực (nhỏ).
+
+⚠️ SỐ ĐO 2026-09-27 — đọc trước khi chỉnh hệ số. ⛔ KHÔNG đổi giá ở lượt này;
+chủ dự án chốt giữ nguyên và sẽ điều chỉnh theo thực tế sau.
+
+Câu "chi phí ~ thời gian GPU" ở trên **bị số đo bác**. Đo trên v3 (836×576,
+3205 khung, preset fast, 3 lượt/đích, trung vị):
+
+    đích    thời gian GPU   kích thước ra        hệ số giá
+    1080      321,4 s  1,00x   164,8 MB  1,00x       1,0
+    1440      345,4 s  1,07x   264,9 MB  1,61x       1,8
+    2160      330,7 s  1,03x   518,9 MB  3,15x       4,0
+
+⭐ Thời gian GPU gần như PHẲNG (±4 %, và 1440 còn *chậm hơn* 2160) vì
+`ENGINE_SCALE = 4`: engine LUÔN upscale ×4 từ **nguồn** bất kể đích, đích chỉ đổi
+khâu co lại + encode. ⇒ chi phí GPU tỉ lệ với **NGUỒN**, ⛔ không phải **ĐÍCH**.
+
+Hệ số giá bám sát **kích thước đầu ra** hơn nhiều — tức lưu trữ + băng thông, một
+chi phí có thật và CÓ tỉ lệ với đích. ⚠️ Nhưng tương quan ⛔ không chứng minh ý
+định: chỉ chủ dự án mới chốt được cơ sở thật.
+
+Toàn văn + xuất xứ: `docs/UPSCALE_V2_CORRECTION/08_BENCHMARK_RESULTS.md` §G.
 """
 from __future__ import annotations
 

@@ -133,8 +133,21 @@ def pytest_collection_modifyitems(session, config, items):
         return
     try:
         sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "tools"))
-        from test_nhanh import to_tien_da_giu_khoa
+        from test_nhanh import ai_giu_khoa_la_to_tien, to_tien_da_giu_khoa
         if to_tien_da_giu_khoa():
+            return
+        # ⭐ Luoi thu HAI, bat theo `pid` thay vi theo TEN — xem
+        #    `test_nhanh.ai_giu_khoa_la_to_tien`. Tap ten khong bao gio day du
+        #    (lop boc o ngoai kho), nhung quan he cha-con thi luon do duoc.
+        #    Khong co nuoc nay thi ca nan chi hien ra duoi dang MOT MAN HINH IM
+        #    LANG trong 900 giay, va nguoi doc di tim con bo trong ma nghiep vu.
+        mo_ta = ai_giu_khoa_la_to_tien()
+        if mo_ta:
+            print(f"  [cua so yen] {mo_ta}")
+            print("  [cua so yen] KHONG xin khoa: to tien da giu ho. Dung boc "
+                  "`pytest` trong mot lop giu khoa (chay_nang.py/gate.py/...) - "
+                  "khoa la tep O_EXCL, KHONG tai nhap, nen luot nay se cho chinh "
+                  "to tien cua no den het gio.")
             return
         from cua_so_yen import CuaSoYen
         _KHOA_PHIEN = CuaSoYen(

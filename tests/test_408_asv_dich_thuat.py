@@ -542,7 +542,7 @@ def test_DOI_CHUNG_tang_hang_DICH_thi_van_tay_LONG_TIENG_khong_nhuc_nhich(monkey
 #:
 #: ⭐ Chep tu CSDL production 26/09/2026, ⛔ chi DOC:
 #:      run_id  = asvr_23c9aa26b48a4f78ba6e49c5ca98336   (status `succeeded`)
-#:      stage_id= asvs_b7259be34c6e4f8e807afce8f81aee8a  (stage `voice_synthesis`)
+#:      stage_id= asvs_b7259be34c6e...  (12 ky tu dau, du de tra)  (stage `voice_synthesis`)
 #:    Ba ban ghi `tung_luot_doc` dau + cac khoa vo huong, nguyen van. ⛔ Khong
 #:    mang loi thoai cua khach (`ban_ghi_luot_doc` khong ghi `chu`).
 OUTPUTS_GIONG_THAT = {
@@ -737,15 +737,102 @@ def _khoa_tom_tat_that_su_ghi() -> dict[str, set[str]]:
     ⭐ Cùng một nguồn với chiều thuận: dict tại chỗ `return` + khoá của `**` lấy
        bằng cách GỌI THẬT hàm sinh nó. ⛔ Không bịa một danh sách thứ hai.
     """
-    from apps.auto_scan_video import (giai_doan_giong, giai_doan_thoi_gian,
-                                      nan_cho_vua, thoi_gian)
+    from apps.auto_scan_video import (giai_doan_giong, giai_doan_qc,
+                                      giai_doan_thoi_gian, nan_cho_vua,
+                                      thoi_gian)
 
     return {
         "voice_synthesis": (_khoa_chuoi(_dict_tom_tat_tai_return(giai_doan_giong))
                             | set(nan_cho_vua.tom_tat([], tung_luot_doc=[]))),
         "timing_align": (_khoa_chuoi(_dict_tom_tat_tai_return(giai_doan_thoi_gian))
                          | set(thoi_gian.tom_tat({"doan": []}))),
+        # ⭐ `giai_doan_qc` dung `"tom_tat": tom_tat_kem_khong_do(...)` — mot CALL,
+        #    ⛔ khong phai mot dict go tay, nen `_dict_tom_tat_tai_return` ⛔ khong
+        #    doc duoc. GOI THAT ham ay, dung cach da dung cho `nan_cho_vua.tom_tat`.
+        "qc": set(giai_doan_qc.tom_tat_kem_khong_do({"muc": []}, {})),
     }
+
+
+#: Giai doan CO Y chua duoc banh coc soi, kem NGUOI do va NGAY — ⛔ khong phai
+#: mot danh sach trong suot.
+#:
+#: 🔴 **Vi sao hang so nay phai ton tai (do 27/09).** `_khoa_tom_tat_that_su_ghi`
+#:    la mot literal GO TAY. Docstring cua bai duoi khai *"mot khoa moi phai vao
+#:    `KHOA_CAN` hoac `KHOA_BO_QUA_CO_Y`; ⛔ khong co duong thu ba de no im
+#:    lang"* — va loi khai ay **SAI**: duong thu ba la *"thuoc mot giai doan
+#:    ⛔ khong co trong literal nay"*, va **11 trong 13** giai doan dang di duong
+#:    do. Ho loi *"pham vi phep do hep hon loi tuyen bo"*, o dung cai cong duoc
+#:    dung de chan ho loi ay.
+#:
+#: ⭐ Ban va ⛔ khong phai "soi het 13 giai doan ngay" — do la mot lan liet ke
+#:    lon va rui ro. Ban va la lam cho cho TRONG duoc **DEM**: tu day, them mot
+#:    giai doan vao `pipeline.CHUOI` ma ⛔ khong xep no vao mot trong hai o se
+#:    lam `test_408_banh_coc_KHAI_DUNG_do_phu_cua_chinh_no` do. Mot cho trong
+#:    duoc khai la mot cho trong; mot cho trong im lang thi khong.
+#:
+#: ⚠️ Moi dong o day la mot MON NO, ⛔ khong phai mot quyet dinh thiet ke.
+CHUA_SOI_CO_Y: dict[str, str] = {
+    "media_prepare": "chua soi (dieu phoi, 27/09)",
+    "audio_prepare": "chua soi (dieu phoi, 27/09)",
+    "transcribe": "chua soi (dieu phoi, 27/09)",
+    "content_process": "chua soi (dieu phoi, 27/09)",
+    "compose": "chua soi (dieu phoi, 27/09)",
+    "render": "chua soi (dieu phoi, 27/09)",
+    "edit_plan": "chua soi (dieu phoi, 27/09)",
+    "image_finish": "chua soi (dieu phoi, 27/09)",
+    "qc_do_luong": "chua soi (dieu phoi, 27/09)",
+    "qc_ai": "chua soi (dieu phoi, 27/09)",
+}
+
+
+def test_408_banh_coc_KHAI_DUNG_do_phu_cua_chinh_no():
+    """🔴 **Mot cong chi soi 2 trong 13 giai doan ma khai la soi HET.**
+
+    `_khoa_tom_tat_that_su_ghi` la mot literal go tay. Bai duoi khai *"⛔ khong co
+    duong thu ba de mot khoa im lang"*, nhung duong thu ba co that: **thuoc mot
+    giai doan ⛔ khong nam trong literal ay**. Do 27/09: literal co
+    `{timing_align, voice_synthesis}`, `pipeline.CHUOI` co 13 giai doan.
+
+    ⇒ Bai nay ⛔ khong bat cho trong phai DAY; no bat cho trong phai duoc **KHAI**.
+      Them mot giai doan vao `pipeline.CHUOI` ma ⛔ khong xep no vao `KHOA_CAN`
+      hay `CHUA_SOI_CO_Y` thi bai nay do, nen mot cho trong moi ⛔ khong the vao
+      im lang nua.
+
+    ⚠️ Va `CHUA_SOI_CO_Y` phai TEO DI: mot ten van con trong do sau khi giai doan
+       ay DA duoc soi la mot loi khai sai theo chieu con lai, nen bai nay chot ca
+       hai chieu.
+    """
+    from apps.auto_scan_video import pipeline
+    from tools import asv_doi_soat as cc
+
+    moi_giai_doan = {g.ten for g in pipeline.CHUOI}
+    da_soi = set(_khoa_tom_tat_that_su_ghi())
+
+    thieu = sorted(moi_giai_doan - da_soi - set(CHUA_SOI_CO_Y))
+    assert not thieu, (
+        "giai doan %s ⛔ khong duoc banh coc soi va cung ⛔ khong duoc khai la "
+        "chua soi — do dung la 'duong thu ba' ma docstring cua banh coc noi la "
+        "khong co. Them vao `_khoa_tom_tat_that_su_ghi` hoac `CHUA_SOI_CO_Y`."
+        % (thieu,))
+
+    # ⭐ Chieu con lai: mot ten DA duoc soi ma van nam trong danh sach mon no.
+    het_no = sorted(da_soi & set(CHUA_SOI_CO_Y))
+    assert not het_no, (
+        "giai doan %s DA duoc soi ma van khai la 'chua soi' — xoa khoi "
+        "`CHUA_SOI_CO_Y`." % (het_no,))
+
+    # ⛔ Va mot ten khong con trong `pipeline.CHUOI` thi la mon no cua mot giai
+    #    doan da chet: no lam con so do phu trong hon thuc te.
+    da_chet = sorted(set(CHUA_SOI_CO_Y) - moi_giai_doan)
+    assert not da_chet, (
+        "`CHUA_SOI_CO_Y` con %s ma `pipeline.CHUOI` ⛔ khong con giai doan do"
+        % (da_chet,))
+
+    # ⭐ Moi giai doan duoc soi phai co CA HAI o trong `asv_doi_soat`, neu khong
+    #    thi vong lap cua bai duoi nem `KeyError` chu ⛔ khong bao loi ro rang.
+    for ten in sorted(da_soi):
+        assert ten in cc.KHOA_CAN, f"{ten}: thieu o `KHOA_CAN`"
+        assert ten in cc.KHOA_BO_QUA_CO_Y, f"{ten}: thieu o `KHOA_BO_QUA_CO_Y`"
 
 
 def test_doi_soat_moi_khoa_DA_GHI_deu_co_NGUOI_QUYET_doc_hay_KHONG():
@@ -856,14 +943,33 @@ def test_doi_soat_KHONG_doc_khoa_cua_dong_thoi_gian():
     Mục `giai_doan` của dòng thời gian chỉ có `bat_dau · giai_doan ·
     giai_doan_hong · giay · ket_thuc · loi_co_ma · so_ket_qua · trang_thai`.
     Công cụ phải đọc `asv_stage.outputs`, ⛔ không đọc dòng thời gian.
+
+    🔴 **Sua phep do 27/09: doc CHUOI HANG trong than ham, ⛔ khong `in` van ban
+       ma nguon.** Ban truoc lam `"tom_tat" not in inspect.getsource(...)`, nen
+       mot **CHU THICH** giai thich *"khoa nay den tu `tom_tat_kem_khong_do`"*
+       cung lam cong do — mot bao dong gia tren mot cau van ⛔ khong he la mot
+       phep doc. Va bao dong gia lam nguoi ta TAT cong (ho
+       `banh-coc-do-cach-go-thay-vi-do-tinh-chat`).
+
+       Chieu con lai cung tot hon: ban cu ⛔ khong phan biet duoc mot chu thich
+       voi mot lan doc that, nen ai cung co the "sua" no bang cach doi cach go.
     """
     from tools import asv_doi_soat as cc
 
-    ma = inspect.getsource(cc.doi_soat)
-    assert "tom_tat" not in ma, (
+    ham = ast.parse(inspect.getsource(cc.doi_soat)).body[0]
+    buoc_ds = list(ham.body)
+    # ⛔ Bo docstring: no la van ban cho nguoi doc, ⛔ khong phai mot lan doc khoa.
+    if (buoc_ds and isinstance(buoc_ds[0], ast.Expr)
+            and isinstance(buoc_ds[0].value, ast.Constant)):
+        buoc_ds = buoc_ds[1:]
+
+    chuoi = {n.value for buoc in buoc_ds for n in ast.walk(buoc)
+             if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+
+    assert "tom_tat" not in chuoi, (
         "`doi_soat` lai doc `tom_tat` — do la khoa cua GIA TRI TRA VE cua "
         "giai doan, ⛔ khong phai mot khoa cua `outputs` hay cua dong thoi gian")
-    assert "dong_thoi_gian" not in ma
+    assert "dong_thoi_gian" not in chuoi
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1086,27 +1192,34 @@ def test_ho_so_dich_MOT_video_dung_MOT_dong_so_cai():
         "biểu thức dựng tại chỗ")
 
 
-def test_ho_so_dich_CUA_CHAN_ngan_sach_KHONG_bi_nuot_thanh_ho_so_rong(monkeypatch):
-    """🔴 Hành vi: hết ngân sách là trạng thái **khách phải biết**.
+def test_ho_so_dich_AsvError_KHONG_bi_nuot_thanh_ho_so_rong(monkeypatch):
+    """🔴 Hai ca hỏng KHÁC loại, và gộp chúng là mất một trạng thái khách phải biết.
 
-    ⚠️ Hai ca hỏng KHÁC loại: model trả rác ⇒ hồ sơ rỗng đi tiếp; cửa chặn vì
-    hết ngân sách ⇒ NÉM. Bài này cũng khẳng định cửa chặn **trước khi** model
-    được gọi — tức ⛔ không phát sinh lời gọi thật ~16 giây nào.
+    - model trả **rác** ⇒ hồ sơ rỗng, đi tiếp (hồ sơ làm bản dịch TỐT HƠN, ⛔ không
+      phải thứ nó cần để CHẠY);
+    - một **`features.AsvError`** ⇒ **NÉM**. Đó là họ lỗi chính sách của app (hết
+      ngân sách, vượt trần chi) — thứ ⛔ không được biến thành "hồ sơ rỗng" rồi im.
+
+    ⚠️ **Bản trước của bài này (26/09 sáng) đạt tới tính chất trên bằng cách
+       monkeypatch `features.kiem_tran_chi`** — tức đi qua **cửa chặn** của
+       `goi_tinh_tien`. Nhưng chủ dự án chốt **PHƯƠNG ÁN B: chỉ đo, ⛔ không trang bị
+       cửa** ⇒ `uoc_credit` ⛔ không được truyền ⇒ `cua_chan_truoc_khi_tieu` **⛔ không
+       bao giờ được gọi** ⇒ bản trước đo **một ca không thể xảy ra**.
+
+    ⭐ Nên bài này giữ **nguyên tính chất**, chỉ đổi **đường tới nó**: `AsvError` ném
+       từ bất cứ đâu trong `goi_tinh_tien` đều phải bay lên. Tính chất ⛔ không phụ
+       thuộc việc cửa có được trang bị hay không — và đó là lý do nó đáng giữ.
     """
     from apps.auto_scan_video import ai, features, ho_so_dich
 
-    def cua_dong(db, run, them):
+    def nem_chinh_sach(*a, **k):
         raise features.AsvError("Chi phi thuc te se vuot muc da giu")
 
-    def khong_duoc_goi(*a, **k):
-        raise AssertionError("model bị gọi DÙ cửa đã chặn — cửa chạy sai thứ tự")
-
-    monkeypatch.setattr(features, "kiem_tran_chi", cua_dong)
-    monkeypatch.setattr(ai, "goi", khong_duoc_goi)
+    monkeypatch.setattr(ai, "goi_tinh_tien", nem_chinh_sach)
 
     with pytest.raises(features.AsvError):
         ho_so_dich.dung(None, _RunGia(0),
-                        {"doan": [{"ma": "seg_0001", "chu": "你好"}]})
+                        {"doan": [{"ma": "seg_0001", "chu": "\u4f60\u597d"}]})
 
 
 def test_ho_so_dich_model_tra_RAC_van_tra_ho_so_RONG(monkeypatch):
@@ -1126,19 +1239,74 @@ def test_ho_so_dich_model_tra_RAC_van_tra_ho_so_RONG(monkeypatch):
     assert ra["bang_dai_tu"] == {} and ra["the_loai"] == ""
 
 
-def test_ho_so_dich_CUA_chay_that_su_vi_uoc_credit_KHAC_khong():
-    """⚠️ `goi_tinh_tien` bỏ qua cửa khi `uoc_credit` là 0 (`ai.py:835`).
+def test_ho_so_dich_KHONG_trang_bi_cua_chan__phuong_an_B():
+    """🔑 **Chủ dự án chốt PHƯƠNG ÁN B (26/09): CHỈ ĐO, ⛔ không bật cửa chặn.**
 
-    ⇒ Một cửa không chạy là một cửa không tồn tại. Đây là lý do `UOC_CREDIT`
-    tồn tại, và nó ⛔ không phải một bảng giá thứ hai.
+    `ai.goi_tinh_tien` làm **hai** việc, và ta chỉ muốn **một**:
+      (1) **cửa chặn** margin — chỉ chạy khi `uoc_credit` khác 0 (`ai.py:835`);
+      (2) **sổ cái** — luôn chạy.
+    ⇒ Đi qua `goi_tinh_tien` để có (2), và ⛔ **không** trang bị (1).
+
+    ⚠️ Bài này chốt chiều **NGƯỢC** với bản trước nó, và đó là **có chủ ý**. Bản
+       trước khẳng định `uoc_credit > 0` *"để cửa thật sự chạy"*. Nhưng đo ra: **cả
+       SÁU** lời gọi LLM của app đều ⛔ không truyền `uoc_credit` ⇒ bật cho **một**
+       chỗ là tạo một cửa mà ⛔ không ai đoán được nó ở đâu — **tệ hơn** cả việc
+       ⛔ không có cửa nào.
+
+    ⭐ Lý do của chủ dự án: *"Giá chỉ để tượng trưng. Sau này khi hoàn thiện hệ thống
+       và vận hành, tôi sẽ tự đề xuất con số sau."* Một cửa chặn ⛔ **không có ngưỡng
+       đo được** là một cửa sẽ bị **tắt sau lần báo động giả đầu tiên**.
+
+    ⇒ Dụng cụ thay cửa: `giay_llm_nan` · `giay_tts` · `so_doan_nan_oan`, đọc bằng
+      `tools/asv_doi_soat.py`. Chúng **thấy** lượt nào lỗ mà ⛔ không làm khách gặp lỗi.
+
+    ⛔ Bài này ⛔ **không** nói *"đừng bao giờ có cửa"* — nó nói *"khi bật thì bật
+       ĐỒNG THỜI cả sáu, kèm một ngưỡng ĐÃ ĐO"*. Đổi nó khi điều đó xảy ra.
     """
     from apps.auto_scan_video import ho_so_dich
 
-    assert int(ho_so_dich.UOC_CREDIT) > 0
+    assert not hasattr(ho_so_dich, "UOC_CREDIT"), (
+        "hang so cua cua chan con ton tai — phuong an B khong trang bi cua")
 
     (goi,) = [c for c in _cac_goi_thuoc_tinh(ho_so_dich)
               if c.func.attr == "goi_tinh_tien"]
     kw = {k.arg for k in goi.keywords if k.arg}
-    assert "uoc_credit" in kw, (
-        "⛔ không khai `uoc_credit` ⇒ mặc định 0 ⇒ `cua_chan_truoc_khi_tieu` "
-        "KHÔNG BAO GIỜ chạy, và hại (a) vẫn còn nguyên")
+    assert "uoc_credit" not in kw, (
+        "van truyen uoc_credit — mot trong sau loi goi co cua, nam cho kia khong")
+    assert "item_key" in kw, "thieu item_key thi SO CAI khong co khoa"
+
+
+def test_408_ban_gia_lam_ho_so_dich_ra_KHAC_RONG():
+    """🔴 **Duong TRA TIEN nay chua bao gio duoc do cuc bo** (lan B, 27/09).
+
+    `fixtures/asv_media.phan_hoi_ngoai_dich` ⛔ khong co nhanh cho `HO_SO_DICH`,
+    nen moi loi goi roi xuong ban gia DICH chung (`{"doan": {...}}`). Hinh dang ay
+    sai so voi `ho_so_dich._doc` ⇒ no nem `HoSoDichLoi` ⇒ `ho_so_dich.dung` **NUOT**
+    ngoai le (`except Exception`, ⛔ co y, vi ho so la thu lam ban dich TOT HON chu
+    ⛔ khong phai thu no can de CHAY) roi di tiep voi **ho so RONG**.
+
+    ⇒ Duong nay CO chay va CO tinh tien trong moi phep kiem dau-cuoi, nhung ket qua
+      cua no **LUON rong**, nen ⛔ khong phep kiem nao tung do duoc rang ho so that
+      su nan ban dich. Hai ho loi gap nhau: *"ban gia tra dung thu ma ma muon
+      nhan"* va *"loi bi NUOT"*.
+
+    ⭐ Bai nay chot ve DUONG DI, ⛔ khong chot noi dung ho so: ho so la du lieu cua
+       model. Dieu phai dung la *"ban gia di qua `_doc` ma ⛔ khong nem, va ra KHAC
+       RONG"* — mot ban gia tra rong lai lam bai xanh ma ⛔ khong chung minh gi.
+    """
+    from apps.auto_scan_video import ai, ho_so_dich
+    from tests.fixtures.asv_media import phan_hoi_ngoai_dich
+
+    goi = phan_hoi_ngoai_dich(ai.HO_SO_DICH, [{"role": "user", "content": "{}"}])
+    assert goi is not None, (
+        "ban gia ⛔ khong co nhanh cho HO_SO_DICH — moi loi goi se roi xuong luoc "
+        "do DICH, `_doc` nem, `dung` nuot, va ho so LUON rong")
+
+    ho_so = ho_so_dich._doc(goi["noi_dung"])
+    assert set(ho_so) == set(ho_so_dich.KHOA), (
+        f"ban gia ⛔ khong tra dung hop dong: {sorted(ho_so)}")
+    # ⛔ Ve DOI CHUNG: mot ho so RONG di qua `_doc` cung khong nem, nen "khong
+    #    nem" mot minh ⛔ khong chung minh gi.
+    assert ho_so["bang_dai_tu"], "bang dai tu rong — ban gia ⛔ khong do duoc gi"
+    assert ho_so["the_loai"], "the loai rong"
+    assert ho_so["so_nguoi_noi"] > 0, "so nguoi noi = 0"

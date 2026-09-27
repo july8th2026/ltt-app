@@ -57,6 +57,82 @@ def _doc_json(kho: Storage, khoa: str) -> dict:
         return json.loads(f.read().decode("utf-8"))
 
 
+def _bam_hai_ben(duong_ra: str, duong_nguon: str) -> tuple[str, str, str]:
+    """`(bam_ra, bam_nguon, ly_do)` cho T3. `ly_do` rong = bam duoc.
+
+    ⭐ Tach ra khoi `chay` de LY DO khong chay duoc tro thanh mot **gia tri tra
+       ve** thay vi mot dong log: mot dong log ⛔ khong vao artifact, ⛔ khong
+       vao `stage.outputs`, va ⛔ khong ai doi chieu duoc no sau khi lan chay
+       ket thuc. Xem `tom_tat_kem_khong_do`.
+    """
+    try:
+        return qc.bam_luong_hinh(duong_ra), qc.bam_luong_hinh(duong_nguon), ""
+    except Exception as exc:  # noqa: BLE001 - khong do duoc != do ra sai
+        log.warning("qc: khong bam duoc luong hinh (%s: %s)",
+                    type(exc).__name__, exc)
+        return "", "", f"{type(exc).__name__}: {exc}"
+
+
+def _do_hinh_hai_ben(duong_ra: str, duong_nguon: str, *, tt_ra: dict,
+                     tt_nguon: dict, bam_khop: bool
+                     ) -> tuple[dict | None, dict | None, str]:
+    """`(hinh_ra, hinh_nguon, ly_do)` cho T13 + T17. `ly_do` rong = do duoc.
+
+    ⭐ Nguon chi can do khi luong hinh KHONG giong nguon tung bit: o preset giu
+       hinh ma bam khop (T3), luong hinh ra CHINH LA luong hinh nguon, nen so do
+       cua nguon = so do cua ban ra — giai ma lan hai la tra tien cho mot cau
+       tra loi da biet.
+    """
+    try:
+        hinh_ra = qc.do_hinh(
+            duong_ra, thoi_luong=float(tt_ra.get("thoi_luong") or 0.0))
+        if bam_khop:
+            return hinh_ra, {"den_s": hinh_ra["den_s"],
+                             "dong_s": hinh_ra["dong_s"]}, ""
+        return hinh_ra, qc.do_hinh(
+            duong_nguon,
+            thoi_luong=float(tt_nguon.get("thoi_luong") or 0.0)), ""
+    except Exception as exc:  # noqa: BLE001 - khong do duoc != do ra sai
+        log.warning("qc: khong do duoc hinh (%s: %s)",
+                    type(exc).__name__, exc)
+        return None, None, f"{type(exc).__name__}: {exc}"
+
+
+def tom_tat_kem_khong_do(bao_cao: dict, ly_do: dict) -> dict:
+    """`qc.tom_tat` + **phep do nao ⛔ KHONG chay duoc**, kem ly do.
+
+    🔴 **Vi sao truong nay phai ton tai: `dat = not hong`, va `KHONG_AP_DUNG`
+       ⛔ khong phai `hong`.**
+
+       Mot luot ma thieu `libvmaf`, ffmpeg bam khong noi luong hinh, va luot
+       giai ma ca tep het thoi gian ⇒ T3, T13, T17, T18 deu ha xuong
+       `KHONG_AP_DUNG`, va bao cao in ra `dat: True`, `so_muc_hong: 0`,
+       `qc_ky_thuat_dat: True`. Tuc **cong PHAT HANH bao DAT sau khi ⛔ khong do
+       gi** — dung ho loi cua gate o `f4c4f064`: *mot chu PASS dung mot minh
+       tren mot phep do chua he chay*.
+
+    ⭐ `ly_do` la thu CHINH CHO NEM ra ghi lai (`_bam_hai_ben`,
+       `_do_hinh_hai_ben`, `_do_vmaf`), ⛔ khong phai suy nguoc tu chuoi `mo_ta`
+       cua bao cao: doc mot trang thai bang cach do chuoi la mot phep kiem se
+       im lang khi ai do sua mot cau tieng Viet.
+
+    ⛔ Va chi dem giao cua `ly_do` voi cac muc THAT SU `KHONG_AP_DUNG`: T8/T9/T10
+       khong ap dung **theo thiet ke**, T3 khong ap dung o preset cat, T18 khong
+       ap dung o preset giu hinh — dem ca chung thi moi lan chay deu "thieu phep
+       do" va con so thanh tieng on, roi nguoi ta tat no (ho `banh coc bao dong
+       gia`). Va nguoc lai: mot phep do TUNG hong nhung cuoi cung VAN co ket qua
+       (vd bam ra rong ma T3 van DAT o nhanh khac) ⛔ khong duoc dem la thieu.
+    """
+    tt = dict(qc.tom_tat(bao_cao))
+    treo = {str(m["ma"]) for m in (bao_cao.get("muc") or [])
+            if m.get("trang_thai") == qc.KHONG_AP_DUNG}
+    khong_do = sorted(ma for ma in ly_do if ma in treo)
+    tt["qc_so_muc_khong_do"] = len(khong_do)
+    tt["qc_muc_khong_do"] = khong_do
+    tt["qc_ly_do_khong_do"] = {ma: str(ly_do[ma])[:300] for ma in khong_do}
+    return tt
+
+
 def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict) -> float:
     """Do dai (giay) ma TEP DUOC DO phai co, truoc phep chia `toc_do`.
 
@@ -161,6 +237,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             _thoi_luong_mong_doi(ke_hoach, goi_kc),
             (ban_dung.get("hinh") or {}).get("bien_tap"))
 
+        # 🔑 Ly do KHONG do duoc cua tung phep kiem — di vao `tom_tat`, tuc vao
+        #    `asv_stage.outputs`. Xem `tom_tat_kem_khong_do`.
+        ly_do_khong_do: dict[str, str] = {}
+
         bam_ra = bam_nguon = ""
         if cach != cdr.CAT_MA_HOA_LAI:
             if bao:
@@ -172,13 +252,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             # ⭐ Chi bam o che do SAO CHEP. O che do cat, bam la mot phep tinh
             #    chac chan khong khop — ton thoi gian de tra loi mot cau hoi ta
             #    da biet cau tra loi.
-            try:
-                bam_ra = qc.bam_luong_hinh(duong_ra)
-                bam_nguon = qc.bam_luong_hinh(duong_nguon)
-            except Exception as exc:  # noqa: BLE001 - khong do duoc != do ra sai
-                log.warning("qc: khong bam duoc luong hinh (%s: %s)",
-                            type(exc).__name__, exc)
-                bam_ra = bam_nguon = ""
+            bam_ra, bam_nguon, _ly_do = _bam_hai_ben(duong_ra, duong_nguon)
+            if _ly_do:
+                ly_do_khong_do["T3"] = _ly_do
 
         if bao:
             bao(75, _t('Đang kiểm bản ra có hình'))
@@ -188,20 +264,13 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    giu hinh ma bam khop (T3), luong hinh ra CHINH LA luong hinh nguon,
         #    nen so do cua nguon = so do cua ban ra — giai ma lan hai la tra
         #    tien cho mot cau tra loi da biet.
-        hinh_ra = hinh_nguon = None
-        try:
-            hinh_ra = qc.do_hinh(
-                duong_ra, thoi_luong=float(tt_ra.get("thoi_luong") or 0.0))
-            if bam_ra and bam_ra == bam_nguon:
-                hinh_nguon = {"den_s": hinh_ra["den_s"],
-                              "dong_s": hinh_ra["dong_s"]}
-            else:
-                hinh_nguon = qc.do_hinh(
-                    duong_nguon,
-                    thoi_luong=float(tt_nguon.get("thoi_luong") or 0.0))
-        except Exception as exc:      # noqa: BLE001 - khong do duoc != do ra sai
-            log.warning("qc: khong do duoc hinh (%s: %s)",
-                        type(exc).__name__, exc)
+        hinh_ra, hinh_nguon, _ly_do = _do_hinh_hai_ben(
+            duong_ra, duong_nguon, tt_ra=tt_ra, tt_nguon=tt_nguon,
+            bam_khop=bool(bam_ra and bam_ra == bam_nguon))
+        if _ly_do:
+            # ⚠️ MOT luot giai ma tra loi CA HAI phep kiem, nen mot luot hong
+            #    lam CA HAI khong do duoc — khai ca hai, khong khai mot.
+            ly_do_khong_do["T13"] = ly_do_khong_do["T17"] = _ly_do
 
         # ── T18: VMAF — chi preset cat (ma hoa lai) ──────────────────────────
         vmaf = None
@@ -211,6 +280,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             vmaf = _do_vmaf(kho, ban_dung.get("hinh") or {}, thu_muc, run=run,
                             duong_nguon=duong_nguon, duong_ra=duong_ra,
                             tt_ra=tt_ra, khoang_gd2=khoang_gd2)
+            if vmaf.get("loi"):
+                ly_do_khong_do["T18"] = str(vmaf["loi"])
 
         bao_cao = qc.kiem(
             tt_ra=tt_ra, tt_nguon=tt_nguon, am_luong=am_luong,
@@ -249,7 +320,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     return {
         "phan": [{"staging_key": khoa, "kind": "json", "duoi": "json",
                   "van_tay": vt, "parent_keys": [khoa_ra]}],
-        "tom_tat": qc.tom_tat(bao_cao),
+        # 🔑 `tom_tat` + phep do nao KHONG chay duoc: `dat = not hong` cho
+        #    `KHONG_AP_DUNG` di qua lang le, nen mot cong khong do gi van in
+        #    `qc_ky_thuat_dat: True`. Xem `tom_tat_kem_khong_do`.
+        "tom_tat": tom_tat_kem_khong_do(bao_cao, ly_do_khong_do),
         # 🔑 Nguoi goi (`thi_hanh`) promote bao cao TRUOC roi moi doc co nay va
         #    nem. Nho vay mot lan chay hong van de lai bang chung ve VI SAO.
         "_qc_hong": bao_cao["muc_hong"],
@@ -311,9 +385,14 @@ def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, run, duong_nguon: str,
         # ⭐ Tham chieu chay qua CUNG phep cat cua giai doan 2 — xem
         #    `qc.loc_tham_chieu`. Thieu no thi hai ben lech tung khung va T18
         #    bao `hong` du bo ma hoa khong lam gi sai.
+        # 🔴 `toc_do` (27/09): `bt_gd2` da **co chu y bo** `toc_do` (viec cua GD1),
+        #    nhung `duong_ra` DA mang phep doi moc do, con `duong_nguon`
+        #    (`run.source_key`) thi chua. Truyen RIENG, ⛔ khong nhet lai vao
+        #    `bt_gd2` — hinh hoc GD2 phai giu dung phan cua no.
         loc = qc.loc_tham_chieu(hinh, duong_chu=duong_chu, duong_ass=duong_ass,
                                 khoang_giu=khoang_gd2, ds_logo=ds_logo,
-                                lop_phu=lop_phu_ds, bien_tap=bt_gd2)
+                                lop_phu=lop_phu_ds, bien_tap=bt_gd2,
+                                toc_do=_bt.toc_do(cai.bien_tap))
         return qc.do_vmaf(duong_nguon=duong_nguon, duong_ra=duong_ra,
                           loc_hinh=loc, duong_logo=duong_logo,
                           rong=int(tt_ra.get("rong") or 0),

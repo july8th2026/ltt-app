@@ -1,8 +1,6 @@
 # so-cho-goi-ffmpeg-tran theo tep
-apps/asv_gpu/do_luong/ocr_khung.py 2
 apps/audio_pause/services/chen_lang.py 1
 apps/audio_pause/services/engine/audio_splicer.py 6
-apps/auto_scan_video/nguon_loi.py 2
 apps/qualitylab/services/media.py 2
 apps/video_assembly/services/engine/assemble.py 6
 apps/video_assembly/services/engine/audio/demucs_post.py 2

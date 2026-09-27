@@ -241,6 +241,21 @@ def lap_ban(*, preset: str, chi_muc, hieu_canh=None, ban_ghi=None) -> BanBienTap
     return ban
 
 
+def _nguon_cua(h) -> str:
+    """Xuat xu cua `do_tin`, de ly do ⛔ khong khai sai.
+
+    🔴 Ban truoc ghi cung *"VLM de xuat bo"*. Nhung `do_tin` la mot HOP DONG
+       duck-type dung chung boi hai dai luong KHAC BAN CHAT: ti le do bang
+       **ffmpeg** (`BangChungCanh`, tu Task 10) va **do tin VLM** (`HieuCanh`).
+       Va tu Task 22 thi ⛔ KHONG mot ma san pham nao con dung `HieuCanh` — nen
+       cau "VLM" ay **luon sai**, va no di vao **artifact cua KHACH**.
+
+    ⭐ `getattr` co mac dinh **trung tinh**: mot nguon thu ba (hay mot ban gia
+       trong test) ⛔ khong bi khai la VLM chi vi no im lang.
+    """
+    return str(getattr(h, "NGUON_BANG_CHUNG", "") or "bang chung")
+
+
 def _quyet_dinh_mot_canh(c, h, *, co_thoai: bool) -> QuyetDinh:
     """Mot canh. **Mac dinh la GIU** — bo la hanh dong phai co can cu.
 
@@ -277,7 +292,8 @@ def _quyet_dinh_mot_canh(c, h, *, co_thoai: bool) -> QuyetDinh:
     if de_xuat == "bo" and diem_bang_chung >= nguong:
         return QuyetDinh(
             c.ma, THAO_TAC_CAT,
-            f"VLM de xuat bo (tin {diem_bang_chung:.2f} >= nguong {nguong:.2f}"
+            f"{_nguon_cua(h)} de xuat bo "
+            f"(diem {diem_bang_chung:.2f} >= nguong {nguong:.2f}"
             f"{', canh co loi thoai' if co_thoai else ''})",
             diem_bang_chung, (c.ma,))
 
@@ -285,16 +301,28 @@ def _quyet_dinh_mot_canh(c, h, *, co_thoai: bool) -> QuyetDinh:
     #    ghi "duoi nguong 0.85" khong cho biet vi sao canh nay kho cat hon canh
     #    ben canh — va do dung la cau hoi nguoi doc log dang co.
     #
-    # ⚠️ **Chu "VLM"/"tin" o day la VAN BAN LY DO cho nguoi doc, ⛔ khong phai
-    #    ten bien** — `test_463::test_ban_bien_tap_THAT_SU_co_ly_do_ky_thuat`
-    #    (ngoai pham vi Task 18) doi chinh xac chu "VLM" xuat hien trong
-    #    `ly_do`, nen ⛔ khong doi van ban nay du nguon co the la mot phep do
-    #    tat dinh (`diem_bang_chung` khi do la mot ti le, khong phai do tin).
+    # 🔴 `123285ae` chi va nhanh CAT. Hai nhanh GIU duoi day van ghi cung "VLM",
+    #    nen tren duong TAT DINH hom nay (`BangChungCanh`, Task 10) gan MOI dong
+    #    artifact khach van khai sai xuat xu — nhanh CAT la nhanh it dong nhat.
+    #    Cung mot ban va, ap cho ca ba nhanh: `_nguon_cua(h)` doc
+    #    `NGUON_BANG_CHUNG` cua chinh doi tuong.
+    #
+    # ⚠️ Chu thich cu o day khai `test_463::test_ban_bien_tap_THAT_SU_co_ly_do_ky_thuat`
+    #    "doi chinh xac chu VLM" nen ⛔ khong duoc doi van ban. Da DO (27/09):
+    #    bai do dung `HieuCanh` voi `de_xuat="bo", do_tin=0.95 >= 0.65` nen no di
+    #    qua nhanh CAT — nhanh DA dung `_nguon_cua` tu `123285ae`. Chu "VLM" no
+    #    thay den tu `HieuCanh.NGUON_BANG_CHUNG`, ⛔ khong tu hang so o day.
+    #    ⇒ Chu thich ay mo ta trang thai TRUOC `123285ae`: no chan mot ban va ma
+    #    no khong con chan duoc. Ho loi #8 (chu thich ta trang thai CU).
+    #
+    # ⭐ "do tin" cung la mot tu mang mui model: voi bang chung tat dinh no la
+    #    mot TI LE. Dung "diem" — cung ten trung tinh da chon cho bien cuc bo.
     vi_sao_nguong = " (canh co loi thoai nen nguong cao hon)" if co_thoai else ""
-    ly_do = "VLM de xuat giu" if de_xuat == "giu" else (
-        f"de xuat bo nhung do tin {diem_bang_chung:.2f} duoi nguong "
+    nguon = _nguon_cua(h)
+    ly_do = f"{nguon} de xuat giu" if de_xuat == "giu" else (
+        f"de xuat bo nhung diem {diem_bang_chung:.2f} duoi nguong "
         f"{nguong:.2f}{vi_sao_nguong}"
-        if de_xuat == "bo" else "VLM khong chac — giu")
+        if de_xuat == "bo" else f"{nguon} khong chac — giu")
     return QuyetDinh(c.ma, THAO_TAC_GIU, ly_do, diem_bang_chung, (c.ma,))
 
 

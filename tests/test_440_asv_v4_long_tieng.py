@@ -731,6 +731,99 @@ def test_thu_lai_KHONG_gui_lai_nhung_doan_DA_XONG(
         "lan sau dang tra tien lai tu dau" % (len(trung), sorted(trung)[:5]))
 
 
+def test_mot_luot_content_process_de_lai_DUNG_MOT_dong_so_cai_HO_SO_DICH(
+        tmp_path, monkeypatch, db, kho_tam, asr_gia, giong_gia):  # noqa: F811
+    """`ho_so_dich` la loi goi TRA TIEN dau tien cua giai doan — no phai vao so.
+
+    ⚠️ **`fx_media.phan_hoi_ngoai_dich` ⛔ KHONG biet `HO_SO_DICH`** (no biet
+       `DOC_CANH`, `HO_SO_NOI_DUNG`, `QC_HINH`). Nen moi bai thay `ai.goi` ma
+       ⛔ khong tu lo `HO_SO_DICH` se thay loi nhac van ban thuan cua no di vao
+       duong DICH, `_ma_trong` nem `JSONDecodeError` **ben trong**
+       `goi_tinh_tien` — TRUOC buoc ghi so cai — va `dung()` nuot thanh *"ho so
+       rong"*. Do la mot duong tra tien ⛔ khong bao gio duoc do o cuc bo, cung
+       ho voi `cua_ai_gia` (tra dict con cua that tra chuoi).
+
+    ⭐ Nen bai nay thay `ai.goi`, ⛔ KHONG `ai.goi_tinh_tien`: cua tra tien THAT
+       phai chay, khong thi ⛔ khong co dong so cai nao de noi ve.
+    """
+    from apps.auto_scan_video import ai, ho_so_dich, pipeline, su_dung
+    from tests.test_402_asv_mach_doc_gia import _chay_het_hang_doi
+
+    def goi_gia(db_, thao_tac, messages, **kw):
+        if getattr(thao_tac, "ma", "") == ai.HO_SO_DICH.ma:
+            return {"noi_dung": json.dumps(
+                {"the_loai": "", "so_nguoi_noi": "", "bang_dai_tu": {},
+                 "bang_ten_rieng": {}, "giong_van": ""}, ensure_ascii=False),
+                "su_dung": None}
+        san = fx_media.phan_hoi_ngoai_dich(thao_tac, messages)
+        if san is not None:
+            return san
+        return _tra_loi(_ma_trong(messages))
+
+    monkeypatch.setattr(ai, "goi", goi_gia)
+
+    run = _run_cat(db, kho_tam, tmp_path)
+    _chay_het_hang_doi(db)
+
+    dong = su_dung.cac_dong(db, run, stage=pipeline.CONTENT_PROCESS,
+                            item_key=ho_so_dich.ITEM_KEY)
+    assert len(dong) == 1, (
+        "mong DUNG mot dong so cai `ho_so_dich` cho ca lan chay, thay %d — mot "
+        "loi goi ~16 giay may B ⛔ khong co but toan la mot bao cao margin lech "
+        "dung mot loi goi moi video" % len(dong))
+
+
+def test_DO_KHA_NANG_BO_TEST_flush_so_cai_co_MAT_qua_rollback_khong(
+        tmp_path, db, kho_tam):  # noqa: F811
+    """🔑 **Mot phep do ve chinh BO TEST, va no phu nhan mot gia thuyet.**
+
+    `su_dung.ghi` chi `db.add` + `db.flush` (trong mot `begin_nested()`), va ba
+    cho trong kho nay khai bang chu rang do la mot rui ro tien that:
+
+        `giai_doan_noi_dung`  *"mot `flush` chi day cau lenh xuong giao dich dang
+                              mo. Worker chet ngay sau do thi ca giao dich bi
+                              cuon lai"*
+        `giai_doan_giong._chot_lo`, `ho_so_noi_dung.bao_dam`  — cung cau chu.
+
+    ⇒ Mot phep kiem tu nhien la: *tieu tien roi `rollback`, dong so con khong?*
+
+    🔴 **DO DUOC (27/09): dong so KHONG mat.** `pysqlite` phat `SAVEPOINT` o che
+       do autocommit (caveat da ghi cua SQLAlchemy cho driver nay), nen
+       `begin_nested()` lam lan ghi BEN NGAY tren SQLite. Tren **PostgreSQL** —
+       kho cua production — no la mot SAVEPOINT that trong giao dich cua nguoi
+       goi, va `db.rollback()` **XOA** no.
+
+    ⚠️ Nen **⛔ khong phep kiem cuc bo nao co the chung minh hay phu nhan** menh
+       de *"commit, ⛔ khong flush"*. Mot bai viet ra o day se XANH du ma co
+       `commit` hay khong — dung loai bai kiem ma `test_448`/`banh_coc` goi la
+       bao dong gia. Ho loi #1 cua bang bay: **kenh cuc bo co mot tinh chat ma
+       kenh that ⛔ khong co** — lan nay nguoc chieu, no lam ta AN TAM sai.
+
+    ⭐ Bai nay ton tai de con so ay ⛔ khong bi phat hien lai lan thu ba. Khi no
+       DO, tin tot: bo test da doi (pysqlite duoc cau hinh lai, hoac test chay
+       tren PostgreSQL) ⇒ **gio viet duoc phep kiem that** cho moi cho khai
+       *"commit, ⛔ khong flush"*.
+    """
+    from apps.auto_scan_video import pipeline, su_dung
+
+    run = _run_cat(db, kho_tam, tmp_path)
+    su_dung.ghi(db, run, stage=pipeline.CONTENT_PROCESS, item_key="do-kha-nang",
+                su_dung=su_dung.SuDung(
+                    nang_luc="do_kha_nang", app_chu="ltt_llm",
+                    trang_thai=su_dung.DA_GIAO, don_vi=su_dung.LUOT,
+                    so_luong=1.0, credit=0, ma_dispatch="do-kha-nang:1"))
+    assert su_dung.cac_dong(db, run, item_key="do-kha-nang"), \
+        "khung sai: `su_dung.ghi` khong ghi duoc gi"
+
+    db.rollback()
+
+    assert su_dung.cac_dong(db, run, item_key="do-kha-nang"), (
+        "TIN TOT: `db.rollback()` gio XOA duoc mot dong so cai moi `flush`. "
+        "Nghia la bo test nay da co the do menh de *'commit, ⛔ khong flush'* — "
+        "hay viet phep kiem THAT cho `giai_doan_noi_dung` (`ho_so_dich`), "
+        "`giai_doan_giong._chot_lo` va `ho_so_noi_dung.bao_dam`, roi bo bai nay.")
+
+
 def test_diem_chot_giu_KET_QUA_va_mang_VAN_TAY(
         tmp_path, monkeypatch, db, kho_tam, asr_gia, giong_gia):
     """Mot diem chot khong giu ket qua thi lan thu lai van phai goi model lai —

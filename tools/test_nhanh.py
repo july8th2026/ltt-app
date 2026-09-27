@@ -344,8 +344,104 @@ def _la_gate(ten: str, argv, kich_ban: str = "gate.py") -> bool:
                for d in list(argv or [])[1:])
 
 
-def to_tien_da_giu_khoa(kich_ban: tuple[str, ...] = ("gate.py", "test_nhanh.py",
-                                                    "chay_nang.py"),
+#: Vi sao TUNG ten co trong danh sach. ⭐ Ly do phai doc duoc: mot ten o day lam
+#: `tests/conftest.py` **THOI xin khoa**, nen mot ten sai huong nay khong gay treo
+#: — no gay mot luot 26 tep chay **khong khoa nao**, dung tai nan dem 05-06/09.
+LY_DO_KICH_BAN = {
+    "gate.py":
+        "giu `cpu_nhieu` + `postgres_test` cho buoc `bo test` roi phong "
+        "`tools/test_nhanh.py` (gate.py dong 1072/1079/1101/1345).",
+    "test_nhanh.py":
+        "giu `TAI_NGUYEN` roi phong `python -m pytest` (dong 479).",
+    "chay_nang.py":
+        "lop boc chung cua moi agent: giu `cpu_nhieu` roi chay lenh nhan qua "
+        "`argparse.REMAINDER` — thuong la `python -m pytest -n 7 <tep...>`. "
+        "Song NGOAI kho (`~/.claude/ltt/chay_nang.py`).",
+    "do_phu_diff.py":
+        "giu `cpu_nhieu` + `postgres_test` (dong 149) roi chay "
+        "`python -m pytest ... <pham_vi>`, va `--pham-vi` mac dinh la `tests` "
+        "— tuc CA bo test, luon > 20 tep.",
+}
+
+#: Cac kich ban da xin `cpu_nhieu` HO mot luot pytest con.
+#:
+#: 🔴 **Danh sach nay de thieu theo BAN CHAT, khong phai do cau tha.** Mot lop boc
+#:    nam **ngoai kho** thi ma trong kho ⛔ khong the `grep` ra no:
+#:    `chay_nang.py` song o `~/.claude/ltt/` va da thieu o day tu dau, nen moi
+#:    luot `chay_nang.py -- python -m pytest <>= 20 tep>` **treo mai, CPU 0**
+#:    (do 26/09: 18 tep xanh, 12 tep xanh, 26 tep TREO). Mot phien mat gan mot
+#:    buoi de chan doan, vi trieu chung giong het mot con bo nghiep vu.
+#:
+#: ⛔ Vi vay dung tin mot minh danh sach nay:
+#:    · `tests/test_3060_khoa_to_tien_boc_pytest.py` la **banh coc** — no di TIM
+#:      moi lop boc (ca trong `tools/` ca trong `~/.claude/ltt/`) vua giu
+#:      `cpu_nhieu` vua phong pytest, va DO khi co cai chua duoc phan loai;
+#:    · `ai_giu_khoa_la_to_tien()` la **luoi chay**, bat theo `pid` nen no bat ca
+#:      lop boc chua ai kip them ten vao day.
+KICH_BAN_GIU_KHOA = tuple(LY_DO_KICH_BAN)
+
+
+def ai_giu_khoa_la_to_tien(tai_nguyen: str = "cpu_nhieu", *,
+                           ban_ghi: dict | None = None,
+                           pid_to_tien: list[int] | None = None) -> str:
+    """Nguoi dang giu khoa CO PHAI to tien cua chinh ta khong. Tra MO TA, hoac "".
+
+    ⭐ **Vi sao can, khi da co `to_tien_da_giu_khoa`.** Phep hoi kia hoi *TEN*, va
+       tap ten khong bao gio day du duoc (lop boc o ngoai kho). Phep hoi nay hoi
+       *QUAN HE*: ban ghi khoa cua `cua_so_yen` co `pid` + `may`, cay to tien co
+       `pid` — nen no tra loi duoc **khong can biet lop boc ten gi**.
+
+    ⭐ Va no bien mot **cai treo im lang** thanh **mot dong chu**. Khoa la tep
+       `O_EXCL`, khong tai nhap: xin khoa ma to tien dang giu no thi ta cho chinh
+       to tien cua ta het `cho_toi_da_s` (900 giay o `conftest`) — man hinh khong
+       in gi, CPU 0. Mot thong bao dung luc re hon mot buoi chan doan.
+
+    ⚠️ **Loc theo `may` truoc khi so `pid`.** Ban ghi cua mot may KHAC co the mang
+       mot pid tinh co trung voi to tien cua ta — do la mot **su trung so**, khong
+       phai mot quan he. Bo `may` di thi ham nay bao dong gia.
+
+    ⚠️ Van con mot ke ho khong bo duoc: pid bi cap lai. Chu cu chet, Windows cap
+       lai dung pid do cho mot to tien cua ta ⇒ bao dong gia. Chap nhan, vi hau
+       qua chi la MOT DONG IN thua — ta ⛔ khong quyet dinh gi dua tren no ngoai
+       viec thoi xin mot khoa ma neu khong thoi thi cung treo.
+    """
+    if ban_ghi is None:
+        # ⛔ Bat HEP, khong `except Exception`: mot cua chan doan nuot moi loi la
+        #    mot cua chan doan se im dung luc can noi (banh coc
+        #    `check_silent_except.py` dem dung cai do).
+        try:
+            sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+            from cua_so_yen import _doc
+        except ImportError:
+            return ""
+        ban_ghi = _doc(tai_nguyen)              # tu tra None khi khong doc duoc
+    if not ban_ghi:
+        return ""
+    if str(ban_ghi.get("may") or "") != socket.gethostname():
+        return ""                               # khoa cua may khac: pid vo nghia
+    try:
+        pid_giu = int(ban_ghi.get("pid") or 0)
+    except (TypeError, ValueError):
+        return ""
+    if pid_giu <= 0:
+        return ""
+    if pid_to_tien is None:
+        try:
+            import psutil
+        except ImportError:
+            return ""
+        try:
+            pid_to_tien = [t.pid for t in psutil.Process().parents()]
+        except (psutil.Error, OSError):
+            return ""
+    if pid_giu not in list(pid_to_tien or []):
+        return ""
+    return (f"to tien cua chinh luot nay (pid {pid_giu}, phien "
+            f"{ban_ghi.get('phien') or '?'}) DANG GIU khoa `{tai_nguyen}`: "
+            f"{str(ban_ghi.get('lenh') or '')[:80]}")
+
+
+def to_tien_da_giu_khoa(kich_ban: tuple[str, ...] = KICH_BAN_GIU_KHOA,
                         to_tien: list[tuple] | None = None) -> bool:
     """Mot to tien CO PHAI mot cong cu da xin khoa ho ta khong.
 
@@ -358,31 +454,10 @@ def to_tien_da_giu_khoa(kich_ban: tuple[str, ...] = ("gate.py", "test_nhanh.py",
        hoi la hai cho de chung lech nhau — va lech o day nghia la hoac khoa
        chet (ca hai cung xin) hoac lo hong (ca hai cung bo qua).
 
-    🔴 `chay_nang.py` THEM 26/09/2026 — MOT CA KHOA CHET DA XAY RA THAT.
-
-       `chay_nang.py` cung xin `cpu_nhieu` ho, nhung no song NGOAI kho
-       (`~/.claude/ltt/`), nen danh sach nay — viet tu goc nhin cua kho — khong
-       he biet no ton tai. He qua do duoc:
-
-           chay_nang.py giu cpu_nhieu
-             └─ pytest (>= _NGUONG_TEP_NANG tep)
-                  └─ conftest xin cpu_nhieu  ->  CHO MAI mot khoa TO TIEN dang giu
-
-       Khoa la tep `O_EXCL`, khong tai nhap, nen no khong bao gio tu thoat.
-
-       ⚠️ Vi sao no song lau ma khong ai thay: no CHI no khi luot co >= 20 tep
-          (`tests/conftest.py::_NGUONG_TEP_NANG`). Do duoc cung ngay: 12 tep
-          XANH, 18 tep XANH, 26 tep CHET. Nen moi luot nho deu "chung minh" ma
-          dung, va nguoi ta di tim loi o cho khac. Toi da loai hai gia thuyet
-          sai (`pytest-randomly`, "import module lay lock") truoc khi thay.
-
-       ⛔ Va trieu chung giong MOI thu khac: treo vo han, CPU bang 0, tai hien
-          duoc voi giay CPU gan y het moi lan — vi no luon dung o CUNG MOT DIEM
-          CHAN, khong phai vi cung mot con bo.
-
-       ⭐ Cach bat trong mot lenh: luc "treo", chay
-          `python tools/cua_so_yen.py trang-thai` tu shell khac. Neu nguoi giu
-          khoa CHINH LA luot cua minh thi do la tu khoa, khong phai con bo.
+    ⛔ Ham nay ⛔ KHONG phai cua hoi cua `gate.py`: gate di qua
+       `_to_tien_la_gate` (chi biet `gate.py`), nen noi dai `KICH_BAN_GIU_KHOA`
+       ⛔ khong doi hanh vi cua gate. Chot bang
+       `test_3060::test_gate_khong_doi_hanh_vi`.
     """
     if to_tien is None:
         try:

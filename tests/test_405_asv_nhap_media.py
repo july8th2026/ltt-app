@@ -224,6 +224,64 @@ def test_van_tay_doi_khi_PHIEN_BAN_FFMPEG_doi():
     assert a != b
 
 
+def test_405_phep_soi_TRUOT_khong_gop_moi_ban_ffmpeg_vao_MOT_khoa(tmp_path,
+                                                                  monkeypatch):
+    """🔴 `phien_ban_ffmpeg` tung tra hang so `"khong-ro"` khi `ffmpeg -version`
+    khong chay duoc — va no pha DUNG cai ma bai tren chot.
+
+    Hai ban ffmpeg KHAC NHAU ma phep soi truot deu ra `"khong-ro"` ⇒ CUNG mot
+    `van_tay_chuan_hoa` ⇒ nang cong cu xong, lan chay sau **dung lai ban tieng cua
+    cong cu CU** ma khong ai biet. Do dung la kieu hong ma O13 sinh ra de chan, va
+    no di qua chinh cai cong duoc dung lam la chan.
+
+    ⚠️ Phep soi truot **that su xay ra**: `timeout=30` tren may dang 100 % CPU, va
+       stdout rong khi worker chay duoi `LocalSystem` (PATH khac phien nguoi dung).
+
+    ⭐ Ba chieu, va cai thu hai la ve DOI CHUNG — thieu no thi ban sua "cho moi lan
+       goi mot gia tri khac" cung xanh, va ta tra tien tinh lai TOAN BO moi lan
+       chay du cong cu khong doi.
+    """
+    import subprocess as _sp
+
+    from apps.auto_scan_video import nhap_media
+
+    def _soi_truot(*_a, **_k):
+        raise _sp.TimeoutExpired(cmd="ffmpeg", timeout=30)
+
+    monkeypatch.setattr(nhap_media.subprocess, "run", _soi_truot)
+
+    ban_a = tmp_path / "a" / "ffmpeg.exe"
+    ban_b = tmp_path / "b" / "ffmpeg.exe"
+    for p, noi_dung in ((ban_a, b"AAAA"), (ban_b, b"BBBBBBBB")):
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(noi_dung)
+
+    def _tra(p):
+        monkeypatch.setattr(nhap_media.media, "ffmpeg_bin", lambda: str(p))
+        return nhap_media.phien_ban_ffmpeg()
+
+    vt_a, vt_b = _tra(ban_a), _tra(ban_b)
+
+    # (1) Hai ban dung KHAC nhau => khoa KHAC nhau, du phep soi truot ca hai lan.
+    assert vt_a != vt_b, (
+        f"hai ban ffmpeg khac nhau gop vao MOT khoa cache: {vt_a!r} — nang cong "
+        f"cu xong se dung lai ket qua cua cong cu cu")
+
+    # (2) ⭐ Ve DOI CHUNG: CUNG mot ban dung => CUNG khoa, nen cache van trung va
+    #     ta ⛔ khong tra tien tinh lai vo co moi lan chay.
+    assert _tra(ban_a) == vt_a, (
+        "cung mot ban ffmpeg ma ra hai khoa: cache truot han, moi lan chay lai "
+        "deu tinh lai tu dau")
+
+    # (3) ⛔ Khong chung minh duoc la cung cong cu (ca `stat` cung khong duoc) thi
+    #     KHONG duoc dung lai cache — huong hong la "tinh lai".
+    monkeypatch.setattr(nhap_media.media, "ffmpeg_bin",
+                        lambda: str(tmp_path / "khong-ton-tai" / "ffmpeg.exe"))
+    assert nhap_media.phien_ban_ffmpeg() != nhap_media.phien_ban_ffmpeg(), (
+        "khong soi duoc va khong stat duoc ma van tra mot gia tri ON DINH: hai "
+        "cong cu khac nhau se dung chung cache")
+
+
 def test_van_tay_doi_khi_CAU_HINH_CHUAN_HOA_doi(monkeypatch):
     from apps.auto_scan_video import nhap_media
 

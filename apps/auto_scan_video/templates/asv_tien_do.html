@@ -162,7 +162,14 @@
   {% if xong %}
     <ul class="asv-buoc-xong">
       {% for m in xong %}
-        <li>{{ _(nhan_giai_doan.get(m.giai_doan, m.giai_doan)) }}</li>
+        {# 🔴 `succeeded` tra loi "khong hong", ⛔ khong tra loi "da lam". `qc_ai`
+             mac dinh TAT va khi tat no chay qua tuc thi — in nhan "Soat lai nghia
+             ban dich" tran o day la khang dinh voi KHACH mot viec ⛔ chua he lam.
+             Cung ho voi `"VLM de xuat bo"` (`123285ae`). `m.da_lam` la `False`
+             CHI khi giai doan tu khai la no ⛔ khong lam gi; `None` = khong khai. #}
+        <li>{{ _(nhan_giai_doan.get(m.giai_doan, m.giai_doan)) }}{%
+          if m.da_lam is false %} <span class="asv-buoc-bo-qua">{{ _('— bỏ qua') }}</span>{%
+          endif %}</li>
       {% endfor %}
     </ul>
   {% endif %}

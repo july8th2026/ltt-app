@@ -121,16 +121,40 @@ def test_trinh_soan_CO_dung_duong_chay_v3(shell):
     assert _goi(shell, "ham_khong_bao_gio_ton_tai_o_day") == 0
 
 
-def test_lop_khach_v3_van_GIU_ham_v2_cho_duong_khac(shell):
-    """⚠️ `workflowApi.ts` **vẫn** xuất `saveWorkflow` v2, và đó là cố ý.
+def test_lop_khach_CHI_con_ham_v3_va_KHONG_AI_goi_v2(shell):
+    """🔴 **Bài này trước đây chốt điều NGƯỢC LẠI, và tiền đề của nó đã rỗng.**
 
-    `loadOrCreateWorkflow` v2 còn phục vụ đường Plan v1 (`/agent/api/workflows`)
-    cho tới khi lớp ấy được gỡ. Xoá nó bây giờ là gỡ hai thứ trong một lần —
-    và lần gỡ đó phải đi cùng lần gỡ Plan v1, không đi cùng lần chuyển Canvas.
+    Bản cũ (`test_lop_khach_v3_van_GIU_ham_v2_cho_duong_khac`) chốt
+    `"export async function saveWorkflow(" in api`, với lý lẽ *"`loadOrCreateWorkflow`
+    v2 còn phục vụ đường Plan v1 cho tới khi lớp ấy được gỡ"*.
+
+    ⚠️ Đo 27/09: `a5559e36 "wf-v2 P-A A6: don ma chet v2 trong workflowApi.ts"` đã
+       **cố ý** gỡ cụm v2, và ⛔ **không một chỗ nào** còn gọi `saveWorkflow` /
+       `loadOrCreateWorkflow` — `CanvasShell.tsx` chỉ gọi `saveWorkflowV3` /
+       `loadOrCreateWorkflowV3`. Lý lẽ *"v2 còn phục vụ đường khác"* nói về một
+       người gọi ⛔ không còn tồn tại.
+
+    ⇒ Bài cũ là một **bánh cóc sót lại canh mã đã bị xoá có chủ ý** — nó đỏ suốt
+      và ⛔ không bảo vệ gì. Và chủ dự án đã chốt (07/09): lớp Agent/Canvas/Workflow
+      ⛔ chưa có khách, ⛔ không rà soát tương thích ngược.
+
+    ⭐ ⛔ Không XOÁ bài mà ĐỔI CHIỀU nó: chốt tính chất nay đúng — chỉ còn đường v3,
+       và ⛔ không ai gọi tên v2 nữa. Xoá đi thì lần sau ai đó thêm lại `saveWorkflow`
+       v2 sẽ ⛔ không có cửa nào cản; đổi chiều thì vẫn có.
     """
     api = API.read_text(encoding="utf-8")
-    assert "export async function saveWorkflow(" in api
     assert "export async function saveWorkflowV3(" in api
+    assert "export async function loadOrCreateWorkflowV3(" in api
+    # ⛔ Ten v2 KHONG duoc quay lai — `(` de khong bat chinh `saveWorkflowV3`.
+    assert "export async function saveWorkflow(" not in api, (
+        "ham v2 quay lai ma ⛔ khong ai goi no — xem `a5559e36`")
+    assert "export async function loadOrCreateWorkflow(" not in api
+
+    # ⭐ Ve DOI CHUNG: trinh soan phai THAT SU goi duong v3, neu khong thi hai
+    #    khang dinh tren chi chot rang mot ham TON TAI chu ⛔ khong rang no duoc dung.
+    assert _goi(shell, "saveWorkflowV3") > 0
+    assert _goi(shell, "loadOrCreateWorkflowV3") > 0
+    assert _goi(shell, "saveWorkflow") == 0, "trinh soan con goi ham v2"
 
 
 def test_cua_v3_gui_di_dung_luoc_do_v3():

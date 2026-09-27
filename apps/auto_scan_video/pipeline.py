@@ -246,12 +246,14 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "media_prepare: chay lai media_prepare ma khong vo hieu buoc nay "
                  "thi no doc ban tieng cua luot TRUOC (features.py:263)",
                  # 🔴 TIEN DE IM LANG — Q7: san pham la voice->voice.
-                 "duong `asr` doi nguon CO TIENG NOI; hardsub chi de DOI CHIEU. "
-                 "Mac dinh `auto` uu tien embedded -> ocr -> asr, nen tren phim co "
-                 "hardsub duong asr KHONG chay (nguon_loi.dinh_tuyen)",
-                 "che do khac `asr` doi nguon loi that su co (phu de nhung / "
-                 "hardsub); nguoc lai nl.KhongCoNguon "
-                 "(giai_doan_chep_loi.py:136)",
+                 #    ⭐ 26/09 (Task 21): `embedded`/`ocr`/`auto` DA BO. Tien de cu
+                 #    ("mac dinh `auto` nen duong asr KHONG chay") da HET, va thay
+                 #    vao do la mot tien de MOI, nang hon: nay ⛔ khong con duong
+                 #    nao doc chu tren hinh, nen mot phim ⛔ KHONG CO TIENG NOI cho
+                 #    ra ban ghi RONG chu khong lui sang hardsub.
+                 "duong `asr` doi nguon CO TIENG NOI; phim khong co tieng noi ⇒ "
+                 "ban ghi rong, ⛔ KHONG con duong hardsub de lui sang "
+                 "(nguon_loi.py: MOT duong duy nhat, 26/09)",
                  "cap ngon ngu hop le: nguon thuoc (zh,en,vi) hoac `auto`, dich "
                  "thuoc (vi,en) — chot NGAY SAU asr, truoc moi buoc tra tien "
                  "(ngon_ngu.py:37,38 · giai_doan_chep_loi.py:155)"),
@@ -450,6 +452,18 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "ke hoach thoi gian cua timing_align: 'co thoai' doc tieng VIET "
                  "DA SINH o day, ⛔ khong doc ban chep loi NGUON "
                  "(ke_cat.khe_thoai_tu_ke_hoach)",
+                 # 🔴 Bo sung 27/09. Dong tren khai DUNG *nguon nao*, nhung no im
+                 #    ve *TRUC nao* — va tu khi `edit_plan` chay SAU `render`, truc
+                 #    la cho lech. `khe_thoai_tu_ke_hoach` tra khe tren truc BAN RA
+                 #    CUA timing_align (truoc `toc_do`), con tep ma giai doan nay
+                 #    cat la MP4 cua GD1 (**sau** `toc_do`). Doi truc o
+                 #    `giai_doan_hinh_anh._khe_thoai_truc_ban_giao`; thieu phep doi
+                 #    ay thi voi `toc_do = 1,25` mot cau thoai o giay 90 bi doc
+                 #    thanh "⛔ khong thoai" va bi cat vao giua loi.
+                 "khe tieng phai DOI TRUC tu truc bien tap (truoc `toc_do`) sang "
+                 "truc MP4 cua GD1 (sau `toc_do`) truoc khi dung — hai truc chi "
+                 "trung nhau khi `toc_do = 1` "
+                 "(giai_doan_hinh_anh._khe_thoai_truc_ban_giao)",
                  "tran 5 % la BAT BIEN O BIEN: `ke_cat.kiem` NEM khi vuot, nen "
                  "mot ke cat hong ⛔ khong bao gio ton tai (ke_cat.py)",
                  "cua so `cat_dau_cuoi` cua khach GIAO SAU ke cat, va CO Y nam "
@@ -463,9 +477,13 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "hoach, ban dung) (giai_doan_qc.py:74,79)",
                  "ban ra VA ban nguon phai giai ma duoc — mot tep hong nem tho o "
                  "day, khong suy giam (giai_doan_qc.py:98)",
-                 # 🔴 TIEN DE IM LANG: khac han T3/T13/T18 von suy giam.
+                 # 🔴 TIEN DE IM LANG: khac han T3/T13/T17/T18 von suy giam.
+                 #    ⚠️ T17 bo sung 27/09: `giai_doan_qc.py:273` dat
+                 #    `ly_do_khong_do["T13"] = ly_do_khong_do["T17"]` — MOT luot giai ma
+                 #    hong lam CA HAI khong do duoc, nen mot ban khai chi ke T13 noi
+                 #    HEP hon thuc te va lam nguoi doc tin T17 luon co so.
                  "do duoc am luong bang loudnorm: khong do duoc thi CA giai doan "
-                 "hong (khac T3/T13/T18 von ha xuong khong_kha_dung) "
+                 "hong (khac T3/T13/T17/T18 von ha xuong khong_kha_dung) "
                  "(giai_doan_qc.py:103 · tach_tieng.py:282)",
                  "ban dung khai cach render; thieu thi MAC DINH ve SAO_CHEP "
                  "(giai_doan_qc.py:113)",

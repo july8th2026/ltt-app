@@ -23,6 +23,15 @@ va `auto` la mot ket qua hop le, chi khong phai cai khach chon.
 
 ⇒ Nen phep kiem o day hoi CAU HOI CUOI: *"cai khach bam co nam trong ho so
   khong"*. Do la cau hoi duy nhat mot o chet khong tra loi duoc.
+
+## ⛔ 26/09 (Task 21): chinh o `nguon_loi` DA BI RUT KHOI STUDIO
+
+San pham chi con MOT duong voice->voice, nen o do khong con gi de chon. Tep nay
+GIU nguyen **phep thu bon mat xich** — no van dung cho hai o ngon ngu — va them
+mot bai moi o cuoi muc 2: *o da rut thi truong form cu phai bi BO QUA, ⛔ khong
+duoc thanh loi 400*. ⭐ Do la mat chieu nguoc cua cung mot cau hoi: mot o chet
+la o co ma khong ve dich; mot o DA RUT la o khong co ma van phai khong lam
+hong ai.
 """
 from __future__ import annotations
 
@@ -34,15 +43,17 @@ from tests import test_423_asv_giao_dien as _mt
 
 moi_truong = _mt.moi_truong
 
-#: Ba o lan `gui` noi vao Studio 23/09, + gia tri KHAC mac dinh de doi duoc.
+#: O lan `gui` noi vao Studio 23/09, + gia tri KHAC mac dinh de doi duoc.
 #:
 #: ⛔ Gia tri phai khac mac dinh: `cai_dat.chuan_hoa` co y KHONG ghi khoa mang
-#:    gia tri mac dinh (luat `KHOA_THUA`), nen mot phep kiem nop `auto` se
-#:    khong phan biet duoc "da ve dich" voi "bi vut di".
+#:    gia tri mac dinh (luat `KHOA_THUA`), nen mot phep kiem nop gia tri mac dinh
+#:    se khong phan biet duoc "da ve dich" voi "bi vut di".
+#:
+#: ⛔ Hang `nguon_loi` DA RUT 26/09 (Task 21): o do khong con tren trang. Xem
+#:    `test_o_nguon_loi_DA_RUT_va_truong_form_cu_bi_BO_QUA` duoi day.
 O_MOI = {
     "ngon_ngu_nguon": ("zh", "ngon_ngu_nguon", "zh"),
     "ngon_ngu_dich": ("en", "ngon_ngu_dich", "en"),
-    "nguon_loi": ("ocr", "nguon_loi", "ocr"),
 }
 
 
@@ -73,27 +84,29 @@ def _id_cua(email: str) -> str:
 #  1. O co mat tren trang — va mang DUNG `name` may chu doc
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_trang_Studio_co_DU_ba_o_moi(moi_truong, tmp_path):
+def test_trang_Studio_co_DU_cac_o_moi(moi_truong, tmp_path):
     """⭐ Doc `name=`, khong doc nhan: nhan doi theo ban dich, `name` la hop dong
     voi `routes.tao`."""
     _app, a, _csrf, _b, _cb = moi_truong
     html = a.get("/auto-scan-video").text
 
-    for ten in ("ngon_ngu_nguon", "ngon_ngu_dich", "nguon_loi"):
+    for ten in sorted(O_MOI):
         assert f'name="{ten}"' in html, ten
+    # ⛔ Va o DA RUT phai that su khong con: mot `name="nguon_loi"` con sot lai
+    #    la mot o gui gia tri ma khong ai doc — dung hinh dang "o CHET" mA tep
+    #    nay ton tai de bat, chi la chieu nguoc.
+    assert 'name="nguon_loi"' not in html
 
 
 def test_mien_gia_tri_den_TU_module_chu_khong_go_tay(moi_truong, tmp_path):
     """⛔ Hop dong 22/09 song o `ngon_ngu.py`. Mot danh sach go tay trong Jinja
     la ban thu hai, va no lech ngay lan dau ai do them/bot mot ma."""
-    from apps.auto_scan_video import ngon_ngu, nguon_loi
+    from apps.auto_scan_video import ngon_ngu
 
     _app, a, _csrf, _b, _cb = moi_truong
     html = a.get("/auto-scan-video").text
 
     for ma in ngon_ngu.NGUON_HOP_LE + (ngon_ngu.TU_DOAN,):
-        assert f'value="{ma}"' in html, ma
-    for ma in nguon_loi.CHE_DO_HOP_LE:
         assert f'value="{ma}"' in html, ma
     # ⛔ Va KHONG mot ma dich nao ngoai hop dong (vd `zh` o phia dich).
     assert list(dict(ngon_ngu.cho_giao_dien()["dich"])) == list(
@@ -135,37 +148,18 @@ def test_moi_o_moi_DEU_vao_ho_so_lan_chay(moi_truong, tmp_path, ten):
     assert run.settings.get(khoa) == mong_doi, run.settings
 
 
-def test_nguon_loi_ep_OCR_di_toi_GIAI_DOAN_chep_loi(moi_truong, tmp_path):
-    """🔴 Bai kiem cua chinh loi 23/09: ho so luu `ocr`, va ban doc toan phan
-    ma `giai_doan_chep_loi` dung cho ra `ocr` — khong phai `auto`."""
-    from apps.auto_scan_video import cai_dat, nguon_loi
-    from tests.fixtures import asv_media as fx
+def test_o_nguon_loi_DA_RUT_va_truong_form_cu_bi_BO_QUA(moi_truong, tmp_path):
+    """🔴 **Ba bai gop thanh mot 26/09 (Task 21).** Ba bai cu do ba dieu ve o
+    `nguon_loi`: ep `ocr` co ve dich khong; `auto` co bi bo khi ghi khong; mot
+    gia tri bia ra co bi tu choi o CUA khong. Ca ba **mat doi tuong** — o do da
+    bi rut, va MOT duong duy nhat thi khong con gi de ep, de bo, hay de tu choi.
 
-    fx.require_ffmpeg()
-    _app, a, csrf, _b, _cb = moi_truong
-    chu = _id_cua("asv-a@example.com")
+    ⭐ Cai CON lai la mot bat bien thuc su cua viec RUT mot o: mot khach (hay mot
+       bot, hay mot ho so cu nop lai) van co the gui truong form cu. No phai bi
+       **BO QUA** — ⛔ khong 400, ⛔ khong ghi vao ho so.
 
-    assert _mt._tao_run_cho(a, csrf, tmp_path, nguon_loi="ocr").status_code == 200
-    run = _run_moi_nhat(chu)
-
-    # ⭐ CUNG duong doc ma `giai_doan_chep_loi.chay` dung (`cai.nguon_loi`).
-    cai = cai_dat.tu_ho_so(run.settings)
-    assert cai.nguon_loi == nguon_loi.OCR
-
-
-def test_nguon_loi_AUTO_khong_ghi_khoa_nao(moi_truong, tmp_path):
-    """⛔ Luat `KHOA_THUA`: ho so chon `auto` giu nguyen hinh dang cu — tuc van tay
-    cua nhung lan chay khong dung tinh nang nay KHONG doi.
-
-    🔴 **Bai nay doi ten va doi cach goi ngay 24/09 (Task 5), va do la ket qua
-       DUNG.** Truoc do no ten `..._MAC_DINH_...` va **khong nop `nguon_loi`** —
-       tuc no ngam dua vao "mac dinh la `auto`". Mac dinh nay la **`asr`**
-       (san pham la long tieng voice->voice), nen mot lan chay khong chon gi SE
-       ghi `nguon_loi: asr` — dung nhu no phai the.
-
-    ⇒ Thu `KHOA_THUA` bo di la `auto` (`nguon_loi.CHE_DO_HO_SO_CU`), khong phai
-      "mac dinh hien hanh". Nen bai nay nay **nop `auto` tuong minh**: no kiem mot
-      tinh chat cua luat `KHOA_THUA`, khong kiem mac dinh la gi.
+    ⚠️ Do la mat chieu nguoc cua "o chet": o chet = co o, gia tri khong ve dich.
+       O da rut = khong co o, va gia tri cu ⛔ khong duoc lam hong ai.
     """
     from tests.fixtures import asv_media as fx
 
@@ -173,29 +167,17 @@ def test_nguon_loi_AUTO_khong_ghi_khoa_nao(moi_truong, tmp_path):
     _app, a, csrf, _b, _cb = moi_truong
     chu = _id_cua("asv-a@example.com")
 
-    assert _mt._tao_run_cho(a, csrf, tmp_path,
-                            nguon_loi="auto").status_code == 200
-    assert "nguon_loi" not in (_run_moi_nhat(chu).settings or {})
-
-
-def test_nguon_loi_bia_ra_bi_tu_choi_O_CUA(moi_truong, tmp_path):
-    """Truoc credit, khong phai o phut thu muoi."""
-    from tests.fixtures import asv_media as fx
-
-    fx.require_ffmpeg()
-    _app, a, csrf, _b, _cb = moi_truong
-    chu = _id_cua("asv-a@example.com")
-
-    r = _mt._tao_run_cho(a, csrf, tmp_path, nguon_loi="doc-tam-linh")
-    assert r.status_code == 400
-    assert _run_moi_nhat(chu) is None
+    for cu in ("ocr", "embedded", "auto", "asr", "doc-tam-linh"):
+        r = _mt._tao_run_cho(a, csrf, tmp_path, ten=f"{cu}.mp4", nguon_loi=cu)
+        assert r.status_code == 200, (cu, r.status_code, r.text[:300])
+        assert "nguon_loi" not in (_run_moi_nhat(chu).settings or {}), cu
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  3. Nap lai cai dat cua lan chay cu — ba o moi phai theo
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_chay_lai_voi_cai_dat_nay_NAP_ca_ba_o_moi(moi_truong, tmp_path):
+def test_chay_lai_voi_cai_dat_nay_NAP_ca_cac_o_moi(moi_truong, tmp_path):
     """🔑 `_ngu_canh_studio` dat mac dinh cho tung o. Quen mot o thi nut "Chay
     lai voi cai dat nay" lang le tra khach ve mac dinh cua o do — va ho khong
     co cach nao biet, vi cac o khac thi dung."""
@@ -205,7 +187,8 @@ def test_chay_lai_voi_cai_dat_nay_NAP_ca_ba_o_moi(moi_truong, tmp_path):
     _app, a, csrf, _b, _cb = moi_truong
 
     r = _mt._tao_run_cho(a, csrf, tmp_path, ngon_ngu_nguon="zh",
-                         nguon_loi="ocr", preset="smart_localize")
+                         ngon_ngu_dich="en", che_do_giong="AUTO_MATCH",
+                         giong_id="", preset="smart_localize")
     assert r.status_code == 200, r.text[:400]
     run_id = str(r.url).rstrip("/").rsplit("/", 1)[-1]
 
@@ -215,7 +198,7 @@ def test_chay_lai_voi_cai_dat_nay_NAP_ca_ba_o_moi(moi_truong, tmp_path):
     #    ve DINH DANG trong khi cau hoi la ve GIA TRI.
     import re
     assert re.search(r'value="zh"\s+selected', html), "nguon zh khong duoc nap lai"
-    assert re.search(r'value="ocr"\s+checked', html), "nguon_loi ocr khong duoc nap lai"
+    assert re.search(r'value="en"\s+selected', html), "dich en khong duoc nap lai"
 
 
 # ══════════════════════════════════════════════════════════════════════════════

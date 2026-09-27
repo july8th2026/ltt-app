@@ -543,16 +543,42 @@ class TestChuanHoaVanBan:
         giong_noi.doc_mot_doan("xin\u200bchao")
         assert "\u200b" not in nhan["chu"]
 
-    def test_do_do_dai_SAU_khi_chuan_hoa_chu_khong_truoc(self):
+    def test_do_do_dai_SAU_khi_chuan_hoa_chu_khong_truoc(self, monkeypatch):
         """⚠️ Chuẩn hoá có thể làm văn bản **dài ra**. Đo trước rồi chuẩn hoá
-        sau là đo nhầm cái sẽ không được đọc."""
-        import inspect
+        sau là đo nhầm cái sẽ không được đọc.
 
+        🔴 **Bản cũ đo CÁCH GÕ, không đo tính chất** — nó `inspect.getsource`
+           rồi so vị trí hai chuỗi trong thân `doc_mot_doan`. Task 25 tách phép
+           chuẩn hoá ra `giong_noi.chu_se_doc` (một luật, một chỗ khai, để cửa
+           chần ở `giai_doan_giong` dùng CHÍNH nó) ⇒ chuỗi biến mất khỏi thân
+           hàm và bánh cóc báo đỏ **cho một thay đổi không đổi tính chất nào**.
+           Đúng họ lỗi `banh-coc-do-cach-go-thay-vi-do-tinh-chat`.
+
+        ⭐ Bản này đo **hành vi**: `"CPU"` -> `"xi pi diu"`, nên 300 lần `CPU`
+           là **1.200** ký tự thô (dưới trần 1.500) và **3.000** ký tự sau chuẩn
+           hoá (vượt trần). Đo ngày 27/09/2026. Một bản đo độ dài TRƯỚC khi
+           chuẩn hoá sẽ **nhận** đoạn này rồi đẩy 3.000 ký tự sang engine.
+        """
         from apps.auto_scan_video import giong_noi
+        from apps.ltt_voice import features as vf
+        from apps.ltt_voice.tham_so_cong_khai import TRAN_MOI_LUOT_SINH
 
-        ma = inspect.getsource(giong_noi.doc_mot_doan)
-        assert ma.index("chuan_hoa_van_ban") < ma.index("TRAN_MOI_LUOT_SINH", ma.index("chuan_hoa_van_ban")), (
-            "do do dai truoc khi chuan hoa")
+        # ⭐ Ban gia NEM neu bi goi: phep kiem noi rang tran duoc do TRUOC khi
+        #    ra engine, nen engine ⛔ khong duoc cham toi. Va no lam vui long
+        #    banh coc `test_428` (⛔ khong goi engine nang ma khong rao chan).
+        def chan(*a, **kw):
+            raise AssertionError("da goi may sinh tieng voi doan vuot tran")
+
+        monkeypatch.setattr(vf, "goi_cong", chan)
+
+        tho = " ".join(["CPU"] * 300) + "."
+        assert len(tho) <= TRAN_MOI_LUOT_SINH, "mau phai DUOI tran khi con tho"
+        assert len(giong_noi.chu_se_doc(tho)) > TRAN_MOI_LUOT_SINH, \
+            "mau phai VUOT tran sau chuan hoa - khong thi phep kiem vo nghia"
+
+        with pytest.raises(giong_noi.GiongError) as loi:
+            giong_noi.doc_mot_doan(tho)
+        assert str(TRAN_MOI_LUOT_SINH) in str(loi.value)
 
     def test_KHONG_dung_chuan_bi_van_ban_vi_no_CHIA_DOAN(self):
         """⛔ `features.chuan_bi_van_ban` vừa chuẩn hoá **vừa chia đoạn**, và

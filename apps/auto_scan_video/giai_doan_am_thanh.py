@@ -99,12 +99,38 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             raise nhap_media.MediaError(_t('Nhạc nền sai số kênh.'))
 
         goc_tt = nhap_media.soi(nguon)
-        if abs(tt["thoi_luong"] - goc_tt["thoi_luong"]) > 0.5:
+        # 🔴 So voi LUONG TIENG, ⛔ khong voi CONTAINER (sua 27/09).
+        #
+        #    `rut_ban_day_du` chay `-vn`, nen ban nen dai bang **luong tieng**.
+        #    `thoi_luong` cua container thi la max(hinh, tieng) — mot dai luong
+        #    KHAC. Do that: phim 5,0 s hinh + 3,5 s tieng ⇒ ban nen 3,506 s, lech
+        #    container 1,49 s ⇒ nem *"Nhac nen lech thoi luong"*, mot thong bao
+        #    chi tay vao BAN NEN trong khi loi nam o PHEP SO. Va no lech mot
+        #    chieu: hinh dai hon tieng thi bao hong, nguoc lai thi khong.
+        #
+        # ⚠️ `None` = luong **khong khai** `duration` (MP4 duoc phep bo qua) —
+        #    ⛔ khong phai `0`. Khi khong khai thi container la thu duy nhat ta
+        #    co, nen quay ve no; `or` se gop hai trang thai nay lai.
+        #    (`.get`: `soi()` luon khai khoa nay, nhung cho noi nay cung nhan
+        #     nhung ban `soi` da bi thay o phep kiem — mot dict THIEU khoa la
+        #     mot hinh dang that o bien nay, va no cung nghia la "khong khai".)
+        goc_tieng = goc_tt.get("thoi_luong_tieng")
+        moc_goc = float(goc_tt["thoi_luong"] if goc_tieng is None else goc_tieng)
+        if abs(tt["thoi_luong"] - moc_goc) > 0.5:
             # Lech thoi luong o day se lam moc thoi gian cua ban long tieng
             # troi so voi hinh — va no troi cang luc cang xa ve cuoi.
             raise nhap_media.MediaError(_t('Nhạc nền lệch thời lượng so với bản gốc.'))
 
         am = tach_tieng.do_am_luong(nen)
+
+        # 🔴 KHOA VANG khac KHOA RONG (27/09). `cao_do.f0_trung_vi_va_ly_do` tra
+        #    `(0.0, "")` cho mot video **im lang that** — mot trang thai CO NGHIA.
+        #    Nen mot `ket_qua` khong khai `f0_ly_do` chut nao (ban gia lap demucs
+        #    trong bo test lam dung the) se duoc doc thanh *"da do: khong co
+        #    giong"* thay vi *"khong ai do"* — va gate
+        #    `f0_trung_vi_khac_0_tren_phim_co_tieng` doc chinh hai chu so do.
+        f0_ly_do = (str(ket_qua["f0_ly_do"] or "") if "f0_ly_do" in ket_qua
+                    else "tien trinh tach khong khai f0_ly_do")
 
         checksum_nguon = assets.bam_tep(nguon)
         vt = tach_tieng.van_tay_tach(
@@ -146,7 +172,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 # ⭐ VI SAO `0.0`. `f0_trung_vi = 0.0` vi tep hong va vi thieu
                 #    `torchaudio` doi hai viec khac nhau; mot `0.0` tran khong
                 #    phan biet duoc. Rong = do duoc that.
-                "f0_ly_do": str(ket_qua.get("f0_ly_do") or ""),
+                "f0_ly_do": f0_ly_do,
                 "lufs": am["lufs"],
                 "dinh_that": am["dinh_that"],
                 "thoi_luong": tt["thoi_luong"],

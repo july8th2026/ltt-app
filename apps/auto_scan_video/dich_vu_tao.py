@@ -56,6 +56,12 @@ class LoiCaiDat(features.AsvError):
 #: route tu doc va gan sau khi co run. `dac_diem_giong` khong co: chua cua nao
 #: sinh ra no. `schema`/`voice_id` la khoa do `cai_dat.chuan_hoa` tu viet — nhan
 #: lai de mot ho so doc tu run cu nop lai duoc nguyen ven.
+#:
+#: 🔑 **`nguon_loi` nam o day du no KHONG con la dieu khien nao** (Task 21,
+#:    26/09). Chinh vi cau tren: mot ho so doc tu run cu nop lai phai di qua cua
+#:    NGUYEN VEN. Bo ten nay khoi danh sach lam `dung_cai_dat` tu choi ho so cu
+#:    voi cau *"Cai dat co truong la"* — tuc bien mot viec DON thanh mot loi cho
+#:    khach. Gia tri duoc doc, ghi log, roi VUT (xem duoi).
 KHOA_NHAN = frozenset({
     "timing_mode", "preset", "che_do_giong", "giong_id", "ngon_ngu_nguon",
     "ngon_ngu_dich", "vung", "cat", "lop_phu", "tu_dien", "phu_de", "am_thanh",
@@ -129,20 +135,15 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
     except ngon_ngu_mod.NgonNguError as exc:
         raise LoiCaiDat(str(exc)) from None
 
-    # Nguon loi thoai (auto|embedded|ocr|asr) — kiem o CUA, truoc credit.
-    # ⭐ Duong YEU CAU MOI ⇒ mac dinh HIEN HANH (`asr` tu 24/09, `3d6feea3`).
-    #    Khac han duong DOC ho so da luu, noi khoa vang mat nghia la `auto` —
-    #    xem `nguon_loi.CHE_DO_HO_SO_CU`.
+    # ⛔ `nguon_loi` KHONG con la mot dieu khien (Task 21, 26/09): MOT duong duy
+    #    nhat voice->voice. Khoa van nam trong `KHOA_NHAN` — xem chu thich o do —
+    #    va di qua `chuan_che_do` de mot ho so cu mang `"ocr"`/`"embedded"`/`"auto"`
+    #    duoc GHI MOT DONG LOG roi quy ve `asr`, ⛔ khong nem vao mat khach.
     #
-    # 🔴 **Kiem xong phai GHI.** Tu 23/09 toi truoc ban sua `331b9ca3`, `nl`
-    #    duoc duyet o day roi khong bao gio duoc dat vao `cai_dat` ben duoi —
-    #    mot dieu khien CHET: khach chon "chi dung ASR" hay "chi dung OCR",
-    #    cua nhan, lan chay van di duong `auto`. Ban vá đó (đường ghi ở dưới)
-    #    van giu nguyen o day — chi PHAN TINH `nl` la doi tu `3d6feea3`.
-    nl = (str(tho.get("nguon_loi") or "").strip().lower()
-          or nguon_loi_mod.CHE_DO_MAC_DINH)
-    if nl and nl not in nguon_loi_mod.CHE_DO_HOP_LE:
-        raise LoiCaiDat(_t('Nguồn lời thoại không hợp lệ.'))
+    # ⛔ Khong tu choi gia tri la nua: khi chi con MOT duong thi "gia tri sai" va
+    #    "gia tri cu" khong con phan biet duoc bang gia tri, va mot loi tu choi o
+    #    day chi chan duoc chinh ho so ta vua sinh ra hom qua.
+    nguon_loi_mod.chuan_che_do(tho.get("nguon_loi"))
 
     che_do_giong = (str(tho.get("che_do_giong") or "")
                     or hop_dong_v4.CHE_DO_GIONG_MAC_DINH)
@@ -202,33 +203,17 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
                "che_do_giong": che_do_giong, "giong_id": giong_id,
                "ngon_ngu_nguon": "" if nguon == ngon_ngu_mod.TU_DOAN else nguon,
                "ngon_ngu_dich": dich,
-               # 🔴 **Dong nay tung VANG MAT, va o chon nguon loi thoai vi the
-               #    la mot o CHET tu dau den cuoi.**
-               #
-               #    Phep duyet o tren da co tu lan `ocr`, `cai_dat.tu_ho_so` da
-               #    doc khoa nay, `nguon_loi.dinh_tuyen` da xu ly du bon che do
-               #    — chi mot cho khong noi: ho so dung o day. Nen mot khach ep
-               #    "chu tren hinh" di qua CUA khong mot loi nao, roi lan chay
-               #    van chay `auto`.
-               #
-               # ⚠️ Kieu hong nay khong the keu: moi phep kiem don le deu xanh,
-               #    va ket qua `auto` la mot ket qua hop le — chi khong phai cai
-               #    khach chon. No chi lo ra khi ai do doi soat O GIAO DIEN voi
-               #    HO SO DA LUU, va do la viec cua lan `gui`.
-               #
-               # ⭐ `chuan_hoa` tu bo khoa nay khi no bang `auto` (luat
-               #    `KHOA_THUA`), nen ho so cua nhung lan chay khong ep nguon
-               #    giu nguyen hinh dang cu — van tay khong doi.
-               "nguon_loi": nl,
                "vung": ds_vung,
                "tu_dien": bang_tu_dien,
                # ⚠️ Bi danh cu, xem `cai_dat.KHOA_BI_DANH_GIONG`.
                "voice_id": giong_id}
     # ⛔ L4 cua `cat_dau_cuoi` + luat `KHOA_THUA`: khong dung thi KHONG ghi khoa.
-    #    `cai_dat.chuan_hoa` (dong 203-205) tu bo `nguon_loi` khi no bang mac
-    #    dinh, nen o day chi can dua gia tri da duyet qua.
-    if nl:
-        cai_dat["nguon_loi"] = nl
+    #
+    # 🔴 **`nguon_loi` ⛔ KHONG duoc ghi vao day nua** (Task 21, 26/09). Tu 23/09
+    #    den `331b9ca3` no da tung bi duyet-roi-khong-ghi, va do la loi G-01. Nay
+    #    no bi CO Y khong ghi vi mot ly do khac han: khong con gia tri nao de ghi.
+    #    ⛔ Dung doc dong nay nhu mot lan tai pham G-01 — ban sua do la "kiem xong
+    #    phai GHI", con day la "khong con gi de kiem".
     if cua_so_cat:
         cai_dat["cat"] = [cua_so_cat[0], cua_so_cat[1]]
     if ds_lop_phu:

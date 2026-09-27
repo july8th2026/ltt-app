@@ -130,8 +130,9 @@ from apps.auto_scan_video import ngon_ngu as _ngon_ngu
 #:      3,35    dai [3,04 ; 3,51]   giong san pham, do lai 23/09/2026
 #:
 #:    Hai dai chong nhau gan het, hai trung vi lech 2% ⇒ **trong nhieu**. Giu ban
-#:    **moi hon** va **da noi vao san pham** (`nan_cho_vua.loi_nhac_nan` qua
-#:    `ngon_ngu.HE_SO_MUC_TIEU`). Con so `3,284` nghi huu — lich su giu o day.
+#:    **moi hon** va **da noi vao san pham** (`nan_cho_vua.loi_nhac_nan_lo` qua
+#:    `ngon_ngu.HE_SO_MUC_TIEU`; nguoi goi cu `loi_nhac_nan` da xoa 26/09, Task
+#:    22). Con so `3,284` nghi huu — lich su giu o day.
 #:
 #: ⛔ Khong phai 9 ky tu/giay cua Netflix — do la toc do **DOC** cua phu de.
 #: ⛔ Va khong phai `4,5` — con so cu do da **lam hong mot lan chay that**
@@ -515,6 +516,31 @@ def la_dong_theo_sau(dong) -> bool:
     return bool((dong or {}).get(KHOA_GOP_VAO))
 
 
+#: Dong KHOANG LANG: `giai_doan_giong` thay mot doan ⛔ khong con chu (sau chuan
+#: hoa) bang mot khoang lang dung do dai khe. Xem `giai_doan_giong` muc `[F0]`.
+KHOA_IM_LANG = "im_lang"
+
+
+def la_dong_im_lang(dong) -> bool:
+    """Dong `ban_ke` nay la mot KHOANG LANG thay the, ⛔ khong phai mot ban doc?
+
+    🔴 **Vi sao la mot ham chu ⛔ khong phai `d.get("im_lang")` tai cho** (Task 25,
+       27/09/2026). Ha nguon phai hoi cau nay o **nhieu** cho, va moi cho hoi sai
+       lai hong mot kieu KHAC:
+
+         `qc_do_luong`  -> ASR mot khoang lang, cham WER voi mot cau chu, ra
+                           `wer ≈ 1.0`, `sua_chua.giong_khong_dat` danh dau, va
+                           **vong sua chay cho mot doan ⛔ khong co gi de doc**;
+         bao cao        -> dem mot khoang lang la mot ban doc ⇒ khach mat thoai
+                           ma ⛔ khong ai biet.
+
+    ⭐ `chu` cua dong im lang **⛔ KHONG rong** (no la chuoi goc, vd toan ky tu vo
+       hinh `U+200B`), nen moi phep loc kieu `if not chu` ⛔ khong bat duoc no.
+       Do la ly do phai co mot co TUONG MINH, va mot ten de hoi no.
+    """
+    return bool((dong or {}).get(KHOA_IM_LANG))
+
+
 def am_tiet_cua(chu: str | None) -> int:
     """Dem am tiet tieng Viet = token cach nhau boi khoang trang.
 
@@ -569,6 +595,12 @@ def no_ban_ke(dong_dau: dict, thanh_vien: Sequence[dict]) -> list[dict]:
             theo["he_so_co_gian"] = dong_dau["he_so_co_gian"]
         if dong_dau.get("tu_cu"):
             theo["tu_cu"] = True
+        # ⭐ `im_lang` la tinh chat cua CA TEP, cung ly do voi `he_so_co_gian`:
+        #    mot nhom im lang thi moi thanh vien cua no im lang. Thieu dong nay
+        #    thi bao cao dem duoc 1 doan im lang cho mot nhom 3 `ma` — tuc khach
+        #    mat thoai o hai `ma` ma ⛔ khong ai dem (Task 25).
+        if dong_dau.get("im_lang"):
+            theo["im_lang"] = True
         ra.append(theo)
     return ra
 

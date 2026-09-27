@@ -84,9 +84,38 @@ KHOA_CAN: dict[str, tuple[str, ...]] = {
     # `giai_doan_giong.chay` -> `tom_tat` (phang vao outputs boi `thi_hanh`)
     "voice_synthesis": ("tung_luot_doc", "giay_tts", "giay_llm_nan",
                         # Đ4 — `giai_doan_giong.py` XUAT no o cho `return`
-                        "so_doan_nan_oan"),
+                        "so_doan_nan_oan",
+                        # ⭐ Đ7 — CAI GIA cua quyet dinh "doan khong chu thi BO
+                        #    QUA" (Task 25, 27/09). Quyet dinh do la DUNG cho san
+                        #    pham — phim khach that SE co khe chi nhac — nhung no
+                        #    lam khach MAT mot doan thoai, nen no phai DEM DUOC.
+                        #    ⛔ Mot con so duoc GHI ma ⛔ khong ai DOC thi no chi la
+                        #    mot bao cao; cho nay la cho no duoc doc.
+                        "so_doan_im_lang", "doan_im_lang"),
     # `giai_doan_thoi_gian.chay` -> `tom_tat["master"] = do_duoc`
     "timing_align": ("master",),
+    # `giai_doan_qc.tom_tat_kem_khong_do` -> `tom_tat` (giai_doan_qc.py:326)
+    #
+    # 🔴 **Ba khoa nay duoc GHI tu truoc ma ⛔ KHONG AI DOC** (do 27/09: khong mot
+    #    cho nao trong `apps/`, `server/`, `platform_core/`, `tools/` doc chung).
+    #    Chung ton tai de tra dung cau hoi *"cong PHAT HANH bao DAT sau khi do
+    #    duoc bao nhieu phep?"* — mot luot thieu `libvmaf`, ffmpeg bam khong noi
+    #    luong hinh, va giai ma het thoi gian se ha T3/T13/T17/T18 xuong
+    #    `KHONG_AP_DUNG` roi in `dat: True, so_muc_hong: 0`. Mot chu DAT dung mot
+    #    minh tren nhung phep do chua he chay.
+    #
+    # ⭐ Va day cung la lan mo rong banh coc hai chieu: truoc hom nay `KHOA_CAN`
+    #    chi phu **2 trong 13** giai doan (`voice_synthesis`, `timing_align`), nen
+    #    `test_408` chi canh duoc hai cho. `qc` la giai doan thu ba, va no la giai
+    #    doan duy nhat co the noi "DAT" ma ⛔ khong do gi.
+    #
+    # ⚠️ Ba khoa nay duoc ghi **vo dieu kien** (ke ca khi rong) nen dat chung o
+    #    day ⛔ khong lam luot binh thuong bao thieu — chung chi thieu khi giai
+    #    doan `qc` chay bang mot duong ⛔ khong di qua `tom_tat_kem_khong_do`.
+    "qc": ("qc_so_muc_khong_do", "qc_muc_khong_do", "qc_ly_do_khong_do",
+           # ⭐ Đ8 doc CA loi tuyen bo LAN pham vi cua no. `qc_ky_thuat_dat` mot
+           #    minh ⛔ khong tra loi duoc *"DAT tren bao nhieu phep do that?"*.
+           "qc_ky_thuat_dat"),
 }
 
 #: 🔴 **Khoa `tom_tat` ma cong cu nay CO Y ⛔ khong doc** — chieu NGUOC cua banh
@@ -122,6 +151,15 @@ KHOA_BO_QUA_CO_Y: dict[str, tuple[str, ...]] = {
         "che_do", "so_doan", "so_doan_bi_cat", "so_doan_tang_toc",
         "he_so_toc_lon_nhat", "ket_cuoi_ms", "troi_toi_da_ms",
     ),
+    "qc": (
+        # Bao cao phang cua chinh cong QC — Đ8 doc `qc_ky_thuat_dat` cong
+        # `qc_so_muc_khong_do`, la cap tra loi duoc cau hoi ve PHAM VI. Hai khoa
+        # duoi dem MUC HONG, mot cau hoi khac va da co nguoi tra loi (bao cao QC
+        # di thang ra man khach), nen o day chung la sieu du lieu.
+        "qc_muc_hong", "qc_so_muc_hong",
+        # Phien ban bo phep kiem — sieu du lieu cua luot chay.
+        "qc_phien_ban",
+    ),
 }
 
 #: Khoa nam TRONG `outputs["master"]` cua `timing_align` — mot cau truc LONG,
@@ -154,6 +192,7 @@ def doi_soat(outputs_theo_giai_doan: dict[str, dict]) -> dict:
     """
     giong = dict(outputs_theo_giai_doan.get("voice_synthesis") or {})
     thoi = dict(outputs_theo_giai_doan.get("timing_align") or {})
+    qc_o = dict(outputs_theo_giai_doan.get("qc") or {})
     master = dict(thoi.get("master") or {})
 
     # ── Đ1/Đ2: sai so thoi luong doc, tren TUNG LUOT DOC ────────────────────
@@ -194,6 +233,12 @@ def doi_soat(outputs_theo_giai_doan: dict[str, dict]) -> dict:
         # Đ3 — giai doan giong cham vi cai gi
         "giay_tts": giong.get("giay_tts"),
         "giay_llm_nan": giong.get("giay_llm_nan"),
+        # ⭐ Đ7 — bao nhieu doan bi BO QUA (khoang lang) va la nhung doan nao.
+        #    ⚠️ `0` nghia la "do duoc va ⛔ khong doan nao bi bo"; `None` nghia la
+        #    "giai doan ⛔ khong ghi con so nay" — hai trang thai KHAC nhau, va
+        #    `chan_doan` o duoi noi ro cai nao.
+        "so_doan_im_lang": giong.get("so_doan_im_lang"),
+        "doan_im_lang": giong.get("doan_im_lang"),
         # ⭐ Đ4 — so doan `giay > khe` NHUNG `giay <= ngan_sach`, tuc tung bi
         #    TINH TIEN OAN mot luot LLM nan truoc ban sua thu tu. `0` = do duoc
         #    va khong doan nao; `None` = giai doan chua chay.
@@ -203,6 +248,25 @@ def doi_soat(outputs_theo_giai_doan: dict[str, dict]) -> dict:
         # Đ6 — nac (c): chap nhan lech nhung ⛔ khong im
         "so_doan_lech_cuoi": master.get("so_doan_lech_cuoi"),
         "giay_lech_cuoi": master.get("giay_lech_cuoi"),
+        # ── Đ8: cong PHAT HANH noi DAT sau khi do duoc bao nhieu phep? ───────
+        #
+        # 🔴 `giai_doan_qc` GHI ba khoa nay tu truoc (`tom_tat_kem_khong_do`), va
+        #    do 27/09: ⛔ KHONG mot cho nao trong `apps/`, `server/`,
+        #    `platform_core/`, `tools/` doc chung. Mot con so duoc ghi ma ⛔ khong
+        #    ai doc thi no la mot bao cao, ⛔ khong phai mot phep kiem.
+        #
+        # ⚠️ Vi sao no dang gia: `dat = not hong`, va `KHONG_AP_DUNG` ⛔ khong
+        #    phai `hong`. Mot luot thieu `libvmaf` + ffmpeg bam khong noi luong
+        #    hinh + giai ma het thoi gian ⇒ T3/T13/T17/T18 deu ha xuong
+        #    `KHONG_AP_DUNG`, va bao cao in `dat: True, so_muc_hong: 0`. Tuc
+        #    **DAT sau khi ⛔ khong do gi** — dung ho loi cua gate o `f4c4f064`.
+        #
+        # ⭐ Doc CA HAI: `qc_ky_thuat_dat` (loi tuyen bo) va `qc_so_muc_khong_do`
+        #    (pham vi cua no). Mot minh cai dau ⛔ khong tra loi duoc cau hoi;
+        #    mot minh cai sau thi ⛔ khong ai biet no co dang lo hay khong.
+        "qc_ky_thuat_dat": qc_o.get("qc_ky_thuat_dat"),
+        "qc_so_muc_khong_do": qc_o.get("qc_so_muc_khong_do"),
+        "qc_muc_khong_do": qc_o.get("qc_muc_khong_do"),
     }
 
 
@@ -351,6 +415,62 @@ def nhat_quan(cac_cau: list[str], *,
 #  Lop CSDL — dung map `{ten_giai_doan: outputs}` roi giao cho lop TINH
 # ══════════════════════════════════════════════════════════════════════════════
 
+#: Ba ly do KHAC LOAI mà một giá trị `None` có thể mang — và chỉ ly do thứ ba là LỖI.
+THIEU_GIAI_DOAN = "thieu_giai_doan"
+CHUA_XONG = "chua_xong"
+THIEU_KHOA = "thieu_khoa"
+
+
+def chan_doan(outputs_theo_giai_doan: dict[str, dict],
+              trang_thai_theo_giai_doan: dict[str, str | None]) -> dict[str, str]:
+    """`{ten_giai_doan: ly_do}` — vi sao giai doan nay CHUA cap duoc so. `""` = du.
+
+    🔴 **`None` gop BA trang thai khac loai, va dung cai gop ay tung lam mot dung cu
+       do im lang khong do gi ma van xanh** (`tools/asv_doi_soat.py` ban 26/09 doc
+       `gd["tom_tat"]` — mot khoa ⛔ khong ton tai — nen tra `None` cho MOI phep do):
+
+      1. `thieu_giai_doan` — ⛔ khong co dong `AsvStage` nao: luot chay chua tới đó.
+         **Binh thuong**, ⛔ khong phai loi.
+      2. `chua_xong:<trang_thai>` — co dong nhung chua `succeeded`: **cung binh thuong**.
+      3. `thieu_khoa:<a,b>` — giai doan **DA XONG** ma khoa can ⛔ **khong co trong
+         `outputs`**. ⭐ Chi ca nay la LOI, va no la loi o **phia GHI** hoac o **bang
+         `KHOA_CAN`** — ⛔ khong bao gio la "chua tới lúc".
+
+    ⇒ In ly do ra ben canh con so, de mot bang toan `None` tu khai bao no la
+      *"chua chay tới"* hay *"dung cu hong"*. Mot lan chay that rat dat; doc sai
+      ket qua cua no dat hon.
+    """
+    ra: dict[str, str] = {}
+    for ten, can in KHOA_CAN.items():
+        tt = trang_thai_theo_giai_doan.get(ten)
+        if tt is None:
+            ra[ten] = THIEU_GIAI_DOAN
+            continue
+        if str(tt) != "succeeded":
+            ra[ten] = f"{CHUA_XONG}:{tt}"
+            continue
+        out = outputs_theo_giai_doan.get(ten) or {}
+        thieu = [k for k in can if k not in out]
+        ra[ten] = f"{THIEU_KHOA}:{','.join(thieu)}" if thieu else ""
+    return ra
+
+
+def trang_thai_tung_giai_doan(db, run_id: str) -> dict[str, str | None]:
+    """`{ten_giai_doan: trang_thai}` — `None` khi ⛔ khong co dong nao.
+
+    ⚠️ Tach khoi `outputs_tung_giai_doan` vi ham do **lam phang `None` thanh `{}`**:
+       sau no thi *"chua co giai doan"* va *"giai doan xong voi outputs rong"* la
+       cung mot thu — dung cai mat mat ma `chan_doan` ton tai de vá.
+    """
+    from apps.auto_scan_video import features
+
+    ra: dict[str, str | None] = {}
+    for ten in KHOA_CAN:
+        s = features.giai_doan_theo_ten(db, run_id, ten)
+        ra[ten] = None if s is None else str(s.status)
+    return ra
+
+
 def outputs_tung_giai_doan(db, run_id: str) -> dict[str, dict]:
     """`{ten_giai_doan: dict(outputs)}` cho dung cac giai doan `KHOA_CAN` can.
 
@@ -395,9 +515,24 @@ def main(argv: list[str]) -> int:
             print(f"KHONG THAY run {run_id!r} trong CSDL nay.")
             return 1
 
-        ra = doi_soat(outputs_tung_giai_doan(db, run.id))
+        outs = outputs_tung_giai_doan(db, run.id)
+        ra = doi_soat(outs)
         for khoa, gt in ra.items():
             print(f"{khoa}={gt}")
+
+        # ⭐ Vi sao mot phep do la `None` — xem docstring `chan_doan`.
+        ly_do = chan_doan(outs, trang_thai_tung_giai_doan(db, run.id))
+        print("\n-- NGUON: vi sao mot phep do co the la None --")
+        loi = False
+        for ten, vi_sao in ly_do.items():
+            if not vi_sao:
+                print(f"   {ten}: du khoa")
+            else:
+                print(f"   {ten}: {vi_sao}")
+                loi = loi or vi_sao.startswith(THIEU_KHOA)
+        if loi:
+            print("\n🔴 Co giai doan DA XONG ma THIEU khoa can => loi o phia GHI"
+                  " hoac o bang KHOA_CAN, ⛔ khong phai 'chua chay tới'.")
         return 0
     finally:
         try:

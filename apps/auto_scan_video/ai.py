@@ -199,11 +199,22 @@ HO_SO_DICH = ThaoTac("ho_so_dich", False, ("the_loai", "bang_dai_tu"), pha="15",
 #: 🔴 **Truoc pha 27 truong bat buoc o day la `("canh",)`, va no mo ta mot hinh
 #:    dang phan hoi ma khong ai bao gio yeu cau.**
 #:
-#:    `hieu_canh.loi_nhac_canh` bao model tra ve mot doi tuong PHANG — `loai`,
+#:    Loi nhac `doc_canh` bao model tra ve mot doi tuong PHANG — `loai`,
 #:    `chu_the`, `de_xuat`, `do_tin`, ... — khong co khoa `canh` nao. Nen mot
 #:    phan hoi lam **dung y nguyen loi dan** bi `doc_json` tu choi voi "thieu
 #:    truong bat buoc ['canh']". Khai bao va loi dan mo ta hai luoc do khac
 #:    nhau, va khong ai phat hien vi khong nguoi goi nao ton tai de chay no.
+#:
+#: ⚠️ **26/09/2026 (Task 22) — loi nhac ay KHONG con o `hieu_canh.py`.**
+#:    `hieu_canh.loi_nhac_canh` + `doc_hieu_canh` + `van_tay_canh` +
+#:    `ngu_canh_cho_canh` da bi XOA: Task 10 (`defba7b2`) thay VLM bang phep do
+#:    TAT DINH o `edit_plan`, nen ⛔ khong mot giai doan nao con soan loi nhac
+#:    `doc_canh`. **Pham vi cua ban khai nay hom nay** la mot thu duy nhat:
+#:    `tools/do_llm_cong_asv.py` (bo do cong LLM noi bo) tu soan mot loi nhac
+#:    THAM DO hinh dang phang nay roi doc lai bang `doc_ket_qua(kq, DOC_CANH)`.
+#:    ⇒ Hai truong duoi day van la hop dong THAT, chi la nguoi di tren duong
+#:    la nguoi VAN HANH chu khong phai khach. `test_2025` + `test_2050` ghim
+#:    dieu nay. ⭐ DIEU KIEN XOA han: ngay bo do do thoi do `doc_canh`.
 #:
 #: ⭐ Hai truong duoi day la hai truong `_quyet_dinh_mot_canh` THUC SU doc.
 #:    `loai`/`chu_the`/`ly_do` la thu de nguoi doc bao cao hieu quyet dinh, nen

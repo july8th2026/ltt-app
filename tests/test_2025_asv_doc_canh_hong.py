@@ -7,12 +7,29 @@ va moi luot hong deu la mot phan hoi HTTP thanh cong co hinh dang sai —
 5 lan `"giữ"` (co dau), 2 lan tra ve mot MANG, 1 lan boc `{"objects": [...]}`.
 So lieu day du: `docs/auto_scan_video_final/L_FIX_TOC_DO.md`.
 
-  §1 `chuan_de_xuat`     — `"giữ"` la CUNG mot gia tri voi `giu`, khong phai rac
-  §2 loi nhac            — mot KHUNG JSON, va `de_xuat` la MA chep y nguyen
   §3 thu lai             — phan hoi sai hinh dang duoc hoi lai MOT lan
   §4 do phu bang chung   — `smart_localize` khong duoc am tham thanh "giu het"
 
 ⛔ Khong phep kiem nao o day goi model that.
+
+🔴 **26/09/2026 (Task 22) — §1 va §2 DA BI XOA. Cai gia, ghi ra:**
+
+   * **§1 `chuan_de_xuat`** (*`"giữ"` co dau la CUNG mot gia tri voi `giu`*) do
+     mot ham chi ton tai de phuc vu `doc_hieu_canh`; ca hai bi xoa cung duong
+     VLM cua `edit_plan` (Task 10, `defba7b2`). ⭐ **Do phu KHONG mat:** phep bo
+     dau that nam o `hieu_canh.chuan_ma` — van song — va nguoi dung CON LAI cua
+     no (`qc_ai.chuan_dat`) duoc `test_2120` do bang **dung bo mau tieng Viet co
+     dau** (`"đạt"`, `"Đạt"`, `"không đạt"`, `"KHÔNG"`) cong bo mau rac
+     (`"co le"`, `0.5`, `[]`). Tuc bai hoc R-05 con nguyen nguoi do, chi doi
+     cua vao.
+   * **§2 loi nhac** (*khung JSON, `de_xuat` la MA chep y nguyen*) do
+     `hieu_canh.loi_nhac_canh` — da xoa. ⚠️ **Do phu MAT that o day**: loi nhac
+     `doc_canh` duy nhat con lai la phep tham do trong
+     `tools/do_llm_cong_asv.py`, va ⛔ khong phep kiem nao doc no. Cai gia dung
+     bang mot cau: neu ai do lam hong loi nhac tham do ay thi bo do cong LLM se
+     dem mot `LuocDoSai` cua CHINH TA thanh mot loi cua cong — mot so lieu van
+     hanh sai, ⛔ khong phai mot hoa don cua khach. ⭐ DIEU KIEN DONG LAI: ngay
+     mot giai doan san pham lai soan loi nhac `doc_canh`.
 """
 from __future__ import annotations
 
@@ -27,70 +44,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from apps.auto_scan_video import (ai, canh as canh_mod,  # noqa: E402
                                   giai_doan_ban_bien_tap as gdbbt,
-                                  hieu_canh as hc, hop_dong_v4)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  §1  `de_xuat` co dau van la `de_xuat`
-# ══════════════════════════════════════════════════════════════════════════════
-
-@pytest.mark.parametrize("tho,ra", [
-    # 🔴 Nam luot THAT cua phim nghiem thu tra ve dung chuoi nay.
-    ("giữ", "giu"), ("GIỮ", "giu"), (" Giữ ", "giu"),
-    ("bỏ", "bo"), ("Không chắc", "khong_chac"), ("khong chac", "khong_chac"),
-    ("khong-chac", "khong_chac"),
-    ("giu", "giu"), ("bo", "bo"), ("khong_chac", "khong_chac"),
-])
-def test_de_xuat_co_dau_DUOC_nhan_dung_gia_tri(tho, ra):
-    assert hc.chuan_de_xuat(tho) == ra
-
-
-@pytest.mark.parametrize("tho", ["bu", "", None, "maybe", "đỏ", "giu_lai", 1])
-def test_gia_tri_LA_van_bi_TU_CHOI(tho):
-    """⛔ Chuan hoa nhan dien, khong doan. `"bu"` (1/18 luot that) van la loi."""
-    assert hc.chuan_de_xuat(tho) == ""
-
-
-def test_doc_hieu_canh_NHAN_phan_hoi_co_dau_va_TU_CHOI_gia_tri_la():
-    goc = {"loai": "a", "chu_the": [], "hanh_dong": "", "cam_xuc": "",
-           "quan_trong": 0.8, "de_xuat": "giữ", "do_tin": 0.9,
-           "ly_do": "", "canh_bao": []}
-    import json
-    h = hc.doc_hieu_canh({"noi_dung": json.dumps(goc, ensure_ascii=False)}, "c1")
-    assert h.de_xuat == hc.GIU
-
-    goc["de_xuat"] = "bu"
-    with pytest.raises(hc.HieuCanhError):
-        hc.doc_hieu_canh({"noi_dung": json.dumps(goc, ensure_ascii=False)}, "c1")
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  §2  Loi nhac: mot KHUNG, khong phai mot cau ke ten khoa
-# ══════════════════════════════════════════════════════════════════════════════
-
-def test_loi_nhac_canh_DUA_KHUNG_JSON_va_cam_MANG():
-    van = hc.loi_nhac_canh("canh_0001", "xin chao", 2, {"a": 1})[0]["content"]
-    assert '"de_xuat"' in van and '"do_tin"' in van and '"quan_trong"' in van
-    assert "KHONG phai mang" in van
-    for ma in hc.DE_XUAT:
-        assert f'"{ma}"' in van
-
-
-def test_loi_nhac_canh_NOI_RO_de_xuat_la_MA_khong_phai_chu_tieng_Viet():
-    van = hc.loi_nhac_canh("canh_0001", "", 0, {})[0]["content"]
-    assert "khong them dau tieng Viet" in van
-
-
-def test_doi_loi_nhac_lam_DOI_van_tay_canh():
-    """⛔ Giu van tay = lan chay sau dung lai ket qua sinh boi loi nhac CU."""
-    assert hc.PHIEN_BAN_HIEU_CANH >= 4
-    a = hc.van_tay_canh("c1", "x", 2, 0.65)
-    truoc = hc.PHIEN_BAN_HIEU_CANH
-    try:
-        hc.PHIEN_BAN_HIEU_CANH = truoc + 1
-        assert hc.van_tay_canh("c1", "x", 2, 0.65) != a
-    finally:
-        hc.PHIEN_BAN_HIEU_CANH = truoc
+                                  hop_dong_v4)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -451,3 +405,172 @@ def test_phien_ban_ffmpeg_vao_VAN_TAY_ban_bien_tap():
     assert '"ffmpeg"' in ma
     # Khoa chi duoc gan trong nhanh CO bang chung.
     assert "if hieu:" in ma[:ma.index('"ffmpeg"')]
+
+
+# ── Luat "canh KHONG thoai + hinh KEM => CAT" phai song HET duong ─────────────
+#
+# 🔴 **Task 26 (27/09/2026).** `test_448` chot *"preset cat phai cat it nhat MOT
+#    canh khong co thoai"* va bai do da DO: cung phim mau, cung 4 canh, cung do
+#    phu 1,0, luot 25/09 cat 1 canh va luot 27/09 cat 0. Phep do cho ket luan
+#    **HE QUA CO CHU Y** cua `defba7b2`, ⛔ khong phai hoi quy — canh bi cat hom
+#    25/09 (`canh_0004`) KHONG co thoai that, nhung no bi cat vi **ban thay the
+#    VLM** tra `de_xuat="bo", do_tin=0.9` cho MOI canh khong thoai; hinh cua no
+#    (`testsrc`) co **0,000 s** khung den / dung hinh. Tieu chi chu du an la mot
+#    PHEP HOI (*khong thoai* VA *hinh kem*), nen `so_cat = 0` la dung tren phim ay.
+#
+# ⚠️ Nhung khi ky vong do roi khoi `test_448`, ⛔ khong con phep kiem nao noi
+#    duoc preset `cat_thong_minh` CO cat. Ba bai duoi day tra lai dieu do, va
+#    chung do o BA cho khac nhau — ⛔ khong bai nao thay duoc bai nao:
+#
+#      1. `..._BAN_BIEN_TAP_that_su_CAT`   `de_xuat = bo` co thanh mot lat cat
+#                                          THAT trong `BanBienTap` khong
+#      2. `..._NGUONG_BO_khong_am_tham...` hai nguong, va ai phu quyet ai
+#      3. `..._tren_PHIM_DUNG_SAN`         phep do THAT bang ffmpeg, ⛔ khong mock
+#
+# ⭐ Vi sao (1) can ton tai du `test_2025` da do `de_xuat` va `test_438` da do
+#    `lap_ban`: **⛔ khong bai nao noi hai dau voi nhau.** `de_xuat = "bo"` di qua
+#    `_quyet_dinh_mot_canh`, va ham do so `do_tin` mot lan NUA voi
+#    `ban_bien_tap.NGUONG_BO` — mot lop phu quyet chi VO HAI khi hai hang so con
+#    bang nhau. Do la dung lop loi "hai cho khai cung mot dieu, khong ai bat khop".
+
+def test_canh_KHONG_THOAI_va_hinh_KEM_thi_BAN_BIEN_TAP_that_su_CAT(monkeypatch):
+    """⭐ Chot ca CHUOI: `_do_cac_canh` -> `lap_ban` -> mot lat cat co that.
+
+    ⛔ ⛔ Khong dung `de_xuat` lam ket luan: `de_xuat = "bo"` la mot **de nghi**,
+       va thu khach nhan la `BanBienTap.cac_ma_cat`. Giua hai cai do con
+       `_quyet_dinh_mot_canh` (so lai nguong) va `_ap_chinh_sach_an_toan`
+       (san/tran thoi luong) — hai cho deu co the hoan lat cat, lang le.
+    """
+    from apps.auto_scan_video import ban_bien_tap as bt
+
+    ci = _chi_muc(4)                    # bon canh dai 1 s: [0,1) ... [3,4)
+    bg = _ban_ghi_thoai((0.1, 0.9))     # chi canh_0001 co thoai
+    _do_gia(monkeypatch, den=[(2.0, 3.0)], dong=[(2.0, 3.0)])   # canh_0003 den
+
+    hieu, hong = gdbbt._do_cac_canh("phim.mp4", ci, bg)
+    assert hong == []
+    assert {h.ma_canh: h.de_xuat for h in hieu} == {
+        "canh_0001": "giu", "canh_0002": "giu",
+        "canh_0003": "bo", "canh_0004": "giu"}
+
+    ban = bt.lap_ban(preset=hop_dong_v4.PRESET_CAT_THONG_MINH, chi_muc=ci,
+                     hieu_canh=hieu, ban_ghi=bg)
+    assert ban.cac_ma_cat == ("canh_0003",), (
+        "phep do da de nghi bo canh_0003 ma ban bien tap ⛔ khong cat no — "
+        + str(ban.sang_dict()))
+    assert ban.cac_ma_giu == ("canh_0001", "canh_0002", "canh_0004")
+    # ⛔ Va lat cat ⛔ khong duoc bi hoan "de dat san": 3/4 thoi luong con lai.
+    assert "da_hoan_cat" not in ban.ghi_chu, ban.ghi_chu
+
+
+def test_NGUONG_BO_khong_am_tham_phu_quyet_NGUONG_TI_LE_HINH_KEM(monkeypatch):
+    """🔴 `_quyet_dinh_mot_canh` so `do_tin` LAN NUA voi `ban_bien_tap.NGUONG_BO`.
+
+    Voi bang chung tat dinh, `do_tin` **la** `ti_le`, nen ban bien tap chi cat khi
+    `ti_le >= max(NGUONG_TI_LE_HINH_KEM, NGUONG_BO)`. ⇒ `NGUONG_BO` (hang so nghi
+    cho **do tin CHU QUAN cua VLM**) dang lang le lam **san** cho mot dai luong
+    khac ban chat.
+
+    ⚠️ Chu thich cua `NGUONG_TI_LE_HINH_KEM` moi chu du an *"sua con so nay"* sau
+       khi do tren vat lieu that. Neu ha no xuong duoi `NGUONG_BO` thi phep do se
+       de nghi bo, bao cao se ghi `de_xuat: bo`, va ban bien tap van ⛔ khong cat
+       — mot can gat DA XOAY ma ⛔ khong doi gi, dung lop "hai cho khai cung mot
+       dieu". Nen bat bien phai duoc CHOT, chu khong de nguoi sau tu phat hien.
+    """
+    from apps.auto_scan_video import ban_bien_tap as bt
+
+    # ⚠️ Doc HAI hang so THAT ra truoc, vi ca (a) ben duoi phai monkeypatch mot
+    #    trong hai — mot `assert` doc lai bien da bi patch thi do chinh cai patch.
+    nguong_do_that = gdbbt.NGUONG_TI_LE_HINH_KEM
+    nguong_vlm_that = bt.NGUONG_BO
+
+    # (a) Tai hien cai phu quyet im lang: ha nguong phep do xuong 0,30 ma
+    #     `NGUONG_BO` van 0,65 ⇒ `de_xuat = bo` nhung ban ⛔ KHONG cat.
+    ci = _chi_muc(2)
+    bg = _ban_ghi_thoai((0.1, 0.9))                 # canh_0001 co thoai
+    monkeypatch.setattr(gdbbt, "NGUONG_TI_LE_HINH_KEM", 0.30)
+    _do_gia(monkeypatch, den=[(1.0, 1.5)])          # canh_0002: ti_le = 0,5
+    hieu, _ = gdbbt._do_cac_canh("phim.mp4", ci, bg)
+    theo_ma = {h.ma_canh: h for h in hieu}
+    assert theo_ma["canh_0002"].de_xuat == "bo", theo_ma["canh_0002"].ly_do
+    ban = bt.lap_ban(preset=hop_dong_v4.PRESET_CAT_THONG_MINH, chi_muc=ci,
+                     hieu_canh=hieu, ban_ghi=bg)
+    assert ban.cac_ma_cat == (), (
+        "ca nay dang chung minh mot PHU QUYET IM LANG; neu no da het thi bat "
+        "bien (b) duoi day khong con can, va bai kiem nay phai duoc viet lai")
+
+    # (b) ⇒ BAT BIEN: nguong do tin VLM ⛔ khong duoc cao hon nguong phep do,
+    #     neu khong thi `NGUONG_TI_LE_HINH_KEM` la mot can gat chi xoay duoc
+    #     theo MOT chieu.
+    assert nguong_vlm_that <= nguong_do_that, (
+        f"ban_bien_tap.NGUONG_BO = {nguong_vlm_that} cao hon "
+        f"NGUONG_TI_LE_HINH_KEM = {nguong_do_that}: moi canh co ti_le nam giua "
+        f"hai so se duoc de nghi bo roi bi giu lai, im lang")
+
+
+# ── Phep do THAT, ⛔ khong ban thay the ──────────────────────────────────────
+#
+# 🔑 **Vi sao bai duoi day can ffmpeg THAT du da co bon bai mock o tren.** Moi
+#    bai kia thay `qc.do_hinh` bang `_do_gia`, tuc chung do `_khoang_kem` /
+#    `_phan_giao` / nguong — ⛔ khong bai nao do **cho noi** giua `qc.do_hinh` va
+#    `_khoang_kem`. Cho noi do la hai ten khoa: `khoang_den` va `khoang_dong`.
+#    Doi mot trong hai ten (hoac doi `blackdetect`/`freezedetect` sang mot hinh
+#    dang ket qua khac) thi `_khoang_kem` tra ve **rong**, MOI canh ra `ti_le = 0`,
+#    preset cat ⛔ khong cat gi nua — va ca bon bai mock van XANH. Do dung lop
+#    "cho noi hai module vut truong im lang" ma kho da ghi so ba lan.
+
+def _ffmpeg():
+    from tests.fixtures.asv_media import ffmpeg_bin
+
+    return ffmpeg_bin()
+
+
+@pytest.mark.skipif(not _ffmpeg(), reason="may nay khong co ffmpeg")
+def test_cat_canh_KHONG_THOAI_do_bang_ffmpeg_THAT_tren_PHIM_DUNG_SAN(tmp_path):
+    """⭐ **Du lieu DUNG SAN, ⛔ khong ha ky vong.** Mot phim hai canh:
+
+        canh_0001  [0, 6)  `testsrc`        — dong, va CO thoai
+        canh_0002  [6, 9)  `color=black`    — den tron ven, ⛔ KHONG thoai
+
+    ⇒ Preset cat PHAI cat `canh_0002`, va phep do phai KHAI RA ca hai bo loc da
+      no (`toi_den`, `dung_hinh`). Day la ky vong ma `test_448` ⛔ khong con chot
+      duoc tren phim mau cua no (Task 26) — no ⛔ khong bi ha, no doi cho sang
+      mot ban nguon DUNG cho cau hoi nay.
+
+    ⛔ ⛔ Khong mock `qc.do_hinh`: chinh CHO NOI giua no va `_khoang_kem` la thu
+       bai nay canh (xem khoi ghi chu ngay tren).
+    """
+    import subprocess
+
+    from apps.auto_scan_video import ban_bien_tap as bt
+
+    phim = tmp_path / "hai_canh.mp4"
+    # ⚠️ `d=2.0` la nguong cua ca `blackdetect` va `freezedetect`, nen canh den
+    #    phai dai HON 2 s — 3 s de co bien, ⛔ khong de sat nguong.
+    subprocess.run(
+        [_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y",
+         "-f", "lavfi", "-i", "testsrc=size=320x180:rate=10:duration=6",
+         "-f", "lavfi", "-i", "color=c=black:size=320x180:rate=10:duration=3",
+         "-filter_complex", "[0:v][1:v]concat=n=2:v=1[v]", "-map", "[v]",
+         "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
+         str(phim)], check=True, capture_output=True)
+
+    ci = canh_mod.ChiMucCanh(
+        (canh_mod.Canh("canh_0001", 0.0, 6.0),
+         canh_mod.Canh("canh_0002", 6.0, 9.0)), 9.0)
+    bg = _ban_ghi_thoai((0.5, 5.5))         # thoai chi nam trong canh_0001
+
+    hieu, hong = gdbbt._do_cac_canh(str(phim), ci, bg)
+    assert hong == [], hong
+    theo_ma = {h.ma_canh: h for h in hieu}
+    assert theo_ma["canh_0001"].de_xuat == "giu", theo_ma["canh_0001"].ly_do
+    kem = theo_ma["canh_0002"]
+    assert kem.de_xuat == "bo", kem.ly_do
+    assert kem.do_tin > 0.9, (
+        f"canh den tron ven ma ti_le chi {kem.do_tin} — cho noi giua "
+        f"qc.do_hinh va _khoang_kem dang mat khoang: {kem.ly_do}")
+    assert set(kem.canh_bao) == {"toi_den", "dung_hinh"}, kem.canh_bao
+
+    ban = bt.lap_ban(preset=hop_dong_v4.PRESET_CAT_THONG_MINH, chi_muc=ci,
+                     hieu_canh=hieu, ban_ghi=bg)
+    assert ban.cac_ma_cat == ("canh_0002",), ban.sang_dict()

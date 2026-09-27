@@ -136,9 +136,16 @@ def ung_vien_tu_ban_bien_tap(ban, chi_muc) -> list[kc.UngVien]:
        cung khuon voi `ban_do_thoi_gian.tu_ban_bien_tap` (ban noi *canh nao*, chi
        muc noi *canh do la khoang nao*).
 
-    🔑 `do_tin` cua quyet dinh **la** `diem_kem`: no la do tin cua de xuat BO. Mot
-       canh bi de xuat bo voi do tin 0,95 te hon mot canh bi de xuat bo voi 0,70,
-       va thu tu uu tien cua `ke_cat` doc dung con so do.
+    🔑 `do_tin` cua quyet dinh **la** `diem_kem`, va tu 26/09 no la **ti le thoi
+       luong canh la khung den / dung hinh**, do bang `blackdetect`+`freezedetect`
+       (`giai_doan_ban_bien_tap.BangChungCanh`) — ⛔ KHONG con la "do tin cua
+       VLM". Ten khoa giu nguyen vi no la hop dong duck-type
+       (`ban_bien_tap._quyet_dinh_mot_canh` doc chung), nhung ⛔ dung doc ten do
+       thanh mot ban khai ve xuat xu.
+
+    ⭐ Thu tu uu tien cua `ke_cat` van dung tren con so do: 0,95 (95 % canh la
+       khung den) that su te hon 0,70. Hai dai luong khac ban chat ma trung
+       chieu — do la mot su may, nen no phai duoc ghi ra chu khong de ngam.
 
     ⛔ Tra danh sach RONG khi thieu mot trong hai nua — ⛔ khong nem. Thieu ban
        bien tap nghia la *"khong co can cu de cat"*, va mac dinh cua ca he la
@@ -166,8 +173,41 @@ def ung_vien_tu_ban_bien_tap(ban, chi_muc) -> list[kc.UngVien]:
     return ra
 
 
-def _ke_cat(db, kho: Storage, run, *, thoi_luong: float) -> kc.KeCat:
-    """Ke cat cua lan chay. ⭐ MOT noi tra loi cau *"ta bo gi"*."""
+def _khe_thoai_truc_ban_giao(ke_hoach: dict, bien_tap) -> tuple:
+    """Khe tieng cua `timing_align` -> truc cua MP4 GD1 (**sau `toc_do`**).
+
+    🔴 **`timing_align` ⛔ KHONG biet `toc_do`.** `giai_doan_canh_thoi_gian`/
+       `thoi_gian.py` ⛔ khong co mot chu `toc_do` nao: `dat_tai_ms` cua no nam
+       tren truc BIEN TAP (truoc toc do). Con tep ma giai doan nay cat la ban ra
+       cua `render`, tuc **sau** `setpts=PTS/toc_do`. Voi `toc_do = 1,25` moi khe
+       tieng nam **tre 25 %** so voi cho no that su phat.
+
+    ⛔ Va cai gia ⛔ khong phai mot so lech nho: `ke_cat.co_thoai` la cong CUNG
+       thuc thi luat *"CHI cat vung KHONG co loi thoai"* (chu du an chot). Lech
+       truc lam cong do **cho qua** mot doan that su co tieng ⇒ mot cau thoai bi
+       cat giua cau, dung thiet hai ma cong nay ton tai de chan.
+
+    ⭐ Ba cho khac trong kho da doi truc dung bang `bien_tap.moc_ban_ra`
+       (`giai_doan_qc`, `giai_doan_qc_ai`, `qc.py` khoi phu de). Day la cho thu
+       tu, va no dung CUNG mot ham chu ⛔ khong go lai phep chia.
+    """
+    from . import bien_tap as _bt
+
+    khe = kc.khe_thoai_tu_ke_hoach(ke_hoach)
+    if _bt.toc_do(bien_tap) == 1.0:
+        return khe
+    return tuple((_bt.moc_ban_ra(b, bien_tap), _bt.moc_ban_ra(k, bien_tap))
+                 for b, k in khe)
+
+
+def _ke_cat(db, kho: Storage, run, *, thoi_luong: float,
+            bien_tap=None) -> kc.KeCat:
+    """Ke cat cua lan chay. ⭐ MOT noi tra loi cau *"ta bo gi"*.
+
+    ⚠️ `bien_tap` la ho so **DAY DU** cua khach (con `toc_do`), ⛔ khong phai ban
+       da qua `loc_bien_tap_gd2`: o day ta can chinh `toc_do` de doi truc khe
+       tieng — xem `_khe_thoai_truc_ban_giao`.
+    """
     from . import ban_bien_tap as bbt, canh as canh_mod
 
     ke_hoach = {}
@@ -183,7 +223,7 @@ def _ke_cat(db, kho: Storage, run, *, thoi_luong: float) -> kc.KeCat:
         chi_muc = canh_mod.tu_dict(goi.get("chi_muc") or {})
 
     return kc.chon(ung_vien_tu_ban_bien_tap(ban, chi_muc),
-                   thoai=kc.khe_thoai_tu_ke_hoach(ke_hoach),
+                   thoai=_khe_thoai_truc_ban_giao(ke_hoach, bien_tap),
                    thoi_luong=thoi_luong)
 
 
@@ -196,7 +236,9 @@ def _cua_so_khach(db, run):
        va mot phep phan doan khong tran thi mot ngay no cat 40 % phim cua khach
        (plan §3). Cua so nay ⛔ khong phai mot phan doan — no la **khach tu keo**
        hai tay cam va tu thay ket qua. Ep no vao cung mot tran se lam mot yeu cau
-       ro rang cua khach bi he thong tu choi vi mot ly do noi ve do tin cua VLM.
+       ro rang cua khach bi he thong tu choi vi mot nguong do **he thong** dat
+       cho phep do hinh cua NO (`NGUONG_TI_LE_HINH_KEM`) — mot con so ⛔ khong
+       noi gi ve cai khach vua keo tay.
 
     ⚠️ Nhung no vao `tom_tat` rieng (`cua_so_khach`), nen mot bao cao doc duoc
        phan biet *"he thong cat"* voi *"khach cat"*.
@@ -299,7 +341,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         lop_phu: list = []
         bien_tap_gd2: dict | None = None
         if cach == cdr.CAT_MA_HOA_LAI:
-            ke = _ke_cat(db, kho, run, thoi_luong=thoi_luong)
+            # ⚠️ `cai.bien_tap` DAY DU (con `toc_do`), ⛔ khong phai
+            #    `bien_tap_gd2`: ke cat can doi truc khe tieng theo `toc_do` ma
+            #    GD1 da ap — xem `_khe_thoai_truc_ban_giao`.
+            ke = _ke_cat(db, kho, run, thoi_luong=thoi_luong,
+                         bien_tap=cai.bien_tap)
             # ⭐ MOT lan doc cua so, dung cho CA phep giao LAN bao cao: hai lan
             #    doc cung mot cai dat la hai cho co the lech (`cai_dat.doc` co the
             #    doc mot `run.settings` da bi ghi lai giua chuoi — xem

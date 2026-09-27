@@ -10,16 +10,29 @@ kiem nay vao chin tep khac nhau se lam mat dung dieu do.
 ⛔ Va tung phep kiem o day duoc viet de **DO** khi ban va bi go ra, khong phai
    de xanh khi ma "trong co ve dung". Moi phep kiem ghi kem cach tai hien
    khiem khuyet goc.
+
+🔴 **26/09/2026 (Task 22) — HAI bai cua khoi B22-01 da bi xoa, va cai gia:**
+
+   * `test_loi_nhac_canh_GUI_KHUNG_HINH_that_dang_OpenAI` do rang loi nhac
+     `doc_canh` gui khung JPEG that dang `image_url`. Doi tuong do
+     (`hieu_canh.loi_nhac_canh`) bi xoa cung duong VLM cua `edit_plan` (Task 10,
+     `defba7b2`). ⭐ **Tinh chat "thao tac THI GIAC phai gui anh THAT" ⛔ khong
+     mat nguoi do**: `test_2120::test_loi_nhac_hinh_gui_dung_so_anh_dang_image_url`
+     do dung dieu do tren `qc_ai.loi_nhac_hinh` — loi nhac thi giac CON SONG va
+     nam tren duong chay that.
+   * `test_MOT_hinh_dang_luoc_do_o_ca_BA_cho` do rang ba ban mo ta cua `doc_canh`
+     khong lech nhau. Hai trong ba ban (loi nhac + `doc_hieu_canh`) da bi xoa;
+     ban thu ba (`ai.DOC_CANH.truong_bat_buoc`) con, va `test_2025::
+     test_DOC_CANH_van_doi_dung_hai_truong_quyet_dinh` giu dung khang dinh ay.
+     ⇒ Mat la **phep doi chieu GIUA cac ban mo ta**, va no mat vi chi con MOT
+     ban — ⛔ khong con gi de lech.
 """
 from __future__ import annotations
 
 import ast
 import inspect
-import json
 from datetime import timedelta
 from pathlib import Path
-
-import pytest
 
 from apps.auto_scan_video import (ai, assets, ban_bien_tap, che_do_render as cdr,
                                   giai_doan_ban_bien_tap as gdbbt,
@@ -104,52 +117,6 @@ def test_EDIT_PLAN_THUC_SU_do_canh_chu_khong_truyen_hieu_rong():
     assert "goi_tinh_tien" not in _ten_duoc_goi(gdbbt._do_cac_canh)
     assert "do_hinh" in _ten_duoc_goi(gdbbt._do_cac_canh), (
         "duong do canh khong di qua blackdetect/freezedetect")
-
-
-def test_loi_nhac_canh_GUI_KHUNG_HINH_that_dang_OpenAI():
-    """🔴 Truoc pha 27 loi nhac chi NOI "co N khung hinh", khong gui khung nao.
-
-    Tuc `can_thi_giac=True` chon model thi giac, roi ta hoi no mot cau ma mot
-    model van ban tra loi duoc y het — va cau tra loi se "trong nhu that ve mot
-    buc anh model chua bao gio nhin thay".
-    """
-    khung = (b"\xff\xd8\xff\xe0gia-lap-jpeg-1", b"\xff\xd8\xff\xe0gia-lap-jpeg-2")
-    tin = hc.loi_nhac_canh("canh_0001", "xin chao", len(khung), {"a": 1}, khung)
-    assert len(tin) == 1
-    noi_dung = tin[0]["content"]
-    assert isinstance(noi_dung, list), "tin nhan khong phai da phuong thuc"
-    anh = [p for p in noi_dung if p.get("type") == "image_url"]
-    assert len(anh) == len(khung), f"gui {len(anh)}/{len(khung)} khung"
-    for p in anh:
-        assert p["image_url"]["url"].startswith("data:image/jpeg;base64,")
-
-    # Khong khung thi van gui duoc phan van ban — mot lan rut khung hong khong
-    # duoc lam chet ca giai doan.
-    chi_van = hc.loi_nhac_canh("canh_0001", "xin chao", 0, {}, ())
-    assert isinstance(chi_van[0]["content"], str)
-
-
-def test_MOT_hinh_dang_luoc_do_o_ca_BA_cho():
-    """🔴 Ba ban mo ta tung lech nhau, va khong ban nao chay.
-
-    Loi nhac hoi mot doi tuong PHANG · `DOC_CANH.truong_bat_buoc` khai
-    `("canh",)` · `doc_hieu_canh` chiu ca hai hinh dang. Nen mot phan hoi lam
-    **dung y nguyen loi dan** bi tu choi voi "thieu truong bat buoc ['canh']".
-    """
-    assert ai.DOC_CANH.truong_bat_buoc == ("de_xuat", "do_tin")
-
-    phang = json.dumps({"loai": "canh", "chu_the": [], "hanh_dong": "",
-                        "cam_xuc": "", "quan_trong": 0.2, "de_xuat": "bo",
-                        "do_tin": 0.9, "ly_do": "khong co thoai",
-                        "canh_bao": []})
-    h = hc.doc_hieu_canh({"noi_dung": phang}, "canh_0001")
-    assert h.de_xuat == hc.BO and h.do_tin == pytest.approx(0.9)
-
-    # Va lop boc kia nay bi TU CHOI thay vi duoc chieu — mot hinh dang, mot lan.
-    with pytest.raises(ai.LuocDoSai):
-        hc.doc_hieu_canh({"noi_dung": json.dumps(
-            {"canh": {"de_xuat": "bo", "do_tin": 0.9}})},
-                         "canh_0001")
 
 
 def test_diem_chot_theo_canh_doc_lai_duoc():

@@ -110,7 +110,11 @@
         {%- else %}{{ _("Tự nhận ra") }}{% endif %}
         → {{ _(ngon_ngu_nhan.get(cai.ngon_ngu_dich, cai.ngon_ngu_dich)) }}
       </li>
-      <li>{{ _("Nguồn lời thoại") }}: {{ _(nguon_loi_nhan.get(cai.nguon_loi, cai.nguon_loi)) }}</li>
+      {#- ⛔ Dòng "Nguồn lời thoại" đã rút 26/09 (Task 21): một đường duy nhất
+          voice→voice ⇒ hồ sơ không còn khóa này. Nguồn THẬT đã dùng vẫn hiện ở
+          `Bằng chứng chất lượng` (`quan_sat.bang_chung_chat_luong`) — đó là chỗ
+          trả lời câu *"lần chạy này lấy lời từ đâu"*, khác với màn này (*"khách
+          đã chọn gì"*). -#}
       <li>{{ _("Giọng đọc") }}: {{ cai.giong_id or "—" }}</li>
       <li>{{ _("Vùng che") }}:
         {% if cai.vung %}{{ cai.vung | length }}{% else %}{{ _("không có") }}{% endif %}
@@ -216,7 +220,12 @@
 
       {% if bang_chung.do_luong %}{% set d = bang_chung.do_luong %}
         <li>{{ _("Nghe lại và soát lại") }}:
-          {{ _("%(n)s đoạn đã đo") % {"n": d.so_doan_do} }}
+          {# 🔴 `so_doan_da_do`, ⛔ KHONG `so_doan_do`: khoa cu dem doan DA CHUAN
+               BI. Voi bo do `giong` `khong_kha_dung` (thieu qc-venv / model /
+               card) thi `ket_qua` rong ⇒ `so_giong_khong_dat = 0`, va cau nay
+               doc thanh "da do 95 doan, khong doan nao sai" trong khi ⛔ KHONG
+               doan nao duoc do. Xem `giai_doan_qc_do_luong.tom_tat_do_luong`. #}
+          {{ _("%(n)s đoạn đã đo") % {"n": d.so_doan_da_do} }}
           <ul>
             {% for b in d.bo_do %}
               <li>{{ _(b.nhan) }} — {{ _(b.nhan_trang_thai) }}</li>

@@ -29,8 +29,14 @@ moi_truong = _mt.moi_truong
 #: Hinh dang lay TU chinh `tom_tat` cua tung giai doan. Xem chu thich tung dong.
 GIEO = {
     # giai_doan_chep_loi.chay()["tom_tat"]["dinh_tuyen"]
-    "transcribe": {"dinh_tuyen": {"che_do": "auto", "nguon_loi": "ocr",
-                                  "ly_do": ["khong_co_phu_de_nhung"]}},
+    #
+    # ⛔ 26/09 (Task 21): hinh dang nay doi tu `{che_do: auto, nguon_loi: ocr,
+    #    ly_do: [khong_co_phu_de_nhung]}` sang `asr` + `ly_do` RONG — mot duong
+    #    duy nhat voice->voice. ⭐ Khuon gieo phai doi theo: mot khuon mang hinh
+    #    dang cua mot duong DA BO la mot phep kiem doc THU DAI DIEN, va no se
+    #    xanh trong khi duong THAT doi hinh dang.
+    "transcribe": {"dinh_tuyen": {"che_do": "asr", "nguon_loi": "asr",
+                                  "ly_do": []}},
     # giai_doan_ban_bien_tap.chay()["tom_tat"] — bo so cua luot nen v3
     "edit_plan": {"preset": "smart_localize", "so_canh": 6, "so_giu": 6,
                   "so_cat": 0, "so_canh_da_doc": 4, "so_canh_hong": 2,
@@ -80,13 +86,14 @@ def _tao(a, csrf, tmp_path, **them) -> str:
 
 def test_bang_chung_MANG_du_bon_nhom(moi_truong, tmp_path):
     _app, a, csrf, _b, _cb = moi_truong
-    run_id = _tao(a, csrf, tmp_path, preset="smart_localize", nguon_loi="ocr")
+    run_id = _tao(a, csrf, tmp_path, preset="smart_localize")
     _gieo(run_id)
 
     html = a.get(f"/auto-scan-video/run/{run_id}").text
 
-    # nguon loi THAT (khong phai che do khach khai)
-    assert "Chữ chạy trên hình" in html
+    # nguon loi THAT. ⛔ Tu 26/09 chi con MOT gia tri, nen bai nay khong con
+    # phan biet duoc "nguon THAT" voi "che do khach khai" — bai duoi lam viec do.
+    assert "Nghe tiếng rồi chép lại" in html
     # do phu bang chung: 4/6 = 67%
     assert "4/6" in html and "67%" in html
     # canh doc HONG — con so ma luot nen v3 khong he noi ra
@@ -96,6 +103,34 @@ def test_bang_chung_MANG_du_bon_nhom(moi_truong, tmp_path):
     assert "Chất lượng hình sau mã hoá lại (VMAF)" in html
     # bo do: `khong_kha_dung` phai NOI RA, khong im lang
     assert "chưa đo được trên máy chủ" in html
+
+
+def test_LAN_CHAY_CU_mang_nguon_ocr_hien_NGUYEN_MA_chu_khong_bia_nhan(
+        moi_truong, tmp_path):
+    """🔑 Ban ghi cua cac lan chay 22–26/09 THAT SU mang `nguon_loi: "ocr"`, va
+    ⛔ ta khong viet lai CSDL. Man hinh phai doc duoc chung.
+
+    ⛔ Nhung `NHAN_NGUON_THAT` chi con MOT hang (`asr`), nen `ocr` hien NGUYEN
+       MA. Do la CO Y: bia mot nhan tieng Viet ("Chữ chạy trên hình") cho mot
+       duong khong con ton tai la noi voi khach rang duong do van chay duoc.
+
+    ⚠️ Bai nay la doi chung cho phep `dict.get(ma, ma)` o
+       `quan_sat.bang_chung_chat_luong` — thieu no thi ai do "don dep" bang cach
+       doi thanh `NHAN_NGUON_THAT[ma]` va man hinh cua mot lan chay CU se nem
+       `KeyError`.
+    """
+    _app, a, csrf, _b, _cb = moi_truong
+    run_id = _tao(a, csrf, tmp_path, preset="smart_localize")
+    _gieo(run_id, {"transcribe": {"dinh_tuyen": {
+        "che_do": "auto", "nguon_loi": "ocr",
+        "ly_do": ["khong_co_phu_de_nhung"]}}})
+    html = a.get(f"/auto-scan-video/run/{run_id}").text
+    import re
+    assert "Chữ chạy trên hình" not in html
+    # ⚠️ Hoi DUNG dong bang chung, khong hoi "chuoi ocr co o dau do trong trang":
+    #    mot phep do rong hon cau hoi se xanh vi mot chu `ocr` trong mot lop CSS.
+    assert re.search(r'Lời thoại gốc lấy từ:\s*<strong>ocr</strong>', html), \
+        'khong thay dong bang chung mang NGUYEN MA `ocr`'
 
 
 def test_khong_co_giai_doan_nao_xong_thi_KHONG_hien_khoi_rong(moi_truong,
@@ -128,6 +163,56 @@ def test_bo_do_khong_kha_dung_KHONG_bi_doc_thanh_da_dat(moi_truong, tmp_path):
     theo_ma = {b["ma"]: b for b in bc["do_luong"]["bo_do"]}
     assert theo_ma["dich"]["trang_thai"] == "khong_kha_dung"
     assert theo_ma["dich"]["nhan_trang_thai"] != theo_ma["giong"]["nhan_trang_thai"]
+
+
+def test_2101_khach_thay_so_doan_DO_DUOC_chu_khong_so_doan_CHUAN_BI(moi_truong,
+                                                                    tmp_path):
+    """🔴 `asv_chi_tiet.html` in *"N doan da do"* tu `so_doan_do` — ma khoa ay dem
+    doan **DA CHUAN BI**, ⛔ khong doan **DO DUOC**.
+
+    Voi bo do `giong` `khong_kha_dung` (thieu qc-venv / model / card) thi `ket_qua`
+    rong ⇒ `so_giong_khong_dat = 0`. Canh mot `so_doan_do = 18`, hai con so ay doc
+    thanh *"da do 18 doan, ⛔ khong doan nao sai"* trong khi ⛔ KHONG doan nao duoc
+    do. Ho `hai trang thai gop thanh mot gia tri`, va lan nay no di ra **cho khach**.
+
+    ⭐ `giai_doan_qc_do_luong.tom_tat_do_luong` DA sinh `so_doan_da_do` de tra loi
+       dung cau ay, va CO Y ⛔ khong doi nghia khoa cu vi cho khac doc no. Nhung ⛔
+       khong ai doi NGUOI DOC sang khoa moi, nen con bo van o nguyen cho no dang o
+       — dung ho *"co duoc ghi ma ⛔ khong ai doc"*.
+
+    ⚠️ Chot bang TINH CHAT, ⛔ khong bang mot con so go cung: con so khach thay
+       ⛔ khong bao gio duoc LON HON so doan that su do duoc. Neu ai do doi bo so
+       gieo thi bai nay van dung.
+    """
+    import platform_core.db as dbmod
+    from apps.auto_scan_video import quan_sat, tables as T
+
+    _app, a, csrf, _b, _cb = moi_truong
+    run_id = _tao(a, csrf, tmp_path)
+    # 18 doan CHUAN BI, 3 doan THAT SU do duoc — dung hinh dang cua mot luot ma
+    # bo do giong ⛔ khong chay duoc.
+    _gieo(run_id, {**GIEO, "qc_do_luong": {**GIEO["qc_do_luong"],
+                                           "so_doan_da_do": 3}})
+
+    db = next(dbmod.get_session())
+    try:
+        bc = quan_sat.bang_chung_chat_luong(db, db.get(T.AsvRun, run_id))
+    finally:
+        db.close()
+
+    dl = bc["do_luong"]
+    assert dl["so_doan_da_do"] == 3, (
+        "`bang_chung_chat_luong` ⛔ khong mang con so DO DUOC ra man khach")
+    assert dl["so_doan_da_do"] <= dl["so_doan_do"], (
+        "so doan DO DUOC ⛔ khong the nhieu hon so doan CHUAN BI")
+
+    # ⭐ Va man khach phai in con so DO DUOC. `3` chu ⛔ khong `18`.
+    van = a.get(f"/auto-scan-video/run/{run_id}").text
+    assert "3 đoạn đã đo" in van, (
+        f"man khach ⛔ khong in so doan do duoc; trang co chua '18 đoạn đã đo'? "
+        f"{'18 đoạn đã đo' in van}")
+    assert "18 đoạn đã đo" not in van, (
+        "man khach khang dinh da do 18 doan trong khi chi 3 doan duoc do")
 
 
 def test_do_phu_bang_chung_la_PHAN_TRAM_doc_duoc(moi_truong, tmp_path):
@@ -165,12 +250,16 @@ def test_bang_chung_KHONG_lo_thu_cua_van_hanh(moi_truong, tmp_path):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  2. Cai dat da dung: cap ngon ngu + nguon loi khach CHON
+#  2. Cai dat da dung: cap ngon ngu khach CHON
+#
+#  ⛔ "nguon loi khach CHON" da ra khoi muc nay 26/09 (Task 21): o do khong
+#     con tren trang, va man ho so khong con dong do. Nguon THAT thi van hien
+#     — o muc 1, vi no la PROVENANCE chu khong phai mot lua chon.
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_man_lan_chay_noi_ra_cap_ngon_ngu_va_nguon_loi(moi_truong, tmp_path):
+def test_man_lan_chay_noi_ra_cap_ngon_ngu(moi_truong, tmp_path):
     _app, a, csrf, _b, _cb = moi_truong
-    run_id = _tao(a, csrf, tmp_path, ngon_ngu_nguon="zh", nguon_loi="ocr")
+    run_id = _tao(a, csrf, tmp_path, ngon_ngu_nguon="zh")
     html = a.get(f"/auto-scan-video/run/{run_id}").text
     assert "Tiếng Trung" in html and "Tiếng Việt" in html
 

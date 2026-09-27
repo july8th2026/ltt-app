@@ -82,7 +82,9 @@ def test_ban_ghi_rong_KHONG_chia_cho_khong():
 
 def test_tom_tat_cat_o_ranh_DOAN_chu_khong_giua_cau():
     """⚠️ Mot cau cut moi model doan tiep phan thieu, va no doan bang token cua
-    khach — cung ly do voi `hieu_canh.ngu_canh_cho_canh`."""
+    khach. (Ban sinh doi `hieu_canh.ngu_canh_cho_canh` — cat theo CANH — da bi
+    xoa 26/09 cung duong VLM cua `edit_plan`, Task 22; nen tu hom nay bai nay la
+    NGUOI DO DUY NHAT cua luat "cat o ranh doan, dung cat giua cau".)"""
     van = hs.tom_tat_ban_ghi(_ban_ghi(), toi_da=14)
     assert van == "mot hai ba"        # doan thu hai khong lot, KHONG bi cat doi
 

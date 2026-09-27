@@ -50,17 +50,67 @@ python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien bench-upscale -- 
   python tools\bench_upscale.py --mode warmup --preset quality --video v3 --repeat 5
 ```
 
-| Preset | Warmup | N | time_to_first_frame_s (median) | min | max | total_s (median) | min | max | CPU-giây (median) |
-|---|---|---|---|---|---|---|---|---|---|
-| fast | on | — | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO |
-| fast | off | — | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO |
-| quality | on | — | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO |
-| quality | off | — | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO | CHƯA ĐO |
+| Preset | Warmup | N | ttff median | min | max | total median | upscale median | CPU-giây median |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| fast | **on** | 13 | **1,531** | 1,015 | 1,574 | 3,585 | 2,615 | 10,410 |
+| fast | **off** | 13 | **1,534** | 1,026 | 1,543 | 3,587 | 2,594 | 10,520 |
+| quality | on | — | `CHƯA ĐO` | | | | | |
+| quality | off | — | `CHƯA ĐO` | | | | | |
 
-**Kết luận (điền SAU khi có đủ 4 dòng trên, không trước):** CHƯA ĐO.
-⚠️ Nếu `on` và `off` không khác nhau quá sai số lặp (`max-min` của từng
-trạng thái), đó là bằng chứng ISSUE D (`00_CURRENT_TRUTH.md`) đúng như dự
-đoán — ghi rõ độ lệch quan sát được, không chỉ "giống nhau".
+**Chênh lệch trung vị (on − off):**
+
+| ttff | tổng | upscale | cpu_s |
+|---:|---:|---:|---:|
+| **−0,20 %** | −0,06 % | **+0,81 %** | −1,05 % |
+
+🔴 **Đính chính (27/09):** cột `tổng` bản đầu ghi 7,106 / 7,115 — **sai, gấp đôi**.
+Tôi tính `sum(stage_timings_s.values())` mà ⛔ **`total` lại là MỘT KHOÁ bên trong
+chính dict đó**, nên mỗi lượt bị cộng thêm chính nó. Giá trị đúng lấy thẳng từ
+khoá `total`: **3,585 / 3,587**.
+⭐ Tỉ lệ phần trăm **không đổi** (cả hai nhánh cùng bị nhân đôi) nên **kết luận
+đứng vững** — nhưng con số tuyệt đối thì sai, và một con số sai trong tài liệu sẽ
+được người sau dùng làm mốc. Mục F (phân rã pha) ⛔ **không** dính lỗi này vì ở đó
+tôi đọc thẳng khoá `total`, không cộng.
+
+## ✅ KẾT LUẬN: warmup KHÔNG có lợi ích đo được ⇒ **ĐÃ XOÁ**
+
+Mọi chênh lệch **dưới 1 %**, và ⭐ **dấu không nhất quán**: `ttff`/`tổng` nghiêng
+về `on`, `upscale` nghiêng về `off`. Một hiệu ứng thật thì không đổi dấu giữa các
+đại lượng của cùng một lượt chạy. Dải giá trị chồng gần như hoàn toàn
+(`on` 1,015–1,574 · `off` 1,026–1,543), và **mỗi nhánh có đúng một giá trị thấp
+~1,02** — đối xứng, tức không liên quan tới điều kiện.
+
+⇒ Khớp với lập luận kiến trúc ở ISSUE D: `subprocess.run` **chờ tiến trình con
+thoát hẳn**, job thật spawn `Popen` **mới**, nên model không thể còn trong VRAM.
+Mandate §6/§30: không đo được lợi ích ⇒ **xoá**. Đã xoá khỏi `engine.py`.
+
+### Thiết kế phép đo — và hai lần nó bị hỏng trước khi đúng
+
+Con số trên chỉ đáng tin vì **lần thứ ba** mới đúng. Ghi lại cả hai lần hỏng:
+
+1. **Lượt 1 — không xen kẽ.** Chạy `on,on,on` rồi `off,off,off`. Mọi yếu tố biến
+   thiên theo thời gian (tải nền) **ánh xạ thẳng** lên điều kiện. Tổng thời gian
+   trôi 693 → 1152 s và trông hệt như "warmup nhanh hơn 20 %". ⛔ Vô nghĩa.
+2. **Lượt 2 — chỉ số `cpu_s` CỘNG DỒN.** Nó tăng đơn điệu +20 s mỗi lượt *bất kể*
+   điều kiện, vì đo CPU tích luỹ của tiến trình cha chứ không phải của từng lượt.
+   ⚠️ Tôi đã **dùng chính nó** để chẩn đoán lượt 1 là "bị tranh CPU" — tiền đề sai.
+   Lượt 1 *có* nhiễu thật, nhưng bằng chứng đúng là `gpu%` tụt 76→51.
+3. **Lượt 3 — đúng.** Xen kẽ `on/off/on/off`, `--max-frames` được tôn trọng
+   (15 khung/lượt thay vì 3205), `cpu_s` tính theo hiệu. Khoá máy giữ **1,3 phút**
+   thay vì 41,6 phút. `cpu_s` hết trôi: 9,62 … 10,66 dao động quanh 10,4.
+
+⭐ Bài học: **một chỉ số sai không chỉ cho số sai — nó làm hỏng cả kết luận rút
+ra từ nó.** Hỏi một đại lượng "mày đang đếm cái gì" trước khi suy diễn từ nó.
+
+### Xuất xứ
+
+`--mode warmup --preset fast --video v3 --max-frames 15 --repeat 10` +6 lượt của
+lần chạy bị lưới an toàn cắt ⇒ n=13/nhánh. engine SHA256 `07e49f7c…b1a0c` ·
+driver 616.92 · RTX 5060 Ti · autotune `tile=384 threads=4:4:4`.
+
+⚠️ `quality` **CHƯA ĐO**. Kết luận trên chỉ áp cho `fast`. Nhưng lập luận kiến
+trúc (tiến trình thoát hẳn) ⛔ không phụ thuộc preset, nên không có lý do chờ
+`quality` mới được xoá.
 
 ---
 
@@ -176,3 +226,319 @@ diễn thay vì đo:
    `06_BASELINE_AFTER_BAD_UPDATE.md` mục 5 (`KHÔNG CÓ MẪU`, không phải
    `CHƯA ĐO`: thêm phép đo sẽ không lấp được ô này, chỉ thêm SAMPLE MỚI mới
    lấp được).
+
+---
+
+# F. ⭐ ĐÃ ĐO (2026-09-26) — phân rã theo pha: **PNG I/O KHÔNG phải nút thắt**
+
+Phép đo thật đầu tiên của đợt sửa, sau khi chủ dự án dừng bot GEMINI và một
+tiến trình `realesrgan` **mồ côi** bị dọn (ISSUE L tận mắt).
+
+**Xuất xứ:** `git_head=ab094099` · engine SHA256 `07e49f7c…b1a0c` · driver 616.92
+· RTX 5060 Ti · ffmpeg 8.0.1 · video **v3** (836×576, 30 fps) · preset **fast**
+· đích **1568×1080** · autotune chọn thật: `tile=384 threads=4:4:4 est=1000
+budget=11560 fast_path=True`.
+
+🔴 **Số khung THẬT = 3205 (trọn video, 106,83 s), ⛔ KHÔNG phải 200.** Tôi truyền
+`--max-frames 200` và ban đầu ghi "200 khung" vào đây — **sai**. Bộ đo **bỏ qua**
+`--max-frames` (lỗi của bộ đo, đã báo); bản ghi JSONL khai `frames: 3205`. Tỉ lệ
+giữa các pha ⛔ không đổi vì cả hai vế cùng chịu một số khung, nhưng con số khung
+trong phạm vi thì phải đúng — một phạm vi sai làm người sau ngoại suy sai.
+
+| Pha | giây | % tổng |
+|---|---:|---:|
+| **upscale + encode (tầng SR)** | **335,09** | **96,7 %** |
+| frame_extraction | 10,58 | 3,1 % |
+| concat | 0,51 | 0,15 % |
+| upload (đĩa local thay R2) | 0,07 | 0,02 % |
+| probe | 0,05 | 0,01 % |
+| source_copy | 0,02 | 0,01 % |
+| **tổng** | **346,67** | 100 % |
+
+## Quyết định rút ra: ⛔ KHÔNG viết lại đường PNG
+
+Mandate §22: *"Không rewrite pipeline nếu SR stage chiếm >90 % và I/O không đáng
+kể."* Đo được **96,7 %** ⇒ điều kiện thoả.
+
+Kể cả khi **xoá sạch** mọi chi phí I/O (bất khả), tổng chỉ giảm **≤ 3,3 %**.
+So với rủi ro viết lại một đường đang chạy cho khách, đây là việc **không đáng
+làm** — và nó là một quyết định *không làm gì*, dựa trên số.
+
+⛔ Điều này **bác** hạng mục ưu tiên P1 của báo cáo cũ:
+`docs/UPSCALE_V2/04_BOTTLENECKS.md` xếp *"PNG Disk I/O — 2-3x faster extraction,
+⭐⭐⭐⭐"*. Trần lợi ích thật là **3,3 %**, không phải "2-3×".
+
+⚠️ **Phạm vi của kết luận này** (⛔ đừng đọc rộng hơn): preset **fast**, nguồn
+**836×576**, **3205 khung** (trọn video), đích **1568×1080**, ⛔ không stabilize, ⛔ không
+smooth_motion. `smooth_motion` nhân số khung nguồn lên nên tỉ lệ I/O **có thể**
+khác — `CHƯA ĐO`. Preset `quality` chậm hơn nhiều ở tầng SR nên tỉ lệ I/O chỉ
+còn nhỏ hơn, không lớn hơn.
+
+## Tải nền trong lúc đo — vì sao vẫn tin được con số này
+
+`gpu_util` trung bình 76,2 % · nhiệt trung bình 66,7 °C (đỉnh 74) · VRAM đỉnh
+2 410 MiB · `cpu_giay_process_tree` 159,9 s · 839 mẫu.
+
+Đây là con số **tỉ lệ giữa các pha trong CÙNG một lượt chạy**, nên tranh chấp
+bên ngoài kéo dài **cả** tử số lẫn mẫu số — tỉ lệ 96,7 % bền với nhiễu, khác
+với con số **tuyệt đối** (xem mục A, đã bị nhiễu làm hỏng).
+
+---
+
+# G. ⭐ ĐÃ ĐO (2026-09-27) — Baseline **Fast** × 3 đích, và một lời khai giá bị bác
+
+Nguồn **v3** (836×576, 30 fps, 3205 khung, 106,8 s) · preset **fast** ·
+`tile=384 threads=4:4:4` · 3 lượt mỗi đích, lấy **trung vị**.
+
+| Đích | total (tv) | khung/s | tầng SR % | tách khung | VRAM đỉnh | GPU% tb | đầu ra |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 1080 | 321,4 s | 9,97 | 96,6 | 10,2 s | 2378 MiB | 83,4 | 1568×1080 |
+| 1440 | 345,4 s | 9,28 | 96,8 | 10,5 s | 6389 MiB | 86,1 | 2090×1440 |
+| 2160 | 330,7 s | 9,69 | 96,1 | 10,8 s | 4771 MiB | 83,3 | 3136×2160 |
+
+## G.1 ⭐ Độ phân giải ĐÍCH gần như KHÔNG ảnh hưởng thời gian
+
+Chênh lệch **±4 %**, và **không đơn điệu** (1440 *chậm hơn* 2160). Giải thích từ
+chính kiến trúc: `ENGINE_SCALE = 4` — engine **luôn** upscale ×4 từ nguồn
+(836×576 → 3344×2304) **bất kể đích**; đích chỉ đổi khâu co lại + encode. Nên chi
+phí GPU tỉ lệ với **NGUỒN**, ⛔ không phải với **ĐÍCH**.
+
+⚠️ Cột **VRAM đỉnh ⛔ KHÔNG dùng để kết luận**: nó cũng không đơn điệu
+(2378 → 6389 → 4771) và là **đỉnh lấy mẫu** nên dễ bắt trượt. Muốn nói về VRAM
+thì phải đo riêng. Ghi lại để người sau ⛔ đừng trích nó làm bằng chứng.
+
+## G.2 🔴 Lời khai lý do tính giá trong `cost.py` bị BÁC
+
+`apps/upscalevideo/cost.py` docstring khai:
+
+> *"theo phút video × độ phân giải đích × preset (chi phí ~ **thời gian GPU** ~
+> số frame × diện tích × độ nặng model)"* — hệ số 1080=1.0 · 1440=1.8 · 2160=4.0
+
+Đo được:
+
+| Đích | thời gian GPU | kích thước đầu ra | hệ số GIÁ |
+|---|---:|---:|---:|
+| 1080 | 1,00× | 164,8 MB → 1,00× | 1,0 |
+| 1440 | **1,07×** | 264,9 MB → **1,61×** | 1,8 |
+| 2160 | **1,03×** | 518,9 MB → **3,15×** | 4,0 |
+
+⇒ **Thời gian GPU ⛔ KHÔNG phải cơ sở của hệ số giá** — lệch tới **3,9×** ở 2160.
+
+⭐ Nhưng **giá bản thân nó ⛔ KHÔNG vô lý**: nó bám khá sát **kích thước đầu ra**,
+tức lưu trữ + băng thông giao hàng — một chi phí **có thật** và **có** tỉ lệ với
+đích. ⚠️ Việc hệ số giá *tương quan* với kích thước ⛔ không chứng minh đó là **ý
+định** ban đầu; tôi chỉ đo được tương quan, ⛔ không đọc được ý định.
+
+**Vì sao điều này đáng ghi thay vì bỏ qua:** một người sau đọc lý do "chi phí ~
+thời gian GPU", rồi đo thời gian GPU và thấy **phẳng**, sẽ kết luận nhầm rằng giá
+đang chặt chém — hoặc tệ hơn, "tối ưu" hệ số giá theo một cơ sở không có thật.
+Tôi **suýt** kết luận đúng như vậy trước khi đi đo kích thước đầu ra.
+
+⛔ **Tôi KHÔNG đổi giá** — "tính gì tiền" là đánh đổi **sản phẩm**, thuộc quyền
+chủ dự án (`CLAUDE.md` luật 2). Việc cần làm là sửa **lời khai lý do** cho khớp
+số đo, và chỉ chủ dự án mới chốt được lý do thật là gì.
+
+⚠️ Phạm vi: **một** nguồn 836×576, preset **fast**, ⛔ không stabilize/smooth.
+Nguồn có độ phân giải khác sẽ đổi chi phí tầng SR (vì SR tỉ lệ với **nguồn**),
+nhưng kết luận "đích không điều khiển chi phí GPU" ⛔ không phụ thuộc điều đó.
+
+---
+
+# H. 🔴 ĐÃ ĐO (2026-09-27) — **Quality chậm hơn Fast 15,7 lần, tính tiền gấp 2,5**
+
+Nguồn **v3** (836×576) · đích **1080** · `--max-frames 300` · 3 lượt · trung vị.
+Autotune chọn dải **cao nhất**: `x4plus tile=512 threads=1:2:2 est=10024
+budget=11791 fast_path=True` (VRAM trống 15 050 MiB lúc đo ⇒ **không** bị tụt dải).
+
+| | Fast | Quality | tỉ lệ |
+|---|---:|---:|---:|
+| tốc độ | 9,97 khung/s | **0,64 khung/s** | **15,7×** |
+| GPU util tb | 83,4 % | **98,0 %** | bão hoà thật |
+| VRAM đỉnh | 2 378 MiB | **13 267 MiB** | |
+| tầng SR | 96,6 % | **99,6 %** | |
+| **hệ số giá** | 1,0 | **2,5** | |
+
+⭐ Ba lượt Quality: **472,3 / 472,2 / 471,8 s** — lệch **< 0,1 %**. Quality bão hoà
+GPU và **rất tất định**; con số này ⛔ không phải nhiễu.
+
+## H.1 Doanh thu trên tài nguyên khan hiếm nhất
+
+Máy có **một** GPU và `UniqueConstraint` khoá đồng thời ở **1** (ISSUE A), nên
+phút-GPU là tài nguyên bị chặn cứng.
+
+| | credit | đ | phút GPU | **đ / phút-GPU** |
+|---|---:|---:|---:|---:|
+| fast 1080 | 54 | 5 400 | 5,4 | **1 008** |
+| fast 2160 | 214 | 21 400 | 5,4 | **3 994** |
+| quality 1080 | 134 | 13 400 | **83,5** | **161** |
+| quality 2160 | 535 | 53 500 | 83,5 | 641 |
+
+⇒ **Chênh 25 lần** giữa ô sinh lời nhất (`fast 2160`) và kém nhất
+(`quality 1080`) — trên cùng một cái card, cùng một hàng đợi.
+
+⇒ Một job `quality 1080` chiếm **CẢ card ~83 phút** để thu 13 400 đ, và trong 83
+phút đó ⛔ **không job nào khác chạy được**.
+
+## H.2 Phân biệt ĐO và NGOẠI SUY
+
+- **ĐO**: 300 khung trong 472,2 s ⇒ 0,64 khung/giây. 3 lượt, lệch < 0,1 %.
+- **NGOẠI SUY**: 3205 khung ⇒ 5 045 s ≈ **83,5 phút**. Tuyến tính theo số khung.
+  Hợp lý vì tầng SR chiếm **99,6 %** và làm việc theo từng khung — nhưng ⛔ đây
+  **không** phải phép đo trực tiếp. Muốn chắc thì chạy trọn 3205 khung
+  (~83 phút, **vượt ngưỡng khoá 30 phút** ⇒ phải xin cách khác).
+
+## H.3 Phạm vi — ⛔ đừng đọc rộng hơn
+
+Một nguồn **836×576**, đích **1080**, ⛔ không stabilize/smooth_motion. Nguồn có
+độ phân giải khác sẽ đổi chi phí **cả hai** preset (SR tỉ lệ với **nguồn**), nên
+tỉ lệ 15,7× có thể đổi. `quality × 1440/2160`: **CHƯA ĐO**.
+
+## H.4 ⛔ KHÔNG đổi giá ở lượt này
+
+Chủ dự án chốt 27/09: *"phần giá cứ để như hiện tại, tôi sẽ điều chỉnh thực tế
+sau."* Số đo ghi ở đây và ở docstring `cost.py` để khi điều chỉnh thì có căn cứ.
+"Tính gì tiền" là đánh đổi **sản phẩm** (`CLAUDE.md` luật 2).
+
+---
+
+# I. ⭐ DỰ ĐOÁN → KIỂM → ĐÚNG: đích ⛔ không tốn thời gian GPU
+
+Đây là lần đầu trong đợt đo tôi **dự đoán trước rồi mới kiểm**, thay vì đo xong
+mô tả lại. Ghi cả dự đoán lẫn kết quả để người sau đánh giá được cách suy luận,
+⛔ không chỉ đánh giá con số.
+
+**Dự đoán** (rút từ dữ liệu *Fast*, §G): `ENGINE_SCALE = 4` nên engine **luôn**
+upscale ×4 từ **nguồn** bất kể đích; đích chỉ đổi khâu co lại + encode. Nếu đúng
+thì `quality × 2160` phải tốn **xấp xỉ** `quality × 1080`.
+
+**Kiểm** trên preset *Quality* — một preset **độc lập**, và sạch hơn vì nó bão hoà
+GPU (98 %) nên rất tất định:
+
+| đích | n | total (tv) | khung/s | VRAM đỉnh | GPU% | tile | đầu ra |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 1080 | 3 | 472,2 s | 0,64 | 13 269 MiB | 98,0 | 512 | 1568×1080 |
+| 2160 | 3 | **471,4 s** | 0,64 | 13 266 MiB | 98,1 | 512 | 3136×2160 |
+
+**Chênh: −0,19 %.** 2160 còn *nhanh hơn* một chút. ⇒ **DỰ ĐOÁN ĐÚNG.**
+
+## I.1 Vì sao phép kiểm này mạnh hơn dữ liệu Fast
+
+Fast dao động ±4 % và **không đơn điệu** — đủ để nghi ngờ nhưng chưa đủ để chốt,
+vì biên độ nhiễu cùng cỡ với hiệu ứng cần đo. Quality bão hoà GPU nên lệch **<
+0,2 %**, tức nhiễu nhỏ hơn hiệu ứng **một bậc**. Cùng một kết luận, nhưng chỉ
+phép đo thứ hai mới **chứng minh** được nó.
+
+⭐ Bài học: khi một hiệu ứng chìm trong nhiễu, đừng chỉ lặp lại nhiều lần — tìm
+một **chế độ chạy có nhiễu thấp hơn** để đo cùng thứ đó.
+
+## I.2 Bảng hệ số giá so với thời gian GPU — đủ bốn ô
+
+| | credit | thời gian GPU đo được | hệ số giá | hệ số GPU |
+|---|---:|---:|---:|---:|
+| quality 1080 | 134 | 472,2 s | 1,0 | 1,00 |
+| quality 2160 | 535 | 471,4 s | **4,0** | **1,00** |
+| fast 1080 | 54 | 321,4 s | — | — |
+| fast 2160 | 214 | 330,7 s | 4,0 | 1,03 |
+
+⇒ Ở **cả hai** preset, đích nhân giá lên **4,0×** cho **~1,0×** thời gian GPU.
+
+⛔ Điều này ⛔ KHÔNG nói giá sai — lưu trữ và băng thông **có** tỉ lệ với đích
+(§G.2: kích thước đầu ra 1,00 / 1,61 / 3,15×). Nó chỉ nói **cơ sở "thời gian GPU"
+ghi trong `cost.py` là sai**. Chủ dự án chốt giữ giá, điều chỉnh sau (§H.4).
+
+---
+
+# J. ĐÃ ĐO (2026-09-27) — Tile sweep **Fast**: ⛔ không có gì để tối ưu
+
+v3 (836×576) · `threads=4:4:4` · 300 khung · 3 lượt · trung vị.
+
+| tile | tv (s) | min | max | VRAM đỉnh | GPU% tb | ttff | vs tốt nhất |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 200 | **25,76** | 25,54 | 25,81 | 1 665 MiB | 74,4 | 1,02 | 0,0 % |
+| 256 | 26,11 | 25,97 | **33,09** | 1 838 MiB | 76,7 | 1,52 | +1,4 % |
+| 384 | 26,39 | 25,81 | 26,45 | 2 136 MiB | 90,6 | 1,53 | +2,4 % |
+
+## J.1 Kết luận: **giữ nguyên tile**, ⛔ không chỉnh
+
+Biên độ toàn dải **2,4 %**, mà một lượt của tile 256 lệch tới **33,09 s** — tức
+**nhiễu cùng cỡ với hiệu ứng**. Đổi mặc định để lấy 2,4 % trong điều kiện đó
+chính là **tối ưu ảo**: nó sẽ được ghi vào docs như một cải tiến, rồi người sau
+xây tiếp lên trên một con số không phân biệt được với nhiễu.
+
+⭐ Đây là kết quả **"không làm gì"** thứ ba của đợt đo (sau PNG I/O và warmup).
+Cả ba đều tiết kiệm công việc thật, và cả ba chỉ có được nhờ **đo trước khi sửa**.
+
+## J.2 Thứ DUY NHẤT có tỉ lệ thật: VRAM
+
+1 665 → 2 136 MiB (tile 200 → 384), tức tile nhỏ tiết kiệm **22 %** VRAM, đơn
+điệu và nhất quán. GPU util cũng tăng theo tile (74,4 → 90,6 %).
+
+⚠️ Nhưng VRAM ⛔ **không phải thứ đang thiếu**: đồng thời GPU = 1 (ISSUE A) và
+card có 16 GB, còn Fast chỉ chạm ~2,1 GB. Tiết kiệm một tài nguyên đang dư ⛔
+không phải tối ưu. Ghi lại để nếu **sau này** có shared-GPU thật thì có sẵn số.
+
+---
+
+# K. 🔴 ĐÃ ĐO (2026-09-27) — Tile sweep **Quality**: nhanh hơn 8,7 %, nhưng là ĐÁNH ĐỔI
+
+v3 (836×576) · `threads=1:2:2` · 60 khung · 3 lượt · trung vị.
+
+| tile | tv (s) | min | max | VRAM đỉnh | GPU% | vs tốt nhất |
+|---:|---:|---:|---:|---:|---:|---:|
+| **256** | **88,83** | 88,80 | 89,07 | **4 761 MiB** | 96,6 | **0,0 %** |
+| 320 | 94,43 | 93,33 | 94,74 | 6 408 | 97,2 | +6,3 % |
+| 384 | 94,31 | 94,28 | 95,25 | 8 263 | 96,8 | +6,2 % |
+| 448 | 95,91 | 95,80 | 97,00 | 10 516 | 97,1 | +8,0 % |
+| **512** ← mặc định | 96,53 | 96,38 | 104,85 | **13 135 MiB** | 96,8 | **+8,7 %** |
+
+Tile 256 **nhanh hơn 8,7 %** và dùng **ít hơn 64 % VRAM**. Ba lượt tile 256 lệch
+0,3 % ⇒ hiệu ứng **lớn hơn nhiễu một bậc**, ⛔ không phải nhiễu như bên Fast.
+
+## K.1 ⛔ Nhưng đầu ra KHÁC NHAU — đo rồi, không đoán
+
+Mandate §23 bắt đo **output equivalence**, ⛔ không chỉ đo tốc độ. Upscale cùng
+12 khung bằng tile 256 và tile 512, so **PNG với PNG** (⛔ không encode trước —
+encoder thêm nhiễu của chính nó):
+
+| | |
+|---|---|
+| PSNR | 45,15 – 46,46 dB (trung vị **46,02**) |
+| SSIM | 0,9898 – 0,9922 |
+| khung giống hệt từng bit | **0 / 12** |
+
+⚠️ Phép so này nói hai bên **khác nhau**, ⛔ **không** nói bên nào **đúng hơn** —
+không có ảnh ×4 chuẩn để làm tham chiếu.
+
+Nhưng có lập luận cấu trúc: nguồn 836×576 ⇒ tile 512 chia **2×2** mảnh, tile 256
+chia **4×3** mảnh. **Tile nhỏ = nhiều đường ghép hơn**, nên tile 512 gần với
+trạng thái "không chia mảnh" hơn.
+
+## K.2 Khuyến nghị: **GIỮ tile 512**, và đây là lý do
+
+⭐ 8,7 % tốc độ đổi lấy một khác biệt chất lượng đo được, **trong chính preset tên
+là Quality** — preset mà khách chọn *vì* họ ưu tiên chất lượng hơn tốc độ. Đánh
+đổi đó **tự mâu thuẫn với lý do tồn tại của preset**.
+
+⛔ Tôi ⛔ KHÔNG đổi mặc định. Đây là đánh đổi **sản phẩm** (khách nhận gì), thuộc
+quyền chủ dự án (`CLAUDE.md` luật 2).
+
+## K.3 ⚠️ Nhưng có một lý lẽ VẬN HÀNH cho tile 256 — ghi để chủ dự án cân
+
+Quality tile 512 chiếm **13 135 / 16 311 MiB**, chỉ còn **~3,2 GB** cho phần còn
+lại của máy. Mà máy này ⛔ không chỉ chạy upscale: `voice_sidecar_main.py` của
+`C:\LTTPlatform` cũng dùng GPU (quan sát 26/09, engine `cuda` ~95 %), và nó ⛔
+**không** nằm dưới cơ chế `GpuLease` nên ⛔ không bị `UniqueConstraint` chặn.
+
+⇒ Một job Quality tile 512 + một yêu cầu voice cùng lúc có thể ép VRAM. Tile 256
+để lại **11,5 GB** thay vì 3,2 GB.
+
+`CHƯA ĐO`: chưa đo ca hai tải chạy đồng thời thật. Ghi lại như **rủi ro có cơ
+sở**, ⛔ không phải sự cố đã xảy ra.
+
+## K.4 Nếu chủ dự án muốn lấy 8,7 %
+
+Thì cần trước: (a) một người **nhìn** hai đầu ra cạnh nhau trên nội dung thật
+(PSNR 46 dB thường là không phân biệt được bằng mắt — nhưng "thường" ⛔ không phải
+"đã kiểm"), và (b) đo trên nhiều loại nội dung hơn 4 clip hiện có, vì vết ghép
+biên lộ rõ nhất ở **vùng phẳng và chuyển màu mượt**, mà bộ test hiện tại ⛔ không
+có clip nào như thế (§KHÔNG CÓ MẪU).
