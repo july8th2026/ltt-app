@@ -77,8 +77,27 @@ _KHAI_BAO = re.compile(
 #: `saveWorkflow` không khớp `saveWorkflowV3` (bẫy đã gặp ở test_970).
 _GOI = re.compile(r"\b(\w+)\s*\(")
 #: `import { a, b } from './workflowApi'` — cả `type X` lẫn `X`.
+# 🔴 `(?:\.{1,2}/)+` chu KHONG phai `\.{1,2}/`.
+#
+#    Ban cu khop duoc `./workflowApi` va `../workflowApi` — dung khi MOI tep
+#    con nam phang trong `src/`. Sau khi UI-3 tach `CanvasShell` xuong
+#    `src/features/editor/hooks/`, duong import thanh `../../../workflowApi`
+#    (ba cap), va bo do MU voi chung.
+#
+#    Do 28/09 tren cay that:
+#        './workflowApi'        5 cho
+#        '../workflowApi'       2 cho
+#        '../../workflowApi'    7 cho   <- ban cu BO QUA
+#        '../../../workflowApi' 17 cho  <- ban cu BO QUA
+#    => 24/31 cho goi tro nen vo hinh; bo do chi con doc ra 2 duong (ca hai tu
+#    `paletteApi.ts`, tep duy nhat con nam phang).
+#
+# ⭐ Va banh coc nay TU BAT DUOC minh da mu: `test_bai_2_KHONG_xanh_vi_canvas_rong`
+#    va `test_phep_do_DOC_DUOC_du_nhieu_loi_goi` do ngay, thay vi de bo do im
+#    lang bao "khong co duong chet nao". Mot cong tu kiem la mot cong dang tin.
 _IMPORT = re.compile(
-    r"import\s*\{([^}]*)\}\s*from\s*['\"]\.{1,2}/(?:src/)?workflowApi['\"]", re.S)
+    r"import\s*\{([^}]*)\}\s*from\s*['\"](?:\.{1,2}/)+(?:src/)?workflowApi['\"]",
+    re.S)
 
 
 def chuan_hoa(duong: str) -> str:
