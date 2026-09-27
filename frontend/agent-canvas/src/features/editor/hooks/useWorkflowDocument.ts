@@ -3,8 +3,8 @@ import { editorReducer, emptyDocument } from '../../../editorState'
 import { slugCongCu } from '../../../nodeDefinition'
 import type { LuatNoiDay, NhomPalette } from '../../../nodeDefinition'
 import { taiPalette } from '../../../paletteApi'
-import { loadOrCreateWorkflowV3, loadPreferences, savePreferences, saveWorkflowV3,
-  WorkflowConflictError, type Workflow } from '../../../workflowApi'
+import { loadOrCreateWorkflowV3, loadPreferences, loadWorkflowV3, savePreferences,
+  saveWorkflowV3, WorkflowConflictError, type Workflow } from '../../../workflowApi'
 import type { BangDinhNghia } from '../graph'
 import { PHIEN_BAN_TRINH_BAY, type GiaoDien, type PhaLuu } from '../kieu'
 
@@ -19,6 +19,23 @@ import { PHIEN_BAN_TRINH_BAY, type GiaoDien, type PhaLuu } from '../kieu'
  *     về, và mọi node hiện ra dưới dạng `nutThieu()` trong một nhịp — đúng cái
  *     màn hình "node biến mất rồi hiện lại" mà người dùng đọc là lỗi.
  */
+/** Workflow mà TRANG yêu cầu mở, hoặc `''` nếu trang không nói.
+ *
+ *  🔴 VÌ SAO CÁI NÀY TỒN TẠI: `loadOrCreateWorkflowV3` mở `items[0]` của một
+ *     danh sách sắp theo `updated_at DESC`, và trình soạn **tự lưu** — nên
+ *     workflow mở ra luôn là workflow sửa gần nhất. Trên giao diện cũ không có
+ *     đường nào tới workflow thứ hai (`01_CURRENT_UI_AUDIT.md` §1.1).
+ *
+ *  ⭐ Đọc từ DOM chứ không từ `location.pathname`: máy chủ là nơi đã lọc theo
+ *     chủ sở hữu và trả 404 cho id của người khác (`trang.py::trang_mot_workflow`).
+ *     Tự bóc id từ URL trong trình duyệt là đoán lại một việc đã có câu trả lời
+ *     đúng, và nó sẽ lệch ngay khi đường dẫn đổi hình.
+ */
+function idTrangYeuCau(): string {
+  const goc = document.querySelector<HTMLElement>('#agent-canvas-root')
+  return (goc?.dataset.workflowId ?? '').trim()
+}
+
 export function useWorkflowDocument(csrf: string, offline: boolean) {
   const [state, dispatch] = useReducer(editorReducer,
     { document: emptyDocument(), past: [], future: [] })
@@ -35,7 +52,10 @@ export function useWorkflowDocument(csrf: string, offline: boolean) {
 
   useEffect(() => {
     let active = true
-    Promise.all([taiPalette(), loadOrCreateWorkflowV3(csrf), loadPreferences()])
+    const id = idTrangYeuCau()
+    Promise.all([taiPalette(),
+      id ? loadWorkflowV3(id) : loadOrCreateWorkflowV3(csrf),
+      loadPreferences()])
       .then(([p, loaded, preferences]) => {
         if (!active) return
         setNhomPalette(p.nhom); setLuatNoiDay(p.luat_noi_day)

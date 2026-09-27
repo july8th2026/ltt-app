@@ -1,6 +1,6 @@
 # Sổ tiến độ — Agent UI V2
 
-Cập nhật lần cuối: 2026-09-27 · bởi: làn `ui3` (tách CanvasShell)
+Cập nhật lần cuối: 2026-09-28 · bởi: làn `ui1` (Automation Studio — IA)
 
 > ⛔ **Trạng thái công việc ghi vào TỆP NÀY, không chỉ trong hội thoại.** Một phiên
 > bị `/compact` mất hội thoại; tệp thì còn.
@@ -17,7 +17,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-3 Tách CanvasShell | `ui3` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui3` | `src/**/*.tsx` · `editorState.ts` · `features/editor/**` | — | dải **5700-5799** · **ĐÃ MỞ KHOÁ song song hoá** — 31 tệp, lớn nhất 179 dòng · 165 test xanh · trình duyệt PASS |
 | UI-2 Design system | `ui2` | ✅ **ĐÃ GỘP** | `worktree-agent-a710623353e7caab2` | **chỉ** `canvas.css` | — | dải **5800-5899** · hex 482→**63** · lớp chết 79→**0** · `@media 640px` 6→**1** · theme sáng 20/20 ô tối→**0/20** · ⚠️ 2 tiêu chí KHÔNG đạt, xem nhật ký |
 | UI-N Nhãn ngắn node LTT | `uiN` | ✅ **ĐÃ GỘP** (`868f9db2`) | — | *(đã trả phiếu)* | ✅ | dải **5900-5999** · LTT_APPS 16/17 → **0/17** nhãn > 40 ký tự |
-| UI-1 Automation Studio | `ui1` | **ĐANG LÀM** (agent) | worktree riêng | `apps/agent/routes/**` · `templates/**` | — | dải **6200-6299** · Q1 đã chốt = **B** · chủ **S5** |
+| UI-1 Automation Studio | `ui1` | **CHỜ DUYỆT** (xong, chưa gộp) | `phien/agent-ui-v2-ui1` | `apps/agent/routes/**` · `apps/agent/templates/**` · `apps/agent/manifest.py` · `useWorkflowDocument.ts` | — | dải **6200-6299** · Q1 = **B** · chủ **S5** · 3 commit: `7064389d` `a5ef5803` `ab03d20e` · trang HTML **2 → 8** · trình duyệt (8198) **PASS** · 🔴 **lưu trữ CHƯA làm — cần cửa HTTP mới, chờ điều phối** |
 | UI-4 Node UX V2 | `ui4` | **ĐANG LÀM** (agent) | worktree riêng | `src/nodes/**` · `WorkflowCanvas.tsx` · `useDisplayGraph.ts` | — | dải **6000-6099** |
 | UI-7 Execution + Runs | `ui7` | **ĐANG LÀM** (agent) | worktree riêng | `ExecutionPanel/**` · `RunV3Panel/Inspector/Diff` · `workflowApi.ts` | — | dải **6100-6199** · chủ **S4** |
 | UI-5 Inspector + Connections | `ui5` | **ĐANG LÀM** (agent) | worktree riêng | `ket_noi_v3.py` (mới) · `StepInspector/**` · `src/inspector/**` | — | dải **6300-6399** · Q4 đã chốt |
@@ -40,6 +40,11 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | ui0 | `frontend/agent-canvas/src/CanvasEdgeView.tsx` | 27/09 | — |
 | ui3 | `frontend/agent-canvas/src/CanvasShell.tsx` → `src/features/editor/**` | 27/09 | **S2** |
 | ui3 | `frontend/agent-canvas/src/editorState.ts` | 27/09 | **S3** (nhận bàn giao từ ui0) |
+| ui1 | `apps/agent/routes/**` (`trang.py`, `_shared.py`) | 28/09 | **S5** |
+| ui1 | `apps/agent/templates/**` (4 tệp) | 28/09 | — |
+| ui1 | `apps/agent/manifest.py` — **chỉ khối `nav`** | 28/09 | ⚠️ ngoài phiếu đã khai, xem §Quyết định |
+| ui1 | `src/features/editor/hooks/useWorkflowDocument.ts` — **3 dòng** | 28/09 | ⚠️ trong `features/editor/**` của UI-3 (đã gộp) |
+| ui1 | `tests/test_72_vanhanh.py` — **1 khẳng định** | 28/09 | — |
 
 
 **Sáu sổ dùng chung và chủ của chúng** — đụng vào thì DỪNG và báo điều phối:
@@ -64,6 +69,12 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 | UX-3 Manual → Ảnh → Video → Giọng → Render | ⚠️ **một phần** | `agent_ui_v2_ui0_nghiem_thu.js` | **UI-0 xong**: node `app.*` nối được và chạy được (đo: 1 cạnh thật, run QUEUED). Còn thiếu trigger thủ công (**Q11**) |
 | UX-4 Sheets → AI Router → nhánh → gộp | ❌ | — | UI-5 + **Q11** (`ai.router` đang `publish_duoc=False`) |
 | UX-5 Parent → Subworkflow → Wait → Human | ❌ | — | **UI-0** + UI-8a |
+| UX-0 Quản lý workflow: xem · tìm · tạo · mở · nhân bản | ✅ **dựng được** | `agent_ui_v2_ui1_nghiem_thu.js` | **UI-1 xong** (28/09). Đo trên 8198: danh sách 0 → 9 mục; `items[0]`=`075714aa` mà mở `4e918dba` ⇒ nạp đúng `4e918dba` bằng **một** lời gọi; nhân bản giữ nguyên tài liệu. ⛔ Còn thiếu **lưu trữ** (cần cửa mới) |
+
+⚠️ UX-0 **không có trong bảng gốc** vì audit chỉ đếm năm luồng *dựng một
+automation*. Nhưng `01 §1.1` đo rằng giao diện ⛔ không có đường nào tới
+workflow **thứ hai** — tức luồng bị thiếu nằm **trước** cả năm luồng kia. Thêm
+nó vào đây để bảng độ phủ đo đúng thứ đang chặn, không chỉ thứ đã liệt kê sẵn.
 
 ## Quyết định đã chốt
 
@@ -75,6 +86,16 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 | Q2 | UI-0 làm thành phase riêng, deploy độc lập | **CHƯA** | | khuyến nghị A, độ tin CAO |
 | — | Giữ `@xyflow/react` | ✅ CHỐT | 27/09 | bằng chứng: dùng 11/30 API |
 | — | Sửa P0-1 ở **cổng biên dịch**, ⛔ không di trú dữ liệu | ✅ CHỐT | 27/09 | `…-TONG.md` §1.5 |
+| — | UI-1: **6 mục IA khai ở `manifest.nav`**, ⛔ không ở template riêng | ✅ CHỐT | 28/09 | làn `ui1` — `NavEntry.built=False` là **cơ chế có sẵn** của nền tảng: `base.html` tự dán huy hiệu "Đang xây". Viết một thanh mục thứ hai trong template là dựng lại thứ đã có, và nó sẽ lệch với nav thật |
+| — | UI-1: bỏ mục nav **"Canvas"** | ✅ CHỐT | 28/09 | làn `ui1` — `09 §1` đặt trình soạn là mục **con** của một workflow. `/agent/canvas` **vẫn sống** (`test_1726`), nó chỉ không còn trên nav |
+| — | UI-1: tên mặc định workflow chốt **lúc TẠO**, ⛔ không dịch lúc hiện | ✅ CHỐT | 28/09 | làn `ui1` — `tao_workflow` **lưu** `"Workflow mới"` vào CSDL ⇒ từ đó là **dữ liệu**. Dịch dữ liệu lúc hiện sẽ đổi cả tên do chính khách đặt |
+
+🔴 **UI-1 CHƯA LÀM: lưu trữ (archive) workflow.** `Workflow.archived_at` có
+trong lược đồ và danh sách đã lọc theo nó, nhưng **không cửa nào đặt được nó**
+— cần một cửa HTTP mới (`POST /agent/api/v3/workflows/{id}/luu-tru` hoặc một
+trường trên `PUT`). Mở bề mặt HTTP là quyết định riêng ⇒ **chờ điều phối**,
+⛔ chưa viết. Cho tới lúc đó `test_6200::test_khong_mo_cua_POST_moi_o_tang_trang`
+canh rằng không ai lặng lẽ mở một cửa ghi ở tầng trang.
 
 ## Rủi ro đang mở
 

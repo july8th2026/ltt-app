@@ -53,8 +53,15 @@ def _user(request: Request):
     return user
 
 
-def _page_context(request: Request, *, error: str = "") -> dict:
-    return {"nav": MANIFEST.slug, "app": MANIFEST,
+def _page_context(request: Request, *, error: str = "",
+                  nav: str = "") -> dict:
+    """Context chung cho moi trang HTML cua app.
+
+    `nav` la `NavEntry.nav_key` cua trang dang mo — `base.html` so no voi tung
+    muc de to sang muc dang xem. Mac dinh la `MANIFEST.slug` (muc "LTT Agent
+    AI"), y nhu truoc khi app co nhieu trang.
+    """
+    return {"nav": nav or MANIFEST.slug, "app": MANIFEST,
             "csrf_token": issue_csrf_token(request), "error": error}
 
 
