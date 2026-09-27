@@ -139,3 +139,55 @@ def test_tran_giay_ngan_co_chu_y():
     assert 0 < job_runner._GIAY_GIET_CAY_CON <= 30, (
         "tran giay cho taskkill phai NGAN: day la duong thoat khan, cho lau o "
         "day la mat luon cua thoat")
+
+def test_taskkill_T_THAT_SU_voi_toi_CHAU_khong_chi_con(tmp_path):
+    """⭐ Mat xich RUNTIME: ban va dat tren mot GIA DINH ve hanh vi cua OS.
+
+    Moi phep kiem khac o tep nay chan `subprocess.run` roi soi argv — chung chung
+    minh TA GOI DUNG LENH, nhung KHONG chung minh LENH DO LAM DUNG VIEC.
+
+    Hinh that la `worker -> (Popen) engine`, tuc quan he CHAU. Neu `/T` chi voi
+    toi con TRUC TIEP thi ban va vo dung ma moi phep kiem kia van xanh — dung
+    kieu "tinh nang dung tren giay" ma dot sua nay di don.
+
+    Phep kiem nay dung tien trinh cua RIENG no (khong cham tien trinh cua ai) va
+    do that: de ra cay cha -> chau, goi dung lenh ban va dung, roi hoi `tasklist`
+    xem CHAU con song khong.
+
+    Do 27/09/2026 tren may nay: `/T` CO voi toi chau. Neu mot ban Windows khac
+    khong the, phep kiem nay DO va nguoi doc biet ngay ban va da mat hieu luc.
+    """
+    import subprocess
+    import time
+
+    def _con_song(pid: int) -> bool:
+        r = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+                           capture_output=True, text=True, timeout=20)
+        return str(pid) in r.stdout
+
+    ma_con = (
+        "import subprocess,sys,time;"
+        "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(120)']);"
+        "print(p.pid,flush=True);"
+        "time.sleep(120)"
+    )
+    cha = subprocess.Popen([sys.executable, "-c", ma_con],
+                           stdout=subprocess.PIPE, text=True)
+    try:
+        chau = int(cha.stdout.readline().strip())
+        time.sleep(1.0)
+        assert _con_song(chau), "chau chua kip chay — phep kiem khong ket luan duoc"
+
+        subprocess.run(["taskkill", "/T", "/F", "/PID", str(cha.pid)],
+                       capture_output=True, timeout=15)
+        time.sleep(2.0)
+
+        assert not _con_song(chau), (
+            "⛔ `taskkill /T` KHONG voi toi CHAU tren may nay => "
+            "`_giet_cay_tien_trinh_con` KHONG lam duoc viec no hua: engine se "
+            "song sot qua `os._exit` va giu GPU trong khi lease da bi thu hoi.")
+    finally:
+        for pid in (cha.pid,):
+            if _con_song(pid):
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)],
+                               capture_output=True, timeout=15)
