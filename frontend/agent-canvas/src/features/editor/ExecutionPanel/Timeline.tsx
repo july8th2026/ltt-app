@@ -33,11 +33,21 @@ export function Timeline(p: Props) {
   const lauNhat = p.buoc.reduce((max, b) => Math.max(max, b.thoiLuongMs ?? 0), 0)
   return (
     <table className="run-timeline">
-      <caption className="sr-only">Dòng thời gian các bước của lượt chạy</caption>
+      <caption className="run-an-nhin">Dòng thời gian các bước của lượt chạy</caption>
+      {/* ⭐ `<colgroup>`, ⛔ KHONG dat be rong tren `<td>`.
+          Voi `table-layout: fixed`, trinh duyet lay be rong cot tu HANG DAU
+          (hoac tu `<colgroup>`) va BO QUA moi be rong khai o `<td>` cac hang
+          sau. Ban truoc khai `width` tren class cua `<td>` nen khong cot nao
+          nhan duoc so nao: ca sau cot tut ve 29px (do 28/09). */}
+      <colgroup>
+        <col className="run-col-ten"/><col className="run-col-thoi-luong"/>
+        <col className="run-col-chi-phi"/><col className="run-col-trang-thai"/>
+        <col className="run-col-attempt"/><col className="run-col-thao-tac"/>
+      </colgroup>
       <thead>
         <tr><th scope="col">Bước</th><th scope="col">Thời lượng</th>
           <th scope="col">Chi phí</th><th scope="col">Trạng thái</th>
-          <th scope="col">Lần thử</th><th scope="col"><span className="sr-only">Thao tác</span></th></tr>
+          <th scope="col">Lần thử</th><th scope="col"><span className="run-an-nhin">Thao tác</span></th></tr>
       </thead>
       <tbody>
         {p.buoc.map(b => {
@@ -59,16 +69,27 @@ export function Timeline(p: Props) {
                 {nhan ?? <span title="Lượt chạy chưa cho đủ mốc để đo bước này">—</span>}
               </td>
               <td className="run-timeline-chi-phi">{b.chiPhi} credit</td>
+              {/* ⭐ Dang CHO thi hien LY DO cho, ⛔ khong hien ca
+                  "Đang chờ tín hiệu (chờ người duyệt)" — 37 ky tu trong mot cot
+                  ~85px lam hang phinh len 139px (do 28/09 tren trinh duyet
+                  that). Ly do la phan mang tin: "cho nguoi duyet" va "cho
+                  webhook" doi hoi hai hanh dong khac nhau, con "dang cho tin
+                  hieu" thi khong noi gi ma trang thai chua noi. Inspector van
+                  hien CA HAI truong rieng. */}
               <td className="run-timeline-trang-thai">
-                <span>{b.nhanTrangThai}</span>
-                {b.lyDoCho && <> ({b.lyDoCho})</>}
+                <span>{b.lyDoCho || b.nhanTrangThai}</span>
               </td>
               <td className="run-timeline-attempt">Lần {b.lanThu}</td>
-              <td>
+              {/* ⭐ BIEU TUONG + `aria-label`, ⛔ khong phai 4 chu tren moi hang.
+                  Ngan keo chi rong 390px va nut nay lap lai o MOI hang: dang
+                  chu day no chiem mot cot rieng, day "Trang thai" xuong 6 dong
+                  (do 28/09 tren trinh duyet that). Ten tro nang GIU NGUYEN, nen
+                  ban phim va trinh doc man hinh ⛔ khong mat gi. */}
+              <td className="run-timeline-thao-tac">
                 {p.xong && p.onChayLaiTu &&
-                  <button type="button" onClick={() => p.onChayLaiTu!(b.nodeId)}>
-                    Chạy lại từ đây
-                  </button>}
+                  <button type="button" aria-label="Chạy lại từ đây"
+                          title="Chạy lại từ đây"
+                          onClick={() => p.onChayLaiTu!(b.nodeId)}>↻</button>}
               </td>
             </tr>
           )

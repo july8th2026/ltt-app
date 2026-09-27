@@ -10,9 +10,49 @@
  *    nền trắng, và ⛔ không phép kiểm jsdom nào bắt được (jsdom không tính màu).
  */
 
+/* ⭐ `run-an-nhin` — ẩn với MẮT, còn với trình đọc màn hình.
+ *
+ * 🔴 ⛔ KHÔNG dùng `.sr-only`: lớp ấy ⛔ KHÔNG ĐƯỢC ĐỊNH NGHĨA Ở ĐÂU trong
+ *    `canvas.css`. Đo được 28/09 trên trình duyệt thật — một `<caption
+ *    className="sr-only">` hiện NGUYÊN VĂN giữa giao diện. (`WorkflowCanvas.tsx`
+ *    cũng dùng `.sr-only` cho `FlowStatus`, nên dòng "N node · M kết nối trong
+ *    renderer" đang hiện cho người dùng thật — ⛔ KHÔNG sửa ở đây: `.sr-only`
+ *    là bề mặt của làn khác, và định nghĩa nó từ tệp này sẽ làm dòng ấy biến
+ *    mất trong im lặng giữa lúc họ đang đo. Đã báo điều phối.)
+ *
+ * ⛔ KHÔNG `display:none` và ⛔ không `visibility:hidden`: cả hai gỡ nội dung
+ *    khỏi cây trợ năng — tức ẩn với CẢ trình đọc màn hình, đúng thứ cần giữ.
+ */
+.run-an-nhin {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
 /* ── Dòng thời gian ────────────────────────────────────────────────────── */
-.run-timeline { width: 100%; border-collapse: collapse; font-size: 10px; }
-.run-timeline caption { text-align: left; }
+/* ⭐ `table-layout: fixed` + bề rộng khai TƯỜNG MINH.
+ *
+ * Ngăn kéo chỉ `min(390px, 100vw - 72px)` và bảng có 6 cột. Để trình duyệt tự
+ * chia (`auto`) thì cột nào có chuỗi dài nhất thắng, và chuỗi dài nhất ở đây là
+ * một nhãn trạng thái (*"Đang chờ tín hiệu (chờ người duyệt)"*) — nên tên bước
+ * bị ép xuống 3 dòng còn trạng thái chiếm 6 dòng. Đo 28/09 trên trình duyệt
+ * thật; ⛔ jsdom không thể thấy. */
+.run-timeline {
+  width: 100%; border-collapse: collapse; font-size: 10px;
+  table-layout: fixed;
+}
+.run-col-ten { width: 30%; }
+.run-col-thoi-luong { width: 12%; }
+.run-col-chi-phi { width: 16%; }
+.run-col-trang-thai { width: 27%; }
+.run-col-attempt { width: 11%; }
+.run-col-thao-tac { width: 28px; }
+.run-timeline-thao-tac > button {
+  width: 24px; min-width: 24px; height: 24px; padding: 0; line-height: 1;
+  border: 1px solid var(--border-strong, #5a3b38); border-radius: 6px;
+  background: var(--surface-interactive, #241a19);
+  color: var(--text-secondary, #c9bbb7); cursor: pointer;
+}
+.run-timeline-thao-tac > button:hover { color: var(--text-primary, #f4f4f5); }
 .run-timeline th {
   padding: 4px; text-align: left; font-weight: 600; font-size: 9px;
   letter-spacing: .06em; text-transform: uppercase;
@@ -25,7 +65,9 @@
   color: var(--text-secondary, #c9bbb7);
 }
 /* Tên bước: cột rộng nhất, và là chỗ duy nhất bấm được để mở Inspector. */
-.run-timeline-ten { position: relative; width: 44%; }
+/* Bề rộng khai một lần ở khối `table-layout: fixed` phía trên — ⛔ đừng khai
+ * lại ở đây: hai con số cho cùng một cột thì con số dưới thắng trong im lặng. */
+.run-timeline-ten { position: relative; }
 .run-timeline-ten > button {
   position: relative; width: 100%; min-height: 32px; padding: 0 6px;
   text-align: left; font-size: 11px; font-weight: 600;
@@ -33,19 +75,37 @@
   color: var(--text-primary, #f4f4f5);
 }
 .run-timeline-ten > button:hover { background: var(--surface-interactive, #241a19); }
+/* Thanh gach nam duoi chan chu — cho chu mot khoang de dung. */
+.run-timeline-ten > button { padding-bottom: 4px; }
 .run-timeline-ten > button:focus-visible {
   outline: 2px solid var(--focus-ring, #ef3731); outline-offset: 1px;
 }
-/* Thanh thời lượng: NỀN của ô tên, không phải một cột riêng — một cột riêng ăn
- * mất chiều ngang mà ngăn kéo 390px không có để cho. */
+/* Thanh thời lượng: một GẠCH MỎNG dưới chân ô tên, ⛔ không phải một khối nền
+ * cao bằng cả hàng.
+ *
+ * 🔴 Bản đầu tô cả chiều cao ô (`inset: 3px auto 3px 0`). Trên trình duyệt thật
+ *    (ảnh `ui7_sau_timeline_inspector.png`, 28/09) nó đọc ra là **hàng đang
+ *    được CHỌN**, không phải "bước này chạy lâu" — hai hàng đo được trông như
+ *    đang bôi đen, ba hàng còn lại trông như bị làm mờ. jsdom ⛔ không thể báo
+ *    chuyện này: ở đó phần tử chỉ có hay không có, ⛔ không có hình.
+ *
+ * ⛔ Cũng không dùng một cột riêng: 390px của ngăn kéo không có chiều ngang để
+ *    cho một cột chỉ mang hình. */
 .run-timeline-thanh {
-  position: absolute; inset: 3px auto 3px 0; border-radius: 6px;
-  background: var(--surface-interactive, #241a19);
+  position: absolute; left: 6px; bottom: 2px; height: 2px; border-radius: 2px;
+  background: var(--text-muted, #927f79);
 }
-.run-timeline tr[data-chon] .run-timeline-thanh { background: var(--brand-soft, #2a1513); }
-.run-timeline tr[data-chon] > td { border-top-color: var(--brand-primary, #ef3731); }
+.run-timeline tr[data-node-status='SUCCEEDED'] .run-timeline-thanh { background: var(--status-success, #62d889); }
+.run-timeline tr[data-node-status='RUNNING'] .run-timeline-thanh { background: var(--status-warning, #efb84f); }
+.run-timeline tr[data-node-status='FAILED'] .run-timeline-thanh { background: var(--status-danger, #ff6b63); }
+/* Hàng đang mở Inspector: đánh dấu bằng NỀN + viền trái, ⛔ không mượn thanh
+ * thời lượng làm dấu chọn — một hình, một nghĩa. */
+.run-timeline tr[data-chon] > td { background: var(--surface-interactive, #241a19); }
+.run-timeline tr[data-chon] > td:first-child {
+  box-shadow: inset 2px 0 0 var(--brand-primary, #ef3731);
+}
 .run-timeline-thoi-luong, .run-timeline-chi-phi,
-.run-timeline-attempt { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.run-timeline-attempt { font-variant-numeric: tabular-nums; }
 .run-timeline-thoi-luong em, .run-timeline-thoi-luong span { color: var(--text-muted, #927f79); }
 .run-timeline tr[data-node-status='RUNNING'] .run-timeline-trang-thai { color: var(--status-warning, #efb84f); }
 .run-timeline tr[data-node-status='SUCCEEDED'] .run-timeline-trang-thai { color: var(--status-success, #62d889); }
@@ -76,6 +136,10 @@
 .run-truong > dd { margin: 0; font-size: 10px; color: var(--text-secondary, #c9bbb7); min-width: 0; }
 .run-truong > dd small { display: block; color: var(--text-muted, #927f79); font-size: 9px; }
 .run-truong > dd code { word-break: break-all; }
+/* Cây JSON cuộn NGANG TRONG HỘP CỦA NÓ — ⛔ không đẩy Inspector tràn ra.
+ * `min-width: 0` là mảnh bắt buộc: một phần tử lưới/flex mặc định `min-width:
+ * auto`, tức ⛔ KHÔNG co nhỏ hơn nội dung, nên `overflow-x` một mình không đủ. */
+.run-json { min-width: 0; max-width: 100%; overflow-x: auto; }
 /* "Chưa có cửa dữ liệu" phải đọc KHÁC một giá trị thật, chứ không chỉ khác ô
  * trắng: nghiêng + mờ hơn, để mắt không nhận nó là số liệu. */
 .run-truong-trong { color: var(--text-muted, #927f79); font-style: italic; }
@@ -130,6 +194,20 @@
 }
 .run-bao-gia > span { font-size: 10px; color: var(--text-secondary, #c9bbb7); }
 
-/* Ngăn kéo là lưới 2 cột (`canvas.css`); các khối của mặt chạy chiếm cả hàng. */
-.operation-drawer :is(.run-bao-gia, .run-node-inspector, .run-timeline,
-                      .run-nhat-ky, .run-v3-inspector) { grid-column: 1/-1; }
+/* ── Chỗ đứng trong ngăn kéo ───────────────────────────────────────────── */
+/* Ngăn kéo là lưới 2 cột (`canvas.css`), nên mọi khối của mặt chạy phải khai
+ * `grid-column: 1/-1` — và chỉ CON TRỰC TIẾP mới nhận được khai ấy.
+ *
+ * 🔴 `.run-v3` NẰM TRONG DANH SÁCH NÀY LÀ BẮT BUỘC, ⛔ không thừa.
+ *    `canvas.css` trên `main` hôm nay khai `.run-v3` chỉ còn `padding/border/
+ *    background` — `grid-column:1/-1` và `display:grid` đã mất trong lần viết
+ *    lại `canvas.css` (làn UI-2). Hậu quả đo được 28/09: cả bảng dòng thời gian
+ *    co về **176px** trong một ngăn kéo 390px, tức nằm gọn trong MỘT trong hai
+ *    cột — sáu cột chữ nhồi vào 176px.
+ *
+ *    ⛔ KHÔNG sửa `canvas.css` để chữa (tệp của làn UI-2, và hai làn cùng sửa
+ *       một tệp CSS thì lần gộp nào cũng là một lần giải xung đột tay).
+ *       `.run-v3` là gốc của chính `RunV3Panel`, nên khai chỗ đứng cho nó từ
+ *       đây là đúng chủ sở hữu. Đã báo điều phối. */
+.operation-drawer > :is(.run-v3, .run-bao-gia, .run-diff) { grid-column: 1/-1; }
+.operation-drawer > .run-v3 { display: grid; gap: 8px; }

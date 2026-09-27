@@ -102,6 +102,13 @@ export const TEN_BUOC: Record<string, string> = {
 
 export const tenBuocGia = (nodeId: string) => TEN_BUOC[nodeId] ?? ''
 
+/** Báo giá mỗi bước của `runDuHinhDang` — dạng của `useLiveQuote` (node_id ->
+ *  credit). Tổng = 12; ⭐ `0` là một cái giá THẬT, ⛔ không phải "chưa có giá",
+ *  nên nó phải nằm trong bảng. */
+export const GIA_MOI_BUOC: Record<string, number> = {
+  'n-sheet': 0, 'nmujtmc1b-0': 3, 'n-video': 8, 'n-dang': 1, 'n-cho': 0,
+}
+
 export const thamSoGia = (nodeId: string) =>
   nodeId === 'nmujtmc1b-0'
     ? { prompt: 'mot con meo', so_anh: 2, kich_thuoc: { rong: 1024, cao: 1024 } }

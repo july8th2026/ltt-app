@@ -43,10 +43,22 @@ function Nhom({ ten, children }: { ten: string; children: ReactNode }) {
 }
 
 /** Cây JSON cho dữ liệu LỒNG, gập sẵn một cấp. Rỗng ⇒ trả `null` để `Truong`
- *  hiện câu "trống" thay vì một dấu `{}` không nói gì. */
+ *  hiện câu "trống" thay vì một dấu `{}` không nói gì.
+ *
+ *  🔴 BỌC TRONG MỘT HỘP CUỘN RIÊNG (`run-json`), ⛔ không thả thẳng vào ô.
+ *     `@uiw/react-json-view` bố trí theo chiều rộng NỘI DUNG: một khoá lồng như
+ *     `"kich_thuoc": {...}` đẩy cây rộng ra, và vì ngăn kéo chỉ
+ *     `min(390px, 100vw - 72px)` nên nó đẩy luôn cả Inspector tràn ngang.
+ *     Đo được 28/09 trên trình duyệt thật: hàng JSON chạm 1405px trong một
+ *     Inspector kết thúc ở 1404px.
+ *
+ *     ⚠️ Lỗi này chỉ lộ ra khi hộp thử được bọc đúng `.canvas-toolbar` — bản
+ *        trước để ngăn kéo trải rộng 1440px nên cây JSON thừa chỗ và mọi phép
+ *        đo đều XANH. jsdom thì ⛔ không bao giờ thấy được.
+ */
 function CayJson({ gia_tri }: { gia_tri: Record<string, unknown> | null }) {
   if (!gia_tri || !Object.keys(gia_tri).length) return null
-  return <JsonView value={gia_tri} collapsed={1} />
+  return <div className="run-json"><JsonView value={gia_tri} collapsed={1} /></div>
 }
 
 export function NodeExecutionInspector({ buoc }: { buoc: BuocRun }) {
