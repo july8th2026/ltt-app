@@ -14,7 +14,9 @@ duong mo mot workflow khac. ⇒ San pham, **qua giao dien**, la
     /agent/workflows            DANH SACH: tim · tao moi · mo · nhan ban
     /agent/workflows/{id}       trinh soan (Canvas) mo DUNG workflow do
     /agent/canvas               loi vao KHONG id — giu nguyen hanh vi cu
-    /agent/runs · /templates · /connections · /agents · /settings
+    /agent/templates            danh muc MAU (UI-9, 28/09) — "Dung mau nay"
+                                tao workflow that qua cua v3 roi mo Canvas
+    /agent/runs · /connections · /agents · /settings
                                 DAT CHO: tra 200 va noi ro "dang xay"
 
 ⭐ `/agent/canvas` giu nguyen: `test_1726::test_hai_trang_html_VAN_CON` chot no,
@@ -39,6 +41,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from apps.agent import mau as _mau
 from apps.agent.routes._shared import (_canvas_presentation_mode, _page_context,
                                        _user, router)
 from platform_core.frontend_bundle import bundle_assets
@@ -58,8 +61,6 @@ from server.templating import templates
 DAT_CHO: tuple[tuple[str, str, str, str, str], ...] = (
     ("/runs", "agent_runs", N_("Lượt chạy"), "UI-7",
      N_("Lịch sử mọi lượt chạy của bạn: lọc theo trạng thái, mở lại một lượt để xem từng bước.")),
-    ("/templates", "agent_templates", N_("Mẫu"), "UI-9",
-     N_("Mẫu chạy được: mở một mẫu ra là một workflow thật của bạn, sửa được ngay.")),
     ("/connections", "agent_connections", N_("Các kết nối"), "UI-5",
      N_("Kết nối tới dịch vụ ngoài để một bước dùng lại mà không phải dán khoá mỗi lần.")),
     ("/agents", "agent_agents", N_("Agent"), "UI-8b",
@@ -123,6 +124,29 @@ def trang_workflows(request: Request, q: str = "", luu_tru: int = 0,
     context.update({"workflows": rows, "q": tim, "tong": tong,
                     "xem_kho": xem_kho, "so_kho": so_kho})
     return templates.TemplateResponse(request, "agent_workflows.html", context)
+
+
+@router.get("/templates", response_class=HTMLResponse)
+def trang_templates(request: Request, _identity: str = Depends(require_login)):
+    """Danh mục mẫu (`apps/agent/mau.py`) — UI-9.
+
+    ⭐ Ve o MAY CHU, giong `trang_workflows`: danh sach mau doc duoc khi JS
+       chet. Chi hanh dong "Dung mau nay" moi can JS, y het nut "Workflow
+       moi" cua `agent_workflows.html` — va no goi DUNG cua da co
+       (`POST /agent/api/v3/workflows`), khong mo cua moi.
+
+    ⚠️ `document` cua tung mau la DU LIEU (JSON), khong phai chuoi hien thi —
+       no di qua `tojson` nguyen ven, KHONG qua `_t()`. Chi `ten`/`mo_ta` (dan
+       N_() trong `mau.py`) moi dich.
+    """
+    danh_sach = _mau.tat_ca()
+    context = _page_context(request, nav="agent_templates")
+    context.update({
+        "mau_list": danh_sach,
+        "mau_json": {m.id: {"name": _t(m.ten), "document": m.document}
+                    for m in danh_sach},
+    })
+    return templates.TemplateResponse(request, "agent_templates.html", context)
 
 
 def _trang_canvas(request: Request, *, workflow_id: str = "",
