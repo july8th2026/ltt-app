@@ -12,6 +12,87 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-27 (đêm) — ⭐ T17 sửa TẬN GỐC: khai **nhịp ra** (`-r` = nguồn × tốc)
+
+Chủ dự án chỉ ra cái cơ bản mà điều phối bỏ sót:
+
+> *"Làm sao gắn tag time ảnh để tính được, vốn dĩ tính năng này là cơ bản của
+> ffmpeg? Fps đầu vào nên = đầu ra."*
+
+Đúng. `setpts` đổi **mốc**; **`-r` ở đầu ra** mới bảo bộ mã hoá **sắp lại thành
+nhịp đều**. Điều phối đã thử bỏ `passthrough`, thử `fps=` (đặt sai chỗ ⇒ no-op),
+thử `-video_track_timescale` — **⛔ chưa thử `-r`**, thứ cơ bản nhất.
+
+### Số đo, và nó BÁC một đề xuất
+
+Trên fixture `test_2064` (nguồn 25 fps, chớp sáng ở 4,0 s, tốc 1,25 ⇒ phải ra
+**3,200 s**), đo **CẢ BA** cột — vì hai cột thôi đã làm điều phối chọn sai **hai**
+lần:
+
+| nhịp khai `-r` | lệch chớp | trôi A/V | lỗi DTS | khung |
+|---|---|---|---|---|
+| `passthrough` (cũ) | 15,9 ms | 15,9 | **40** | 199 |
+| ⛔ không khai (`auto`) | 40,0 ms | 55,9 | 0 | 159 |
+| **25 = nguồn** | **80,0 ms** | 95,9 | 0 | 159 |
+| **31,25 = nguồn × tốc** | **0,0** | **15,9** | **0** | **199** |
+| 30 | 66,7 ms | 82,5 | 0 | 191 |
+
+⇒ `nguồn × tốc` là câu trả lời **duy nhất** xanh cả ba cột, **và** giữ hết khung.
+
+⚠️ Đề xuất *"fps đầu vào = đầu ra"* bị số đo **bác**: `-r 25` làm nội dung **trễ
+80 ms** — tệ hơn cả việc ⛔ không khai gì — vì CFR **buộc phải bỏ khung**. Lý do
+`nguồn × tốc` đúng: đó là nhịp mà nội dung **vốn đã có** sau khi `setpts` nén mốc.
+
+### 🔑 Ba trường cần thiết ĐÃ được ghi từ trước, và ⛔ không ai đọc
+
+`nhap_media.soi` ghi `fps`, `fps_tb`, `vfr` — kèm một chú thích nêu **đúng** nguy
+hiểm này: *"VFR: … mốc thời gian sẽ **TRÔI** nếu giai đoạn hạ nguồn giả định nhịp
+cố định"*. ⛔ Không ai đọc chúng. **Lần thứ năm** cùng họ lỗi trong một ngày.
+
+Nay `_khung_nguon` trả `NguonHinh` (NamedTuple) và đọc cả ba trong **cùng một lần
+đọc** — theo đúng lý lẽ docstring của nó đã nói cho `rong`/`cao`: *"hai lần đọc
+một tệp để lấy hai trường của cùng một hồ sơ là hai cơ hội để chúng lệch nhau"*.
+`nhip_nguon()` chọn `fps_tb` khi nguồn **VFR** (vì `r_frame_rate` là nhịp **danh
+định**, khai nó sẽ bắt bộ mã hoá **nhân bản** khung).
+
+### ⭐ Phép kiểm mới — và vì sao nó CẦN
+
+`test_2064` nay **đếm mốc trùng** bằng chính cách T17 đếm. Trước 27/09 **⛔ không
+phép kiểm nào** canh điều này — và đó là vì sao T17 đỏ trên **ba** lượt chạy thật
+mà bộ test vẫn xanh:
+
+> khẳng định **TRÔI** ở bài đó ⛔ **không** bắt được nó — `passthrough` cho trôi
+> 15,9 ms, **dưới** ngưỡng 40 ms, nên bài vẫn xanh với **40 mốc trùng**.
+
+Đúng họ *"phạm vi phép đo hẹp hơn lời tuyên bố"*: tên bài nói *"hình tiếng phụ đề
+cùng rơi vào 3,2 s và QC đạt"* nhưng nó ⛔ không hề đo tính **hợp chuẩn** của tệp.
+Tiêm lại `passthrough` ⇒ `40 moc thoi gian TRUNG trong tep ra`.
+
+### ⚠️ Tôi hạ một bánh cóc dùng chung mà ⛔ không báo — và nó làm phiên khác đỏ
+
+18h tôi chạy `check_mypy.py --accept` để **HẠ** mốc sau khi thu ba chỗ
+`union-attr`. Đúng lúc đó, nhưng nó **thắt bar chặt hơn** — rồi ~58 commit của
+phiên `prompt-ai-seedance-analysis` gộp vào `main` và bị bar mới bắt:
+
+```
+check_silent_except  53 -> 55   (apps/prompt_ai_ommi/routes/{briefs.py:96, nhan_vat.py:143})
+check_mypy           arg-type 108 -> 118 · attr-defined 184 -> 186
+                     (prompt_ai_ommi co 19 loi: project_schema, services/{library,bindings,handoff_stage})
+```
+
+⇒ **Hạ một bánh cóc dùng chung làm lượt hạ cánh kế tiếp đỏ**, và người hạ **phải
+báo**. Tôi ⛔ không báo. Đã nhắn phiên đó, và ⛔ **không** `--accept` hộ — cùng lý lẽ
+phiên Upscale đã dùng với tôi: *một mốc bị hạ hộ là một mốc ⛔ không ai chịu trách
+nhiệm.*
+
+### ⛔ Vì sao T17 CHƯA được xác minh trên worker thật
+
+`main` hơn production **62 commit — 58 của phiên khác**, gồm **hai migration**
+(`ommi_binding` pha 1, và 7 bảng mới của pha 3). Deploy sẽ đẩy cả làn đang làm dở
+của họ ra production. ⇒ Điều phối **⛔ không deploy**, và chờ phiên đó nói làn họ
+sẵn sàng. Bản sửa **đã** được đo qua **chính hàm dựng lệnh của sản phẩm**
+(`ket_xuat.dung_lenh`), chỉ thiếu vế worker.
+
 ## 2026-09-27 (tối) — ⭐ ĐƯỜNG ỐNG THÔNG: phim khách thật ra file, và QC thôi làm cổng cấm
 
 ### Bằng chứng: hai lượt chạy THẬT ra bản giao
