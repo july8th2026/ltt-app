@@ -106,6 +106,40 @@ Thứ tự chuỗi GĐ2, mỗi mũi một lý do kiểm được:
 Đo bằng cây tạm: đỏ **ở cả `270a659f` và `cff52e84`** — cũ hơn cả T17. Ghi lại
 làm một mục riêng; ⛔ chưa truy nguyên.
 
+### Tái chứng nhận E2E — và hai cửa của runner đều bắt được một ca
+
+`PHIEN_BAN_BAN_DUNG` 2→3 làm `test_448` đỏ **có chủ đích** (*"nghiệm thu đã cũ, phải
+chạy lại"*). Chạy lại: **1 passed / 0 skipped**, 5 ph 22 s, cả hai preset 13/13 giai
+đoạn `succeeded`, `image_finish = hinh_anh/2/ke_cat/1/che_do/10`. `test_448` nay **25
+passed**.
+
+⭐ **Cửa 1 của runner bắt một ca thật:** lượt đầu bài bị **SKIP** (phép kiểm NẶNG,
+chặn mặc định vì máy phục vụ khách) mà `pytest` vẫn **thoát 0**. Nếu runner chỉ đọc
+mã thoát thì tôi đã tưởng đã chứng nhận. ⇒ *Một bài SKIP ⛔ không phải một bài xanh.*
+**Cửa 2** (*báo cáo phải ĐỔI byte*) là lưới thứ hai cho ca `LTT_ASV_E2E_RA` ⛔ không
+tới được bài.
+
+### 🔴 Bẫy khoá: ngưỡng 20 tệp ⛔ KHÔNG bảo vệ khi chính BÀI tự xin khoá
+
+Tôi bọc phép nghiệm thu (**một** tệp) trong `chay_nang.py`, tin rằng
+`_NGUONG_TEP_NANG = 20` của `conftest` bảo vệ — đúng, nhưng ⛔ **không đủ**: chính bài
+ấy có `with fx.KhoaTheoPha(PHIEN_KHOA)` (`test_448:697`) tự xin `cpu_nhieu` cho từng
+pha. `chay_nang` đã giữ khoá và ⛔ không được nhận là tổ tiên ⇒ **bế tắc 12,2 phút,
+giữ khoá cả máy**.
+
+⭐ Dấu hiệu **khác** lần trước (26/09 là `giu khoa 0.0 phut` — thoát giả): lần này là
+**CPU đóng băng** — `UserModeTime` 4,9 s ⛔ không tăng qua ba mẫu, working set 180 MB
+(chưa nạp model), 0 tiến trình con, 0 ffmpeg. Đúng câu *"giữ khoá lâu + CPU một chữ
+số = đang CHỜ"*.
+
+⇒ Giết **cả ba** pid của mình (`chay_nang`, runner, `pytest` — `TaskStop` chỉ giết lớp
+bọc), đo lại `cua_so_yen` về `RÀNH`, rồi chạy **⛔ không bọc**: bài tự giữ khoá **từng
+pha rồi nhả**, tốt hơn giữ suốt lượt. Nay `cpu=110s`, model nạp 2,3 GB, khoá đúng pha
+`asv_media.image_finish`.
+
+**How to apply:** trước khi bọc **bất kỳ** lệnh pytest nào, `grep KhoaTheoPha|
+cua_so_yen|CuaSoYen` chính các tệp test sẽ chạy — ⛔ không chỉ hỏi *"bao nhiêu tệp"*.
+
 ### Bài học về công cụ của chính mình
 
 `thay()` trong script vá của tôi ⛔ không khẳng định *bản mới KHÁC bản cũ*, nên
