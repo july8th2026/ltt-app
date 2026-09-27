@@ -836,3 +836,73 @@ def test_2018_kho_KHONG_co_local_path_van_phai_do_THOI_LUONG_THAT(db, tmp_path,
     assert giay > 0.5, (
         f"kho ⛔ khong co `local_path` tra thoi luong {giay!r} — mot tep dai "
         f"~1,0 giay bi khai la {giay}; `timing_align` se noi 'chua co tieng'")
+
+
+def test_2018_STAGING_tren_kho_KHONG_co_local_path_van_phai_DUNG_LAI(tmp_path):
+    """🔴 **Ho hang con lai cua `edd5409f`: nhanh STAGING.**
+
+    `edd5409f` sua `_doan_con_dung` (kho ⛔ khong co `local_path` tra `0.0`).
+    Nhanh **staging** cua cung khoi `[A]` con nguyen ho loi ay, chi khac cho con
+    so gia la `0.0` thi o day la *"⛔ khong co cache"*:
+
+        duong = kho.local_path(khoa_tam) if hasattr(kho, "local_path") else None
+        if not duong:
+            return None
+
+    ⚠️ **`hasattr` o day la mot no-op.** `Storage.local_path` la phuong thuc cua
+       LOP NEN (`platform_core/storage.py:116`) nen `hasattr` LUON dung;
+       `R2Storage` ⛔ khong ghi de no, nen tren production no LUON tra `None`
+       (`LTT_STORAGE_LOCAL_PREFIXES=voice/` — ⛔ khong keo `asv-staging/` ve dia,
+       do la bang chung cua chinh `edd5409f`: `asv/…wav` cua mot job THAT
+       ⛔ khong co duong dan cuc bo).
+
+    ⇒ Duong dung lai STAGING — thu ton tai dung de **mot lan truot giua giai
+      doan ⛔ khong bat khach tra tien lan hai** (do o pha 23: mot lan truot o
+      doan ba lam luot chay lai goi may sinh tieng **6 lan cho 3 doan**) — chet
+      **100 %** tren production. Va no chet **⛔ khong mot dong log nao**: nhanh
+      nay `return` TRUOC ca tay bat ma chinh ham do dat o duoi de phan biet
+      *"mot doan khong doc duoc"* voi *"phep dung lai da chet im lang"*.
+
+    🔑 `LocalStorage` **co** `local_path` ⇒ moi phep kiem cuc bo di nhanh con
+       lai va ⛔ khong bao gio do duoc tinh chat nay. Bai nay dung dung mot kho
+       **⛔ khong co** `local_path`, va do la toan bo gia tri cua no.
+    """
+    import io
+    import wave
+
+    from apps.auto_scan_video import giai_doan_giong
+
+    tep = tmp_path / "doan.wav"
+    with wave.open(str(tep), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(16000)
+        w.writeframes(bytes([0, 1, 0, 2]) * 8000)      # 16.000 mau = 1,0 giay
+    byte = tep.read_bytes()
+
+    KHOA = "asv-staging/x/y/voice_synthesis/doan-tam.wav"
+
+    class _KhoXa:
+        """Kho GIONG R2: `exists`/`open` duoc, `local_path` tra `None`."""
+
+        def exists(self, khoa):
+            return khoa == KHOA
+
+        def open(self, khoa):
+            assert khoa == KHOA, khoa
+            return io.BytesIO(byte)
+
+        def local_path(self, khoa):
+            # ⭐ CO phuong thuc (nhu `Storage` nen) nhung tra `None` — dung hop
+            #    dong cua backend doi tuong. Bo phuong thuc di la do mot kho
+            #    ⛔ KHONG ton tai tren production.
+            return None
+
+    giay = giai_doan_giong._doan_trong_staging(_KhoXa(), KHOA)
+
+    assert giay is not None, (
+        "doan DA TRA TIEN nam trong staging bi doc thanh KHONG CO cache khi kho "
+        "⛔ khong cho duong dan tren dia — tuc 100 % tren production: moi luot "
+        "chay lai sau mot lan truot doc lai TOAN BO doan da tra tien")
+    assert giay > 0.5, (
+        f"tep staging dai ~1,0 giay bi do thanh {giay!r}")
