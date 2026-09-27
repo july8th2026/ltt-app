@@ -87,6 +87,52 @@ chỉ còn khả năng cache OS/driver, và đó là thứ phải **ĐO** chứ 
 - ⛔ `C:\Users\...\Desktop\TEST VIDEO` **chỉ đọc**: không sửa, không xoá, không
   ghi đầu ra vào đó.
 
+## 5.2b 🔴 ⛔ ĐỪNG bọc `chay_nang.py` quanh lệnh TỰ LẤY KHOÁ — nó tự khoá chính mình
+
+Tôi mắc đúng lỗi này ở cuối phiên và **chặn cả máy 36,5 phút** cho một lượt gate
+⛔ không bao giờ thoát được.
+
+```
+pid A  chay_nang.py --phien gate-upscale   ──GIỮ──►  cpu_nhieu
+  └ pid B  cay_gate.py chay --pham-vi ...
+      └ pid C  gate.py --pham-vi ...       ──XIN──►  cpu_nhieu   (đứng mãi)
+```
+
+`gate.py` tự xin `cpu_nhieu` ở **4 chỗ** (`:1072 :1079 :1101 :1345`), và nó có
+**0** phép hỏi tổ tiên (`grep "to_tien|parents()"` → 0). Khoá là tệp `O_EXCL`,
+⛔ **không tái nhập**. ⇒ Bọc nó là **chờ một khoá mà tổ tiên mình đang giữ**.
+
+| Lệnh | Bọc `chay_nang.py`? |
+|---|---|
+| `gate.py` · `cay_gate.py` | ⛔ **KHÔNG** — tự lấy khoá, ⛔ không hỏi tổ tiên |
+| `pytest` | ⛔ **KHÔNG** — `conftest` tự lấy khi ≥ 20 tệp |
+| `pre-commit run --all-files` | ✅ có |
+| `npm run build`, cargo, script đo riêng | ✅ có |
+
+### ⭐ Phép chẩn trong MỘT lệnh — dùng cho mọi ca "treo" về sau
+
+Lúc một lệnh có vẻ treo, chạy từ **shell KHÁC**:
+
+```
+python tools\cua_so_yen.py trang-thai
+```
+
+Người giữ khoá **chính là lượt của mình** ⇒ **tự khoá**, ⛔ không phải con bọ.
+
+⛔ **Đừng `| tail` và đừng `> tệp` khi chẩn treo.** `cua_so_yen` *in ra* dòng
+`xep hang N phut - cpu_nhieu: <ai>` — đúng dòng nói ra nguyên nhân. `tail` giữ
+tới khi tiến trình chết, `>` thì bị Python đệm; cả hai đều **nuốt mất** nó.
+
+### Vì sao một luật đúng vẫn dẫn tôi vào đây
+
+Luật tôi tự viết ở §5.2 nói *"lệnh nặng đi qua `chay_nang.py`"* — và nó **đúng**.
+Nhưng nó ⛔ không nói *"trừ những lệnh TỰ LẤY khoá"*. ⭐ **Một luật thiếu vế ngoại
+lệ thì đúng ở mặt chữ mà sai ở mặt dùng** — và người đọc càng tuân thủ thì càng
+đâm thẳng vào chỗ hỏng.
+
+⚠️ `cua_so_yen` **đã cảnh báo** tôi ở mốc 30 phút. Ngưỡng ấy hoạt động; chỗ hỏng
+là **người đọc** đã lướt qua nó. Cảnh báo chỉ có giá trị khi có ai đó dừng lại.
+
 ## 5.3 🔴 Đo lường — luật vàng của phiên này
 
 - ⛔ **Không một con số hiệu năng nào được viết ra nếu chưa đo.** `CHƯA ĐO` là
