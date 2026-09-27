@@ -430,6 +430,31 @@ UI-7. ⇒ UI-7 phải chọn **một** trong ba, và ghi rõ đã chọn cái n�
 là nó trả lời *"bản deploy hôm nay có đúng không"* chứ ⛔ không phải *"nhánh tôi có
 đúng không"*.
 
+### 🔴 Vế THỨ HAI: worker chạy dưới `LocalSystem`, PATH khác hẳn phiên người dùng
+
+Hai vế này **cộng dồn**, và vế thứ hai hỏng **im lặng hơn**:
+
+| | Hỏng thế nào |
+|---|---|
+| worker nạp **mã đã deploy** | phép đo trả lời câu hỏi về **bản khác** |
+| worker chạy dưới **`LocalSystem`** | mã chạy trong **môi trường khác**: PATH khác, biến môi trường khác, quyền khác |
+
+Ca thật 27/09 (phiên `Auto Scan Video`, bước gate 13/37): một công cụ gọi `ffmpeg`
+bằng **tên trần**. Tác giả **đã chạy nó thành công trước khi commit** — nhưng chạy
+trong **phiên người dùng**, nơi `ffmpeg` có trên `PATH`. Dưới `LocalSystem` thì
+không, và nó hỏng **im lặng**.
+
+⇒ Với UI-7 và mọi pha chạm hàng đợi job: *"chạy được trong phiên tôi"* trả lời một
+câu **khác** với *"chạy được ở nơi nó sẽ chạy"*. **Hai trạng thái, ⛔ không phải một.**
+
+⭐ **Và đây là phát biểu đáng giữ nhất của cả ngày, từ phiên kia:**
+
+> **Một bánh cóc có ích nhất khi nó đo một điều mà môi trường của người viết
+> ⛔ KHÔNG THỂ đo.**
+
+Đó cũng là lý do ⛔ không được tắt một bánh cóc vì *"máy tôi chạy tốt"* — câu đó
+chính là triệu chứng, không phải bằng chứng.
+
 ## 3b.4 Mỗi pha phải nộp gì
 
 ```
