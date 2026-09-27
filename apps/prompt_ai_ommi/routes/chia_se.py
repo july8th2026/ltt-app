@@ -144,7 +144,12 @@ async def nhap_mau_goc_route(request: Request,
     try:
         summary = nsvc.nhap(db, admin_owner_id=user.id)
         db.commit()
-    except Exception as exc:
+    except Exception:
+        # ⭐ `raise` TRAN, ⛔ khong `raise exc`: dang sau gan mot ten roi nem lai
+        #    cat truy vet o chinh dong nay, nen khi cua 500 no len thi stack tro
+        #    vao day thay vi vao cho that su nem. Quet AST 28/09 tim ra dong nay
+        #    — mot phep grep theo `from None` ⛔ khong thay, vi day la ca thu ba:
+        #    khong thieu `from`, ma **khong nen** co `exc`.
         db.rollback()
-        raise exc
+        raise
     return summary

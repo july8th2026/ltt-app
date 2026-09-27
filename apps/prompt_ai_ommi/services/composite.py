@@ -32,15 +32,13 @@ import re
 
 from apps.prompt_ai_ommi.services import placeholders as ph
 from apps.prompt_ai_ommi.services import resources as rsvc
+from apps.prompt_ai_ommi.project_schema import IMAGE_JOB_TYPE
 from platform_core.i18n import _ as _t
 
-# Trung VAN BAN voi `apps/prompt_ai_ommi/routes/_shared.py::_IMAGE_JOB_TYPE`
-# (hai cho khai mot dieu). ⛔ Khong import tu routes/_shared vao day: services/
-# khong nen phu thuoc nguoc vao routes/ (no keo theo FastAPI/Request/template
-# khong can cho mot module thuan logic). Da bao dieu phoi gop ve MOT hang so
-# dung chung o lop thap hon (vd `apps/prompt_ai_ommi/manifest.py`) — xem bao
-# cao lam I.
-_IMAGE_JOB_TYPE = "taoanh.generate"
+# ✅ 28/09: het trung van ban. Ghi chu cu dung o ve "⛔ khong import tu
+# routes/_shared vao services/" — nhung ket luan thi tam: cho dung la mot
+# lop THAP HON ma ca hai duoc phep import.
+_IMAGE_JOB_TYPE = IMAGE_JOB_TYPE
 
 _PLACEHOLDER_NAMES = ("SUBJECT", "STYLE", "EXTRA", "EQUIPMENT")
 _PLACEHOLDER_TOKEN = re.compile(r"\{([A-Z][A-Z0-9_]*)\}")
