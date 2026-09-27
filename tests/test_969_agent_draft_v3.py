@@ -552,8 +552,8 @@ def test_bao_ve_3_DOI_CHUNG_doi_ban_publish_thi_gia_DI_THEO(web):
         db.close()
 
 
-def test_MUOI_CHIN_route_v3_deu_duoc_dang_ky():
-    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **mười chín**
+def test_HAI_MUOI_BA_route_v3_deu_duoc_dang_ky():
+    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **hai mươi ba**
     route.
 
     Lịch sử con số: năm → **tám** (ba route `runs` ra đời cùng kiến trúc V2)
@@ -567,6 +567,9 @@ def test_MUOI_CHIN_route_v3_deu_duoc_dang_ky():
        — MỘT cửa báo giá cho CẢ đồ thị, thay `POST /agent/api/tools/{ten}/quote`
        gọi một lần **mỗi node**; đo được 24 → 2 request mỗi phiên).
     → **mười chín** (28/09, điều phối UI: `/luu-tru` và `/mo-lai`).
+    → **hai mươi ba** (28/09, làn UI-5: bốn cửa `/ket-noi` — kho kết nối
+       của khách, §6 ô kết nối. Bí mật đi qua `platform_core/credential.py`;
+       ⛔ không cửa nào trả lại giá trị bí mật, chỉ `ref` + nhãn).
 
     ## ⭐ Vì sao hai route 28/09 là một quyết định, không phải một chi tiết
 
@@ -621,8 +624,14 @@ def test_MUOI_CHIN_route_v3_deu_duoc_dang_ky():
         # nguoi DOC tu lau, day la cua dau tien DAT va XOA no.
         ("POST", "/api/v3/workflows/{workflow_id}/luu-tru"),
         ("POST", "/api/v3/workflows/{workflow_id}/mo-lai"),
+        # UI-5 (28/09): kho ket noi cua khach. `nha-cung-cap` la bang TRA
+        # (kieu nao dung duoc), khong phai du lieu cua mot khach.
+        ("GET", "/api/v3/ket-noi"),
+        ("POST", "/api/v3/ket-noi"),
+        ("DELETE", "/api/v3/ket-noi/{ket_noi_id}"),
+        ("GET", "/api/v3/ket-noi/nha-cung-cap"),
     }
-    assert len(co) == 19
+    assert len(co) == 23
 
 
 def test_tai_lieu_rong_dung_HINH_DANG_ma_M1_sinh_ra():
