@@ -391,6 +391,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                         thu_muc / f"logo{i}{Path(str(l['khoa'])).suffix or '.png'}")
                 for i, l in enumerate(ds_logo)]
             if _pd.co_dot_vao_hinh(ho_so_pd):
+                # 🔴 **Doi truc DAI CHU GOC sang khung RA (B8, 27/09).**
+                #    `dai_phu_de_goc` la phan so khung NGUON (khach ve tren
+                #    nguon), con `viet_tep_ass` tinh `margin_v` bang chieu cao
+                #    khung **RA**. Hinh hoc GD2 cat theo chieu DOC thi hai phan
+                #    so lech nhau — do duoc 27-30 px, va HAI cua so cat nguoc
+                #    nhau cho CUNG mot `margin_v`.
+                #
+                # ⭐ Day la cho DUY NHAT biet ca hai khung cung luc, nen phep doi
+                #    truc thuoc ve day; phep TINH thi o `hinh_hoc` (mot nguon).
+                ho_so_pd = _pd.doi_truc_dai_phu_de(
+                    ho_so_pd, bien_tap_gd2=bien_tap_gd2,
+                    rong_nguon=rong_nguon, cao_nguon=cao_nguon)
                 duong_ass = _pd.viet_tep_ass(ho_so_pd, su_kien_ra, thu_muc,
                                              rong=rong_khung, cao=cao_khung)
 

@@ -12,7 +12,8 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from apps.prompt_ai_ommi.routes._shared import (
-    MANIFEST, _csrf, _require_run_enabled, _user, router, require_login, get_db)
+    MANIFEST, _csrf, _require_run_enabled, _user, body_khong_bat_buoc, router,
+    require_login, get_db)
 from apps.prompt_ai_ommi.services import nhan_vat as nv
 
 
@@ -137,11 +138,7 @@ async def update_character(request: Request, cid: str,
 async def delete_character(request: Request, cid: str,
                            _identity: str = Depends(require_login),
                            db: Session = Depends(get_db)):
-    body = {}
-    try:
-        body = await request.json()
-    except Exception:
-        pass
+    body = await body_khong_bat_buoc(request)
     _csrf(request, body); user = _user(request)
     try:
         row = nv.doc(db, cid, user.id)

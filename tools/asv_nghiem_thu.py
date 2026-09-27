@@ -59,8 +59,15 @@ KICH_BAN: list[tuple[str, str, str]] = [
      "tests/test_419_asv_tiem_loi.py::test_artifact_bien_mat_thi_CACHE_khong_dung_lai_no"),
     ("S12", "tranh chap tai nguyen / dinh tuyen GPU",
      "tests/test_402_asv_mach_doc_gia.py::test_lan_ffmpeg_KHONG_nhat_duoc_job_GPU"),
-    ("S13", "QC tu choi ban ra hong",
-     "tests/test_420_asv_qc.py::test_QC_hong_thi_RUN_KHONG_ve_done"),
+    # 🔴 **DAO CHIEU 27/09 — chu du an chot: QC la BO DO va BAO CAO, ⛔ khong
+    #    phai cong cam phat hanh.** Nen CA loi khai cua hang nay doi, ⛔ khong
+    #    chi bai vien dan: QC ⛔ khong con "tu choi" gi — no DO, GHI phat hien
+    #    (`_qc_hong`, `qc_ky_thuat_dat`) va lan chay DI TIEP.
+    #
+    # ⚠️ Sua ten bai ma giu nguyen loi khai se de lai mot ma tran noi doi:
+    #    no se khai rang he thong CO mot cong ma he thong ⛔ khong con co.
+    ("S13", "QC DO va GHI phat hien, lan chay VAN di tiep",
+     "tests/test_420_asv_qc.py::test_QC_hong_VAN_ve_done_va_VAN_ghi_phat_hien"),
 ]
 
 

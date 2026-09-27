@@ -170,6 +170,27 @@ def _render_workspace(request: Request):
         "max_scenes": MAX_SCENES,
     })
 
+async def body_khong_bat_buoc(request: Request) -> dict:
+    """Body JSON cua mot request co the KHONG CO body (DELETE) -> `{}`.
+
+    ⭐ Bat `ValueError` chu ⛔ KHONG `Exception`. `request.json()` nem
+    `json.JSONDecodeError` (con cua `ValueError`) khi body rong hoac khong phai
+    JSON — do la ca HOP LE duy nhat o day. `except Exception` bat ca thu khac
+    (loi doc mang, loi ma hoa) va bien chung thanh `{}` im lang, tuc mot loi
+    THAT bien mat o dung cho kho tim nhat (bo kiem `check_silent_except`).
+
+    ⚠️ Tra `{}` KHONG lam yeu CSRF: `_csrf(request, {})` van tu choi vi khong
+    co token. Khach hang thuc su gui token thi phai gui body hop le.
+
+    ⛔ Moi handler `DELETE` dung HAM NAY, dung tu viet `try/except` — hai cho
+    tung tu viet (`briefs.py`, `nhan_vat.py`) va ca hai dung `except Exception`.
+    """
+    try:
+        return await request.json()
+    except ValueError:
+        return {}
+
+
 def _resource_error(exc: Exception) -> HTTPException:
     """Chỉ dịch lỗi CỦA NGƯỜI DÙNG. Mọi thứ khác để nguyên cho 500.
 

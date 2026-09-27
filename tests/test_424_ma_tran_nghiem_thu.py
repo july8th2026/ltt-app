@@ -116,7 +116,12 @@ MA_TRAN: dict[str, list[tuple[str, str]]] = {
         ("test_411_asv_ban_dung.py", "test_composer_KHONG_sinh_media"),
         ("test_415_asv_cong_thoat_render.py", "test_RENDER_that_su_sinh_ra_mot_mp4_PHAT_DUOC"),
         ("test_415_asv_cong_thoat_render.py", "test_render_lai_KHONG_danh_thuc_mot_giai_doan_thuong_nguon_nao"),
-        ("test_420_asv_qc.py", "test_QC_hong_thi_RUN_KHONG_ve_done"),
+        # 🔴 **DAO CHIEU 27/09: QC la BO DO, ⛔ khong phai cong.** Bai cu
+        #    (`test_QC_hong_thi_RUN_KHONG_ve_done`) chot hanh vi CU — QC hong
+        #    thi run ve `error`. Chu du an chot nguoc lai, nen bai ay ⛔ khong
+        #    con ton tai va ma tran phai vien dan bai chot hanh vi MOI.
+        ("test_420_asv_qc.py",
+         "test_QC_hong_VAN_ve_done_va_VAN_ghi_phat_hien"),
         ("test_420_asv_qc.py", "test_moi_dung_sai_deu_NO_duoc"),
         ("test_420_asv_qc.py", "test_lan_chay_that_QUA_duoc_cong"),
     ],
