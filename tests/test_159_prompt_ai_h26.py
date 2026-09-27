@@ -14,7 +14,18 @@ def test_public_name_changes_but_runtime_contract_stays_stable():
     assert [item.label for item in MANIFEST.nav] == ["Prompt AI"]
     assert MANIFEST.slug == "prompt_ai_ommi"
     assert MANIFEST.route_prefix == "/prompt-ai-ommi"
-    assert MANIFEST.job_types == ("prompt_ai_ommi.generate",)
+    # ⭐ Ghim CHINH XAC, co y: `job_types` la HOP DONG RUNTIME. Doi mot ten o day
+    #    lam mo coi moi job dang xep hang mang ten cu — `resolve_handler` tra
+    #    "khong co handler" va job chet sau khi credit da giu.
+    #
+    # ⚠️ Nen bai nay DO khi ai them mot job type la DUNG Y, khong phai mot bai
+    #    qua chat: them job type la viec CO CHU Y, va day la cho buoc nguoi them
+    #    phai noi ra. Them vao tuple duoi, dung noi long thanh mot phep kiem
+    #    "chua tap".
+    #
+    #    `import_zip` them 28/09 (pha 5, upload ZIP qua hang doi job).
+    assert MANIFEST.job_types == ("prompt_ai_ommi.generate",
+                                  "prompt_ai_ommi.import_zip")
 
 
 def test_builtin_catalog_is_customer_safe_and_has_all_three_kinds():

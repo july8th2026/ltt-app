@@ -22254,3 +22254,30 @@ msgstr "A short-lived ticket used to send one scene to another app (for example 
 
 msgid "Vector đặc trưng khuôn mặt, suy từ ảnh nhân vật do khách tải lên, dùng để giữ đúng một mặt qua nhiều cảnh. Là dữ liệu sinh trắc học nên ⛔ không ra API; đi cùng nhân vật khi nhân vật bị xoá."
 msgstr "A facial feature vector derived from a character image the customer uploaded, used to keep the same face across scenes. It is biometric data, so it never leaves through the API; it goes with the character when the character is deleted."
+
+msgid "Vé tạm để gửi một cảnh sang app khác (ví dụ Tạo video): giữ bản sao prompt và danh sách ảnh tham chiếu trong 30 phút. Hết hạn là xoá, kể cả khi chưa ai đọc."
+msgstr "A short-lived ticket used to send one scene to another app (for example Video): it holds a copy of the prompt and the list of reference images for 30 minutes. Expiry means deletion, even if nobody read it."
+
+msgid "Mã chia sẻ khách sinh ra để gửi một mục của họ cho người khác: mã, loại mục, số lần đã dùng, hạn dùng, mốc thu hồi. Là bằng chứng ai đã mở cửa cho ai, nên nó sống theo tài khoản."
+msgstr "A share code the customer creates to send one of their items to someone else: the code, the kind of item, how many times it has been used, its expiry, and when it was revoked. It is the record of who opened a door for whom, so it lives with the account."
+
+msgid "Mẫu sinh ảnh: câu prompt có ô trống, tỉ lệ, số ảnh mỗi lượt. Khách tự viết hoặc clone từ mẫu gốc rồi sửa — bản thảo của họ."
+msgstr "An image template: a prompt with blanks, an aspect ratio, and how many images per run. Customers write their own or clone a starter template and edit it - their draft."
+
+msgid "Khung dựng storyboard: phần mở đầu, luật ghép, đoạn phủ định, và lời nhắc dùng khi chia cảnh tự động. Khách sửa được từng phần."
+msgstr "A storyboard framework: the opening section, the composition rules, the negative footer, and the prompt used when splitting scenes automatically. Customers can edit each part."
+
+msgid "Mẫu khách lưu lại từ một lượt đã chạy: prompt cuối, phong cách và model đã dùng, điểm khách tự đánh giá. Giữ để họ tra lại vì sao một lượt cho kết quả tốt."
+msgstr "A sample the customer saved from a run: the final prompt, the style and model used, and the rating they gave it. Kept so they can look up why a particular run came out well."
+
+msgid "Bộ thiết lập sẵn của khách: phong cách nào, meta-prompt nào, lọc theo nhãn nào. Một lối tắt họ tự đặt để khỏi chọn lại mỗi lần."
+msgstr "A customer's preset: which style, which meta-prompt, which tag filter. A shortcut they define so they do not have to pick again every time."
+
+msgid "Một lượt sinh ảnh: tham số đã gửi, mẫu đã dùng, phiên bản thứ mấy và bản nào là cha nó. Giữ để khách so hai bản và quay lui."
+msgstr "One image run: the parameters sent, the template used, which version it is and which version is its parent. Kept so the customer can compare two versions and roll back."
+
+msgid "Bản chụp một tài nguyên khách đã xoá, giữ 30 ngày để họ đổi ý. Khôi phục trả lại tài nguyên và biến thể của nó, ⛔ không trả lại nhãn hay liên kết bộ sưu tập. Quá 30 ngày là xoá vĩnh viễn, kể cả tệp trên kho."
+msgstr "A snapshot of a resource the customer deleted, kept 30 days in case they change their mind. Restoring returns the resource and its variants, but not its tags or collection links. After 30 days it is deleted for good, including the file in storage."
+
+msgid "services.bao_tri.bao_tri, mỗi giờ"
+msgstr "services.bao_tri.bao_tri, hourly"

@@ -27,6 +27,8 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import select
+
 from apps.prompt_ai_ommi.services import bindings as bindings_svc
 from apps.prompt_ai_ommi.services.bat_bien import bat_bien_giao_bai
 from apps.prompt_ai_ommi.tables import OmmiHandoff, OmmiResourceVariant
@@ -419,6 +421,28 @@ def tao_ve(db, *, owner_id: str, project_id: str, scene_id: str,
     db.add(row)
     db.flush()
     return row
+
+
+def don_ve_het_han(db, *, now: datetime | None = None) -> int:
+    """Xoa moi ve DA QUA `expires_at`. Tra ve so dong da xoa.
+
+    🔴 Ve nay la HOP THU TAM 30 phut, nhung truoc 28/09 ⛔ KHONG noi nao xoa no
+    => hang tich tu vo han, moi hang giu mot ban sao prompt va danh sach anh
+    tham chieu cua khach. Mot han luu khong co nguoi quet ⛔ khong phai mot
+    chinh sach.
+
+    ⭐ Nguoi goi la `services/bao_tri.py` qua `AppManifest.bao_tri`, tuc duoi
+    lease cua nen tang => chay dung MOT lan tren toan cum.
+
+    ⛔ KHONG xoa theo `used_at`: mot ve da dung van con han, va ben nhan co the
+    doc lai trong cua so ay. Chi `expires_at` quyet dinh.
+    """
+    moc = now or datetime.now(timezone.utc)
+    rows = list(db.execute(
+        select(OmmiHandoff).where(OmmiHandoff.expires_at <= moc)).scalars())
+    for row in rows:
+        db.delete(row)
+    return len(rows)
 
 
 def tim_ve(db, ticket_id: str) -> OmmiHandoff | None:
