@@ -452,6 +452,18 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "ke hoach thoi gian cua timing_align: 'co thoai' doc tieng VIET "
                  "DA SINH o day, ⛔ khong doc ban chep loi NGUON "
                  "(ke_cat.khe_thoai_tu_ke_hoach)",
+                 # 🔴 Bo sung 27/09. Dong tren khai DUNG *nguon nao*, nhung no im
+                 #    ve *TRUC nao* — va tu khi `edit_plan` chay SAU `render`, truc
+                 #    la cho lech. `khe_thoai_tu_ke_hoach` tra khe tren truc BAN RA
+                 #    CUA timing_align (truoc `toc_do`), con tep ma giai doan nay
+                 #    cat la MP4 cua GD1 (**sau** `toc_do`). Doi truc o
+                 #    `giai_doan_hinh_anh._khe_thoai_truc_ban_giao`; thieu phep doi
+                 #    ay thi voi `toc_do = 1,25` mot cau thoai o giay 90 bi doc
+                 #    thanh "⛔ khong thoai" va bi cat vao giua loi.
+                 "khe tieng phai DOI TRUC tu truc bien tap (truoc `toc_do`) sang "
+                 "truc MP4 cua GD1 (sau `toc_do`) truoc khi dung — hai truc chi "
+                 "trung nhau khi `toc_do = 1` "
+                 "(giai_doan_hinh_anh._khe_thoai_truc_ban_giao)",
                  "tran 5 % la BAT BIEN O BIEN: `ke_cat.kiem` NEM khi vuot, nen "
                  "mot ke cat hong ⛔ khong bao gio ton tai (ke_cat.py)",
                  "cua so `cat_dau_cuoi` cua khach GIAO SAU ke cat, va CO Y nam "
@@ -465,9 +477,13 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "hoach, ban dung) (giai_doan_qc.py:74,79)",
                  "ban ra VA ban nguon phai giai ma duoc — mot tep hong nem tho o "
                  "day, khong suy giam (giai_doan_qc.py:98)",
-                 # 🔴 TIEN DE IM LANG: khac han T3/T13/T18 von suy giam.
+                 # 🔴 TIEN DE IM LANG: khac han T3/T13/T17/T18 von suy giam.
+                 #    ⚠️ T17 bo sung 27/09: `giai_doan_qc.py:273` dat
+                 #    `ly_do_khong_do["T13"] = ly_do_khong_do["T17"]` — MOT luot giai ma
+                 #    hong lam CA HAI khong do duoc, nen mot ban khai chi ke T13 noi
+                 #    HEP hon thuc te va lam nguoi doc tin T17 luon co so.
                  "do duoc am luong bang loudnorm: khong do duoc thi CA giai doan "
-                 "hong (khac T3/T13/T18 von ha xuong khong_kha_dung) "
+                 "hong (khac T3/T13/T17/T18 von ha xuong khong_kha_dung) "
                  "(giai_doan_qc.py:103 · tach_tieng.py:282)",
                  "ban dung khai cach render; thieu thi MAC DINH ve SAO_CHEP "
                  "(giai_doan_qc.py:113)",

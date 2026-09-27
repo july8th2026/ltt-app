@@ -143,6 +143,33 @@ def _tien_do_khach(giai_doan: list[dict], run) -> dict:
     }
 
 
+#: `{ten_giai_doan: khoa trong `outputs` noi rang no CO THAT SU lam viec cua no}`.
+#:
+#: 🔴 `succeeded` tra loi *"⛔ khong hong"*, ⛔ khong tra loi *"da lam"*. Mot giai
+#:    doan bi TAT bang cau hinh van chay qua tuc thi roi bao `succeeded`, va nhan
+#:    cua no tren man khach thi khang dinh viec ay DA XONG.
+#:
+#: ⭐ Bang nay CO Y chi mot dong. No ⛔ khong phai mot khuon cho moi giai doan —
+#:    chi nhung giai doan **tat duoc bang cau hinh** moi can tra loi cau hoi nay,
+#:    va hom nay chi co `qc_ai`. Them mot giai doan tat duoc thi them mot dong.
+KHOA_DA_LAM: dict[str, str] = {"qc_ai": "qc_ai_bat"}
+
+
+def _da_lam(ten: str, outputs) -> bool | None:
+    """`True`/`False` khi giai doan CO khai, `None` khi no ⛔ khong khai gi.
+
+    ⚠️ Ba trang thai, ⛔ khong hai: *"da lam"*, *"da chay va ⛔ khong lam"*, va
+       *"⛔ khong khai"*. Gop hai cai sau lai thi moi giai doan ⛔ khong co bang
+       khai deu bi in ra la "bo qua" — mot bao dong gia tren 12 trong 13 giai
+       doan, va bao dong gia lam nguoi ta tat cong.
+    """
+    khoa = KHOA_DA_LAM.get(ten)
+    if not khoa:
+        return None
+    v = (outputs or {}).get(khoa)
+    return None if v is None else bool(v)
+
+
 def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
                    moi_giai_doan_toi_da: int = 50) -> dict:
     """Dong thoi gian cua ca lan chay, dung tu du lieu ben.
@@ -169,6 +196,23 @@ def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
             "giay": _giay(s.started_at, s.finished_at),
             # Tham chieu ket qua: khoa luu tru, khong phai duong dan tren dia.
             "so_ket_qua": len((s.outputs or {}).get("khoa_asset") or []),
+            # ── `succeeded` co nghia la DA LAM, hay chi la DA CHAY QUA? ──────
+            #
+            # 🔴 `qc_ai` **mac dinh TAT** (`LTT_ASV_QC_AI`) va khi tat no chay qua
+            #    tuc thi roi bao `succeeded`. Nhan cua no la *"Soat lai nghia ban
+            #    dich"*, nen khach doc duoc mot dong khang dinh ban dich DA DUOC
+            #    SOAT trong khi ⛔ khong mot cau nao duoc doc. Cung ho loi voi
+            #    `"VLM de xuat bo"` (`123285ae`): mot ban khai SAI xuat xu di ra
+            #    **cho khach**.
+            #
+            # ⭐ Con so tra loi da nam san trong `outputs` tu truoc
+            #    (`giai_doan_qc_ai.py:140` ghi `qc_ai_bat: False`) — ⛔ khong ai
+            #    doc no. Day la cho no duoc doc.
+            #
+            # ⚠️ `None` = *"giai doan nay ⛔ khong khai gi"*, khac han `False` =
+            #    *"da chay va ⛔ khong lam gi"*. Nguoi doc template phan biet hai
+            #    cai, nen ⛔ khong duoc gop chung vao mot gia tri gia.
+            "da_lam": _da_lam(g.ten, s.outputs),
         }
 
         # ── Loi: hai muc chi tiet ──────────────────────────────────────────

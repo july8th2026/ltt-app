@@ -22047,3 +22047,9 @@ msgstr "Filling the background band needs the source frame size, which could not
 #: apps/auto_scan_video/ (soat lan C, 27/09/2026)
 msgid "Kế hoạch thời gian khai tổng thời lượng {ms} ms: hai cổng kiểm độ dài (bản lồng tiếng dài hơn nguồn, và tệp kết xuất dài sai) đều tắt khi con số này bằng 0."
 msgstr "The timing plan declares total duration {ms} ms: both length gates (dub longer than source, and rendered file of wrong length) switch OFF when this number is zero."
+
+#: apps/auto_scan_video/templates/asv_tien_do.html
+#. Buoc bi TAT bang cau hinh: nhan giai doan van hien, kem ghi chu nay,
+#. de khong khang dinh voi khach mot viec chua he lam.
+msgid "— bỏ qua"
+msgstr "— skipped"
