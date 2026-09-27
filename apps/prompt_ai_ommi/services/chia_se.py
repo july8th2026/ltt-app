@@ -16,13 +16,28 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apps.prompt_ai_ommi.tables import (
-    OmmiMetaPrompt, OmmiPromptSnippet, OmmiStyle, OmmiShareCode)
+    OmmiMetaPrompt, OmmiPromptSnippet, OmmiStyle, OmmiShareCode,
+    OmmiImageTemplate, OmmiStoryboardFramework, OmmiSample, OmmiProfile)
 from apps.prompt_ai_ommi.tables.nhan_vat import (
     OmmiCharacter, OmmiBackground, OmmiPose)
 
-#: kind (nhu client goi) -> lop model. Bo sung image_template/
-#: storyboard_framework/sample/profile o Task 14 (phu thuoc Task 12, Lan G -
-#: chua xong luc Lan F thi hanh Task 6/7/8, xem bao cao cuoi).
+#: kind (nhu client goi) -> lop model. 10 loai, HAI hinh dang chu so huu khac
+#: nhau (Task 14, doc tu migration b64a39da941d + services/nhap_mau_goc.py,
+#: KHONG doan theo plan):
+#:   - meta_prompt/snippet/style: co CU, owner_id NULLABLE - catalog la
+#:     owner_id IS NULL (khong dung toi trong module nay, chi library.py).
+#:   - character/background/pose: owner_id NOT NULL (Pha 3), khong co catalog
+#:     rieng - da co share_level tu truoc.
+#:   - image_template/storyboard_framework/sample/profile: owner_id NOT NULL
+#:     (bang MOI, Pha 4) - catalog la is_builtin=True + share_level="catalog",
+#:     KHONG PHAI owner_id NULL (cot nay khong cho NULL).
+#: Moi ham trong tep nay (sinh_ma/thu_hoi/dat_muc_chia_se) chi so sanh
+#: `row.owner_id == owner_id` cua NGUOI GOI - dung cho CA HAI hinh dang vi
+#: khong ai (ke ca None) trung owner_id that cua mot nguoi dung that, nen
+#: khong can nhanh rieng theo hinh dang o day. Nhung `_model()` PHAI no (raise
+#: ShareError) tren mot kind la, ⛔ khong duoc `continue`/tra rong - xem
+#: test_5414 doi chung ca 10 khoa deu tro dung lop, va hai "khoa la" (rong,
+#: sai chinh ta) deu bi tu choi thay vi bi bo qua.
 TARGET_KINDS: dict[str, type] = {
     "meta_prompt": OmmiMetaPrompt,
     "style": OmmiStyle,
@@ -30,6 +45,10 @@ TARGET_KINDS: dict[str, type] = {
     "character": OmmiCharacter,
     "background": OmmiBackground,
     "pose": OmmiPose,
+    "image_template": OmmiImageTemplate,
+    "storyboard_framework": OmmiStoryboardFramework,
+    "sample": OmmiSample,
+    "profile": OmmiProfile,
 }
 
 _VALID_LEVELS = {"private", "code", "catalog"}

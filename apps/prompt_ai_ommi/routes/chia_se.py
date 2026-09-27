@@ -120,3 +120,31 @@ async def set_share_level(request: Request, kind: str, item_id: str,
         db.rollback()
         raise _share_error(exc) from exc
     return {"id": row.id, "share_level": row.share_level}
+
+
+@router.post("/api/admin/nhap-mau-goc")
+async def nhap_mau_goc_route(request: Request,
+                             _identity: str = Depends(require_login),
+                             db: Session = Depends(get_db)):
+    """Nhap 12 meta prompt + 13 snippet + 21 image template + 5 khung
+    storyboard tu Prompt Seedance Studio vao catalog. Idempotent (R-3) -
+    goi lai chi bao them=0 (xem apps/prompt_ai_ommi/services/nhap_mau_goc.py).
+
+    So dem 12/13/21/5 la cua Lan G, tu do TRUC TIEP tren ban sao Studio
+    (27/09/2026) - KHONG PHAI 7/8/9=24 nhu mot ban bao cao cu."""
+    from apps.prompt_ai_ommi.services import nhap_mau_goc as nsvc
+    body = await request.json(); _csrf(request, body)
+    if not is_operator(request):
+        # Tai dung msgid da dich (assets_catalog.py:143 / library.py:162) -
+        # tranh them msgid moi, dung nhu chuoi 403 o set_share_level phia
+        # tren. Bao dieu phoi neu can mot cau rieng cho dung "nhap mau goc".
+        raise HTTPException(status_code=403,
+                            detail=_t('Chỉ admin được publish mẫu vào catalog.'))
+    user = _user(request)
+    try:
+        summary = nsvc.nhap(db, admin_owner_id=user.id)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise exc
+    return summary
