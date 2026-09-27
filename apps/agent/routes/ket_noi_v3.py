@@ -288,7 +288,7 @@ def v3_danh_sach_ket_noi(request: Request, kieu: str = "",
     return JSONResponse({"items": ds})
 
 
-def _bi_mat_tu_body(kieu: str, body: dict) -> dict:
+def _bi_mat_tu_body(kieu: str, body: dict):
     """`bi_mat` da kiem hinh dang. ⛔ Khong bao gio log, khong bao gio tra lai.
 
     Moi khoa BAT BUOC cua `kieu` phai co mat va khong rong; ⛔ khoa la bi TU
@@ -310,7 +310,16 @@ def _bi_mat_tu_body(kieu: str, body: dict) -> dict:
             detail={"ma": "bi_mat_sai_hinh_dang",
                     "thong_diep": _t('Thiếu thông tin bí mật.'),
                     "thieu": sorted(thieu), "khoa_la": sorted(la)})
-    return {k: str(tho[k]) for k in can}
+    ra = {k: str(tho[k]) for k in can}
+    # ⭐ MOT khoa ten `gia_tri` thi gui CHUOI, khong gui dict. Hai duong luu ra
+    #    **cung mot** JSON (`credential._dong_goi` boc chuoi thanh
+    #    `{"gia_tri": ...}`) va `_mo_goi` tra lai dung chuoi — nhung `_preview`
+    #    thi khac: dict di qua `json.dumps` nen 4 ky tu cuoi la `42"}` thay vi
+    #    4 ky tu cuoi cua CHINH khoa. Mot `preview` vo nghia lam ca cot do mat
+    #    tac dung: khach khong nhan ra khoa nao la khoa nao.
+    if list(ra) == ["gia_tri"]:
+        return ra["gia_tri"]
+    return ra
 
 
 @router.post("/api/v3/ket-noi")

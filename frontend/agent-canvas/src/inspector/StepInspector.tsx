@@ -116,12 +116,14 @@ export function StepInspector({ buoc, dinhNghia, nodes, edges, csrf, readOnly,
           : 'Bước này không có chế độ Mock, nên chạy thử sẽ tiêu credit thật. '
             + 'Cửa chạy MỘT bước chưa mở.'} />}
     </div>
-    {/* Sticky action o chan panel (§6 luat 4). "Chạy thử" khoa lai vi cua chay
-        MOT buoc chua mo — ⛔ mot nut bam duoc ma khong lam gi thi te hon mot
-        nut khoa co ly do. */}
+    {/* Sticky action o chan panel (§6 luat 4).
+        ⚠️ Nhan la "Chạy thử bước", KHONG phai "Chạy thử" nhu §6 ghi: tab thu
+           nam cung ten "Chạy thử", va hai dieu khien trung ten trong mot panel
+           thi nguoi dung doc man hinh nghe hai lan cung mot cau va khong biet
+           cai nao lam gi. No MO tab do — mot nut bam duoc ma khong lam gi thi
+           te hon mot nut khoa co ly do. */}
     <footer className="inspector-hanh-dong">
-      <button type="button" disabled
-        title="Cửa chạy một bước chưa mở">Chạy thử</button>
+      <button type="button" onClick={() => setTab(TAB[4])}>Chạy thử bước</button>
       <button type="button" disabled={readOnly || !onNhanBan}
         onClick={() => onNhanBan?.()}>Nhân bản</button>
       <button type="button" className="danger" disabled={readOnly || !onXoa}
