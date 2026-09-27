@@ -45,14 +45,27 @@ export function NodeKhung(p: ThamSoKhung) {
   //    (`.node-type`, an bang CSS o moi muc) vi do la danh tinh MAY doc —
   //    cong cu tro nang va phep kiem doc no, nguoi dung thi khong phai doc.
   const dinhDanh = `${dinhNghia.type}@${dinhNghia.type_version}`
+  // 🔴 `app_name` LEN TRUOC, khong phai `title`. `01 §4.1` do duoc phan cap
+  //    thi giac bi LON NGUOC tren `app.video.generate`: thu to nhat va dam
+  //    nhat la `title` = "Sinh video từ mô tả" (mot cau bi cat 60 ky tu), con
+  //    "Tạo Video Seedance" — *ten thật sự dùng được* — nam o hang thu TU,
+  //    nho hon ca chuoi `app.video.generate@1` o hang ba. So do `09 §3.2` ve
+  //    dung "⬤ Tạo Video Seedance", tuc CHINH `app_name`.
+  //
+  // ⛔ `title` KHONG bi vut: node `core.*` co `app_name` RONG (`core.stop` ->
+  //    "Dừng" chi nam o `title`), va khi hai ten khac nhau thi `title` van la
+  //    thong tin — no tut xuong mot dong nho, ⛔ khong mat.
+  const tenChinh = dinhNghia.app_name || dinhNghia.title
+  const tenPhu = dinhNghia.app_name && dinhNghia.title !== dinhNghia.app_name
+    ? dinhNghia.title : ''
   return <div className={`node-khung node-kind-${dinhNghia.kind}`}
     data-muc-do={mucDo} data-suc-khoe={p.sucKhoe ?? 'idle'}
     data-testid="node-khung"
     style={{ '--node-rong': `${RONG_MUC[mucDo]}px` } as CSSProperties}
-    title={`${dinhNghia.title} — ${dinhDanh}`}>
+    title={`${tenChinh} — ${dinhDanh}`}>
     <header className="node-khung-dau">
       {dinhNghia.icon && <span className="node-icon" aria-hidden>{dinhNghia.icon}</span>}
-      <span className="node-tieu-de">{dinhNghia.title}</span>
+      <span className="node-tieu-de">{tenChinh}</span>
       <span className="node-kind" data-testid="node-kind">{dinhNghia.kind}</span>
       {trangThai && <span className="node-trang-thai"
         data-testid="node-trang-thai">{trangThai}</span>}
@@ -62,6 +75,10 @@ export function NodeKhung(p: ThamSoKhung) {
         doc + hai canh bao) nhung ⛔ khong chiem cho tren mat node. */}
     <div className={`node-khung-than${mucDo === 'compact' ? ' node-than-an' : ''}`}>
       <small className="node-type">{dinhDanh}</small>
+      {/* ⭐ Dong nay ton 0 HANG: khoi `than` da ton tai san cho GPU/"Cần kết
+          nối"/"Sắp có", nen `title` chen vao day chu khong mo mot hang moi. */}
+      {tenPhu && <small className="node-ten-phu"
+        data-testid="node-ten-phu">{tenPhu}</small>}
       {lopTaiNguyen === 'gpu'
         ? <small className="node-tai-nguyen" data-testid="node-tai-nguyen"
             title="Tài nguyên: GPU">GPU</small>

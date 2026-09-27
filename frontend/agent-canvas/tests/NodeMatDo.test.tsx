@@ -43,6 +43,9 @@ const nd = (kind: NodeKind, over: Partial<NodeDefinition> = {}): NodeDefinition 
  *  con số 525px, nên phép kiểm dùng đúng hình dạng của nó, ⛔ không bịa. */
 const VIDEO_GENERATE = nd('app', {
   type: 'app.video.generate', type_version: 1,
+  // Hai ten THAT cua `apps/taovideo/manifest.py`, va chung khac nhau — do la
+  // ca diem cua `01 §4.1`: `title` la cau bi cat, `app_name` la ten dung duoc.
+  title: 'Sinh video từ mô tả', app_name: 'Tạo Video Seedance',
   cong_vao: [
     cong('prompt', 'text', true), cong('model', 'model_ref'),
     cong('resolution', 'text'), cong('duration', 'text'),
@@ -54,6 +57,16 @@ const VIDEO_GENERATE = nd('app', {
     cong('refs', 'json'),
   ],
   cong_ra: [cong('video_key', 'video', true)],
+  // ⭐ `tham_so.properties` va `cong_vao` la 1:1 tren node nay, va do khong
+  //    phai trung hop: `luoc_do.cong_vao()` sinh MOT cong cho MOI tham so cua
+  //    `params_schema`. Chinh quy tac ay lam node cao 525px, nen fixture phai
+  //    mang dung quan he do.
+  tham_so: { type: 'object', required: ['prompt'],
+             properties: Object.fromEntries([
+               'prompt', 'model', 'resolution', 'duration', 'aspect_ratio',
+               'generate_audio', 'camera', 'motion', 'visual_style', 'seed',
+               'image_key', 'image_keys', 'video_key', 'audio_key', 'refs',
+             ].map(k => [k, { type: 'string' }])) },
 })
 
 type DuLieu = Record<string, unknown>
@@ -158,17 +171,32 @@ describe('node chi mang NAM thu (09 §3.2)', () => {
 
   it('⛔ `app.video.generate@1` KHONG con tren mat node, no o tooltip', () => {
     ve(VIDEO_GENERATE, { mucDoEp: 'normal' })
-    // Phan tu van trong DOM (danh tinh MAY doc) — nhung mang lop bi an bang
-    // CSS, va chuoi ay co mat trong `title` cua ca node.
+    // Phan tu van trong DOM (danh tinh MAY doc) — nhung mang lop bi
+    // `display:none`, va chuoi ay co mat trong `title` cua ca node.
     expect(document.querySelector('.node-type')?.textContent)
       .toBe('app.video.generate@1')
     expect(khung()).toHaveAttribute('title',
       'Tạo Video Seedance — app.video.generate@1')
   })
 
-  it('⛔ KHONG dung `description` lam tieu de (01 §4.1)', () => {
+  it('🔴 `app_name` LA tieu de, `title` tut xuong dong nho (01 §4.1)', () => {
+    // Phan cap cu bi LON NGUOC: `title` ("Sinh video từ mô tả" — mot cau bi
+    // cat 60 ky tu) to va dam nhat, con ten dung duoc nam o hang thu TU.
     ve(VIDEO_GENERATE, { mucDoEp: 'normal' })
     expect(screen.getByText('Tạo Video Seedance')).toHaveClass('node-tieu-de')
+    // ⛔ `title` khong bi VUT — no chi tut xuong mot dong nho.
+    expect(screen.getByTestId('node-ten-phu'))
+      .toHaveTextContent('Sinh video từ mô tả')
+  })
+
+  it('node `core.*` co `app_name` RONG => `title` len tieu de, khong dong phu', () => {
+    ve(CORE_STOP, { mucDoEp: 'normal' })
+    expect(screen.getByText('Dừng')).toHaveClass('node-tieu-de')
+    expect(screen.queryByTestId('node-ten-phu')).not.toBeInTheDocument()
+  })
+
+  it('⛔ KHONG dung `description` lam tieu de (01 §4.1)', () => {
+    ve(VIDEO_GENERATE, { mucDoEp: 'normal' })
     expect(screen.queryByText(/mo ta dai bi cat/)).not.toBeInTheDocument()
   })
 
@@ -354,8 +382,9 @@ describe('🔴 soNhanh — `cong_ra.length` ⛔ KHONG phai dai luong "so nhanh"'
 
 describe('tomTatCauHinh — mot DONG, ⛔ khong phai mot form', () => {
   it('toi da ba tham so, gia tri dai bi cat', () => {
-    const t = tomTatCauHinh(VIDEO_GENERATE, {})
-    expect(t).toBe('Tạo video AI')   // chua cau hinh => `app_name`
+    // ⛔ Chua cau hinh KHONG roi ve `app_name`/`title`: ca hai da o tren mat
+    //    node roi (tieu de + dong phu), lap lai la tieu mot dong de noi lai.
+    expect(tomTatCauHinh(VIDEO_GENERATE, {})).toBe('Chưa cấu hình')
     const day = nd('app', { tham_so: { type: 'object', required: [], properties: {
       model: { type: 'string' }, resolution: { type: 'string' },
       duration: { type: 'string' }, seed: { type: 'number' } } } })

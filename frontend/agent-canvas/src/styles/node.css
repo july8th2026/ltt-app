@@ -61,18 +61,20 @@
 
 /* 🔴 `type@version` KHONG len mat node (`09 §3.2` cam hien
  *    `app.video.generate@1` cho nguoi dung cuoi) — nhung phan tu VAN o trong
- *    DOM: no la danh tinh may doc, va `NodeRenderer.test.tsx` doc no.
- *    `position:absolute` + `clip` = an mat, con trong cay tro nang. ⛔ KHONG
- *    `display:none`: `getByText` cua testing-library van tim thay, nhung mot
- *    `display:none` lam no rot khoi cay tro nang luon. */
-.node-khung[data-muc-do] .node-type {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
+ *    DOM: no la danh tinh MAY doc, va `NodeRenderer.test.tsx` doc no.
+ *
+ * ⚠️ `display:none`, ⛔ KHONG phai `clip-path` kieu sr-only. Ban dau la sr-only,
+ *    va phep do tren trinh duyet that (28/09) bat duoc: mot phan tu 1x1 bi
+ *    `clip-path` VAN nam trong `innerText`, tuc no van la mot dong chu duoc
+ *    trinh bay. Ma nguoi dung dung trinh doc man hinh CUNG la nguoi dung cuoi,
+ *    nen mot chuoi `app.video.generate@1` doc len cho ho la dung cai `09 §3.2`
+ *    cam. Danh tinh may doc thi o lai DOM; NGUOI doc no o `title` cua ca node.
+ *
+ * ⚠️ `getByText` cua testing-library ⛔ khong kiem CSS (do la viec cua
+ *    `toBeVisible`), va vitest o day khong ap `node.css` vao jsdom — nen bai
+ *    cu `getByText('x.app@2')` xanh voi ca hai cach. Phep phan xu la trinh
+ *    duyet that, khong phai jsdom. */
+.node-khung[data-muc-do] .node-type { display: none; }
 
 .node-khung[data-muc-do] .node-khung-than {
   gap: 5px;
@@ -97,6 +99,15 @@
   white-space: nowrap;
 }
 .node-khung[data-muc-do='expanded'] .node-mo-ta { white-space: normal; }
+/* `title` khi no KHAC `app_name` — mot dong nho, ⛔ khong mot hang moi. */
+.node-khung[data-muc-do] .node-ten-phu {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-muted, #7d858e);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .node-khung[data-muc-do] :is(.node-tai-nguyen, .node-credential, .node-sap-co) {
   padding: 0 5px;
   font-size: 9.5px;
@@ -125,10 +136,18 @@
 }
 /* Cong DANG CO DAY doc dam hon — nguoi dung phai thay soi day cua minh. */
 .node-khung[data-muc-do] .node-cong[data-da-noi] .node-cong-ten { font-weight: 650; }
-/* Cong BAT BUOC chua co day: mot dau `*`, khong phai mot mau (mau mot minh
- * ⛔ khong phai mot thong tin — `09 §12`). */
-.node-khung[data-muc-do] .node-cong-vao[data-bat-buoc]:not([data-da-noi])
-  .node-cong-ten::after { content: ' *'; color: var(--canh-bao, #d79a2b); }
+/* Cong BAT BUOC: mot dau `*`, khong phai mot mau (mau mot minh ⛔ khong phai
+ * mot thong tin — `09 §12`).
+ *
+ * ⚠️ `*` o day la mot SU KIEN TINH ("cong nay bat buoc"), ⛔ khong phai mot
+ *    canh bao ("cong nay dang thieu"). Ban dau no la `:not([data-da-noi])`,
+ *    tuc mot canh bao — va no keu tren MOI node da go du tham so o Inspector,
+ *    vi mot cong bat buoc duoc thoa bang GIA TRI cung nhieu nhu bang DAY.
+ *    Viec dem cai gi con thieu thuoc ve HUY HIEU goc, noi co doc duoc tham so. */
+.node-khung[data-muc-do] .node-cong-vao[data-bat-buoc] .node-cong-ten::after {
+  content: ' *';
+  color: var(--canh-bao, #d79a2b);
+}
 
 /* ── Cong: KHAY cham ──────────────────────────────────────────────────────
  * 🔴 ĐÂY LA PHEP CAT TRA LOI 525px, va no phai giu CA HAI bat bien cua UI-0.

@@ -103,6 +103,14 @@ async page => {
       soHang: n.querySelectorAll('.node-cong').length,
       soKhay: n.querySelectorAll('.node-khay-o').length,
       tomTat: n.querySelector('.node-mo-ta')?.textContent ?? null,
+      huyHieu: [...n.querySelectorAll('.node-hh')]
+        .map(h => `${h.dataset.loai}=${h.textContent}`),
+      tieuDe: n.querySelector('.node-tieu-de')?.textContent ?? null,
+      tenPhu: n.querySelector('.node-ten-phu')?.textContent ?? null,
+      // ⚠️ `innerText` (⛔ khong `textContent`) — no la thu duoc TRINH BAY.
+      //    Mot phan tu sr-only 1x1 bi `clip-path` VAN nam trong `innerText`,
+      //    va do la cach phep do 28/09 bat duoc `app.video.generate@1` con
+      //    tren mat node sau khi tuong da an no.
       chuTrenMat: k.innerText.replace(/\s+/g, ' ').trim().slice(0, 160),
     };
   }, {nodeId});
@@ -121,7 +129,27 @@ async page => {
     // ⛔ `app.video.generate@1` khong duoc o tren MAT node (`09 §3.2`).
     check(!normal.chuTrenMat.includes('app.video.generate@1'),
       `chuoi type@version con tren mat node: ${normal.chuTrenMat}`);
+    // 🔴 `01 §4.1`: ten DUNG DUOC (`app_name`) phai la thu to nhat, va `title`
+    //    — cau bi cat 60 ky tu — tut xuong dong nho. Truoc ban va thi nguoc.
+    check(normal.tieuDe === 'Tạo Video Seedance',
+      `tieu de la "${normal.tieuDe}" (cho app_name = "Tạo Video Seedance")`);
+    check(normal.tenPhu === 'Sinh video từ mô tả',
+      `dong phu la "${normal.tenPhu}" (cho title) — title khong duoc VUT`);
+    // 🔴 BAO DONG GIA — anh chup 28/09 bat duoc: node da go du `prompt` van
+    //    deo huy hieu "1 cong bat buoc chua co day". Mot cong bat buoc duoc
+    //    thoa bang GIA TRI cung nhieu nhu bang DAY, va mot canh bao keu tren
+    //    MOI node la thu lam nguoi ta tat ca cong canh bao.
+    check(!normal.huyHieu.some(h => h.startsWith('thieu_ket_noi')),
+      `huy hieu bao dong GIA tren node da go du tham so: ${JSON.stringify(normal.huyHieu)}`);
   }
+
+  // Doi chung: node THAT SU thieu `prompt` thi huy hieu PHAI keu — neu khong
+  // thi phep do tren vua chung minh mot su VANG MAT cua ca tinh nang.
+  await datDoThi([nut('n-trong', 'video.generate', {})], [], 1);
+  const thieu = await doKhung('n-trong');
+  soLieu.doiChungThieuThamSo = thieu?.huyHieu;
+  check(!!thieu && thieu.huyHieu.includes('thieu_ket_noi=1'),
+    `node THIEU prompt phai co huy hieu, thay: ${JSON.stringify(thieu?.huyHieu)}`);
 
   // ── Phep do 2: ba muc mat do doi TU DONG theo zoom ───────────────────────
   // 0.5 < 0.6 => compact. ⛔ Khong bam cong tac nao: khong co cong tac (Q7).

@@ -166,8 +166,13 @@ export function tomTatCauHinh(nd: NodeDefinition,
     const gt = gonGiaTri(params?.[ten])
     if (gt !== undefined) phan.push(gt)
   }
-  // Chưa cấu hình gì ⇒ `app_name` là câu dùng được duy nhất (⛔ KHÔNG dùng
-  // `description`: `01 §4.1` đo được nó là một câu bị cắt 60 ký tự).
-  if (!phan.length) return nd.app_name || ''
+  // ⛔ KHÔNG rơi về `app_name`/`title`/`description` khi chưa có tham số nào:
+  //   - `app_name` đã là TIÊU ĐỀ của node, và `title` đã là dòng phụ ⇒ lặp lại
+  //     một trong hai ở đây là tiêu một dòng để nói lại điều vừa nói;
+  //   - `description` là câu bị cắt 60 ký tự (`01 §4.1`).
+  // Node CÓ tham số mà chưa đặt gì là một điều CÓ THẬT và cần nói ra. Node
+  // không có tham số nào thì ⇒ rỗng, và người gọi ⛔ không vẽ dòng nào.
+  if (!phan.length)
+    return Object.keys(nd.tham_so.properties ?? {}).length ? 'Chưa cấu hình' : ''
   return phan.join(' · ')
 }

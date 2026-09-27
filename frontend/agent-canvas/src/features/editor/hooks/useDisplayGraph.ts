@@ -104,12 +104,27 @@ export function useDisplayGraph(ts: ThamSo) {
         sucKhoe = 'stale'
 
       // ── Trục 2: HUY HIỆU GÓC (định lượng) ──────────────────────────────
-      // ⭐ `thieuKetNoi` đếm cổng vào BẮT BUỘC chưa có dây. ⛔ KHÔNG đếm mọi
-      //    cổng chưa nối: phần lớn 15 cổng của `app.video.generate` là tham
-      //    số vô hướng, người dùng gõ chúng ở Inspector, và đòi dây cho chúng
-      //    là báo động giả trên MỌI node — thứ làm người ta tắt cả cổng.
+      // ⭐ Đếm cổng vào BẮT BUỘC chưa có GIÁ TRỊ. ⛔ KHÔNG đếm mọi cổng chưa
+      //    nối: phần lớn 15 cổng của `app.video.generate` là tham số vô hướng,
+      //    người dùng gõ chúng ở Inspector, và đòi dây cho chúng là báo động
+      //    giả trên MỌI node — thứ làm người ta tắt cả cổng.
+      //
+      // 🔴 VÀ MỘT CỔNG BẮT BUỘC CÓ HAI ĐƯỜNG ĐƯỢC THOẢ: một sợi dây, HOẶC một
+      //    giá trị gõ tay ở Inspector (`luoc_do.cong_vao()` sinh cổng từ CHÍNH
+      //    `params_schema`, nên mỗi cổng vào LÀ một tham số). Bản đầu chỉ hỏi
+      //    "có dây chưa", và ảnh chụp trình duyệt 28/09 bắt được ngay: một node
+      //    `app.video.generate` đã gõ đủ `prompt` vẫn đeo huy hiệu "1 cổng bắt
+      //    buộc chưa có dây". Một báo động giả trên MỌI node là đúng cái làm
+      //    người ta tắt cả cổng cảnh báo.
+      const thamSo = (node.data.params ?? {}) as Record<string, unknown>
+      const coGiaTri = (ten: string) => {
+        const v = thamSo[ten]
+        if (v === undefined || v === null || v === '') return false
+        return Array.isArray(v) ? v.length > 0 : true
+      }
       const thieuKetNoi = nd.cong_vao
-        .filter(c => c.bat_buoc && !congCuaNode.has(c.ten)).length
+        .filter(c => c.bat_buoc && !congCuaNode.has(c.ten) && !coGiaTri(c.ten))
+        .length
       const huyHieu = huyHieuNode({
         loiBienDich: loiNode[node.id],
         loiChay: mucRun?.error || undefined,
