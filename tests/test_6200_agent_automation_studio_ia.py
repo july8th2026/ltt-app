@@ -66,7 +66,13 @@ def web(tmp_path, monkeypatch):
     from server.app import create_app
     client = TestClient(create_app(env={
         "LTT_ENV": "local-server-test", "LTT_CONFIG_PATH": str(cfg),
-        "LTT_SESSION_SECRET": "ui1-ia-session-value",
+        # ⭐ Chuoi PHAI chua mot tu trong `PLACEHOLDER_MARKERS` cua
+        #    `tools/scan_source_secrets.py` ("test", "fixture", "dummy"...),
+        #    neu khong `generic_secret_assignment` bao do va **ca gate cua
+        #    moi phien** tren `main` chan lai. Ban cu "ui1-ia-session-value"
+        #    do dung the (28/09). Cac fixture trong `tests/fixtures/` va
+        #    `tests/browser/` khong bi vi hai thu muc do nam ngoai vung quet.
+        "LTT_SESSION_SECRET": "ui1-ia-session-test-fixture",
         "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
     }), base_url="https://testserver", follow_redirects=False)
     login = client.get("/login?next=/agent/workflows")
