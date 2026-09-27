@@ -13,7 +13,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 
 | Pha | Làn | Trạng thái | Nhánh | Tệp SỞ HỮU | Gộp main | Ghi chú |
 |---|---|---|---|---|---|---|
-| UI-0 Lỗi P0 cơ khí | `ui0` | **ĐANG LÀM** | `claude/ltt-agent-automation-ux-audit-9e3764` | `bien_dich.py` · `workflowApi.ts` · `canvas.css` · `NodeKhung.tsx` · `editorState.ts` · `CanvasEdgeView.tsx` | — | dải test **5600-5699** |
+| UI-0 Lỗi P0 cơ khí | `ui0` | **ĐANG LÀM** | `claude/ltt-agent-automation-ux-audit-9e3764` | `bien_dich.py` · `workflowApi.ts` · `canvas.css` · `editorState.ts` · `CanvasEdgeView.tsx` · `CanvasEdgeView.tsx` | — | dải test **5600-5699** |
 | UI-3 Tách CanvasShell | — | CHƯA MỞ | — | — | — | chặn bởi UI-0. **Mở khoá song song hoá** |
 | UI-2 Design system | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 · chủ S1 (`canvas.css`) |
 | UI-1 Automation Studio | — | CHƯA MỞ | — | — | — | **chặn bởi Q1** · chủ S5 (bảng định tuyến) |
@@ -37,7 +37,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | ui0 | `frontend/agent-canvas/src/canvas.css` | 27/09 | **S1** (bàn giao UI-2) |
 | ui0 | `frontend/agent-canvas/src/nodes/NodeKhung.tsx` | 27/09 | — |
 | ui0 | `frontend/agent-canvas/src/CanvasEdgeView.tsx` | 27/09 | — |
-| ui0 | `server/templating.py` (chỉ `ASSET_VER`) | 27/09 | — |
+
 
 **Sáu sổ dùng chung và chủ của chúng** — đụng vào thì DỪNG và báo điều phối:
 

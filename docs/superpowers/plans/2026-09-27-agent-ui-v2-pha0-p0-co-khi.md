@@ -733,10 +733,23 @@ Và thêm vào khối token ở đầu tệp (nếu chưa có `:root` phạm vi 
 ⚠️ UI-2 là chủ sở hữu `canvas.css` về sau. Task này được phép sửa vì UI-2 **chưa
 mở** — ghi vào *Phiếu tệp* để UI-2 biết khi nhận bàn giao.
 
-- [ ] **Bước 4: Bump `ASSET_VER`**
+- [x] **Bước 4: Cache-bust — ✅ KHÔNG cần làm gì (plan đã sai, đã sửa 27/09)**
 
-Trong `server/templating.py`, tăng `ASSET_VER` lên một. ⛔ Bỏ bước này thì người
-dùng đang mở tab cũ vẫn nhận CSS cũ và lỗi "vẫn còn" một cách bí ẩn.
+Plan bản đầu ghi *"tăng `ASSET_VER` lên một"*. **Sai.** Đọc `server/templating.py`:
+
+- `ASSET_VER = _tinh_asset_ver()` là **hash MD5 tự tính** từ nội dung của
+  `TAI_SAN_CO_VERSION` — một danh sách **cố định** gồm `ltt.css`, `htmx.min.js`,
+  `voice.js`… ⛔ **không có** `agent-canvas`. Không có hằng số nào để "tăng".
+- Bundle Canvas do **Vite đặt tên theo hash nội dung** (`main-Bmc_qv-u.js`), và
+  `bundle_assets("agent-canvas")` phát đúng tên tệp ấy ra template. Đổi CSS ⇒ đổi
+  tên tệp ⇒ URL mới ⇒ **tự cache-bust**.
+
+⇒ ⛔ Sửa `server/templating.py` ở pha này là **thừa và sai** — nó sẽ đụng một tệp
+không thuộc phạm vi UI-0 mà không đổi được gì. Gỡ `server/templating.py` khỏi
+*Phiếu tệp* của làn.
+
+⚠️ Điều **thật sự** phải làm để CSS mới tới được người dùng: **build lại bundle**
+(Task 6 Bước 1). Không build thì `canvas.css` mới nằm trong `src/` và không ai thấy.
 
 - [ ] **Bước 5: Chạy lại test frontend**
 

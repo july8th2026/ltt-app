@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { activePage, cloneGraphSelection, connectionCreatesCycle, editorReducer, emptyDocument, scopeNodeIds, type EditorState } from '../src/editorState'
+import { activePage, cloneGraphSelection, connectionCreatesCycle, editorReducer, emptyDocument, scopeNodeIds, type EditorState, nextNode } from '../src/editorState'
+import type { NodeDefinition } from '../src/nodeDefinition'
 
 // ⛔ Bai `typed connection guard` va bai "doi Image node sang upload" DA XOA
 //    cung `connectionAllowed`/`replaceNodeTool` (plan 02 task 15). Chung do
@@ -144,5 +145,38 @@ describe('pham vi chay mot node', () => {
     const edges=[{id:'a-b',source:'a',target:'b'},{id:'b-c',source:'b',target:'c'}]
     expect(new Set(scopeNodeIds(nodes,edges,['c']))).toEqual(new Set(['a','b','c']))
     expect(scopeNodeIds(nodes,edges,['missing'])).toEqual([])
+  })
+})
+
+// ── UI-0 Task 5 — buoc xep phai RONG HON node ─────────────────────────────
+describe('nextNode — buoc xep', () => {
+  const nutGia = (): NodeDefinition => ({
+    type: 'app.video.generate', type_version: 1, kind: 'app', category: 'LTT_APPS',
+    title: 'Tao Video', description: '', icon: '', app_name: 'Video',
+    cong_vao: [], cong_ra: [],
+    tham_so: { type: 'object', properties: {}, required: [] },
+    thi_hanh: 'job', side_effect: '', resource: {}, timeout_expr: '',
+    retry_mac_dinh: { max: 0, backoff_s: 0 },
+    gia: { kieu: 'mien_phi', so: 0, job_type: '' },
+    credential: [], quyen: [], cho: [], ma_loi: [],
+    co_mock: false, publish_duoc: true,
+  })
+
+  it('hai node lien tiep KHONG duoc de len nhau', () => {
+    // Node RONG NHAT do duoc tren trinh duyet that 27/09/2026
+    // (`app.video.generate`) la 456px. Buoc xep phai LON HON con so do —
+    // buoc cu la 430px, nen node thu HAI de len node thu nhat 26px va che
+    // mat duoi tieu de cua no.
+    const RONG_NHAT = 456
+    const a = nextNode(nutGia(), 0)
+    const b = nextNode(nutGia(), 1)
+    expect(b.position.x - a.position.x).toBeGreaterThan(RONG_NHAT)
+  })
+
+  it('xuong hang moi khi het mot hang ba node', () => {
+    const a = nextNode(nutGia(), 0)
+    const d = nextNode(nutGia(), 3)
+    expect(d.position.x).toBe(a.position.x)
+    expect(d.position.y).toBeGreaterThan(a.position.y)
   })
 })

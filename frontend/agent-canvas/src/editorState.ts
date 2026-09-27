@@ -187,7 +187,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
     case 'layout': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map((node, index) => ({ ...node,
-        position: { x: 90 + (index % 4) * 430, y: 90 + Math.floor(index / 4) * 430 } })) })))
+        position: { x: 90 + (index % 4) * BUOC_XEP_X,
+                    y: 90 + Math.floor(index / 4) * BUOC_XEP_Y } })) })))
     case 'undo': {
       const previous = state.past.at(-1)
       if (!previous) return state
@@ -259,6 +260,19 @@ export function cloneGraphSelection(nodes:CanvasNode[],edges:CanvasEdge[],suffix
   return {nodes:clonedNodes,edges:clonedEdges,nodeIds:clonedNodes.map(node=>node.id)}
 }
 
+/** Buoc xep node mac dinh, theo truc X.
+ *
+ *  🔴 PHAI LON HON node rong nhat. Do tren trinh duyet that 27/09/2026:
+ *     `app.video.generate` rong **456px**, con buoc xep cu la **430px** — nen
+ *     node thu HAI de len node thu nhat **26px** va che mat duoi tieu de cua
+ *     no. Khong phai "hoi chat", la SAI: hai node dau tien nguoi dung tha
+ *     xuong da chong nhau.
+ *
+ *  ⚠️ Khi UI-4 doi chieu rong node (3 muc mat do), phai doi CA hai hang so nay
+ *     cung luc — chung la mot cap. */
+export const BUOC_XEP_X = 520
+export const BUOC_XEP_Y = 260
+
 export function nextNode(nd: NodeDefinition, count: number): CanvasNode {
   const params = Object.fromEntries(Object.entries(nd.tham_so.properties ?? {})
     .filter(([, rule]) => rule.default !== undefined)
@@ -268,7 +282,8 @@ export function nextNode(nd: NodeDefinition, count: number): CanvasNode {
   //    nhap dang song tren production luu theo hinh dang nay. Doi no o day la
   //    mot cuoc di tru du lieu, khong phai mot thay doi trinh bay.
   return { id: `n${Date.now().toString(36)}-${count}`, type: 'tool',
-    position: { x: 90 + (count % 3) * 430, y: 90 + Math.floor(count / 3) * 430 },
+    position: { x: 90 + (count % 3) * BUOC_XEP_X,
+                y: 90 + Math.floor(count / 3) * BUOC_XEP_Y },
     data: { tool: slugCongCu(nd), params, fanout: 1, max_retry: 0,
       on_fail: 'retry_same', verify: null } }
 }
