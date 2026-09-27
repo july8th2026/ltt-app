@@ -91,10 +91,7 @@ async def sua(request: Request, bid: str,
 async def xoa(request: Request, bid: str,
              _identity: str = Depends(require_login),
              db: Session = Depends(get_db)):
-    try:
-        body = await request.json()
-    except Exception:  # noqa: BLE001 -- DELETE thuong khong co body
-        body = {}
+    body = await body_khong_bat_buoc(request)
     _csrf(request, body)
     b = _lay(db, bid, _user(request))
     b.archived_at = datetime.now(timezone.utc); db.commit()

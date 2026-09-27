@@ -137,11 +137,7 @@ async def update_character(request: Request, cid: str,
 async def delete_character(request: Request, cid: str,
                            _identity: str = Depends(require_login),
                            db: Session = Depends(get_db)):
-    body = {}
-    try:
-        body = await request.json()
-    except Exception:
-        pass
+    body = await body_khong_bat_buoc(request)
     _csrf(request, body); user = _user(request)
     try:
         row = nv.doc(db, cid, user.id)
