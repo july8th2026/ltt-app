@@ -50,6 +50,57 @@ def available() -> bool:
     return shutil.which("nvidia-smi") is not None
 
 
+def cuda_dung_duoc() -> tuple[bool, str]:
+    """Tiến trình NÀY có dùng được CUDA không, và nếu không thì vì sao.
+
+    ⚠️ **`available()` và hàm này trả lời hai câu khác nhau**, và lẫn chúng đã
+       tốn một buổi chẩn đoán (26/09/2026). `nvidia-smi` thấy card ⛔ KHÔNG có
+       nghĩa tiến trình dùng được card:
+
+           torch 2.11.0+cpu  ->  cuda.is_available() = False, device_count = 0
+
+       Đo được ngày đó: `gpu_lease.acquire` VẪN cấp lease (vì `nvidia-smi` thấy
+       card) ⇒ `ctx.has_gpu = True` ⇒ handler bật đường `--buoc-gpu` ⇒
+       `demucs_runner` trả `{"thieu_card": true}` ⇒ giai đoạn hỏng trong ~0 giây
+       ⇒ hoãn ⇒ **hoãn ⛔ không tính là một lần thử** ⇒ quay vòng vô hạn với CPU
+       ≈ 0. Triệu chứng là *"treo"*, y hệt một lease bị rò — nên hai lỗi khác
+       loại trông giống nhau và ai chẩn đoán cũng lẫn.
+
+    ⭐ Fail-OPEN khi ⛔ không thấy `torch`: câu trả lời lúc đó là *"không biết"*,
+       ⛔ không phải *"không dùng được"*. Một stack GPU không qua torch (ffmpeg
+       NVENC, một sidecar có venv riêng) vẫn phải giành được card như trước.
+       Hàm này chỉ ngăn ca ta ĐÃ ĐO được là hỏng chắc.
+
+    ⚠️ Lần gọi đầu trong một tiến trình chưa nạp torch phải trả giá `import
+       torch` (vài giây). ⛔ Không đệm kết quả: một tiến trình worker sống nhiều
+       giờ có thể bị mất driver giữa đường, và một câu trả lời đệm từ lúc khởi
+       động sẽ nói dối đúng lúc cần đúng.
+    """
+    import importlib.util
+    try:
+        if importlib.util.find_spec("torch") is None:
+            return True, ""
+    except Exception as e:                  # noqa: BLE001 - find_spec cũng ném được
+        log.debug("gpu/cuda_dung_duoc: khong tra duoc torch: %s", e)
+        return True, ""
+    try:
+        import torch
+    except Exception as e:                  # noqa: BLE001
+        # Cài dở dang (thiếu DLL) — ⛔ không kết luận được là card hỏng.
+        log.debug("gpu/cuda_dung_duoc: khong import duoc torch: %s", e)
+        return True, ""
+    ban = str(getattr(torch, "__version__", "?"))
+    try:
+        if not torch.cuda.is_available():
+            return False, f"torch {ban}: cuda.is_available() = False"
+        so = int(torch.cuda.device_count())
+    except Exception as e:                  # noqa: BLE001
+        return False, f"torch {ban}: torch.cuda loi: {type(e).__name__}: {e}"
+    if so <= 0:
+        return False, f"torch {ban}: cuda.device_count() = 0"
+    return True, ""
+
+
 def list_gpus() -> list[GpuInfo]:
     """Mọi GPU NVIDIA thấy được. Trả [] nếu máy không có GPU hoặc không hỏi được.
 

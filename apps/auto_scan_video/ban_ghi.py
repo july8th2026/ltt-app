@@ -179,8 +179,14 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0,
         #    di tiep tu lau.
         "ly_do_roi": str((thoi or {}).get("fallback_reason") or ""),
         "thoi_luong_nguon": float(thoi_luong_nguon or 0.0),
-        # 🔑 Nguon goc loi thoai: `embedded` | `ocr` | `asr` (`nguon_loi.py`).
-        #    Ban ghi truoc 22/09 khong co khoa nay = `asr`.
+        # 🔑 Nguon goc loi thoai. Tu 26/09 (Task 21) chi con MOT gia tri:
+        #    `asr` — xem `nguon_loi.py`. Ban ghi truoc 22/09 khong co khoa nay =
+        #    `asr`; ban ghi 22–26/09 co the mang `ocr`/`embedded` va do la ban ghi
+        #    THAT cua mot duong da bo ⇒ ⛔ khong viet lai, khong xoa.
+        #
+        # ⚠️ Truong nay GIU du chi con mot gia tri: no la PROVENANCE cua ban ghi,
+        #    khong phai mot lua chon. Bo no di se lam mot ban ghi cu (mang `ocr`)
+        #    va mot ban ghi moi trong nhu nhau.
         "nguon_loi": str(nguon_loi or "asr"),
         # 🔴 **Tu bi BO, theo LY DO.** ⛔ Khong duoc rut gon thanh mot con so
         #    tong: *"bo 900 tu vi sai khoa"* la mot loi chuong trinh, *"bo 3 tu

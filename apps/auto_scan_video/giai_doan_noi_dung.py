@@ -247,6 +247,28 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # ⚠️ `dung()` nem khi CUA CHAN ngan sach (`features.AsvError`) va tra ho so
     #    RONG khi model tra rac — hai ca khac loai, xem docstring cua no.
     ho_so = ho_so_dich.dung(db, run, goc, ctx=ctx)
+    # 🔴 **`commit` NGAY sau loi goi tra tien dau tien cua giai doan nay.**
+    #
+    #    `ai.goi_tinh_tien` ghi so cai trong giao dich CUA NGUOI GOI
+    #    (`su_dung.ghi` chi `db.add` + `db.flush`), va `db.commit()` dau tien cua
+    #    ham nay nam o CUOI lo thu nhat, cach day bay buoc. Bat cu thu nao nem
+    #    trong khoang do di qua `thi_hanh` -> `db.rollback()` va **dong so cai
+    #    cua loi goi DA TRA TIEN nay bien mat**: tien mat, so trong. Cung lap
+    #    luan — va cung cau chu — voi `giai_doan_giong._chot_lo`.
+    #
+    # ⚠️ Va khoang do ⛔ khong phai ly thuyet: `lc.kiem(vi_tri=0)` ngay duoi nem
+    #    `TiepNoi` khi lat cat het cho, tuc mot duong DIEU KHIEN THUONG cua moi
+    #    video dai — ⛔ khong phai mot su co.
+    #
+    # ⚠️ **⛔ KHONG CO PHEP KIEM DO cho dong nay, va do la mot su that ve BO
+    #    TEST, ⛔ khong ve menh de.** Do 27/09: `pysqlite` phat `SAVEPOINT` o che
+    #    do autocommit, nen `su_dung.ghi` (dung `begin_nested`) BEN NGAY tren
+    #    SQLite va `db.rollback()` ⛔ khong xoa duoc dong so. Tren PostgreSQL —
+    #    kho cua production — no la SAVEPOINT that va rollback XOA. Bang chung +
+    #    duong di lai: `test_440::test_DO_KHA_NANG_BO_TEST_flush_so_cai_co_MAT_
+    #    qua_rollback_khong`. Dong nay theo cung luat voi `_chot_lo` va
+    #    `ho_so_noi_dung.bao_dam`, ca hai cung ⛔ khong do duoc o cuc bo.
+    db.commit()
 
     vt = long_tieng.van_tay_long_tieng(
         checksum_ban_ghi=checksum, van_tay_ban=van_tay_ban,

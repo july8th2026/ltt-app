@@ -406,7 +406,10 @@ cộng `hỏng im lặng`.
 
 ✅ **Đã làm cả hai việc:**
 
-1. **Cảnh báo ngay cạnh chỗ đặt fps** — `apps/auto_scan_video/nguon_loi.py`,
+1. ⛔ **HỦY 26/09 (Task 21)** — `FPS_DOC` đã biến cùng đường OCR; ràng buộc chuyển
+   sang `luoi_s` của tệp chân lý nền đã đóng băng (xem `tests/test_3602_do_luong.py`,
+   khối chú thích *“RÀNG BUỘC ẨN ĐÃ XÓA”*). Nguyên văn cũ:
+   **Cảnh báo ngay cạnh chỗ đặt fps** — `apps/auto_scan_video/nguon_loi.py`,
    khối chú thích ngay trên `FPS_DOC = 4.0` (⛔ ⛔ không phải trong tài liệu đo).
 2. **Phép kiểm đã có** — `tests/test_3602::test_3602_fps_doc_ocr_khong_duoc_ha_
    duoi_muc_da_hieu_luc` đọc **chính tệp nguồn** bằng AST (⛔ không import, module

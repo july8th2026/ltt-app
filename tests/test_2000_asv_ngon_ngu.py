@@ -200,8 +200,12 @@ def test_loi_nhac_vi_GIU_cum_da_nghiem_thu():
                          "tung chu: ban viet lai cau thoai sao cho nguoi Viet nghe")
     assert f"({nn.CUM['vi']['nhip']})" in lt
     assert nn.CUM["vi"]["nhip"] == "khoang 3,35 am tiet/giay"
-    nan = nan_cho_vua.loi_nhac_nan({"ma": "a", "goc": "x"}, chu_hien_tai="y",
-                                   giay_do_duoc=4.0, khe=3.0)[0]["content"]
+    # ⚠️ **26/09 (Task 22) — DUONG doi, Y DINH giu.** `loi_nhac_nan` (mot doan
+    #    mot luot) da bi xoa sau khi Task 12 chuyen sang LO. Ban lo tung **vut
+    #    `ngon_ngu_dich` im lang** va go cung chu "tieng Viet"; Task 22 noi no
+    #    vao `ngon_ngu.cum` that, nen chinh bai nay lai do duoc dieu no tuyen bo.
+    nan = nan_cho_vua.loi_nhac_nan_lo(
+        [{"ma": "a", "chu": "y", "giay_doc": 4.0, "khe": 3.0}])[0]["content"]
     assert "Van phai la tieng Viet noi tu nhien" in nan
     assert nn.CUM["vi"]["nhip_moi_giay"] in nan
     qc = qc_ai.loi_nhac_ngu_nghia([{"ma": "a", "goc": "x", "chu": "y"}])[0]["content"]
@@ -216,8 +220,12 @@ def test_loi_nhac_en_KHONG_con_mot_chu_tieng_Viet_nao_ve_dich():
     for van in (
         long_tieng.loi_nhac(d, tat_ca=d, ngon_ngu_goc="zh", dac_diem_giong={},
                             ngon_ngu_dich="en")[0]["content"],
-        nan_cho_vua.loi_nhac_nan({"ma": "a", "goc": "x"}, chu_hien_tai="y",
-                                 giay_do_duoc=4.0, khe=3.0, ngon_ngu_dich="en")[0]["content"],
+        # ⚠️ 26/09 (Task 22): `loi_nhac_nan` -> `loi_nhac_nan_lo`. Bai nay la
+        #    phep do da BAT ban lo vut `ngon_ngu_dich` im lang — no noi "cau
+        #    tieng Viet" cho ca dich `en`.
+        nan_cho_vua.loi_nhac_nan_lo(
+            [{"ma": "a", "chu": "y", "giay_doc": 4.0, "khe": 3.0}],
+            ngon_ngu_dich="en")[0]["content"],
         qc_ai.loi_nhac_ngu_nghia([{"ma": "a", "goc": "x", "chu": "y"}], "en")[0]["content"],
     ):
         assert "tieng Viet" not in van and "nguoi Viet" not in van

@@ -143,10 +143,11 @@ APP_DUOC_DUNG_APP: dict = {
     # ⛔ MOT muc duy nhat cho cap nay: hai lan (`giong`, `ocr`) moi ben them
     #    mot muc, va khoa dict trung thi muc sau DE LEN muc truoc — mot nua
     #    be mat duoc phep bien mat lang le. `ruff F601` bat duoc luc gop.
+    #
+    # ⛔ `ocr_khung` DA RUT 26/09 (Task 21): duong OCR hardsub da bo.
     ("auto_scan_video", "asv_gpu"): {
         ("apps.asv_gpu.do_luong", "bo_do"),
         ("apps.asv_gpu.do_luong", "venv"),
-        ("apps.asv_gpu.do_luong", "ocr_khung"),
     },
     # 🔑 Bo do `giong` chuan hoa kich ban va ban ASR bang CHINH ham ASV goi truoc
     #    khi dua chu cho may doc (`text_pipeline.chuan_hoa`, be mat da khai cua
@@ -199,12 +200,13 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.autosubvideo.font_checker", "missing_glyphs"),
     },
 
-    # ── Auto Scan Video chay BO DO / OCR trong venv do luong (22/09) ───────
+    # ── Auto Scan Video chay BO DO trong venv do luong (22/09) ───────────
     #
     # ⭐ `apps/asv_gpu/do_luong/` la giao thuc chay mot bo do trong venv rieng
-    #    (qc-venv) — model/goi nang khong vao venv san pham. TRANSCRIBE (lan
-    #    ocr) goi runner OCR hardsub qua `venv.chay`; van tay engine doc
-    #    `ocr_khung.ENGINE` (ban model ghim). Chi hai module, khong ten rieng.
+    #    (qc-venv) — model/goi nang khong vao venv san pham.
+    #
+    # ⛔ TRANSCRIBE tung goi runner OCR hardsub qua `venv.chay` va ghim
+    #    `ocr_khung.ENGINE` vao van tay engine. Ca hai DA BO 26/09 (Task 21).
 
     # ── Auto Scan Video doc NGAN SACH TOKEN cua model nha ───────────────────
     #

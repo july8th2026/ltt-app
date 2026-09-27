@@ -291,3 +291,98 @@ def test_HOAN_CAT_duoc_noi_ra_o_cap_ban(moi_truong):
         "bo 3/4 canh ma khong hoan lai lenh cat nao — doi chung hong, "
         "bai nay khong con do duoc gi")
     assert d["so_giu"] >= 2
+
+
+def test_463_ly_do_KHAI_DUNG_xuat_xu_cua_con_so(monkeypatch):
+    """🔴 **Lý do đi vào artifact của KHÁCH, nên nó ⛔ không được khai sai xuất xứ.**
+
+    `do_tin` là một **hợp đồng duck-type** dùng chung bởi hai đại lượng **khác bản
+    chất**: tỉ lệ đo bằng **ffmpeg** (`BangChungCanh`, từ Task 10) và **độ tin của
+    VLM** (`hieu_canh.HieuCanh`). Bản trước ghi cứng *"VLM đề xuất bỏ"* cho **mọi**
+    quyết định.
+
+    🔴 Và từ Task 22 thì `hieu_canh.doc_hieu_canh` đã bị xoá, ⛔ **không** mã sản
+       phẩm nào còn dựng `HieuCanh` ⇒ câu *"VLM"* ấy **luôn sai** trên mọi lượt chạy
+       thật, suốt từ đó tới 27/09.
+
+    ⚠️ Và bài kiểm cũ `..._co_ly_do_ky_thuat` chốt `"VLM" in ly_do` — một bánh cóc đo
+       **CÁCH GÕ** thay vì tính chất, và ở đây nó **bảo vệ một lời khai sai**. Nó vẫn
+       đúng cho `HieuCanh`; bài này chốt **chiều còn lại**, chiều mà đường sống đi qua.
+    """
+    from apps.auto_scan_video import ban_bien_tap as bb
+    from apps.auto_scan_video.giai_doan_ban_bien_tap import BangChungCanh
+
+    class _Canh:
+        ma = "canh_0001"
+
+    bc = BangChungCanh(ma_canh="canh_0001", de_xuat="bo", do_tin=0.95,
+                       **{})
+    qd = bb._quyet_dinh_mot_canh(_Canh(), bc, co_thoai=False)
+
+    assert qd.thao_tac == bb.THAO_TAC_CAT, qd
+    assert "ffmpeg" in qd.ly_do, (
+        f"ly do ⛔ khong goi ten phep do THAT: {qd.ly_do!r}")
+    assert "VLM" not in qd.ly_do, (
+        f"bang chung la phep do ffmpeg ma ly do khai la VLM: {qd.ly_do!r}")
+
+
+def test_463_nguon_LA_cua_doi_tuong_chu_khong_phai_mac_dinh_VLM():
+    """⭐ Một nguồn **thứ ba** (hay một bản giả trong test) ⛔ không được bị khai là
+       VLM chỉ vì nó **im lặng** về xuất xứ.
+
+    Đây là vế đối chứng: nếu `_nguon_cua` có mặc định là `"VLM"` thì bài trên vẫn
+    xanh cho `BangChungCanh` (lớp đó khai ffmpeg) mà lỗi vẫn còn cho mọi thứ khác.
+    """
+    from apps.auto_scan_video import ban_bien_tap as bb
+
+    class _Canh:
+        ma = "canh_0002"
+
+    class _La:            # ⛔ khong khai NGUON_BANG_CHUNG
+        ma_canh = "canh_0002"
+        de_xuat = "bo"
+        do_tin = 0.99
+
+    qd = bb._quyet_dinh_mot_canh(_Canh(), _La(), co_thoai=False)
+    assert "VLM" not in qd.ly_do, (
+        f"nguon im lang bi khai la VLM: {qd.ly_do!r}")
+
+
+def test_463_ba_nhanh_GIU_cung_khai_dung_xuat_xu():
+    """🔴 `123285ae` chỉ vá **nhánh CẮT**. Hai nhánh **GIỮ** vẫn ghi cứng *"VLM"* —
+    và trên một phim bình thường nhánh GIỮ là nhánh **đông dòng nhất**, nên lời khai
+    sai đi ra cho khách ở **gần như mọi dòng** chứ chỉ vài dòng bị cắt.
+
+    ⭐ Bài trên (`..._KHAI_DUNG_xuat_xu_cua_con_so`) xanh suốt từ `123285ae` mà con
+       bọ vẫn còn nguyên, vì nó chỉ dựng **một** hình dạng đầu vào: `de_xuat="bo"`
+       với điểm **trên** ngưỡng. Đây đúng họ *"phạm vi phép đo hẹp hơn lời tuyên bố"*
+       — nó chốt *"lý do khai đúng xuất xứ"* nhưng chỉ đo **một trong ba** nhánh.
+
+    Bài này đóng cả ba, nên ⛔ không nhánh nào còn chỗ trốn:
+      1. `de_xuat="giu"`   -> nhánh GIU thang
+      2. `de_xuat="bo"` nhưng điểm **dưới** ngưỡng -> GIU vì chưa đủ bằng chứng
+      3. `de_xuat=""`      -> GIU vì "khong chac"
+    """
+    from apps.auto_scan_video import ban_bien_tap as bb
+    from apps.auto_scan_video.giai_doan_ban_bien_tap import BangChungCanh
+
+    class _Canh:
+        ma = "canh_0004"
+
+    for nhan, de_xuat, diem in (
+        ("de_xuat=giu", "giu", 0.9),
+        ("de_xuat=bo duoi nguong", "bo", 0.10),
+        ("de_xuat rong", "", 0.5),
+    ):
+        bc = BangChungCanh(ma_canh="canh_0004", de_xuat=de_xuat, do_tin=diem)
+        qd = bb._quyet_dinh_mot_canh(_Canh(), bc, co_thoai=False)
+
+        assert qd.thao_tac == bb.THAO_TAC_GIU, (nhan, qd)
+        assert "VLM" not in qd.ly_do, (
+            f"[{nhan}] bang chung la phep do ffmpeg ma ly do khai VLM: "
+            f"{qd.ly_do!r}")
+        # ⚠️ "do tin" cung mang mui model: voi bang chung tat dinh no la mot TI LE.
+        #    Chot luon, vi doi "VLM" -> ten nguon ma giu "do tin" thi loi khai chi
+        #    lui mot buoc chu ⛔ khong mat.
+        assert "do tin" not in qd.ly_do, (
+            f"[{nhan}] ti le tat dinh bi goi la 'do tin': {qd.ly_do!r}")

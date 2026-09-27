@@ -639,7 +639,8 @@ def _doc_goi(van: str) -> dict:
     cuoi.
 
     🔴 **Ban cu (`find`/`rfind`) vo khi prompt co HAI khoi giong-JSON.**
-       `hieu_canh.loi_nhac_canh` nhet tin hieu `{bat, ket, dai_giay, so_khung,
+       Loi nhac `doc_canh` hoi ay (`hieu_canh.loi_nhac_canh`, **da xoa 26/09** —
+       Task 22) nhet tin hieu `{bat, ket, dai_giay, so_khung,
        co_thoai}` o DAU cau, roi mot VI DU khung phan hoi mong doi
        `{"loai": "...", ...}` o CUOI — hai khoi tach nhau boi van xuoi. Tu `{`
        dau den `}` cuoi gop CA HAI thanh mot chuoi khong con la JSON hop le
@@ -675,11 +676,20 @@ def _doan_thao_tac(van: str, than: dict) -> str:
     from apps.auto_scan_video import ai
 
     # 🔴 **Nhan dien nay tung doc mot hinh dang goi tin KHONG TON TAI.**
-    #    No cho mot khoa `canh` o goc — mot API doc-hang-loat ma
-    #    `hieu_canh.loi_nhac_canh` chua bao gio gui: cua that hoi **mot canh mot
-    #    lan**, va tin hieu do duoc di kem la `{bat, ket, dai_giay, so_khung,
-    #    co_thoai}`. Ban thay the vi the khong bao gio nhan ra thao tac doc canh,
-    #    va no khong lo ra vi khong nguoi goi nao ton tai de chay no.
+    #    No cho mot khoa `canh` o goc — mot API doc-hang-loat ma loi nhac
+    #    `doc_canh` chua bao gio gui: cua that hoi **mot canh mot lan**, va tin
+    #    hieu do duoc di kem la `{bat, ket, dai_giay, so_khung, co_thoai}`. Ban
+    #    thay the vi the khong bao gio nhan ra thao tac doc canh, va no khong lo
+    #    ra vi khong nguoi goi nao ton tai de chay no.
+    #
+    # ⚠️ **26/09/2026 (Task 22) — nhanh nay nay NGU DONG, co y giu.**
+    #    `hieu_canh.loi_nhac_canh` da bi xoa (Task 10 thay VLM bang phep do tat
+    #    dinh o `edit_plan`), nen ⛔ khong luot E2E nao con sinh ra hinh dang
+    #    `{co_thoai, dai_giay}` — `test_2051`/`test_2121` chot dung dieu do.
+    #    Giu nhanh nay vi `ai.DOC_CANH` van la mot thao tac DUOC KHAI (bo do
+    #    `tools/do_llm_cong_asv.py` do no): xoa nhanh se lam ban gia im lang tra
+    #    ve hinh dang `DICH_THUAT` neu thao tac ay quay lai duong E2E.
+    #    ⭐ DIEU KIEN XOA: ngay `ai.DOC_CANH` roi khoi `ai.THAO_TAC`.
     if "co_thoai" in than and "dai_giay" in than:
         return ai.DOC_CANH.ma
     # ⭐ **Hinh dang goi tin cua `HO_SO_NOI_DUNG`, khong phai mot chu trong

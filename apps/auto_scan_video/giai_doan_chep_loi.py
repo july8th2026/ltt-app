@@ -44,7 +44,7 @@ from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
 from . import assets, ban_ghi, nhap_media, pipeline
-from .giai_doan_media import ThieuNguon
+from .giai_doan_media import ThieuNguon, _duong_doc_duoc
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +54,8 @@ MODEL_ASR = "large-v3"
 #: 2 (22/09): rut phan vai + ep ngon ngu nguon khach khai vao ASR.
 #: 3 (22/09, lan ocr): dinh tuyen nguon loi embedded -> OCR hardsub -> ASR
 #:   (`nguon_loi.py`), ban ghi mang `nguon_loi` + `do_tin`.
+#:   ⛔ **Da BO 26/09 (Task 21)** — MOT duong duy nhat voice->voice. Ban ghi van
+#:   mang `nguon_loi`, nay luon `asr`. Xem `nguon_loi.py` dau tep.
 PHIEN_BAN_MA = 3
 
 
@@ -108,11 +110,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     with tempfile.TemporaryDirectory(prefix="asv-asr-") as tam:
         thu_muc = Path(tam)
-        duong = kho.local_path(khoa_tieng) if hasattr(kho, "local_path") else None
-        if not duong:
-            duong = str(thu_muc / "tieng.wav")
-            with kho.open(khoa_tieng) as f:
-                Path(duong).write_bytes(f.read())
+        # 🔴 **MOT cua duy nhat de lay mot artifact ve dia.** Truoc 27/09 cho nay
+        #    tu viet lai nhanh do bang `Path(duong).write_bytes(f.read())` — dung
+        #    khuon ma `_duong_doc_duoc` ton tai de khong lam (xem chu thich cua no
+        #    va `test_429`). Va nhanh do la nhanh DUY NHAT production di qua:
+        #    `LocalStorage` co `local_path` nen moi test cuc bo tra duong that,
+        #    con `R2Storage` **khong ghi de** `Storage.local_path` (luon `None`)
+        #    ⇒ 100 % luot that nap ca `audio_full.wav` vao RAM worker. PCM 16 kHz
+        #    mono = 32 kB/s, nen mot phim 2 gio (tran chinh sach) la 230 MB.
+        duong = _duong_doc_duoc(kho, khoa_tieng, thu_muc)
 
         if ctx is not None and getattr(ctx, "progress", None):
             ctx.progress(5, _t('Đang chép lời'))
@@ -122,38 +128,26 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         khai = nn.chuan_nguon(cai.ngon_ngu_nguon)
         tt = nhap_media.soi(duong)
 
-        # 🔑 Dinh tuyen TRUOC ASR: phu de nhung / hardsub la ban loi da bien
-        #    tap — khi co thi khong ton mot luot whisper tren GPU.
+        # ⛔ **KHONG con dinh tuyen** (Task 21, 26/09): MOT duong duy nhat
+        #    voice->voice. `dinh_tuyen` o day chi con la BAN GHI NGUON GOC — no
+        #    giu dung hinh dang cu (`che_do`/`nguon_loi`/`ly_do`/`cat_lai`) vi
+        #    `quan_sat.bang_chung_chat_luong` va cac ban ghi da luu doc no.
         dinh_tuyen: dict = {"che_do": nl.ASR, "nguon_loi": nl.ASR, "ly_do": []}
-        tho = None
-        che_do = nl.chuan_che_do(cai.nguon_loi)
-        if che_do != nl.ASR:
-            if not run.source_key:
-                raise ThieuNguon(_t('Phiên chạy không có tệp nguồn.'))
-            from .giai_doan_media import _duong_doc_duoc
-            video = _duong_doc_duoc(kho, run.source_key, thu_muc)
-            try:
-                tho, dinh_tuyen = nl.dinh_tuyen(
-                    video, che_do=che_do,
-                    ngon_ngu_khai="" if khai == nn.TU_DOAN else khai,
-                    thoi_luong=tt["thoi_luong"], ctx=ctx)
-            except nl.KhongCoNguon as exc:
-                raise ban_ghi.BanGhiError(str(exc)) from exc
-        if tho is None:
-            tho = chep_loi(duong, ngon_ngu="" if khai == nn.TU_DOAN else khai,
-                           ctx=ctx)
+        tho = chep_loi(duong, ngon_ngu="" if khai == nn.TU_DOAN else khai,
+                       ctx=ctx)
 
-        # 🔑 **CAT LAI theo CAU — chi cho duong ASR.** `embedded`/`ocr` da la ban
-        #    chu do NGUOI lam phim chia; chia lai la lam hong mot phan doan tot
-        #    hon phan doan ta tinh duoc. Duong ASR thi nguoc lai: WhisperX tra ve
-        #    ca khoi VAD ~30 giay lam MOT doan tren van Han (Punkt khong co mo
-        #    hinh `zh` — xem `cat_doan.py`), va mot khe 24 giay thi `timing_align`
-        #    khong con gi de canh.
-        if dinh_tuyen.get("nguon_loi") == nl.ASR:
-            from . import cat_doan
-            tho, chan_cat = cat_doan.cat_lai(
-                tho, ngon_ngu=str(tho.get("language") or khai or ""))
-            dinh_tuyen["cat_lai"] = chan_cat
+        # 🔑 **CAT LAI theo CAU.** WhisperX tra ve ca khoi VAD ~30 giay lam MOT
+        #    doan tren van Han (Punkt khong co mo hinh `zh` — xem `cat_doan.py`),
+        #    va mot khe 24 giay thi `timing_align` khong con gi de canh.
+        #
+        # ⭐ Truoc 26/09 buoc nay bi RAO lai cho rieng duong ASR, vi `embedded`/
+        #    `ocr` cho ban chu do NGUOI lam phim chia san. Hai duong do da bo ⇒
+        #    rao khong con gi de rao, va giu no lai la giu mot nhanh khong bao gio
+        #    chay.
+        from . import cat_doan
+        tho, chan_cat = cat_doan.cat_lai(
+            tho, ngon_ngu=str(tho.get("language") or khai or ""))
+        dinh_tuyen["cat_lai"] = chan_cat
 
         ban = ban_ghi.chuan_hoa(tho, thoi_luong_nguon=tt["thoi_luong"],
                                 nguon_loi=dinh_tuyen["nguon_loi"],
@@ -187,7 +181,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             model=MODEL_ASR,
             ngon_ngu=str(ban.get("ngon_ngu") or ""),
             phien_ban_ma=PHIEN_BAN_MA,
-            nguon_loi=f"{che_do}:{dinh_tuyen['nguon_loi']}:{ban.get('engine', '')}")
+            nguon_loi=f"{nl.ASR}:{dinh_tuyen['nguon_loi']}:{ban.get('engine', '')}")
 
         khoa = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
                                    stage=pipeline.TRANSCRIBE, van_tay=vt,

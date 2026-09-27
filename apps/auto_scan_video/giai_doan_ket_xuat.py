@@ -216,14 +216,45 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     return {
         "phan": phan,
-        "tom_tat": {
-            "thoi_luong_giay": round(float(tt["thoi_luong"]), 3),
-            "co_byte": int(tt["co_byte"]),
-            "codec_video": tt["codec_video"],
-            "codec_tieng": tt["codec_tieng"],
-            "so_lop_tieng": len(lop),
-            "chan_doan": " | ".join((duoi or "").split(" | ")[-2:]),
-        },
+        # ⭐ `_tom_tat` — ⛔ khong mot dict o day: no phai ghi CA bo ma hoa da
+        #    KHAI va bo ma hoa da chay THAT (xem docstring cua no).
+        "tom_tat": _tom_tat(
+            tt, so_lop_tieng=len(lop), bo_ma_hoa_khai=khai,
+            bo_ma_hoa_thuc=bo_thuc,
+            chan_doan=" | ".join((duoi or "").split(" | ")[-2:])),
+    }
+
+
+
+def _tom_tat(tt: dict, *, so_lop_tieng: int, bo_ma_hoa_khai: str,
+             bo_ma_hoa_thuc: str, chan_doan: str) -> dict:
+    """Ho so giai doan RENDER — va no phai noi duoc **bo ma hoa NAO da chay**.
+
+    🔴 `codec_video` cua ffprobe la `h264` cho CA `h264_nvenc` LAN `libx264`, nen
+       `outputs` (thu duy nhat `thi_hanh.py:589` giu lai vao `asv_stage.outputs`)
+       ⛔ khong phan biet duoc *"da render tren GPU nhu da khai"* voi *"da lang le
+       lui ve CPU"*. Truoc 27/09 lan HA do chi la mot `log.info` — va mot dong
+       log ⛔ khong phai mot ban ghi: no ⛔ khong vao `outputs`, ⛔ khong vao bao cao
+       nghiem thu, va no bien mat sau khi log xoay vong.
+
+    ⭐ Ba khoa, ⛔ khong mot: hai ban khai (`khai`/`thuc`) de truy duoc, va mot
+       phan quyet (`bi_ha`) de mot bao cao van hanh ⛔ khong phai tu doi chieu hai
+       chuoi. Cung ly do voi `so_doan_im_lang` + `doan_im_lang` cua Task 25.
+    """
+    khai = str(bo_ma_hoa_khai or "")
+    thuc = str(bo_ma_hoa_thuc or "")
+    return {
+        "thoi_luong_giay": round(float(tt["thoi_luong"]), 3),
+        "co_byte": int(tt["co_byte"]),
+        "codec_video": tt["codec_video"],
+        "codec_tieng": tt["codec_tieng"],
+        "so_lop_tieng": int(so_lop_tieng),
+        # ⭐ Bo ma hoa da KHAI trong ban dung (tran: may nay lam duoc gi) va bo
+        #    ma hoa da chay THAT (giao voi suat GPU da duoc cap cho job nay).
+        "bo_ma_hoa_khai": khai,
+        "bo_ma_hoa_thuc": thuc,
+        "bo_ma_hoa_bi_ha": bool(khai and thuc and khai != thuc),
+        "chan_doan": chan_doan,
     }
 
 
