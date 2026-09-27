@@ -2811,6 +2811,36 @@ và Task 14. `kiem_placeholder(body, khai_bao, co_gia_tri)` dùng đúng thứ t
 
 ---
 
+## PHÁN QUYẾT bốn điểm trên (điều phối, 27/09/2026) — ⛔ làn KHÔNG hỏi lại
+
+Cả bốn đều do **bằng chứng** hoặc do **chính spec này** quyết, ⛔ không thuộc ba loại
+phải hỏi chủ dự án (đánh đổi sản phẩm · hai đường đều đúng · việc chỉ chủ dự án làm
+được). Ghi ở đây để làn đọc và đi tiếp.
+
+1. **Số liệu 21, ⛔ không phải 24.** Phép đo trực tiếp trên bản sao Studio thật thắng
+   con số trong báo cáo. Dùng **7/7/7 = 21**. ⚠️ Làn phải **tự đếm lại** khi nhập và
+   **báo số đếm được**, ⛔ đừng tin con số trong plan này — đó chính là cách sai số
+   24 sống sót tới hôm nay.
+2. **`SUBJECT`/`STYLE`/`EXTRA`/`EQUIPMENT` kiểm CÚ PHÁP, ⛔ không kiểm nguồn giá trị.**
+   Đúng ý spec: đây là ô **người dùng gõ tay** lúc sinh ảnh, nên ⛔ không có "nguồn
+   giá trị hệ thống" nào để đối chiếu — một phép kiểm đòi nguồn cho chúng sẽ **luôn
+   đỏ** và người ta sẽ tắt nó đi. Kiểm được: tên nằm trong tập đã khai, cú pháp
+   `{TEN}` đúng, ⛔ không có tên lạ. Bảng quy đổi 15 tên của §7 ⇒ **mở rộng thành 19**
+   và ghi rõ nhóm nào là *giá trị hệ thống*, nhóm nào là *ô người dùng gõ*.
+3. **⛔ KHÔNG viết `library.dat_mac_dinh()` trong pha 4.** Nhập catalog tự kiểm soát
+   `is_default` bằng dữ liệu nguồn, và ⛔ không endpoint nào gọi hàm đó ⇒ viết nó là
+   **mã không bao giờ chạy**, mua sự yên tâm bằng tín dụng giả. Ghi **nợ D-7**: khi
+   khách được tự đặt mặc định cho bản clone riêng, hàm này cần một chủ **và** một
+   phép kiểm cho bất biến *"chỉ một `is_default` mỗi `(owner_id, target_format)`"*.
+4. **Chốt tên đường: `POST /api/library/{kind}/{item_id}/share-level`.** Theo đúng
+   khuôn đường dẫn đã có trong app. ⚠️ Cột `share_level` **phải** có một đường HTTP
+   đặt được, nếu không nó là **cột chết** (ghi được mà không ai ghi) — đúng lớp lỗi
+   nợ D-2 (`ommi_binding.scene_id IS NULL` do không ai sinh, không ai đọc).
+   ⛔ Làn phải thêm một phép kiểm rằng đường này **thật sự được đăng ký** trong
+   `routes/__init__.py`, không chỉ tồn tại trong tệp.
+
+---
+
 ## Điểm cần chủ dự án xác nhận (không phải lỗi chặn thi hành, nhưng ảnh hưởng thiết kế)
 
 1. **§8.3 sai số liệu**: "character 7 · prop 8 · background 9" (tổng 24) không khớp
