@@ -1013,6 +1013,130 @@ Báo chủ dự án **ba** điều, không hơn:
 
 ---
 
+## Task 8: Chốt trên WEB THẬT sau khi deploy
+
+> ⚠️ Task này **chỉ chạy sau khi chủ dự án đồng ý deploy UI-0** (Task 7 Bước 3).
+> Nếu quyết định là "đợi cuối plan" thì Task 8 dời sang UI-11.
+
+**Files:**
+- Create: `tests/browser/agent_ui_v2_ui0_web_that.js`
+- Modify: `docs/architecture/agent_ui_v2/00_SO_TIEN_DO.md`
+
+**Bối cảnh.** Task 6 chạy ở **chế độ A** (máy chủ cô lập 8198) — nó chứng minh *mã
+mới* đúng. Nó **không** chứng minh *bản deploy* đúng: bundle có được build lại không,
+`ASSET_VER` có bump không, Cloudflare có phục vụ đúng tệp không. CLAUDE.md luật 7 đòi
+chốt trên `https://app.lttstudios.com`, ⛔ không phải loopback — loopback bỏ qua
+Cloudflare, và Cloudflare đã từng là thủ phạm thật.
+
+- [ ] **Bước 1: Lấy cookie tài khoản thử (⛔ không gõ mật khẩu)**
+
+```bash
+python tools\nang_quyen.py --lenh "C:\LTTPlatform\venv\Scripts\python.exe tools\tai_khoan_thu.py --app-env C:\LTTPlatform\secrets\app.env --cookie khach1.thu@lttstudios.local"
+```
+
+Kết quả một dòng: `session=<giá trị>`. Đặt vào biến môi trường `LTT_COOKIE_THU`.
+
+⚠️ Nếu tài khoản chưa có hoặc hết credit:
+
+```bash
+python tools\nang_quyen.py --lenh "C:\LTTPlatform\venv\Scripts\python.exe tools\tai_khoan_thu.py --app-env C:\LTTPlatform\secrets\app.env --tao-bo --nap-den 20000"
+```
+
+⛔ **Không** chạy `--dat-lai-mat-khau` — nó thu hồi mọi phiên cũ và đá văng phiên
+khác đang dùng cookie.
+
+- [ ] **Bước 2: Viết kịch bản web thật**
+
+Tạo `tests/browser/agent_ui_v2_ui0_web_that.js`:
+
+```js
+// UI-0 chot tren WEB THAT (CLAUDE.md luat 7: chot tren app.lttstudios.com,
+// KHONG chot tren loopback — loopback bo qua Cloudflare).
+//
+// Dang nhap bang COOKIE tu `tools/tai_khoan_thu.py --cookie`, ⛔ khong go mat
+// khau vao form. Tai khoan duoi `.local`, khong phai khach that.
+async page => {
+  const COOKIE = process.env.LTT_COOKIE_THU;
+  if (!COOKIE) throw new Error('thieu LTT_COOKIE_THU — xem Buoc 1');
+
+  const pageErrors = [], consoleErrors = [], failedRequests = [], serverErrors = [];
+  page.on('pageerror',     e => pageErrors.push(e.message));
+  page.on('console',       m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+  page.on('requestfailed', r => failedRequests.push({url: r.url(), err: r.failure()?.errorText}));
+  page.on('response',      r => { if (r.status() >= 500) serverErrors.push({url: r.url(), status: r.status()}); });
+
+  await page.context().addCookies([{ name: 'session', value: COOKIE,
+    domain: 'app.lttstudios.com', path: '/', secure: true, httpOnly: true }]);
+
+  const loi = [];
+  const check = (dk, msg) => { if (!dk) loi.push(msg); };
+
+  await page.goto('https://app.lttstudios.com/agent/canvas');
+  check(!page.url().includes('/login'), 'cookie khong con hieu luc — lay lai o Buoc 1');
+  await page.locator('#agent-canvas-root').waitFor();
+
+  // ── Phep do 1: ban deploy DA MANG ban va CSS cong noi ───────────────
+  // Them mot node nhieu cong roi dem SO VI TRI KHAC NHAU cua cong vao.
+  await page.locator('.canvas-rail button[aria-label="Mo cong cu"]').click()
+    .catch(() => page.locator('.canvas-rail button').nth(1).click());
+  await page.waitForTimeout(600);
+  const cong = await page.evaluate(() => {
+    const n = document.querySelector('.react-flow__node');
+    if (!n) return null;
+    const hs = [...n.querySelectorAll('.react-flow__handle.target')];
+    return {so: hs.length, viTri: new Set(hs.map(h => {
+      const r = h.getBoundingClientRect();
+      return Math.round(r.x) + ',' + Math.round(r.y);
+    })).size};
+  });
+  if (cong && cong.so > 1) {
+    check(cong.viTri === cong.so,
+      `ban DEPLOY chua mang ban va cong: ${cong.so} cong / ${cong.viTri} vi tri`);
+  }
+
+  // ── Phep do 2: khong con nut '+' chet ───────────────────────────────
+  check(await page.evaluate(() => document.querySelectorAll('.edge-insert').length) === 0,
+        "ban deploy van con nut '+' chet");
+
+  // ── Phep do 3: bon so hieu suc khoe trang ───────────────────────────
+  check(pageErrors.length === 0,     'pageerror: ' + JSON.stringify(pageErrors));
+  check(consoleErrors.length === 0,  'console error: ' + JSON.stringify(consoleErrors));
+  check(failedRequests.length === 0, 'request hong: ' + JSON.stringify(failedRequests));
+  check(serverErrors.length === 0,   '5xx: ' + JSON.stringify(serverErrors));
+
+  if (loi.length) return {status: 'FAIL', loi};
+  return {status: 'PASS', so_lieu: {cong}};
+}
+```
+
+- [ ] **Bước 3: Chạy trên profile trình duyệt RIÊNG của làn**
+
+```bash
+playwright-cli -s=ui0 run-code --filename=tests/browser/agent_ui_v2_ui0_web_that.js
+```
+
+⛔ `-s=ui0` là profile riêng của làn — **không** dùng Chrome thật của chủ dự án.
+
+Kỳ vọng: `"status": "PASS"`.
+
+⚠️ Nếu phép đo 1 hoặc 2 đỏ mà Task 6 (8198) đã xanh ⇒ **không phải lỗi mã**, mà là
+**lỗi đường deploy**: bundle chưa build lại, `ASSET_VER` chưa bump, hoặc Cloudflare
+còn phục vụ bản cũ. Kiểm theo đúng thứ tự đó.
+
+- [ ] **Bước 4: Chụp ảnh chốt + ghi sổ**
+
+Lưu `bang_chung/ui0_web_that_<ngày>.png`. Ghi vào *Nhật ký* một dòng có **số**, ví dụ
+`15 cổng / 15 vị trí`, ⛔ không ghi "đã xác minh" suông.
+
+- [ ] **Bước 5: Commit**
+
+```bash
+git add tests/browser/agent_ui_v2_ui0_web_that.js docs/architecture/agent_ui_v2/
+git commit -m "test(browser): chot UI-0 tren web that qua cookie tai khoan thu"
+```
+
+---
+
 ## Self-review
 
 **Phủ spec.** Bốn lỗi P0 của `01 §2`: P0-1 → Task 1 · P0-2 → Task 4 · P0-3

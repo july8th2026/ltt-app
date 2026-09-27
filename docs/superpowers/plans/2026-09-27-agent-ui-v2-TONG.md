@@ -36,7 +36,8 @@ Mọi task ở mọi pha đều ngầm mang các ràng buộc này. Chép nguyê
 - Ghi cấu hình KHÔNG BOM · `.ps1` thuần ASCII · ⛔ không viết Python inline qua PowerShell.
 - ⛔ KHÔNG deploy từ cây riêng. Deploy xuất HEAD cây chính.
 - Đổi CSS/JS tĩnh ⇒ cache-bust (`server/templating.py:ASSET_VER`).
-- Đổi giao diện ⇒ kiểm bằng trình duyệt thật, ⛔ không đọc mã rồi tuyên bố xong.
+- Đổi giao diện ⇒ kiểm bằng trình duyệt thật (Playwright), ⛔ không đọc mã rồi
+  tuyên bố xong. Hai chế độ kiểm bắt buộc — xem **Phần 3b**.
 - Frontend giữ **schema-driven**: thêm một app KHÔNG được sửa một dòng nào trong
   `frontend/agent-canvas/src/`.
 - ⛔ Không bảng tra tên app/tool/nhãn trong frontend (`test_967` đếm hàng chết).
@@ -275,6 +276,94 @@ GATE ĐỎ         sửa tại chỗ -> chạy lại đúng phép đỏ (gate in
    B4 đang tiêu tiền thật) ⇒ **đó là một câu hỏi cho chủ dự án**, ⛔ không tự quyết.
 3. **Gate chạy ở cây RIÊNG**: `python tools/cay_gate.py chay`. ⛔ Không chạy gate
    trong cây làm việc — một phiên khác gộp giữa lượt sẽ làm bẩn phán quyết.
+
+---
+
+# PHẦN 3b — Kiểm bằng trình duyệt thật (bắt buộc cho MỌI pha)
+
+⛔ **Không pha nào được đánh dấu xong nếu chỉ chạy test và đọc mã.** Ba trong bốn
+lỗi P0 của UI-0 **chỉ lộ ra trên layout thật** — jsdom không tính layout nên một
+phép so toạ độ trong vitest sẽ **XANH GIẢ**.
+
+## 3b.1 Hai chế độ, dùng ở hai thời điểm khác nhau
+
+| | **Chế độ A — máy chủ cô lập** | **Chế độ B — web thật** |
+|---|---|---|
+| Khi nào | **trong lúc làm**, mã chưa deploy | **sau khi deploy**, chốt lần cuối |
+| Đâu | `http://127.0.0.1:8198` (sqlite riêng) | `https://app.lttstudios.com` |
+| Đăng nhập | tài khoản fixture của chính máy chủ đó | `tai_khoan_thu.py --cookie` |
+| Chứng minh được gì | mã mới chạy đúng | **thứ khách thật sự thấy** chạy đúng |
+| Rủi ro | không có | ghi vào CSDL production dưới tài khoản `.local` |
+
+🔴 **Cả hai đều cần.** Chế độ A không chứng minh được bản deploy; chế độ B không
+chạy được trước khi deploy. ⛔ Không thay cái này bằng cái kia.
+
+⚠️ CLAUDE.md luật 7: chốt trên `https://app.lttstudios.com`, **không** chốt trên
+loopback — loopback bỏ qua Cloudflare, và Cloudflare đã từng là thủ phạm thật
+(asset thử thách chỉ có AAAA, máy không IPv6).
+
+## 3b.2 Chế độ B — công thức chính xác
+
+Nguồn: `docs/TAI_KHOAN_THU.md`. ⛔ **Không gõ mật khẩu vào form** — công cụ đăng
+nhập bằng HTTP và chỉ trả cookie phiên.
+
+**Bước 1 — lấy cookie.** Đọc `C:\LTTPlatform\secrets\app.env` cần Administrator,
+nên đi qua `nang_quyen.py` (nâng quyền im lặng, ⛔ không phải điểm dừng):
+
+```bash
+python tools\nang_quyen.py --lenh "C:\LTTPlatform\venv\Scripts\python.exe tools\tai_khoan_thu.py --app-env C:\LTTPlatform\secrets\app.env --cookie khach1.thu@lttstudios.local"
+#   -> session=<giá trị>
+```
+
+⚠️ Nếu tài khoản chưa có hoặc hết credit:
+
+```bash
+python tools\nang_quyen.py --lenh "C:\LTTPlatform\venv\Scripts\python.exe tools\tai_khoan_thu.py --app-env C:\LTTPlatform\secrets\app.env --tao-bo --nap-den 20000"
+```
+
+**Bước 2 — mở Chrome qua Playwright, đặt cookie, vào thẳng trang.**
+Mỗi làn dùng **profile riêng** (`-s=<tên làn>`), ⛔ không dùng Chrome thật của chủ
+dự án:
+
+```js
+// tests/browser/<ten>.js  — chay bang: playwright-cli -s=ui0 run-code --filename=...
+async page => {
+  const COOKIE = process.env.LTT_COOKIE_THU;   // dat tu Buoc 1
+  await page.context().addCookies([{ name: 'session', value: COOKIE,
+    domain: 'app.lttstudios.com', path: '/', secure: true, httpOnly: true }]);
+  await page.goto('https://app.lttstudios.com/agent/canvas');
+  // ... phep do cua pha
+}
+```
+
+**Bước 3 — luôn thu bốn thứ này, mọi pha:**
+
+```js
+const pageErrors = [], consoleErrors = [], failedRequests = [], serverErrors = [];
+page.on('pageerror',     e => pageErrors.push(e.message));
+page.on('console',       m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+page.on('requestfailed', r => failedRequests.push({url: r.url(), err: r.failure()?.errorText}));
+page.on('response',      r => { if (r.status() >= 500) serverErrors.push({url: r.url(), status: r.status()}); });
+```
+
+## 3b.3 Ba luật cứng
+
+1. ⛔ **Tài khoản thử chỉ có đuôi `.local`.** Công cụ tự từ chối email khác, và
+   ⛔ **không** nâng `role=admin` — nó phải nhìn đúng bề mặt khách hàng.
+2. ⛔ **Không chạy `--dat-lai-mat-khau`** trừ khi thật cần: nó thu hồi **mọi** phiên
+   cũ của tài khoản đó ⇒ đá văng phiên khác đang dùng cookie.
+3. ⛔ **Không dùng dữ liệu production của khách thật.** Tài khoản thử tự dựng dữ
+   liệu của nó.
+
+## 3b.4 Mỗi pha phải nộp gì
+
+```
+□ Kịch bản `tests/browser/agent_ui_v2_<pha>_nghiem_thu.js` trả {status:'PASS'|'FAIL', so_lieu:{…}}
+□ Chạy XANH ở chế độ A (8198) trước khi xin gộp `main`
+□ Chạy XANH ở chế độ B (app.lttstudios.com) sau khi deploy — nếu pha được deploy
+□ 0 pageerror · 0 console error · 0 request hỏng · 0 phản hồi 5xx
+□ Ảnh chụp trước/sau trong docs/architecture/agent_ui_v2/bang_chung/
+```
 
 ---
 
