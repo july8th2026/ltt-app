@@ -269,13 +269,53 @@ def chu_cua(ho_so: dict | None) -> str:
 KHOANG_HO_DAI = 0.02
 
 
+#: Mot vung CHE duoc coi la dai phu de goc khi no nam trong phan nay TINH TU
+#: DAY khung. Chu du an chot 28/09.
+DAY_KHUNG_PHAN = 1 / 3
+
+#: ... VA rong it nhat chung nay be ngang khung.
+#:
+#: 🔴 **Ve nay ⛔ KHONG phai mot tinh chinh — no chan dung rui ro da neu khi
+#:    chot.** *"Vung lam mo o 1/3 duoi la dai phu de"* mot minh se hieu nham
+#:    **mot o che logo goc duoi** thanh dai phu de, roi keo phu de xuong nam de
+#:    len goc man hinh. Mot dai phu de thi **rong**; mot o logo thi **hep**.
+#:    Do la khac biet co hoc tach duoc hai thu, ⛔ khong phai mot phong doan.
+#:
+#: ⭐ 0,50 chu ⛔ khong 0,80: khach thuong khoanh vua khit chu chu ⛔ khong keo
+#:    het be ngang. T1a khoanh `x 0,10..0,90` = 0,80; mot dai hep hon van la
+#:    dai. Con o logo dien hinh duoi 0,25.
+DAI_PHU_DE_RONG_TOI_THIEU = 0.50
+
+
+def _la_dai_chu(v: dict) -> bool:
+    """Mot vung che co hinh dang cua DAI PHU DE (rong, nam duoi) khong?"""
+    return (float(v.get("y0") or 0.0) >= 1.0 - DAY_KHUNG_PHAN
+            and (float(v.get("x1") or 0.0) - float(v.get("x0") or 0.0))
+            >= DAI_PHU_DE_RONG_TOI_THIEU)
+
+
 def dai_phu_de_goc(vung) -> dict | None:
-    """Dai phu de goc tu vung khach DANH DAU, hoac `None`.
+    """Dai phu de goc tu vung khach ve, hoac `None`.
 
     ⛔ **`danh_dau_phu_de` la mot tinh nang CO MA KHONG AI DOC truoc lan nay.**
        `vung_che.LOAI_DANH_DAU_PHU_DE` khai y nghia *"dung ve phu de dich chong
        len day"*, giao dien cho ve, ban dung luu — va khong mot dong nao doc
        `loai` do. `tu_dong` la nguoi doc dau tien.
+
+    🔴 **Mo rong 28/09 (B9) — va day la mot BAT BIEN SAN PHAM bi doi co y.**
+
+       Truoc lan nay ham chi doc `danh_dau_phu_de`, va `test_2070` chot dieu do
+       **co chu dich**. Do tren lan chay that T1a: khach (chinh tac gia) khoanh
+       dai phu de Hoa bang loai `lam_mo` — vung **duoc lam mo dung**, nhung
+       `dai_phu_de_goc` tra `None` nen phu de moi roi ve `margin_v` mac dinh
+       cua preset. Tinh nang co ma **khach ⛔ khong biet cua nao de di qua**.
+
+       Chu du an chot 28/09: **mot vung CHE nam o 1/3 duoi VA du rong** thi la
+       dai phu de goc, bat ke `loai`.
+
+    ⚠️ Ve *"du rong"* (`DAI_PHU_DE_RONG_TOI_THIEU`) chan dung rui ro da neu khi
+       chot: mot o che **logo goc duoi** cung nam o 1/3 duoi, va neu tinh no la
+       dai phu de thi phu de bi keo xuong nam de len goc man hinh.
 
     ⭐ `da_che=True`: `che_do_render._loc_lam_mo` lam mo MOI vung, ke ca vung
        danh dau (no khong loc theo `loai`). Nen dai da danh dau luon bi che, va
@@ -284,7 +324,8 @@ def dai_phu_de_goc(vung) -> dict | None:
     """
     from .vung_che import LOAI_DANH_DAU_PHU_DE
 
-    ds = [v for v in (vung or ()) if v.get("loai") == LOAI_DANH_DAU_PHU_DE]
+    ds = [v for v in (vung or ())
+          if v.get("loai") == LOAI_DANH_DAU_PHU_DE or _la_dai_chu(v)]
     if not ds:
         return None
     return {"y0": round(min(float(v["y0"]) for v in ds), 4),
@@ -377,7 +418,21 @@ def vi_tri_tu_dong(ho_so: dict | None, *, cao: int) -> dict:
         return {}
     dai = ho_so.get("dai_phu_de_goc") or None
     if not dai:
-        return {}
+        # ⭐ **⛔ Khong co dai chu goc ⇒ san *title safe* 90 %** (chu du an chot
+        #    28/09; SMPTE, cung muc Netflix dung). Truoc lan nay nhanh nay tra
+        #    `{}` tuc giu `margin_v = 30` TUYET DOI cua preset — dung 5,2 % tren
+        #    khung `576` nhung chi **1,6 %** tren khung `1920`.
+        #
+        # ⛔ SAN, ⛔ khong phai gia tri thay the: preset rong hon thi giu preset.
+        #
+        # ⚠️ Va `safe_area_percent` van de 0 o CA HAI nhanh: `ass_builder` lay
+        #    `max(margin_v, safe)`, nen bat no len la them mot noi thu hai co
+        #    quyen doi le — roi ⛔ khong ai doc noi con so cuoi tu dau ra.
+        san = int(round(cao * LE_AN_TOAN_PHAN))
+        cu = int(getattr(cau_hinh_goc(str(ho_so.get("kieu") or KIEU_MAC_DINH)),
+                         "margin_v", 0) or 0)
+        return ({} if cu >= san
+                else {"margin_v": san, "safe_area_percent": 0})
     if dai.get("da_che"):
         mv = (1.0 - float(dai["y1"])) * cao
     else:
@@ -759,6 +814,21 @@ CO_CHU_TOI_THIEU_PHAN = 0.020
 #: de chan: mot ban giao chu nho van la ban giao, con mot ngoai le thi ⛔ khong.
 CO_CHU_DE_DOC_PHAN = 0.040
 
+#: Le AN TOAN moi canh — *title safe* 90 % cua SMPTE, cung la muc Netflix dung.
+#:
+#: 🔑 **Chu du an chot 28/09, va day la muc MOI chuan deu dong y.** BBC con chat
+#:    hon (*"dai dong toi da 68 % be rong khung 16:9"*, va noi trong 75 % ngang),
+#:    nhung sang do se lam **moi** khach 16:9 dang chay thay phu de nho han han.
+#:
+#: ⚠️ Truoc lan nay le la HAI con so TUYET DOI cua preset (`margin_h = 20`,
+#:    `margin_v = 30`). Tren khung `1024x576` chung tinh ra 2,0 % va 5,2 % — gan
+#:    dung; tren khung `1080x1920` thi ra 1,9 % va **1,6 %**, tuc chu nam sat
+#:    mep va co the bi khung bao (*overscan*) cat mat.
+#:
+#: ⛔ Va vi the day la mot SAN, ⛔ khong phai mot gia tri thay the: khung nao
+#:    preset da rong hon thi giu cua preset.
+LE_AN_TOAN_PHAN = 0.05
+
 
 def _be_rong_dong(dong: str, co_chu: float) -> float:
     """Be rong (pixel) uoc luong cua mot dong o co chu nay.
@@ -1023,10 +1093,13 @@ def viet_tep_ass(ho_so, goi_su_kien, thu_muc, *,
     # ⚠️ Va vi co chu doi thi `display_text` da ngat o COMPOSE **het dung** —
     #    no duoc ngat cho mot be rong khac. Phai ngat LAI, bang chinh
     #    `wrap_lines`, ⛔ khong viet bo ngat thu hai.
+    # ⭐ Le NGANG: san *title safe* 90 % (SMPTE/Netflix), preset rong hon thi
+    #    giu preset. Xem `LE_AN_TOAN_PHAN`.
     _co, _le, _ky_tu = co_chu_vua_khung(
         [str(getattr(e, "text", "") or "") for e in su_kien],
-        rong=rong_ass, cao=cao_ass,
-        co_chu_goc=int(kieu.font_size), le_ngang=int(kieu.margin_h))
+        rong=rong_ass, cao=cao_ass, co_chu_goc=int(kieu.font_size),
+        le_ngang=max(int(kieu.margin_h),
+                     int(round(rong_ass * LE_AN_TOAN_PHAN))))
     # ⛔ `margin_v` ⛔ KHONG dung o day: B8 da dua no ve pixel cua khung RA roi
     #    (`doi_truc_dai_phu_de` + `vi_tri_tu_dong`). Co lai lan nua la ap hai
     #    phep doi truc chong len nhau.

@@ -141,7 +141,11 @@ def test_cau_NGAN_o_khung_tham_chieu_GIU_NGUYEN_co_chu_preset(tmp_path):
        đề của **mọi** khách 16:9 đang chạy.
     """
     truong, _ = _ass(tmp_path, 1024, 576, ("Mot cau ngan.",))
-    assert _co_chu(truong) == 48 and _le_ngang(truong) == 20
+    assert _co_chu(truong) == 48
+    # ⭐ Lề thì CÓ đổi, và đó là một chốt riêng của chủ dự án (28/09): sàn
+    #    *title safe* 90 % của SMPTE = 5 % mỗi cạnh. `1024 × 0,05 = 51`, rộng
+    #    hơn `margin_h = 20` của preset nên sàn thắng. Xem `LE_AN_TOAN_PHAN`.
+    assert _le_ngang(truong) == round(1024 * pd.LE_AN_TOAN_PHAN)
 
 
 def test_chu_HAN_tinh_be_rong_GAP_DOI(tmp_path):
@@ -163,3 +167,37 @@ def test_chu_HAN_tinh_be_rong_GAP_DOI(tmp_path):
         for x in d.split(",", 9)[9].split("\\N"):
             assert pd._be_rong_dong(x, co) <= 324 - 2 * le, (
                 "dong chu Han %d ky tu o co chu %d tran khung" % (len(x), co))
+
+
+# ── Vị trí so với DẢI CHỮ GỐC (chủ dự án chốt 28/09) ─────────────────────────
+
+def _margin_v(truong: list[str]) -> int:
+    return int(truong[-2])
+
+
+def test_vung_lam_mo_RONG_o_1_3_duoi_keo_phu_de_XUONG_de_len_vet_mo(tmp_path):
+    """🔴 Ca T1a: khách khoanh `lam_mo` đúng dải phụ đề Hoa và ⛔ không có gì xảy ra.
+
+    Đáy chữ mới phải trùng **đáy dải** ⇒ `margin_v = (1 − y1) × cao`.
+    Dải `y1 = 0,96` trên khung `576` ⇒ `23`.
+    """
+    ho = dict(HO_SO, che_do="tu_dong")
+    vung = [{"loai": "lam_mo", "x0": 0.10, "x1": 0.90,
+             "y0": 0.82, "y1": 0.96}]
+    ho["dai_phu_de_goc"] = pd.dai_phu_de_goc(vung)
+    assert ho["dai_phu_de_goc"] is not None, (
+        "vung lam mo rong o 1/3 duoi phai duoc nhan la dai phu de goc")
+    assert pd.vi_tri_tu_dong(ho, cao=576)["margin_v"] == round((1 - 0.96) * 576)
+
+
+def test_KHONG_co_dai_thi_lui_ve_san_title_safe_5_phan_tram(tmp_path):
+    """⭐ Mặc định cho video ⛔ không có chữ gốc — SMPTE/Netflix *title safe* 90 %.
+
+    ⚠️ Trước B9 nhánh này giữ `margin_v = 30` **tuyệt đối** của preset: đúng
+       `5,2 %` trên khung `576` nhưng chỉ **`1,6 %`** trên khung `1920`.
+    """
+    ho = dict(HO_SO, che_do="tu_dong")
+    assert pd.vi_tri_tu_dong(ho, cao=576) == {}, (
+        "khung 576: preset (30) da rong hon san (29) nen phai GIU preset")
+    assert (pd.vi_tri_tu_dong(ho, cao=1920)["margin_v"]
+            == round(1920 * pd.LE_AN_TOAN_PHAN))
