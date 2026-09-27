@@ -269,13 +269,53 @@ def chu_cua(ho_so: dict | None) -> str:
 KHOANG_HO_DAI = 0.02
 
 
+#: Mot vung CHE duoc coi la dai phu de goc khi no nam trong phan nay TINH TU
+#: DAY khung. Chu du an chot 28/09.
+DAY_KHUNG_PHAN = 1 / 3
+
+#: ... VA rong it nhat chung nay be ngang khung.
+#:
+#: 🔴 **Ve nay ⛔ KHONG phai mot tinh chinh — no chan dung rui ro da neu khi
+#:    chot.** *"Vung lam mo o 1/3 duoi la dai phu de"* mot minh se hieu nham
+#:    **mot o che logo goc duoi** thanh dai phu de, roi keo phu de xuong nam de
+#:    len goc man hinh. Mot dai phu de thi **rong**; mot o logo thi **hep**.
+#:    Do la khac biet co hoc tach duoc hai thu, ⛔ khong phai mot phong doan.
+#:
+#: ⭐ 0,50 chu ⛔ khong 0,80: khach thuong khoanh vua khit chu chu ⛔ khong keo
+#:    het be ngang. T1a khoanh `x 0,10..0,90` = 0,80; mot dai hep hon van la
+#:    dai. Con o logo dien hinh duoi 0,25.
+DAI_PHU_DE_RONG_TOI_THIEU = 0.50
+
+
+def _la_dai_chu(v: dict) -> bool:
+    """Mot vung che co hinh dang cua DAI PHU DE (rong, nam duoi) khong?"""
+    return (float(v.get("y0") or 0.0) >= 1.0 - DAY_KHUNG_PHAN
+            and (float(v.get("x1") or 0.0) - float(v.get("x0") or 0.0))
+            >= DAI_PHU_DE_RONG_TOI_THIEU)
+
+
 def dai_phu_de_goc(vung) -> dict | None:
-    """Dai phu de goc tu vung khach DANH DAU, hoac `None`.
+    """Dai phu de goc tu vung khach ve, hoac `None`.
 
     ⛔ **`danh_dau_phu_de` la mot tinh nang CO MA KHONG AI DOC truoc lan nay.**
        `vung_che.LOAI_DANH_DAU_PHU_DE` khai y nghia *"dung ve phu de dich chong
        len day"*, giao dien cho ve, ban dung luu — va khong mot dong nao doc
        `loai` do. `tu_dong` la nguoi doc dau tien.
+
+    🔴 **Mo rong 28/09 (B9) — va day la mot BAT BIEN SAN PHAM bi doi co y.**
+
+       Truoc lan nay ham chi doc `danh_dau_phu_de`, va `test_2070` chot dieu do
+       **co chu dich**. Do tren lan chay that T1a: khach (chinh tac gia) khoanh
+       dai phu de Hoa bang loai `lam_mo` — vung **duoc lam mo dung**, nhung
+       `dai_phu_de_goc` tra `None` nen phu de moi roi ve `margin_v` mac dinh
+       cua preset. Tinh nang co ma **khach ⛔ khong biet cua nao de di qua**.
+
+       Chu du an chot 28/09: **mot vung CHE nam o 1/3 duoi VA du rong** thi la
+       dai phu de goc, bat ke `loai`.
+
+    ⚠️ Ve *"du rong"* (`DAI_PHU_DE_RONG_TOI_THIEU`) chan dung rui ro da neu khi
+       chot: mot o che **logo goc duoi** cung nam o 1/3 duoi, va neu tinh no la
+       dai phu de thi phu de bi keo xuong nam de len goc man hinh.
 
     ⭐ `da_che=True`: `che_do_render._loc_lam_mo` lam mo MOI vung, ke ca vung
        danh dau (no khong loc theo `loai`). Nen dai da danh dau luon bi che, va
@@ -284,7 +324,8 @@ def dai_phu_de_goc(vung) -> dict | None:
     """
     from .vung_che import LOAI_DANH_DAU_PHU_DE
 
-    ds = [v for v in (vung or ()) if v.get("loai") == LOAI_DANH_DAU_PHU_DE]
+    ds = [v for v in (vung or ())
+          if v.get("loai") == LOAI_DANH_DAU_PHU_DE or _la_dai_chu(v)]
     if not ds:
         return None
     return {"y0": round(min(float(v["y0"]) for v in ds), 4),
@@ -377,7 +418,21 @@ def vi_tri_tu_dong(ho_so: dict | None, *, cao: int) -> dict:
         return {}
     dai = ho_so.get("dai_phu_de_goc") or None
     if not dai:
-        return {}
+        # ⭐ **⛔ Khong co dai chu goc ⇒ san *title safe* 90 %** (chu du an chot
+        #    28/09; SMPTE, cung muc Netflix dung). Truoc lan nay nhanh nay tra
+        #    `{}` tuc giu `margin_v = 30` TUYET DOI cua preset — dung 5,2 % tren
+        #    khung `576` nhung chi **1,6 %** tren khung `1920`.
+        #
+        # ⛔ SAN, ⛔ khong phai gia tri thay the: preset rong hon thi giu preset.
+        #
+        # ⚠️ Va `safe_area_percent` van de 0 o CA HAI nhanh: `ass_builder` lay
+        #    `max(margin_v, safe)`, nen bat no len la them mot noi thu hai co
+        #    quyen doi le — roi ⛔ khong ai doc noi con so cuoi tu dau ra.
+        san = int(round(cao * LE_AN_TOAN_PHAN))
+        cu = int(getattr(cau_hinh_goc(str(ho_so.get("kieu") or KIEU_MAC_DINH)),
+                         "margin_v", 0) or 0)
+        return ({} if cu >= san
+                else {"margin_v": san, "safe_area_percent": 0})
     if dai.get("da_che"):
         mv = (1.0 - float(dai["y1"])) * cao
     else:
@@ -734,7 +789,138 @@ SO_DONG_TOI_DA = 2
 KY_TU_MOI_DONG = 42
 
 
-def _ngat_dong(chu: str) -> tuple[str, int]:
+#: Be rong TRUNG BINH mot ky tu, tinh bang PHAN cua co chu.
+#:
+#: 🔑 **Do duoc, ⛔ khong chon.** Hang so `KY_TU_MOI_DONG = 42` o tren chinh la
+#:    cong thuc be rong tinh san tai khung tham chieu:
+#:
+#:        (1024 - 20 - 20) / (48 x 0,50) = 41,0   ~   42
+#:
+#:    Nen he so nay ⛔ khong phai mot uoc luong moi — no la con so DA nam trong
+#:    kho tu truoc, chi chua ai viet ra dang cong thuc.
+#:
+#: ⚠️ Arial voi tieng Viet co dau: dau nam TREN/DUOI chu, ⛔ khong an them be
+#:    rong. Chu Han (che do `nguon`) thi RONG GAP DOI — xem `_be_rong_dong`.
+HE_SO_BE_RONG_CHU = 0.50
+
+#: San co chu, tinh bang PHAN chieu cao khung. Duoi day thi thoi co.
+#:
+#: ⛔ Day la mot SAN, ⛔ khong phai mot muc tieu. Cham no nghia la hai dong ⛔
+#:    khong du cho cau nay tren khung nay — mot su that ve DO DAI CAU, va thuoc
+#:    la cat doan ngan hon (`phan_doan`), ⛔ khong phai thu nho chu them nua.
+CO_CHU_TOI_THIEU_PHAN = 0.020
+
+#: Duoi ti le nay thi chu con vua khung nhung DOC MOI MAT. Chi de BAO, ⛔ khong
+#: de chan: mot ban giao chu nho van la ban giao, con mot ngoai le thi ⛔ khong.
+CO_CHU_DE_DOC_PHAN = 0.040
+
+#: Le AN TOAN moi canh — *title safe* 90 % cua SMPTE, cung la muc Netflix dung.
+#:
+#: 🔑 **Chu du an chot 28/09, va day la muc MOI chuan deu dong y.** BBC con chat
+#:    hon (*"dai dong toi da 68 % be rong khung 16:9"*, va noi trong 75 % ngang),
+#:    nhung sang do se lam **moi** khach 16:9 dang chay thay phu de nho han han.
+#:
+#: ⚠️ Truoc lan nay le la HAI con so TUYET DOI cua preset (`margin_h = 20`,
+#:    `margin_v = 30`). Tren khung `1024x576` chung tinh ra 2,0 % va 5,2 % — gan
+#:    dung; tren khung `1080x1920` thi ra 1,9 % va **1,6 %**, tuc chu nam sat
+#:    mep va co the bi khung bao (*overscan*) cat mat.
+#:
+#: ⛔ Va vi the day la mot SAN, ⛔ khong phai mot gia tri thay the: khung nao
+#:    preset da rong hon thi giu cua preset.
+LE_AN_TOAN_PHAN = 0.05
+
+
+def _be_rong_dong(dong: str, co_chu: float) -> float:
+    """Be rong (pixel) uoc luong cua mot dong o co chu nay.
+
+    ⚠️ Chu Han/Kana chiem **ca o** (`fullwidth`), tuc gap doi mot chu La tinh.
+       Bo qua dieu do thi che do phu de `nguon` (giu tieng Trung) se duoc tinh
+       be rong bang **mot nua** su that va tran ra ngoai khung — dung loai loi
+       ma ca B9 nay sinh ra de xoa.
+    """
+    o = 0.0
+    for c in dong:
+        o += 2.0 if ("ᄀ" <= c <= "ᅟ" or "⺀" <= c <= "꓏"
+                     or "가" <= c <= "힣" or "豈" <= c <= "﫿"
+                     or "︰" <= c <= "﹯" or "＀" <= c <= "｠"
+                     or "￠" <= c <= "￦") else 1.0
+    return o * co_chu * HE_SO_BE_RONG_CHU
+
+
+def co_chu_vua_khung(cac_cau, *, rong: int, cao: int, co_chu_goc: int,
+                     le_ngang: int) -> tuple[int, int, int]:
+    """Co chu LON NHAT ma `SO_DONG_TOI_DA` dong con vua be rong khung RA.
+
+    Tra `(co_chu, le_ngang, ky_tu_moi_dong)`.
+
+    🔴 **Chu du an chot 28/09: hai dong la TRAN CUNG, co chu thi CO DONG.**
+
+       Truoc B9 ca hai deu la hang so, va `viet_tep_ass` chi truyen chieu CAO
+       vao cau hinh kieu. Do tren T1a (khung ra `324x576`, cung chieu cao voi
+       nguon `1024x576`):
+
+           co chu      48 px o CA HAI khung
+           ky tu/dong  42    o CA HAI khung
+           => 97/98 dong vuot be rong, dong rong nhat gap 6,1 lan
+
+       libass ⛔ khong bao loi — no **tu ngat lai**, va hai dong no ra **tam**
+       dong che 75 % hinh.
+
+    ⭐ **Vi sao phai LAP chu ⛔ khong giai thang.** So ky tu mot dong phu thuoc
+       co chu, va do dai dong DAI NHAT sau khi ngat lai phu thuoc so ky tu ay —
+       qua `wrap_lines`, mot ham ngat theo TU chu ⛔ khong theo ky tu. Nen ⛔
+       khong co nghich dao dong kin; ta do that o tung co chu, tu lon xuong nho,
+       va lay cai dau tien vua.
+
+    ⚠️ **`wrap_lines` ⛔ KHONG cat bot chu** — do 28/09: mot cau 90 ky tu ngat o
+       `(42, 2)` ra hai dong `41` va **`48`**. No tha cho dong tran con hon lam
+       mat mot tu. Nen ⛔ khong the tin `ky_tu_moi_dong` la tran; phai do do dai
+       dong THAT sau khi ngat.
+
+    ⛔ **MOT chieu: chi CO, ⛔ khong bao gio PHONG TO.** `co_chu_goc` cua preset
+       la tran tren. Nho vay moi khung dang chay DUNG hom nay ⛔ khong doi mot
+       pixel nao — phep co chi cham dung nhung khung/cau THAT SU tran.
+
+    ⚠️ **Va vi the ⛔ KHONG co "khung tham chieu" nao o day.** Ban dau tac gia
+       viet mot `rong_chuan = cao x 16/9` roi co theo ti le — no cho khung doc
+       `1080x1920` co chu **15 px**, vi no coi mot khung doc nhu mot khung
+       `3413x1920` bi cat hep. Mot khung doc ⛔ khong phai mot khung ngang bi
+       hong; no chi la mot khung. Bo han phep quy chieu do.
+    """
+    from apps.autosubvideo.segmenter import wrap_lines
+
+    le = max(1, int(le_ngang))
+    con_lai = float(rong) - 2 * le
+
+    sach = [c for c in (" ".join(str(x or "").split()) for x in cac_cau) if c]
+    san = max(1, int(co_chu_goc))
+    day = min(san, max(1, int(round(float(cao) * CO_CHU_TOI_THIEU_PHAN))))
+
+    for co in range(san, day - 1, -1):
+        ky_tu = int(con_lai / (co * HE_SO_BE_RONG_CHU))
+        if ky_tu < 1:
+            continue
+        # ⚠️ **⛔ Khong tin `ky_tu` lam tran.** Do 28/09: `wrap_lines(s, 41, 2)`
+        #    tra hai dong `41` va **`48`** — khi het dong, phan con lai bi don
+        #    HET vao dong cuoi. Nen dong cuoi DAI RA khi `ky_tu` nho di, va mot
+        #    phep giai thang theo `ky_tu` se di sai chieu. Phai do dong THAT.
+        if all(_be_rong_dong(d, co) <= con_lai
+               for c in sach for d in wrap_lines(c, ky_tu, SO_DONG_TOI_DA)):
+            return co, le, ky_tu
+
+    # ⚠️ **Cham san: bao bang GIA TRI, ⛔ khong bang im lang.** Tai day hai dong
+    #    ⛔ khong du cho cau dai nhat, ke ca o co chu san. Tra co chu san va de
+    #    libass ngat ra dong thu ba — mot phu de ba dong doc duoc tot hon mot
+    #    phu de hai dong ⛔ khong ai doc noi. Nguoi goi ghi con so nay ra bao cao
+    #    (`viet_tep_ass`), nen su that do ⛔ khong bien mat.
+    #
+    # ⭐ Va o day thuoc DUNG la cat doan NGAN hon, ⛔ khong phai thu nho chu:
+    #    mot cau 90 ky tu tren khung `324` can ~45 ky tu mot dong, tuc ~12 px.
+    #    Do la mot su that ve DO DAI CAU.
+    return day, le, max(1, int(con_lai / (day * HE_SO_BE_RONG_CHU)))
+
+
+def _ngat_dong(chu: str, ky_tu: int = 0) -> tuple[str, int]:
     """Chia mot cau thanh toi da `SO_DONG_TOI_DA` dong. Tra (van, so_dong).
 
     🔑 **Ngat dong la cua `autosubvideo.segmenter.wrap_lines`, khong viet o
@@ -749,7 +935,10 @@ def _ngat_dong(chu: str) -> tuple[str, int]:
     s = " ".join(str(chu or "").split())
     if not s:
         return "", 0
-    dong = wrap_lines(s, KY_TU_MOI_DONG, SO_DONG_TOI_DA)
+    # ⭐ `ky_tu = 0` = *"dung tran mac dinh"* — giu nguyen moi cho goi cu (chot
+    #    o COMPOSE, khi khung RA chua biet). GD2 truyen con so THAT cua khung
+    #    ban giao (`co_chu_vua_khung`).
+    dong = wrap_lines(s, ky_tu or KY_TU_MOI_DONG, SO_DONG_TOI_DA)
     return "\\N".join(dong), len(dong)
 
 
@@ -890,6 +1079,40 @@ def viet_tep_ass(ho_so, goi_su_kien, thu_muc, *,
     # ⭐ `cao` di vao cau hinh: vi tri tu dong tinh `margin_v` bang pixel cua
     #    PlayRes, va PlayRes chinh la `cao_ass`.
     kieu = cau_hinh_kieu(ho_so, cao=cao_ass)
+
+    # ── B9-1 (28/09): co chu CO DONG, hai dong la TRAN CUNG ──────────────────
+    #
+    # 🔴 Truoc day chi CHIEU CAO di vao day, nen mot khung ra hep hon giu y
+    #    nguyen co chu cua khung rong — T1a: 48 px o ca `1024x576` lan
+    #    `324x576`, 97/98 dong vuot be rong, libass ngat lai thanh 8 dong.
+    #
+    # ⭐ Day la cho DUY NHAT biet khung BAN GIAO that, nen phep chon co chu
+    #    thuoc ve day; phep TINH thi o `co_chu_vua_khung` (mot nguon). Cung ly
+    #    le da dat `doi_truc_dai_phu_de` o `giai_doan_hinh_anh` (B8).
+    #
+    # ⚠️ Va vi co chu doi thi `display_text` da ngat o COMPOSE **het dung** —
+    #    no duoc ngat cho mot be rong khac. Phai ngat LAI, bang chinh
+    #    `wrap_lines`, ⛔ khong viet bo ngat thu hai.
+    # ⭐ Le NGANG: san *title safe* 90 % (SMPTE/Netflix), preset rong hon thi
+    #    giu preset. Xem `LE_AN_TOAN_PHAN`.
+    _co, _le, _ky_tu = co_chu_vua_khung(
+        [str(getattr(e, "text", "") or "") for e in su_kien],
+        rong=rong_ass, cao=cao_ass, co_chu_goc=int(kieu.font_size),
+        le_ngang=max(int(kieu.margin_h),
+                     int(round(rong_ass * LE_AN_TOAN_PHAN))))
+    # ⛔ `margin_v` ⛔ KHONG dung o day: B8 da dua no ve pixel cua khung RA roi
+    #    (`doi_truc_dai_phu_de` + `vi_tri_tu_dong`). Co lai lan nua la ap hai
+    #    phep doi truc chong len nhau.
+    _ti_le = _co / max(1, int(kieu.font_size))
+    kieu = kieu.model_copy(update={
+        "font_size": _co, "margin_h": _le,
+        "outline_width": max(1, round(kieu.outline_width * _ti_le))
+        if kieu.outline_width else 0,
+        "shadow_offset": (max(1, round(kieu.shadow_offset * _ti_le))
+                          if kieu.shadow_offset else 0)})
+    for e in su_kien:
+        e.display_text, e.line_count = _ngat_dong(
+            str(getattr(e, "text", "") or ""), _ky_tu)
     # ⭐ `build_ass` nhan che do nhan manh qua THAM SO, khong doc tu `style` —
     #    nen phai chuyen tay. Doc tu chinh cau hinh cuoi cung de mot tinh chinh
     #    `highlight_mode` co tac dung that, khong chi nam trong ho so.

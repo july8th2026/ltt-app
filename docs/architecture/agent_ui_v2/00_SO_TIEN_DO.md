@@ -17,10 +17,10 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-3 Tách CanvasShell | `ui3` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui3` | `src/**/*.tsx` · `editorState.ts` · `features/editor/**` | — | dải **5700-5799** · **ĐÃ MỞ KHOÁ song song hoá** — 31 tệp, lớn nhất 179 dòng · 165 test xanh · trình duyệt PASS |
 | UI-2 Design system | `ui2` | ✅ **ĐÃ GỘP** | `worktree-agent-a710623353e7caab2` | **chỉ** `canvas.css` | — | dải **5800-5899** · hex 482→**63** · lớp chết 79→**0** · `@media 640px` 6→**1** · theme sáng 20/20 ô tối→**0/20** · ⚠️ 2 tiêu chí KHÔNG đạt, xem nhật ký |
 | UI-N Nhãn ngắn node LTT | `uiN` | ✅ **ĐÃ GỘP** (`868f9db2`) | — | *(đã trả phiếu)* | ✅ | dải **5900-5999** · LTT_APPS 16/17 → **0/17** nhãn > 40 ký tự |
-| UI-1 Automation Studio | `ui1` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui1` | `apps/agent/routes/**` · `apps/agent/templates/**` · `apps/agent/manifest.py` · `useWorkflowDocument.ts` | — | dải **6200-6299** · Q1 = **B** · chủ **S5** · 3 commit: `7064389d` `a5ef5803` `ab03d20e` · trang HTML **2 → 8** · trình duyệt (8198) **PASS** · 🔴 **lưu trữ CHƯA làm — cần cửa HTTP mới, chờ điều phối** |
-| UI-4 Node UX V2 | `ui4` | **ĐANG LÀM** (agent) | worktree riêng | `src/nodes/**` · `WorkflowCanvas.tsx` · `useDisplayGraph.ts` | — | dải **6000-6099** |
-| UI-7 Execution + Runs | `ui7` | **ĐANG LÀM** (agent) | worktree riêng | `ExecutionPanel/**` · `RunV3Panel/Inspector/Diff` · `workflowApi.ts` | — | dải **6100-6199** · chủ **S4** |
-| UI-5 Inspector + Connections | `ui5` | **ĐANG LÀM** (agent) | worktree riêng | `ket_noi_v3.py` (mới) · `StepInspector/**` · `src/inspector/**` | — | dải **6300-6399** · Q4 đã chốt |
+| UI-1 Automation Studio | `ui1` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui1` | `apps/agent/routes/**` · `apps/agent/templates/**` · `apps/agent/manifest.py` · `useWorkflowDocument.ts` | — | dải **6200-6299** · Q1 = **B** · chủ **S5** · trang HTML **2 → 8** · trình duyệt (8198) **PASS** · ✅ lưu trữ **ĐÃ LÀM** bởi điều phối (`97884407`, dải 5603/5604) |
+| UI-4 Node UX V2 | `ui4` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui4` | `src/nodes/**` · `useDisplayGraph.ts` · `styles/node.css` | — | dải **6000-6099** · `canvas.css` diff **RỖNG** · `app.video.generate` cao **525 → 279 px** (16 hàng cổng → 7 hàng + 9 khay) · ba mức độ zoom **200/280/360 px** · `core.switch` `"1 nhánh"` → **`"5 nhánh"`** · hồi quy cổng UI-0 **y nguyên** · ⚠️ brief ghi 456px, họ đo **285px** — brief sai |
+| UI-7 Execution + Runs | `ui7` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui7` | `ExecutionPanel/**` · `RunV3Panel/Inspector` · `styles/run.css` | — | dải **6100-6199** · chủ **S4** · bảng run **176 → 366 px**, hàng cao nhất **139 → 57 px** · báo giá **12 credit** trên nút · `workflowApi.ts` diff **RỖNG** ⇒ UI-5 không phải chờ · 🔴 báo một `.sr-only` **SAI**, xem nhật ký |
+| UI-5 Inspector + Connections | `ui5` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui5` | `ket_noi_v3.py` (mới) · `src/inspector/**` | — | dải **6300-6399** · Q4 = **C** · node publish được **27 → 60** (+33 mở khoá) · publish **422 → 200** · 4 cửa `/api/v3/ket-noi` · wizard OAuth 6 chặng · 🔴 va UI-3 ở `StepInspector`, xem nhật ký |
 | UI-8a Human approval ⭐ | — | CHƯA MỞ | — | — | — | chặn bởi UI-7 · nâng ưu tiên sau phân tích CrewAI |
 | UI-6 Data picker | — | CHƯA MỞ | — | — | — | chặn bởi UI-5 |
 | UI-8b Agent Designer diff | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
@@ -110,6 +110,194 @@ canh rằng không ai lặng lẽ mở một cửa ghi ở tầng trang.
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-28` `điều phối` — **BA LÀN CÒN LẠI ĐÃ GỘP. `main` = `2cb3f702`.**
+  Cùng lượt: **cửa lưu trữ workflow** (chủ dự án duyệt mở bề mặt HTTP mới).
+
+  ### Lưu trữ workflow — ba cửa, không phải một
+
+  `Workflow.archived_at` có trong lược đồ **từ đầu** và **ba** nơi đã ĐỌC nó
+  (`v3_danh_sach` lọc, `tao_run` từ chối run mới, `nut` bỏ qua khi dò drift).
+  Toàn bộ **nghĩa** đã sống; thiếu đúng một cửa **ĐẶT** nó. UI-1 gặp và **dừng
+  lại hỏi** thay vì tự mở — đúng luật.
+
+  | Cửa | Vì sao bắt buộc |
+  |---|---|
+  | `POST …/luu-tru` | đặt `archived_at` (luỹ đẳng — bấm hai lần ⛔ không làm mốc trôi) |
+  | `POST …/mo-lai` | xoá nó (luỹ đẳng — giao diện có thể gọi từ danh sách đã cũ) |
+  | `?luu_tru=1` | **nhìn thấy** bản đã lưu trữ |
+
+  🔴 Cửa thứ ba ⛔ không phải tiện nghi. Một workflow đã lưu trữ **biến mất khỏi
+  mọi danh sách** — đó là cả ý nghĩa của nó. Không có khung nhìn kho thì
+  `/mo-lai` tồn tại mà **KHÔNG VỚI TỚI ĐƯỢC**: người dùng mất workflow mà ⛔
+  không ai xoá gì cả, và họ ⛔ không có cách nào biết nó còn đó.
+  ⇒ Tầng trang theo cùng: `tong` đếm trong **cùng** khung nhìn, lối vào kho chỉ
+  vẽ khi kho **có** gì, và kho ⛔ không hiện *Nhân bản* (nó sẽ sinh một bản
+  **đang dùng** từ một trang kho).
+
+  ### 🔴 Hai lần phép đo trả lời câu HỎI KHÁC
+
+  1. **Bài `…tra_404` XANH GIẢ.** Lượt đỏ đầu cho nó `PASS` khi route **còn chưa
+     tồn tại** — vì một route **vắng mặt** cũng trả `404`. Mã trạng thái một
+     mình ⛔ không phân biệt *"tôi đã kiểm chủ sở hữu và không thấy"* với *"tôi
+     chưa từng nghe về đường này"*. ⇒ đo cả `detail`.
+  2. **`data-wfl-mo-lai` TRẦN khớp cả bảng bộ chọn trong `<script>`** — bảng đó
+     có ở CẢ HAI khung nhìn. Phép đo hoá ra đo *"trang có nhắc tên thuộc tính
+     này"*, ⛔ không đo *"trang có vẽ nút này"*. ⇒ neo vào dấu `="`.
+
+  ### 🔴 Hai làn cùng dựng MỘT Inspector — git gọi nó là xung đột văn bản
+
+  UI-3 tách form cũ ra `features/editor/StepInspector/`; UI-5 dựng **Inspector
+  V2** (§6) ở `src/inspector/StepInspector.tsx`. UI-5 nền từ một `main` **chưa
+  có** lần tách của UI-3 ⇒ họ sửa `src/CanvasShell.tsx`, tệp mà `main` nay chỉ
+  còn **một dòng re-export**. Git báo xung đột **cả tệp** (1-69, 80-970): đúng
+  về văn bản, vô nghĩa về nội dung.
+
+  ⇒ Giữ bản **UI-5** (nó là TÍNH NĂNG: 5 tab, ô kết nối, luật ẩn trường phụ
+  thuộc, 301 dòng test + nghiệm thu trình duyệt thật), **bỏ** bản UI-3 (nó là
+  một lần **DI CHUYỂN** của chính cái form mà V2 thay thế). ⛔ Không ai mất
+  việc: `FormTuLuocDo` vẫn là ruột của tab *Cấu hình*.
+  ⚠️ `<aside>` chuyển về **chỗ gọi** — bản UI-5 trả về NỘI DUNG, bản UI-3 tự
+  bọc. Bỏ qua chỗ này sẽ mất cả khung panel, và mất **IM LẶNG** vì CSS
+  `.canvas-inspector` gắn vào thẻ chứ không vào ruột.
+
+  ### 🔴 `503` không ở chỗ nó trông như đang ở
+
+  Sau khi gộp, **MỌI** bài có đăng nhập tra `503` — kể cả bài vừa xanh. Trông y
+  hệt *"gộp làm sập đăng nhập"*. Thực tế:
+
+  ```
+  POST /login  ->  303 tới next=/agent/canvas  ->  TRANG ĐÍCH trả 503
+  _trang_canvas:   if not canvas_js: raise HTTPException(503)
+  ```
+
+  Nguyên nhân thật: `manifest.json` của bundle **còn nguyên dấu xung đột** ⇒
+  `bundle_assets` đọc ra rỗng. `follow_redirects=True` làm mã của **trang đích**
+  hiện ra ở chỗ mã của `/login`.
+  ⇒ Phép đo đúng, **số bị gán cho sai BƯỚC**. Tệ hơn một phép đo im lặng: nó
+  làm người ta đi sửa đăng nhập trong khi lỗi ở `manifest.json`.
+  ⭐ Đối chứng cho một luật: **bundle phải dựng lại sau MỌI lần gộp** — nó là
+  ĐẦU RA, nên *"chọn bên nào"* luôn sai, chỉ dựng lại mới đúng.
+
+  ### ⭐ UI-7 báo một 🔴 mà phép đo trên WEB THẬT không xác nhận
+
+  Họ báo: *"`.sr-only` không định nghĩa ở đâu trong `canvas.css` ⇒ dòng `N node
+  · M kết nối trong renderer` **đang hiện cho khách**"*. Nửa đầu **đúng**. Nửa
+  sau đo trong hộp thử `vite dev` của họ — nơi ⛔ không nạp `/static/ltt.css`.
+
+  Đo trên `https://app.lttstudios.com/agent/canvas`:
+
+  ```
+  ô vuông               1×1 px
+  clip                  rect(0px, 0px, 0px, 0px)
+  elementFromPoint tâm  -> không có gì
+  nguồn `.sr-only`      -> /static/ltt.css (×2) + agent-canvas/assets/main-*.css
+  ```
+
+  ⇒ Đã ẩn thật. Cảnh báo đóng. Bài đo ở
+  `tests/browser/agent_ui_v2_sr_only_web_that.js` — giữ lại vì câu *"lớp này
+  còn sống không"* sẽ quay lại mỗi lần ai đó đổi bảng.
+  ⚠️ Hai bẫy trong chính bài đó, cả hai làm một lượt chạy **xong** trông như một
+  lượt **chết**: `__LTT_COOKIE__` được thay bằng **GIÁ TRỊ** (không phải
+  `session=<giá trị>`), và playwright-cli in **giá trị TRẢ VỀ** chứ ⛔ không in
+  `console.log`.
+
+  ### 🔴 LẦN THỨ HAI một bộ quét tệp bị UI-3 làm mù — và bộ ĐẾM của tôi cũng đo sai đại lượng
+
+  Sau `test_1728` sáng nay, `test_1270` đọc `src/CanvasShell.tsx` và ⛔ không còn
+  thấy gì. **Đỏ trên `main` từ lần gộp UI-3.**
+
+  Tôi viết một bộ ĐẾM để tìm mọi bài còn lại cùng kiểu — nó trả **38/39 đường
+  dẫn còn sống**, tức *"không còn bài nào mù"*. Nhưng `test_1270` **vẫn đỏ**, và
+  đường dẫn của nó nằm trong 38 cái *"còn sống"*.
+  ⇒ Bộ đếm đo *"đường dẫn còn TỒN TẠI không"*, trong khi thứ mất là **NỘI
+  DUNG**. Một phép đếm **chạy đúng, số đúng**, trả lời một câu **KHÁC** — và tệ
+  hơn không đếm, vì nó cho một con số **nghe như đã phủ hết**.
+  ⭐ Tín hiệu rẻ (phiên `PROMPT AI` chốt cùng tôi): **một con số "gần như đủ"**
+  (`38/39`, `0 lỗi mới`, *"tất cả trừ một"*) là chỗ phải hỏi lại đại lượng. Con
+  số đẹp làm người ta ngừng hỏi; một con số thảm hại thì tự bắt người ta đi kiểm.
+  ⇒ Neo lại vào **HAI** tệp: chỗ GẮN nhãn (`WorkflowCanvas.tsx`) và BẢNG nhãn
+  (`a11y.ts`). Tiêm lỗi cả hai vế ⇒ cả hai đỏ.
+
+  ### ⚠️ Trần bundle: CẢ HAI trần vượt, và trần KHÁCH THẬT SỰ CẢM vượt NẶNG HƠN
+
+  | đại lượng | đo | trần cũ | vượt |
+  |---|---|---|---|
+  | byte thô | **511.238** | 500.000 | 2,2 % |
+  | **gzip** | **156.702** | 150.000 | **4,5 %** |
+  | brotli | 134.719 | — | — |
+
+  🔴 Tôi đọc bài kiểm **nửa vời**, thấy mỗi trần byte thô, và gần viết vào commit
+  rằng *"khách không ảnh hưởng"*. **Sai** — bài kiểm **đã có sẵn** một trần gzip,
+  và nó vượt nặng hơn. Cái sai không đến từ phép đo; nó đến từ việc tôi **kết
+  luận trước khi đọc hết thứ mình đang sửa**. ⇒ *Bài kiểm cũng là một tập phải
+  đọc hết trước khi sửa — kể cả khi chính mình đang viết lại nó.*
+
+  Nâng `500.000 → 520.000` và `150.000 → 160.000`, **kèm xuất xứ** — con số cũ
+  vào kho ở `baf06e9d` ⛔ không một chú thích nào, nên mỗi lần chạm trần lại là
+  một cuộc tranh luận từ đầu, và người tranh luận ⛔ không có cách nào biết con
+  số cũ đo trong hoàn cảnh nào.
+  ⛔ **KHÔNG tách vendor để "về dưới trần"**: tách `@xyflow/react` ra chunk riêng
+  kéo tệp VÀO xuống dưới 500.000 **ngay**, và làm bài kiểm xanh mà ⛔ không một
+  byte nào rời đường truyền — đo **CÁCH ĐÓNG GÓI** thay vì đo **TÍNH CHẤT**,
+  đúng họ với `.typed-port`. Phép đo đổi sang **TỔNG mọi tệp JS** ⇒ từ nay tách
+  chunk ⛔ không làm nó mù.
+  ⚠️ **Việc giảm byte THẬT chưa làm** (nạp trễ `CommandPalette`, `LayersDrawer`,
+  bốn tab đặt chỗ của Inspector V2) ⇒ **UI-10**.
+
+  ### ⭐ `.typed-port` — một lớp bảo vệ TƯỞNG TƯỢNG bị gỡ
+
+  `test_95` ghim `.typed-port { width:44px` trong `canvas.css`. Nhưng
+  `canvas.css` **đã ghi rõ từ 27/09** rằng ⛔ không component nào gắn class đó
+  (`NodeKhung.tsx` không đặt), nên kích thước thật của `.react-flow__handle` là
+  **6×6 px** trong khi phép kiểm vẫn XANH suốt. Nó đo sự **CÓ MẶT CỦA VĂN BẢN**,
+  ⛔ không đo tính chất mà văn bản đó hứa.
+  ⇒ Neo vào `--handle-hit:24px` **và** `var(--handle-hit` (khai mà ⛔ không ai
+  dùng thì vẫn là `.typed-port` lần hai), cộng lớp trình duyệt thật.
+
+  ### 🔴 BA LẦN trong một ngày: test NHẮM chọn theo CHỦ ĐỀ, bánh cóc đo theo TẬP TỆP
+
+  | cổng | trước | sau |
+  |---|---|---|
+  | `scan_source_secrets` | 3 findings | **0** |
+  | `check_mypy` | `union-attr 89` | **88** (đạt mốc) |
+
+  Cả hai **dưới 20 giây** và ⛔ không bao giờ được gọi tới bởi một bộ test chọn
+  theo chủ đề. `tools/chay_web_that.py` của tôi (tạo 00:48) làm mypy đỏ trên
+  **chính `main`**; hai phiên khác đo và vá hộ (`ff001831`, `e6acb6de`).
+  ⇒ **Thêm `scan_source_secrets.py` + `check_mypy.py` vào nhịp TRƯỚC khi gộp
+  `main`**, ⛔ không chờ gate cuối plan.
+  ⚠️ Mẫu quanh đó ⛔ không chỉ đường được: `tests/fixtures/` + `tests/browser/`
+  đặt literal y hệt mà **chưa bao giờ** bị bắt — hai thư mục đó nằm **NGOÀI**
+  vùng quét. *"Chỗ khác làm thế vẫn xanh"* ở `tests/` gốc là một **tín hiệu sai
+  có hệ thống**.
+
+  ### Số đo tổng
+
+  ```
+  vitest        165 -> 238   (13 -> 15 tệp)
+  route v3       17 -> 23
+  node publish   27 -> 60
+  pytest nhắm   407 passed (+53 sau khi sửa) · tsc xanh
+  secret scan   PASS 0 findings · mypy đạt mốc · pre-commit --all-files xanh
+  ```
+
+  ⚠️ **mypy giảm 3 mà tôi KHÔNG hạ mốc** (`arg-type 108→106`, `index 32→31`):
+  hạ mốc sẽ làm đỏ cây của ba phiên đang có việc chạy, vì một **giảm** của tôi
+  trở thành một **trần mới** cho họ. Thắt cổng dùng chung giữa lúc đông người là
+  một việc đúng làm sai lúc.
+
+  ### Còn treo
+
+  | Việc | Chỗ |
+  |---|---|
+  | Giảm byte THẬT (nạp trễ) | UI-10 |
+  | Tương phản minimap/controls 1,08:1 < 3:1 (WCAG 2.2 AA 1.4.11) | UI-10 |
+  | `ai.llm` · `ai.extract` · `ai.router` còn `publish_duoc=False` | plan 10 |
+  | `trigger.schedule` · `trigger.webhook` ⛔ chưa có trong registry | plan backend riêng |
+  | Cửa callback OAuth `/api/v3/ket-noi/oauth/callback` ⛔ chưa cài | UI-5 để lại |
+  | `CanvasNode.credential_ref` còn thiếu ở `workflowApi.ts` (UI-5 dùng kiểu cục bộ) | điều phối |
+  | Nghiệm thu 4 cửa `/ket-noi` + tốc độ Canvas trên web thật sau deploy | điều phối |
 
 - `2026-09-28` `điều phối` — **UI-1 KIỂM XONG, ĐÃ GỘP.** Nghiệm thu trình duyệt
   thật `PASS`, và mệnh đề chốt được chứng minh **đúng dạng cần**:

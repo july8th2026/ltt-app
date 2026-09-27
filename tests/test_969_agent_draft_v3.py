@@ -552,8 +552,8 @@ def test_bao_ve_3_DOI_CHUNG_doi_ban_publish_thi_gia_DI_THEO(web):
         db.close()
 
 
-def test_MUOI_BAY_route_v3_deu_duoc_dang_ky():
-    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **mười bảy**
+def test_HAI_MUOI_BA_route_v3_deu_duoc_dang_ky():
+    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **hai mươi ba**
     route.
 
     Lịch sử con số: năm → **tám** (ba route `runs` ra đời cùng kiến trúc V2)
@@ -566,6 +566,23 @@ def test_MUOI_BAY_route_v3_deu_duoc_dang_ky():
        BA trong ngày: P9b `/chay-lai-tu/{node}` (§15) và `p10-don` `/bao-gia`
        — MỘT cửa báo giá cho CẢ đồ thị, thay `POST /agent/api/tools/{ten}/quote`
        gọi một lần **mỗi node**; đo được 24 → 2 request mỗi phiên).
+    → **mười chín** (28/09, điều phối UI: `/luu-tru` và `/mo-lai`).
+    → **hai mươi ba** (28/09, làn UI-5: bốn cửa `/ket-noi` — kho kết nối
+       của khách, §6 ô kết nối. Bí mật đi qua `platform_core/credential.py`;
+       ⛔ không cửa nào trả lại giá trị bí mật, chỉ `ref` + nhãn).
+
+    ## ⭐ Vì sao hai route 28/09 là một quyết định, không phải một chi tiết
+
+    `Workflow.archived_at` có trong lược đồ từ đầu và **ba** nơi đã ĐỌC nó
+    (`v3_danh_sach` lọc theo nó, `tao_run` từ chối run mới, `nut` bỏ qua khi dò
+    drift) — nhưng ⛔ **không cửa nào ĐẶT được nó**. Toàn bộ *nghĩa* của lưu trữ
+    đã sống mà *cửa* thì không. Làn UI-1 gặp chỗ này và **dừng lại hỏi** thay vì
+    tự mở một cửa POST; chủ dự án duyệt mở 28/09. Hành vi được canh ở
+    `tests/test_5603_wf_luu_tru_workflow.py`.
+
+    ⚠️ `/mo-lai` **đi kèm** `/luu-tru`, và `?luu_tru=1` đi kèm cả hai. Một cửa
+       lưu trữ không có đường về là một cửa **một chiều**: workflow biến mất
+       khỏi mọi danh sách, nên giao diện ⛔ không còn chỗ nào để bấm mở lại nó.
 
     ⭐ BA lần cập nhật trong MỘT ngày. Đó không phải phiền toái — đó là bài kiểm
        này đang làm đúng việc: mỗi route mới vào cửa công khai phải có **một
@@ -603,8 +620,18 @@ def test_MUOI_BAY_route_v3_deu_duoc_dang_ky():
         ("GET", "/api/v3/runs/{run_id}/so-sanh"),
         ("POST", "/api/v3/runs/{run_id}/nodes/{node_id}/thu-lai"),
         ("POST", "/api/v3/runs/{run_id}/chay-lai-tu/{node_id}"),
+        # Dieu phoi UI (28/09): luu tru workflow — `archived_at` da co
+        # nguoi DOC tu lau, day la cua dau tien DAT va XOA no.
+        ("POST", "/api/v3/workflows/{workflow_id}/luu-tru"),
+        ("POST", "/api/v3/workflows/{workflow_id}/mo-lai"),
+        # UI-5 (28/09): kho ket noi cua khach. `nha-cung-cap` la bang TRA
+        # (kieu nao dung duoc), khong phai du lieu cua mot khach.
+        ("GET", "/api/v3/ket-noi"),
+        ("POST", "/api/v3/ket-noi"),
+        ("DELETE", "/api/v3/ket-noi/{ket_noi_id}"),
+        ("GET", "/api/v3/ket-noi/nha-cung-cap"),
     }
-    assert len(co) == 17
+    assert len(co) == 23
 
 
 def test_tai_lieu_rong_dung_HINH_DANG_ma_M1_sinh_ra():

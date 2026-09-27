@@ -629,7 +629,12 @@ describe('Chạy workflow trên v3', () => {
     await within(drawer).findByText('QUEUED')
     fireEvent.click(within(drawer).getByRole('button', { name: 'Hủy chạy' }))
     expect(await within(drawer).findByText('CANCELLED')).toBeInTheDocument()
-    const dong = [...drawer.querySelectorAll('.run-v3-su-kien li')].map(li => li.textContent)
+    // ⚠️ Doc `.run-nhat-ky-loai`, ⛔ khong doc ca `li.textContent`: tu lan UI-7
+    //    moi dong nhat ky con mang DAU THOI GIAN (`<time>`) va ten buoc, nen so
+    //    ca chuoi la so CACH GO chu khong phai tinh chat. Tinh chat can do van
+    //    nguyen: moi su kien DUNG MOT dong.
+    const dong = [...drawer.querySelectorAll('.run-v3-su-kien li')]
+      .map(li => li.querySelector('.run-nhat-ky-loai')?.textContent)
     expect(dong.filter(t => t === 'run.created')).toHaveLength(1)
     expect(dong).toContain('WorkflowCancelled')
   })

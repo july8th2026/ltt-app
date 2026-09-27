@@ -76,7 +76,7 @@ def page(request: Request, _identity: str = Depends(require_login)):
 
 
 @router.get("/workflows", response_class=HTMLResponse)
-def trang_workflows(request: Request, q: str = "",
+def trang_workflows(request: Request, q: str = "", luu_tru: int = 0,
                     _identity: str = Depends(require_login),
                     db: Session = Depends(get_db)):
     """Danh sach workflow cua chinh nguoi dang dang nhap.
@@ -85,22 +85,43 @@ def trang_workflows(request: Request, q: str = "",
        khi JS chet, va no do duoc bang HTTP trong pytest thay vi chi do duoc
        tren trinh duyet.
 
-    `q` la mot **tham so trang**, khong phai mot cua API: no chi doi thu duoc
-    ve trong chinh trang nay.
+    `q` va `luu_tru` la **tham so trang**, khong phai cua API: chung chi doi thu
+    duoc ve trong chinh trang nay.
+
+    ## ⭐ `?luu_tru=1` la mot KHUNG NHIN, khong phai mot bo loc noi them
+
+    Hai tap RIENG BIET: dang dung, va da luu tru. Khong co khung nhin nay thi
+    `POST /mo-lai` ton tai ma KHONG VOI TOI DUOC — mot workflow da luu tru bien
+    mat khoi moi danh sach, nen giao dien khong con cho nao de bam mo lai no.
+    ⇒ Cua nay **di kem** hai cua POST 28/09, khong phai mot tien nghi them.
+
+    ⚠️ `tong` cung phai dem trong CUNG khung nhin. Neu no dem ban dang dung
+       trong lúc trang dang hien kho luu tru, con so se noi nguoc voi danh sach
+       ngay ben duoi no.
     """
     user = _user(request)
     tim = (q or "").strip()
-    cua_toi = (Workflow.owner_id == user.id, Workflow.archived_at.is_(None))
+    xem_kho = bool(luu_tru)
+    cua_toi = (Workflow.owner_id == user.id,
+               Workflow.archived_at.is_not(None) if xem_kho
+               else Workflow.archived_at.is_(None))
     cau = select(Workflow).where(*cua_toi)
     if tim:
         cau = cau.where(Workflow.name.ilike(f"%{tim}%"))
     rows = db.execute(cau.order_by(Workflow.updated_at.desc())).scalars().all()
-    # `tong` la so workflow KHONG loc. Khong co no, mot o tim khong khop gi se
-    # trong y het mot tai khoan vua mat sach workflow.
+    # `tong` la so workflow KHONG loc theo ten (nhung CUNG khung nhin). Khong co
+    # no, mot o tim khong khop gi se trong y het mot tai khoan vua mat sach
+    # workflow.
     tong = len(db.execute(
         select(Workflow.id).where(*cua_toi)).scalars().all())
+    # So ban trong kho, de nut "Kho luu tru" noi duoc co gi trong do thay vi
+    # bat nguoi dung bam vao mot trang co the rong.
+    so_kho = len(db.execute(select(Workflow.id).where(
+        Workflow.owner_id == user.id,
+        Workflow.archived_at.is_not(None))).scalars().all())
     context = _page_context(request, nav="agent_workflows")
-    context.update({"workflows": rows, "q": tim, "tong": tong})
+    context.update({"workflows": rows, "q": tim, "tong": tong,
+                    "xem_kho": xem_kho, "so_kho": so_kho})
     return templates.TemplateResponse(request, "agent_workflows.html", context)
 
 

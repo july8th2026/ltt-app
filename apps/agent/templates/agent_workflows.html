@@ -7,8 +7,13 @@
     Truoc trang nay, Canvas luon mo `items[0]` va khong co duong nao toi cai thu
     hai (`01_CURRENT_UI_AUDIT.md` §1.1).
 
-    ⭐ Danh sach ve o MAY CHU. Chi HAI hanh dong dung JS, va ca hai di qua cua
-       da co (`POST/GET /agent/api/v3/workflows`) — ⛔ khong mo cua HTTP moi.
+    ⭐ Danh sach ve o MAY CHU. Bon hanh dong dung JS: tao, nhan ban, luu tru,
+       mo lai. Hai cua dau da co san; HAI cua sau (`/luu-tru`, `/mo-lai`) duoc
+       chu du an duyet mo 28/09/2026 — `archived_at` co trong luoc do va BA noi
+       da DOC no, nhung ⛔ khong cua nao DAT duoc no.
+    ⚠️ `?luu_tru=1` la mot KHUNG NHIN, khong phai mot bo loc noi them: mot
+       workflow da luu tru bien mat khoi danh sach chinh, nen khong co khung
+       nhin nay thi nut "Mo lai" ⛔ khong voi toi duoc.
     ⚠️ Moi `href` o day phai con trong bang dinh tuyen that
        (`test_969::test_moi_url_trong_template_agent_deu_con_song`). -#}
 <style>
@@ -27,9 +32,15 @@
   .wfl-dem{margin:0 0 10px}
 </style>
 <section aria-labelledby="wfl-title">
+  {% if xem_kho %}
+  {{ ah.dau_trang(_("AI Studio"), _("Kho lưu trữ"),
+     _("Các workflow bạn đã cất đi. Chúng không chạy được và không hiện ở danh sách chính, nhưng không bị xoá — mở lại là dùng được ngay."),
+     id_tieu_de="wfl-title", lop="ag-head") }}
+  {% else %}
   {{ ah.dau_trang(_("AI Studio"), _("Workflows"),
      _("Mỗi workflow là một chuỗi bước bạn dựng và chạy được. Mở một workflow để sửa, hoặc tạo một workflow mới."),
      id_tieu_de="wfl-title", lop="ag-head") }}
+  {% endif %}
 
   {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
   <div class="alert alert-err" id="wfl-loi" role="alert" hidden></div>
@@ -46,7 +57,17 @@
       <button class="btn" type="submit">{{ _("Tìm") }}</button>
       {% if q %}<a class="btn" href="/agent/workflows">{{ _("Xoá bộ lọc") }}</a>{% endif %}
     </form>
+    {% if xem_kho %}
+    <a class="btn" href="/agent/workflows">{{ _("Về danh sách đang dùng") }}</a>
+    {% else %}
     <button class="btn" type="button" id="wfl-tao">{{ _("Workflow mới") }}</button>
+    {#- Chi hien khi kho CO gi: mot lien ket toi mot trang rong la mot loi moi
+        bam vao hu khong. `so_kho` dem trong CA hai khung nhin nen con so dung
+        ca khi dang o trong kho. -#}
+    {% if so_kho %}
+    <a class="btn" href="/agent/workflows?luu_tru=1">{{ _("Kho lưu trữ") }} ({{ so_kho }})</a>
+    {% endif %}
+    {% endif %}
   </div>
 
   {% if q %}
@@ -62,14 +83,20 @@
       <div class="wfl-o-chu">
         <a class="wfl-ten" href="/agent/workflows/{{ w.id }}">{{ w.name or _("Workflow mới") }}</a>
         <p class="wfl-meta muted">
-          {% if w.published_version_id %}<span class="badge b-ok">{{ _("Đã xuất bản") }}</span>
+          {% if xem_kho %}<span class="badge b-grey">{{ _("Đã lưu trữ") }}</span>
+          {% elif w.published_version_id %}<span class="badge b-ok">{{ _("Đã xuất bản") }}</span>
           {% else %}<span class="badge b-grey">{{ _("Bản nháp") }}</span>{% endif %}
           · {{ _("Sửa lần cuối") }}: <time datetime="{{ w.updated_at.isoformat() }}">{{ w.updated_at.strftime('%d/%m/%Y %H:%M') }}</time>
         </p>
       </div>
       <div class="wfl-hanh">
+        {% if xem_kho %}
+        <button class="btn" type="button" data-wfl-mo-lai="{{ w.id }}">{{ _("Mở lại") }}</button>
+        {% else %}
         <a class="btn" href="/agent/workflows/{{ w.id }}">{{ _("Mở") }}</a>
         <button class="btn" type="button" data-wfl-nhan-ban="{{ w.id }}">{{ _("Nhân bản") }}</button>
+        <button class="btn" type="button" data-wfl-luu-tru="{{ w.id }}">{{ _("Lưu trữ") }}</button>
+        {% endif %}
       </div>
     </li>
     {% endfor %}
@@ -79,6 +106,9 @@
     {% if q %}
     <p>{{ _("Không có workflow nào khớp tên đang tìm.") }}</p>
     <p><a class="btn" href="/agent/workflows">{{ _("Xoá bộ lọc") }}</a></p>
+    {% elif xem_kho %}
+    <p>{{ _("Kho lưu trữ đang trống. Không có workflow nào bị cất đi.") }}</p>
+    <p><a class="btn" href="/agent/workflows">{{ _("Về danh sách đang dùng") }}</a></p>
     {% else %}
     <p>{{ _("Bạn chưa có workflow nào. Tạo một workflow mới để bắt đầu dựng các bước trong Canvas.") }}</p>
     <p><button class="btn" type="button" id="wfl-tao-trong">{{ _("Workflow mới") }}</button></p>
@@ -129,6 +159,38 @@
       nut.disabled = true
       tao(TEN_MAC_DINH, null).catch(e => { nut.disabled = false; bao_loi(e) })
     })
+  }
+
+  /* ── Luu tru / mo lai ───────────────────────────────────────────────────
+     ⭐ Hai cua nay duoc chu du an duyet mo 28/09/2026. `Workflow.archived_at`
+        co trong luoc do tu dau va BA noi da DOC no (danh sach loc theo no,
+        `tao_run` tu choi run moi, `nut` bo qua khi do drift) — thieu dung mot
+        cua DAT no.
+     ⛔ Day KHONG phai xoa: ban ghi, ban nhap va moi version o lai nguyen ven.
+        Nen khong co hop thoai xac nhan — thu can hoan lai thi cho nguoi dung
+        mot duong hoan, dung hon la bat ho tra loi mot cau hoi truoc moi lan.
+     ⚠️ `location.reload()` chu khong go dong khoi DOM: con so `tong`, nut
+        "Kho luu tru" va ca khung nhin deu do MAY CHU ve. Sua mot nua o trinh
+        duyet se lam danh sach va con so dem noi hai chuyen khac nhau. */
+  const KHO = [
+    { chon: '[data-wfl-luu-tru]', khoa: 'wflLuuTru', cua: 'luu-tru' },
+    { chon: '[data-wfl-mo-lai]', khoa: 'wflMoLai', cua: 'mo-lai' },
+  ]
+  for (const { chon, khoa, cua } of KHO) {
+    for (const nut of document.querySelectorAll(chon)) {
+      nut.addEventListener('click', async () => {
+        nut.disabled = true
+        try {
+          await goi('/agent/api/v3/workflows/'
+            + encodeURIComponent(nut.dataset[khoa]) + '/' + cua, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+            body: JSON.stringify({ csrf_token: CSRF }),
+          })
+          window.location.reload()
+        } catch (e) { nut.disabled = false; bao_loi(e) }
+      })
+    }
   }
 
   const HAU_TO = {{ _("(bản sao)") | tojson }}

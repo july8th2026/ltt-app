@@ -3,7 +3,7 @@ import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import '../../canvas.css'
 import { activePage } from '../../editorState'
-import type { CanvasDocument } from '../../workflowApi'
+import type { CanvasDocument, CanvasNode } from '../../workflowApi'
 import { CommandPalette } from './CommandPalette'
 import { ContextMenu } from './ContextMenu'
 import { ExecutionPanel } from './ExecutionPanel'
@@ -11,7 +11,7 @@ import { LayersDrawer } from './LayersDrawer'
 import { LeftRail } from './LeftRail'
 import { MobileTabs } from './MobileTabs'
 import { PageDock } from './PageDock'
-import { StepInspector } from './StepInspector'
+import { StepInspector } from '../../inspector/StepInspector'
 import { StepLibrary } from './StepLibrary'
 import { WorkflowCanvas } from './WorkflowCanvas'
 import { WorkflowHeader } from './WorkflowHeader'
@@ -108,17 +108,18 @@ function Editor() {
       page={page} readOnly={readOnly} offline={offline} phase={phase} theme={theme}
       doiGiaoDien={doc.doiGiaoDien} thuLuuLai={doc.thuLuuLai} desktopPanel={desktopPanel}
       moNgan={moNgan} moBangLenh={() => setCommandOpen(true)}>
+      {/* ⭐ `dinhNghia` + `liveQuotes` la HAI day noi lan UI-7 them: TEN BUOC
+          cho dong thoi gian, va BAO GIA hien TRUOC nut "Chay ngay". Ca hai da
+          nam san trong bo nho trinh soan tu truoc — chung chua bao gio den
+          duoc cho nguoi dung quyet tieu tien. */}
       <ExecutionPanel dangMo={desktopPanel==='run'} moNgan={moNgan} page={page}
+        dinhNghia={dinhNghia} liveQuotes={liveQuotes}
         workflow={workflow} phase={phase} readOnly={readOnly} run={run.run}
         runError={run.runError} runGoc={run.runGoc} runDaXong={run.runDaXong}
         dangGui={run.dangGui} soSanh={run.soSanh} soSanhLoi={run.soSanhLoi}
         chayWorkflow={() => void run.chayWorkflow()} huyRun={run.huyRun}
         chayLaiTuNode={run.chayLaiTuNode} soSanhVoiGoc={run.soSanhVoiGoc}
-        taoBanChayMoi={run.taoBanChayMoi} selected={sel.selected}
-        selectedEdges={sel.selectedEdges} selectedEdge={selectedEdge}
-        showGrid={showGrid} showConnections={showConnections} showMinimap={showMinimap}
-        showLayers={showLayers} batLayers={batLayers} duplicate={edits.duplicate}
-        toggleErrorBranch={edits.toggleErrorBranch} dispatch={dispatch}/>
+        taoBanChayMoi={run.taoBanChayMoi}/>
     </WorkflowHeader>
     <MobileTabs khu={mobilePanel} datKhu={setMobilePanel}/>
     <div className={`canvas-body panel-${mobilePanel}`}>
@@ -178,17 +179,50 @@ function Editor() {
           — ho giu nguyen dieu kien goc dung nhu yeu cau (thuan di chuyen). No
           chi lo ra khi co nguoi doi tab, va truoc do khong phep kiem nao lam
           viec ay. `tests/browser/agent_ui_v2_ui3_mobile.js` nay giu cho nay. */}
+      {/* 🔴 CHO HAI LAN VA NHAU, va dieu phoi giai o day (28/09).
+          UI-3 tach form cu ra `features/editor/StepInspector/`; UI-5 dung
+          **Inspector V2** (§6: nam tab, o ket noi, luat an truong phu thuoc) o
+          `src/inspector/StepInspector.tsx` — ho nen tu mot `main` CHUA co lan
+          tach cua UI-3, nen ho sua `src/CanvasShell.tsx`, cho nay nay chi con
+          la mot dong re-export.
+          ⇒ Giu ban CUA UI-5 (no la tinh nang, co 301 dong test + nghiem thu
+            trinh duyet that), bo ban cua UI-3 (no la mot lan DI CHUYEN cua
+            chinh cai form ma V2 thay the). ⛔ Khong ai mat viec: `FormTuLuocDo`
+            van la ruot cua tab "Cấu hình".
+          ⚠️ `<aside>` o day, khong trong component: ban UI-5 tra ve NOI DUNG
+             (thiet ke cua ho boc o cho goi), con ban UI-3 tu boc. Bo qua cho
+             nay se lam mat ca khung panel — va no se mat IM LANG vi CSS cua
+             `.canvas-inspector` gan vao the, khong vao ruot. */}
       {(readOnly ? mobilePanel==='inspector'
                  : desktopPanel==='inspector')&&
-        <StepInspector dangMo={desktopPanel==='inspector'} selectedNode={selectedNode}
-          dinhNghia={selectedDinhNghia} readOnly={readOnly} goiY={goiY}
-          liveQuotes={liveQuotes} dispatch={dispatch}/>}
+        <aside className={`canvas-inspector${desktopPanel==='inspector'?' is-open':''}`}
+               aria-label="Chi tiết node">
+          <StepInspector buoc={selectedNode ?? null}
+            dinhNghia={selectedDinhNghia ?? null}
+            nodes={page.nodes} edges={page.edges} csrf={csrf}
+            readOnly={readOnly} goiY={goiY}
+            gia={selectedNode?liveQuotes[selectedNode.id]:undefined}
+            onLabel={label=>selectedNode&&dispatch({type:'nodeLabel',id:selectedNode.id,label})}
+            onParam={(ten,v)=>selectedNode&&dispatch({type:'update',id:selectedNode.id,data:{params:{
+              ...(selectedNode.data.params as Record<string, unknown>), [ten]: v }}})}
+            onKetNoi={ref=>selectedNode&&dispatch({type:'graph',
+              nodes:page.nodes.map(node=>node.id===selectedNode.id
+                ?{...node,credential_ref:ref||undefined}:node) as CanvasNode[],
+              edges:page.edges})}
+            onNhanBan={selectedNode?()=>edits.duplicateNode(selectedNode.id):undefined}
+            onXoa={selectedNode?()=>dispatch({type:'delete',ids:[selectedNode.id]}):undefined}/>
+        </aside>}
     </div>
+    {/* `readOnly`/`selected`/`duplicate`/`toggleErrorBranch`: bon lenh SUA da
+        roi ngan keo "Chay workflow" sang day (lan UI-7) — xem chu thich trong
+        `CommandPalette.tsx`. */}
     {commandOpen&&<CommandPalette truyVan={commandQuery} datTruyVan={setCommandQuery}
       dong={() => setCommandOpen(false)}
       dongVaXoa={() => { setCommandOpen(false); setCommandQuery('') }}
       showGrid={showGrid} showConnections={showConnections} showMinimap={showMinimap}
-      dispatch={dispatch}/>}
+      readOnly={readOnly} selected={sel.selected} selectedEdges={sel.selectedEdges}
+      selectedEdge={selectedEdge} duplicate={edits.duplicate}
+      toggleErrorBranch={edits.toggleErrorBranch} dispatch={dispatch}/>}
   </section>
 }
 

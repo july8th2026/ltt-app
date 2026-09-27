@@ -182,8 +182,31 @@ def tom_tat_kem_khong_do(bao_cao: dict, ly_do: dict) -> dict:
     return tt
 
 
-def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict, bien_tap=None) -> float:
+def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict, bien_tap=None,
+                         *, cua_so_khach=None) -> float:
     """Do dai (giay) ma TEP DUOC DO phai co, **tren TRUC BAN RA** (sau `toc_do`).
+
+    🔴 **Sua 28/09 (B9-4) — ham nay tung ⛔ KHONG biet cua so `cat_dau_cuoi`.**
+
+       `image_finish` ap HAI phep cat chong len nhau, va chi phep thu nhat nam
+       trong `ke_cat`:
+
+           ke_cat            phep cat TU DONG cua chinh sach (canh hong)
+           cat_dau_cuoi      cua so KHACH tu keo, ap qua `cat_dau_cuoi.giao`
+
+       Do T1a (28/09, production `fd565a474551`): ke cat tu dong ⛔ khong cat gi
+       (`cat: []`) nen ban do cua no la phep DONG NHAT, con cua so khach
+       `[0,05 ; 0,95]` cat mat 10 %:
+
+           mong doi (cu)  220,007  = 275,008 / 1,25      ⛔ thieu cua so khach
+           tep giao       198,002  = 275,008 x 0,90 / 1,25
+           ⇒ `lech = -22,005 s`, va T2 **hong tren mot ban giao dung**.
+
+    ⭐ **⛔ Khong doc `image_finish.thoi_luong_ra` cho tien**, du con so dung da
+       nam san o do. Lam vay la de QC hoi CHINH giai doan vua cat *"anh cat bao
+       nhieu"* — mot loi cat sai se duoc chinh no xac nhan. Thay vao do ham nay
+       **tu dung lai** phep giao tu HAI ban khai doc lap (`ke_cat` la artifact,
+       `cat` la cai dat cua khach), bang CHINH `cat_dau_cuoi.giao` ma GD2 dung.
 
     🔴 **Sua 27/09 — truoc do ham nay tra HAI TRUC KHAC NHAU tuy nhanh, va nguoi
        goi ap `moc_ban_ra` cho CA HAI:**
@@ -215,7 +238,7 @@ def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict, bien_tap=None) -> flo
     ⚠️ Doc lai thi kiem lai (I8): `ke_cat.kiem` chay o day nua, nen mot ke cat
        vuot tran 5 % ⛔ khong the di qua cong nay bang cach duoc ghi ra tep.
     """
-    from . import ke_cat as _kc
+    from . import cat_dau_cuoi as _cdc, ke_cat as _kc
     from .bien_tap import moc_ban_ra
 
     # ⭐ **Sau B6 (27/09) CA HAI nhanh o CUNG mot truc — truc NGUON.** `render` ⛔
@@ -227,14 +250,27 @@ def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict, bien_tap=None) -> flo
     #    ngoai nhanh thi sai mot nhanh, dat trong nhanh thi ⛔ khong ai doc noi
     #    hop dong. Nay chi co MOT truc vao va MOT truc ra, nen `moc_ban_ra` la
     #    phep cuoi cung, ap MOT lan, cho MOI duong.
+    #
+    # ⚠️ `dai_vao` la do dai ban ra cua GD1 — CUNG con so ma `image_finish` dung
+    #    lam `thoi_luong` khi no giao cua so. Ca hai nhanh duoi deu lay tu ban
+    #    khai, ⛔ khong tu tep dang do.
     if goi_ke_cat:
         ke = _kc.KeCat.tu_dict(goi_ke_cat)
         _kc.kiem(ke)
-        tho = float(ke.ban_do().thoi_luong_ra)
+        giu = list(ke.giu)
+        dai_vao = float(goi_ke_cat.get("thoi_luong") or ke.ban_do().thoi_luong_ra)
     else:
         # ⭐ `tong_ms` = do dai NGUON (giai doan 1 ⛔ khong cat gi).
-        tho = float(ke_hoach.get("tong_ms") or 0) / 1000.0
-    return moc_ban_ra(tho, bien_tap)
+        dai_vao = float(ke_hoach.get("tong_ms") or 0) / 1000.0
+        giu = [(0.0, dai_vao)]
+
+    # 🔑 **Cung ham, cung thu tu voi `giai_doan_hinh_anh.chay`** — cua so khach
+    #    la mot lop THU HEP dat len tren ke cat, ⛔ khong phai mot phep song song.
+    #    Goi lai chinh `giao` thay vi nhan mot phan so la cach duy nhat de mot
+    #    ngay nao do luat giao doi ma QC ⛔ khong lang le lech theo.
+    cua = _cdc.chuan_hoa(cua_so_khach)
+    khoang = _cdc.giao(giu, cua, dai_vao) if cua else giu
+    return moc_ban_ra(sum(k - b for b, k in khoang), bien_tap)
 
 
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
@@ -329,8 +365,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    o day nghia la QC do mot lan chay KHAC lan chay that.
         from . import giai_doan_hinh_anh as _gdha_bt
 
-        _bt_gd2 = _gdha_bt.loc_bien_tap_gd2(cai_dat.doc(run).bien_tap)
-        mong_doi = _thoi_luong_mong_doi(ke_hoach, goi_kc, _bt_gd2)
+        # 🔴 **`cat` phai di cung (B9-4, 28/09).** Cua so `cat_dau_cuoi` la phep
+        #    cat THU HAI cua `image_finish`, va no ⛔ khong nam trong `ke_cat`.
+        #    Thieu no thi T2 hong tren moi lan chay khach co keo hai tay cam —
+        #    do tren T1a: mong doi 220,007 vs tep giao 198,002.
+        _cai = cai_dat.doc(run)
+        _bt_gd2 = _gdha_bt.loc_bien_tap_gd2(_cai.bien_tap)
+        mong_doi = _thoi_luong_mong_doi(ke_hoach, goi_kc, _bt_gd2,
+                                        cua_so_khach=_cai.cat)
 
         # 🔑 Ly do KHONG do duoc cua tung phep kiem — di vao `tom_tat`, tuc vao
         #    `asv_stage.outputs`. Xem `tom_tat_kem_khong_do`.
@@ -404,6 +446,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             che_do_thoi_gian=cai_dat.doc(run).timing_mode,
             che_do_render=cach, thoi_luong_mong_doi=mong_doi,
             hinh_ra=hinh_ra, hinh_nguon=hinh_nguon, vmaf=vmaf,
+            # 🔴 **Ban khai cua GD2 (B9-4, 28/09).** T15 can chung de doi su kien
+            #    phu de sang truc BAN GIAO. Truoc B9 no chi chia `toc_do`, nen
+            #    moi su kien nam trong phan DA CAT van bi dem — T1a bao 3 dong
+            #    "ngoai bien" tren mot tep ⛔ khong sai gi.
+            khoang_giu=[tuple(x) for x in (_out_if.get("khoang_giu") or ())],
+            thoi_luong_vao=float(_out_if.get("thoi_luong_vao") or 0.0),
             # ⭐ V6 pha 27. T14/T15 doc tu day: chinh sach render da khai va
             #    su kien phu de DA CHOT. Khong truyen thi ca hai luon tra
             #    `KHONG_AP_DUNG` — mot phep kiem ton tai ma khong ai di qua,

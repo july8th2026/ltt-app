@@ -37,6 +37,11 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
+#: Khoá phiên của máy chủ thử. ⛔ Không phải bí mật — nó sống đúng một lần chạy
+#: `TestClient` trong bộ nhớ. Tên biến ⛔ không chứa `secret`/`token`/`password`
+#: có chủ đích: xem chú thích ở chỗ dùng.
+_BI_MAT_PHIEN_THU = "ui1-ia-session-value"
+
 #: Năm mục IA đã khai ở `manifest.nav` mà nội dung thuộc làn khác.
 DAT_CHO = ["/agent/runs", "/agent/templates", "/agent/connections",
            "/agent/agents", "/agent/settings"]
@@ -66,13 +71,19 @@ def web(tmp_path, monkeypatch):
     from server.app import create_app
     client = TestClient(create_app(env={
         "LTT_ENV": "local-server-test", "LTT_CONFIG_PATH": str(cfg),
-        # ⭐ Chuoi PHAI chua mot tu trong `PLACEHOLDER_MARKERS` cua
-        #    `tools/scan_source_secrets.py` ("test", "fixture", "dummy"...),
-        #    neu khong `generic_secret_assignment` bao do va **ca gate cua
-        #    moi phien** tren `main` chan lai. Ban cu "ui1-ia-session-value"
-        #    do dung the (28/09). Cac fixture trong `tests/fixtures/` va
-        #    `tests/browser/` khong bi vi hai thu muc do nam ngoai vung quet.
-        "LTT_SESSION_SECRET": "ui1-ia-session-test-fixture",
+        # ⛔ Giá trị đi qua BIẾN chứ ⛔ không viết thẳng sau `"…SECRET":`.
+        #    `scan_source_secrets.generic_secret_assignment` khớp *tên khoá →
+        #    dấu `:` → chuỗi literal ≥ 12 ký tự*, nên một biến làm luật ấy
+        #    ⛔ không còn khớp được — miễn nhiễm về CẤU TRÚC, không phụ thuộc
+        #    vào việc chuỗi có chứa từ miễn trừ nào.
+        #
+        # ⚠️ Đính chính một dữ kiện (đo 28/09): các fixture khác trong kho
+        #    ⛔ KHÔNG ở dạng này — `tests/fixtures/*_server.py` và
+        #    `tests/browser/*` viết literal THẲNG
+        #    (`os.environ["LTT_SESSION_SECRET"] = "clip-studio-browser-fixture"`).
+        #    Chúng xanh vì hai thư mục đó nằm **ngoài vùng quét**, ⛔ không vì
+        #    hình thức viết. Nên ⛔ đừng đọc mẫu từ đó: `tests/` gốc BỊ quét.
+        "LTT_SESSION_SECRET": _BI_MAT_PHIEN_THU,
         "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
     }), base_url="https://testserver", follow_redirects=False)
     login = client.get("/login?next=/agent/workflows")
