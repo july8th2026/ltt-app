@@ -854,7 +854,20 @@ def bang_chung_chat_luong(db, run) -> dict | None:
     dl = _outputs(db, run, pipeline.QC_DO_LUONG)
     if dl.get("do_luong"):
         ra["do_luong"] = {
+            # ⚠️ `so_doan_do` dem doan DA CHUAN BI, ⛔ khong doan DO DUOC — xem
+            #    `giai_doan_qc_do_luong.tom_tat_do_luong`. Giu lai vi cho khac doc
+            #    no, nhung ⛔ KHONG dung no cho cau "da do".
             "so_doan_do": int(dl.get("so_doan_do") or 0),
+            # 🔴 Con so ma man KHACH phai in. Truoc 27/09, `asv_chi_tiet.html:223`
+            #    in `so_doan_do` duoi nhan *"N doan da do"*: voi bo do `giong`
+            #    `khong_kha_dung` (thieu qc-venv / model / card) thi `ket_qua` rong
+            #    ⇒ `so_giong_khong_dat = 0`, va khach doc duoc *"da do 95 doan,
+            #    ⛔ khong doan nao sai"* trong khi ⛔ KHONG doan nao duoc do.
+            #
+            # ⭐ `tom_tat_do_luong` DA sinh `so_doan_da_do` de tra loi dung cau ay
+            #    va CO Y ⛔ khong doi nghia khoa cu — nhung ⛔ khong ai doi NGUOI
+            #    DOC sang khoa moi, nen con bo van o nguyen cho no dang o.
+            "so_doan_da_do": int(dl.get("so_doan_da_do") or 0),
             "so_giong_khong_dat": int(dl.get("so_giong_khong_dat") or 0),
             "so_canh_bao_tieng": len(dl.get("canh_bao_tieng") or []),
             "bo_do": [
