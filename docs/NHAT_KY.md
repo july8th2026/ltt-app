@@ -22463,3 +22463,90 @@ Cập nhật docs: `00_CURRENT_TRUTH.md` (ISSUE L + bảng phán quyết),
 `09_FINAL_ARCHITECTURE.md` (mục "hai rò rỉ"), `10_FINAL_SCORECARD.md` (hàng
 Reliability 55→65/100), `12_PLAN_TRIEN_KHAI.md` (mục 4), `13_TRA_LOI_27_CAU.md`
 (câu 3, 24).
+
+## 2026-09-27 (cuối phiên) — Upscale V2: ISSUE L vá, deploy KHÔNG bấm, gate ĐỎ không phải của ta
+
+### ISSUE L — vá **một nửa**, và nửa kia là cố ý
+
+`platform_core/job_runner.py` (`fbdc7a3c`): trước `os._exit(3)` nay giết cây tiến
+trình con bằng `taskkill /T /F /PID <os.getpid()>`.
+
+⛔ **Không** bỏ `os._exit` — docstring của nó đúng, và tôi kiểm cả ba tiền đề:
+handler giữ GIL (đúng) · cha thay thế con chết (đúng, cả `multiprocessing` lẫn
+`nssm AppExit Default Restart`) · *"không còn gì đáng dọn"* (**SAI** — engine là
+`Popen`, không nằm trong CSDL).
+
+⭐ **Vì sao đáng đụng `platform_core`:** `reclaim_orphans` xoá lease **NGAY** khi
+job kết thúc (không chờ nhịp đập). Nên hệ thống tin card trống và **nhận job
+mới** trong khi mồ côi vẫn giữ nó — đúng cuộc đua `UniqueConstraint` sinh ra để
+chặn, và **vô hình** với lease vì mồ côi không phải một job.
+
+⛔ **Không** dọn thư mục temp: `rmtree` cỡ GB có thể chặn trên tệp mà handler treo
+đang giữ — biến một tiến trình treo thành hai, ngay trên đường thoát khẩn.
+
+### Deploy — tôi KHÔNG bấm, dù được bảo bấm
+
+`0d6d0aed` đang chạy, nghiệm thu ĐẠT tuyệt đối (1275 tệp, 0 lệch). Kiểm từng
+commit bằng `git merge-base --is-ancestor`: **22/22 commit của tôi đã trên
+production**. `main` chỉ hơn 2 commit, **cả hai của phiên khác**.
+
+⇒ Bấm deploy sẽ: không mang gì của tôi · đẩy việc của người khác thay họ · **khởi
+động lại dịch vụ trong lúc họ đang chạy job test thật**.
+
+⭐ Luật 5 *"báo, không chờ"* nói về việc đừng treo mình chờ người khác — ⛔ không
+phải cho phép giẫm lên một phép đo đang dở **khi biết rõ nó đang chạy**.
+⚠️ Và một phép đo bị deploy giẫm lên thì ⛔ **không ĐỎ — nó BIẾN MẤT**. Đỏ thì có
+người đi xem; biến mất thì trông giống *"chưa chạy"*. (Phiên ASV xác nhận: nhật ký
+của họ còn ghi một thư mục tạm 344 MB rò lại từ *"lượt bị deploy giết"*.)
+
+### 🔴 GATE ĐỎ — và nó ⛔ KHÔNG phải của làn này
+
+`.gate/20260927T105155Z-3712.json` · `FAIL (1/33)` · `mypy union-attr 90 → 91`.
+
+Ba dòng, **cả ba ở `apps/auto_scan_video/`** (`qc.py:780`, `am_master.py:748`,
+`giai_doan_qc.py:443`), thuộc `5d568ffe` và `0d6d0aed`. `job_runner.py` và
+`apps/upscalevideo/` ⛔ không có `union-attr` nào. Đã báo chủ khu, ⛔ không tự sửa,
+⛔ không `--accept` hộ — hạ một cái mốc là tuyên bố *"ba chỗ này an toàn"*, và một
+mốc bị hạ hộ là một mốc ⛔ không ai chịu trách nhiệm.
+
+### 🔴 CHƯA CÓ GATE NÀO PHỦ `job_runner.py` — ghi nguyên văn
+
+Gate của tôi chạy `--pham-vi app:upscalevideo`. Nhưng:
+
+```
+thanh_phan.py --doi --goc-so ab359e73  ->  19+ thanh phan bi anh huong
+```
+
+`job_runner` được **gần như mọi app** tiêu thụ ⇒ phạm vi tôi chọn **loại trừ chính
+thứ tôi định phủ**. Một chữ PASS ở đó ⛔ không có nghĩa như tôi tưởng.
+
+Đường khép cũng chặn: L3 lúc 03:54 UTC, cửa sổ `CUA_SO_L3_LAI_GIO = 12` giờ còn
+**5,2 giờ**. ⇒ Trong phiên này ⛔ **không thể** có gate phủ `job_runner`.
+
+⭐ **Bằng chứng thay thế, mạnh hơn gate cho đúng câu hỏi này** (nguồn: phiên "Auto
+Scan Video final closure"): một job **bình thường** chạy **trọn 13/13 giai đoạn,
+QC ĐẠT, thu 10 credit** trên chính `0d6d0aed` — bản mang `job_runner.py` của tôi —
+và ⛔ không để lại tiến trình mồ côi nào. Đó là **runtime**, thứ mà 4 phép kiểm
+argv của tôi ⛔ không cho được, và một gate cũng ⛔ không cho được.
+
+### Nghiệm thu cổng kỹ thuật trên BẢN ĐÃ CÀI
+
+4/4, `canh_bao=[]` sạch. ⚠️ Lượt đầu tôi **gõ tay** kỳ vọng thời lượng `2.0` và ăn
+một cảnh báo GIẢ — `encode_full` map **trọn audio nguồn** (không `-shortest`) nên
+container dài bằng nguồn. Chỉ khi gọi `jobs._thoi_luong_hua` **của bản đã cài**
+mới ra `106,83 s`. ⇒ Đường job thật tính đúng; **preview của khách ⛔ không dính
+cảnh báo giả**.
+
+⭐ Tôi nghe lời khuyên *"gọi hàm của sản phẩm, đừng gõ lại"* cho phía **encode**
+rồi quên đúng lời khuyên đó ở phía **kỳ vọng**. Mắc **một nửa** một lời khuyên thì
+sinh ra một "phát hiện" sai trông y như bug production.
+
+### Còn lại
+
+- **thread sweep** và **ma trận tính năng** (`stabilize` ×1,2 · `smooth_motion`
+  ×2,2 đang tính tiền mà ⛔ chưa ai đo) — `CHƯA ĐO`.
+- ⭐ Và một câu tôi ⛔ **chưa từng hỏi**, phiên ASV hỏi hộ: *"khách THẬT SỰ nộp
+  gì?"* Bộ 4 clip của tôi đều ~576p ngang CFR; tôi ghi `KHÔNG CÓ MẪU` cho
+  portrait/VFR/4K — **trung thực nhưng chưa đủ**. Nếu phần lớn khách nộp video dọc
+  từ điện thoại thì cả ma trận đo **sai dân số**. Chọn mẫu theo *"cái gì phơi bày
+  bug"* ⛔ không thay được *"cái gì khách dùng"*.
