@@ -44,19 +44,26 @@ def _ban(*, so_lop: int = 2, tong_giay: float = 2.0,
 def _ban_cat(**kw) -> dict:
     """Cung ban dung, nhung khai preset CAT (ma hoa lai).
 
-    🔴 **`bien_tap.toc_do` (gd2-diem-anh, 25/09): bat buoc de GD1 THAT SU ma
-       hoa lai.** Tu khi logo/lop_phu/khung/lat-guong/dich-mau chuyen xuong
-       GD2, mot preset CAT khong `vung` va khong doi toc do khong con gi de
-       lam o GD1 — `ket_xuat.dung_lenh` se REMUX (xem `ket_xuat.co_viec`).
-       Bai nay kiem tra hanh vi cua duong MA HOA LAI, nen no can mot ly do
-       that de di duong do.
+    🔴 **`vung` la ly do DUY NHAT con lai de GD1 ma hoa lai (B6, 27/09).**
+       Tu 25/09 logo/lop_phu/khung/lat-guong/dich-mau chuyen xuong GD2; tu B6
+       `toc_do` cung chuyen. Nen mot preset CAT ⛔ khong `vung` thi ⛔ khong con
+       gi de lam o GD1 va `ket_xuat.dung_lenh` REMUX (xem `co_viec`). Bai nay
+       kiem hanh vi cua duong MA HOA LAI, nen no can mot ly do THAT de di duong
+       do.
+
+    ⚠️ Ban truoc dung `bien_tap={"toc_do": 1.1}`. Tu B6 dieu do ⛔ khong con la
+       mot ly do: `ban_dung.dung` NEM neu bi truyen ho so bien tap, va
+       `ket_xuat.dung_lenh` ⛔ khong con doc `hinh.bien_tap` — fixture ay se
+       lang le roi ve duong remux, va hai bai duoi se do vi mot ly do SAI.
     """
-    from apps.auto_scan_video import che_do_render as cdr
+    from apps.auto_scan_video import che_do_render as cdr, vung_che
 
     ban = _ban(**kw)
     ban["hinh"].update({"cach_render": cdr.CAT_MA_HOA_LAI, "bo_ma_hoa": "libx264",
                         "khoang_giu": [[0.0, 2.0]],
-                        "bien_tap": {"toc_do": 1.1}})
+                        "vung": vung_che.chuan_hoa(
+                            [{"x0": 0.1, "y0": 0.1, "x1": 0.3, "y1": 0.3,
+                              "loai": "lam_mo"}])})
     return ban
 
 
@@ -156,8 +163,11 @@ def test_preset_CAT_ma_hoa_lai_va_KHONG_dung_copy():
     ban["hinh"]["cach_render"] = cdr.CAT_MA_HOA_LAI
     ban["hinh"]["bo_ma_hoa"] = "libx264"
     ban["hinh"]["khoang_giu"] = [[0.0, 5.0], [10.0, 20.0]]
-    # 🔴 gd2-diem-anh: khong `vung`/`toc_do` thi GD1 REMUX (xem `_ban_cat`).
-    ban["hinh"]["bien_tap"] = {"toc_do": 1.1}
+    # 🔴 B6: `vung` la ly do DUY NHAT con lai de GD1 ma hoa lai (xem `_ban_cat`).
+    from apps.auto_scan_video import vung_che
+
+    ban["hinh"]["vung"] = vung_che.chuan_hoa(
+        [{"x0": 0.1, "y0": 0.1, "x1": 0.3, "y1": 0.3, "loai": "lam_mo"}])
     cmd = _lenh(ban)
     assert "libx264" in cmd
     assert "-filter_complex" in cmd

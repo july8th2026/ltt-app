@@ -221,11 +221,14 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
     #    pham vo ich (va no chinh la nua con lai cua "hai lan ma hoa" ma
     #    `giai_doan_hinh_anh.py` da khai: GD1 encode "khong lam gi", GD2 encode
     #    "cat + dan diem anh" — vay con MOT lan ma hoa THAT, khong phai hai).
-    from . import bien_tap as _bt
-
     vung_thuc = hinh.get("vung") or ()
-    bien_tap = hinh.get("bien_tap") or None
-    co_viec = bool(vung_thuc) or _bt.toc_do(bien_tap) != 1.0
+    # 🔴 **`hinh.bien_tap` LUON vang tu B6 (27/09)** — `ban_dung.dung` NEM neu
+    #    bi truyen ho so bien tap, va GD2 doc `cai_dat.doc(run)` thang. Nen cau
+    #    hoi *"GD1 co viec gi khong"* nay chi con MOT ve: co `vung` hay khong.
+    #
+    # ⛔ Giu lai mot phep doc `bien_tap` o day se la mot nhanh ⛔ KHONG BAO GIO
+    #    chay — mot cho mua su yen tam bang tin dung gia.
+    co_viec = bool(vung_thuc)
 
     if cach == cdr.SAO_CHEP or not co_viec:
         # ── Preset giu hinh, HOAC preset cat ma GD1 khong con viec gi ──────
@@ -253,96 +256,19 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
         #    `ban_dung.kiem` da chan mot ban dung vua `sao_chep` vua co vung, nen
         #    toi cho nay khong con truong hop nao phai xu ly rieng.
         #
-        # 🔴 **`bien_tap` o day CHI con `toc_do`** (`ban_dung._kiem_bien_tap` da
-        #    chan moi truong khac) — `khung`/`cat_khung`/`zoom`/`lat_guong`/
-        #    `dich_mau`, `logo`, `lop_phu` va DOT phu de deu khong con truyen
-        #    vao `loc_cat_noi` o day nua: chung thuc thi o GD2.
+        # 🔴 **GD1 ⛔ KHONG con mot phep bien tap nao (B6, 27/09).**
+        #    `khung`/`cat_khung`/`zoom`/`lat_guong`/`dich_mau`, `logo`, `lop_phu`
+        #    va DOT phu de da sang GD2 tu 25/09; `toc_do` — ke lac dan cuoi cung
+        #    — sang GD2 tu B6. O day chi con `vung` (lam mo/dien nen), va no phai
+        #    o day: toa do cua no thuoc khung NGUON, dat TRUOC `concat`.
+        #
+        # ⛔ Va `loc_cat_noi` nay NEM khi bi truyen `toc_do`: mot lan chay giao
+        #    tep ⛔ CHUA doi toc do la thu khach phat hien ra truoc ta, nen cho
+        #    nay phai on ao. Xem `che_do_render.loc_cat_noi`.
         loc = cdr.loc_cat_noi(khoang, vung=vung_thuc,
-                              bien_tap=bien_tap,
                               rong_nguon=int(hinh.get("rong_khung") or 0),
                               cao_nguon=int(hinh.get("cao_khung") or 0))
-        # 🔑 Toc do: ve TIENG nam trong CUNG `-filter_complex` — mot do thi loc,
-        #    mot lan ma hoa (pha 26), va `setpts`/`atempo` cung mot he so.
-        ve_tieng = cdr.loc_toc_do_tieng(bien_tap)
-        if ve_tieng:
-            loc = f"{loc};{ve_tieng}"
-            nhan_tieng = "[a_ra]"
         cmd += ["-filter_complex", loc, "-map", "[ra]"]
-        if ve_tieng:
-            # 🔴 **`passthrough` -> `vfr` (27/09). Ban 22/09 do DUNG mot cot va
-            #    ⛔ khong do cot con lai.**
-            #
-            #    Ly le 22/09: *"mac dinh mp4 giu CFR cua duong vao va BO khung sau
-            #    `setpts` — moc hinh troi len toi mot khung (+40 ms) so voi tieng;
-            #    `passthrough` giu moi khung dung moc da nen"*. Trôi la mot moi lo
-            #    THAT, va o 25 fps `passthrough` that su tot hon han ve trôi.
-            #
-            # ⚠️ **Nhung no lam dong ra ⛔ KHONG HOP CHUAN.** `passthrough` giao
-            #    tung khung voi dung moc cua no, va khi `setpts=PTS/toc` nen moc
-            #    lai thi nhieu khung roi vao CUNG mot moc. Do tren hai nhip nguon:
-            #
-            #      nguon 30 fps (lan chay that `asvr_3059dc3d`, 45,121 s, toc 1,25)
-            #        passthrough  1351 khung  troi 43,7 ms   loi DTS 269
-            #        vfr          1082 khung  troi 10,3 ms   loi DTS   0
-            #      nguon 25 fps (nhip ma ban 22/09 do)
-            #        passthrough   500 khung  troi  2,0 ms   loi DTS 100
-            #        vfr           400 khung  troi 15,0 ms   loi DTS   0
-            #
-            #    ⇒ Trôi DOI CHIEU theo nhip nguon (⛔ khong che nao thang ca hai),
-            #      nhung `passthrough` sinh moc TRUNG o **ca hai** nhip. Moc trung
-            #      lam T17 do (269 loi giai ma) va T18 do (VMAF 53,8 / nguong 75,
-            #      min 1,45 — dau hieu LECH THOI GIAN, ⛔ khong phai mat chat luong
-            #      deu). Tuc **moi ban giao co doi toc do deu bi QC chan.**
-            #
-            # ⭐ **`vfr` la cau tra loi CO NGUON, ⛔ khong phai suy luan cua ta.**
-            #    `FFmpeg/doc/ffmpeg.texi`, muc `-fps_mode`, nguyen van:
-            #      passthrough — "Each frame is passed with its timestamp from the
-            #                     demuxer to the muxer."
-            #      vfr         — "Frames are passed through with their timestamp
-            #                     **or dropped so as to prevent 2 frames from
-            #                     having the same timestamp**."
-            #    Bat bien thu hai ay DUNG la thu ta thieu, va `vfr` van giu y dinh
-            #    cua 22/09: ⛔ khong ep CFR, chi bo khung khi buoc phai.
-            #
-            # ⛔ Vi sao ⛔ khong de trong (mac dinh `auto`): do 27/09 `auto`/`cfr`/
-            #    `vfr` cho CUNG ket qua tren nguon nay, nhung tai lieu dinh nghia
-            #    `auto` la *"chooses between cfr and vfr depending on muxer
-            #    capabilities"* — mot loi hua ve CO CHE, ⛔ khong phai ve BAT BIEN.
-            #    Khai `vfr` tuong minh thi bat bien nam trong lenh va no song qua
-            #    mot lan doi muxer.
-            #
-            # ⛔ Va ⛔ khong chon `fps=37,5` (giu MOI khung): trôi cua no gap hai
-            #    lan `vfr` (24,0 vs 10,3 ms o 30 fps) va 37,5 fps la mot nhip giao
-            #    hang la. Ghi lai de lua chon con thay duoc.
-            #
-            # ⚠️ Khoi nay CHI chay khi `ve_tieng` (tuc `toc_do != 1`), nen no
-            #    ⛔ khong doi mot byte nao cua duong `toc_do = 1`.
-            # ⭐ **`-r` THAY cho `-fps_mode passthrough` (T17, 27/09).**
-            #    `setpts` doi MOC; `-r` bao bo ma hoa SAP LAI thanh nhip DEU.
-            #    Thieu no thi moc bi lam tron va nhieu khung roi vao cung mot
-            #    moc — do duoc 269 moc trung tren mot luot 30 fps.
-            # 🔑 Nhip ra = nhip NGUON x `toc`. Do la nhip ma noi dung von da
-            #    co sau khi `setpts` nen moc, nen khai no thi ⛔ khong bo khung
-            #    nao va moc roi dung luoi. Khai nhip NGUON thi CFR phai bo khung
-            #    va noi dung TRE 80 ms — do duoc, te hon ca viec ⛔ khong khai gi.
-            # ⭐ Doc he so bang CHINH ham ma `loc_toc_do_tieng` dung
-            #    (`bien_tap.toc_do`) — mot nguon, ⛔ khong mot ban chep.
-            from . import bien_tap as _bt
-
-            _toc = _bt.toc_do(bien_tap)
-            _fps_nguon = float(hinh.get("fps_nguon") or 0.0)
-            if _fps_nguon > 0:
-                cmd += ["-r", f"{_fps_nguon * _toc:g}"]
-            else:
-                # ⛔ ⛔ Khong biet nhip nguon (ho so `media_prepare` thieu/hong)
-                #    ⇒ ⛔ KHONG doan mot con so. De trong tuc nhan mac dinh
-                #    `auto`, va `auto` do duoc la 0 loi DTS (troi toi 33 ms) —
-                #    te hon `-r` nhung tot hon `passthrough` (40-48 loi), va tot
-                #    hon han viec ep video cua khach ve mot nhip ta bia ra.
-                log.warning(
-                    "asv ket_xuat: toc_do != 1 ma ban dung ⛔ khong khai "
-                    "`fps_nguon` — ⛔ khong khai `-r`, nhan mac dinh `auto`. Moc "
-                    "co the troi toi mot khung.")
         cmd += list(cdr.tham_so(bo))
 
     # ── Tieng: BAN PHOI cua pha 16, khong tron lai ───────────────────────

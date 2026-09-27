@@ -132,13 +132,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if preset == hop_dong_v4.PRESET_GIU_HINH:
         hieu, hong = (), []
     else:
-        # 🔴 **Ban chep loi cung phai ve DUNG TRUC.** `transcribe` chay tren
-        #    `audio_full.wav` cua NGUON, nen `doan[].bat/ket` la moc NGUON; con
-        #    `ci.canh` (tu ban ra cua `render`) la moc SAU `toc_do`. Hoi
+        # ⭐ **⛔ KHONG con phep doi truc nao o day (B6, 27/09).**
+        #
+        #    Truoc B6, `ci.canh` duoc tach tren ban ra cua `render` — tuc moc SAU
+        #    `toc_do` — con `doan[].bat/ket` cua `transcribe` la moc NGUON. Hoi
         #    *"canh nay co thoai khong"* bang hai truc khac nhau la cach mot canh
         #    CO tieng bi doc thanh *"khong thoai"* ⇒ ha nguong ⇒ thanh ung vien
-        #    cat. Xem `_ban_ghi_truc_ban_giao`.
-        ban_ghi = _ban_ghi_truc_ban_giao(ban_ghi, cd.doc(run).bien_tap)
+        #    cat, tuc mot cau thoai bi cat giua cau.
+        #
+        # 🔑 Nay `render` ⛔ khong doi moc thoi gian nua (toc do ap o cuoi GD2),
+        #    nen `ci.canh` va `ban_ghi` **cung mot truc** — truc NGUON. Mot phep
+        #    doi truc o day bay gio la mot phep SAI.
         hieu, hong = _do_cac_canh(duong, ci, ban_ghi)
         _chot_do_phu(preset, ci, hieu, hong)
         if lc is not None:
@@ -602,40 +606,6 @@ def _ban_ghi(db, kho, run) -> dict:
     except (OSError, ValueError) as exc:
         log.warning("khong doc duoc ban chep loi (%s)", type(exc).__name__)
         return {}
-
-
-def _ban_ghi_truc_ban_giao(ban_ghi: dict, bien_tap) -> dict:
-    """Ban chep loi tu truc NGUON -> truc ban ra cua `render` (sau `toc_do`).
-
-    🔑 Trong giai doan nay `ban_ghi` duoc dung cho DUNG MOT cau hoi:
-       `ban_bien_tap._co_thoai(ban_ghi, canh.bat, canh.ket)`. Tu khi `ci` duoc
-       tach tren ban ra cua `render` (xem `_khoa_hinh`), hai ve cua phep so nay
-       phai o cung mot truc.
-
-    ⛔ `toc_do == 1` thi tra ve **chinh** doi tuong cu: mot phep bien doi vo
-       dieu kien la mot cho de lam tron va de sai them, tren duong ma 100 % lan
-       chay hom nay di qua.
-
-    ⚠️ ⛔ Khong sua `ban_ghi` tai cho: cung mot tu dien nay ⛔ khong duoc di ra
-       ngoai giai doan voi moc da doi (`doan_giu_lai` o thuong nguon doc moc
-       NGUON).
-    """
-    from . import bien_tap as _bt
-
-    if _bt.toc_do(bien_tap) == 1.0:
-        return ban_ghi
-    doan = []
-    for d in ((ban_ghi or {}).get("doan") or ()):
-        try:
-            bat = _bt.moc_ban_ra(float(d.get("bat") or 0.0), bien_tap)
-            ket = _bt.moc_ban_ra(float(d.get("ket") or 0.0), bien_tap)
-        except (TypeError, ValueError):
-            # ⛔ Giu NGUYEN doan khong doc duoc moc: bo no di la bien mot doan
-            #    CO tieng thanh mot vung "khong thoai", tuc mo duong cat vao no.
-            doan.append(dict(d))
-            continue
-        doan.append({**dict(d), "bat": bat, "ket": ket})
-    return {**dict(ban_ghi or {}), "doan": doan}
 
 
 def _chi_muc_dict(ci) -> dict:

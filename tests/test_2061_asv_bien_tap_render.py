@@ -1,8 +1,12 @@
 """asv-final lan `bien-tap` — settings -> RenderManifest -> MOT `filter_complex`.
 
-🔴 **Cap nhat gd2-diem-anh (25/09): khung/zoom/lat guong/dich mau/logo/lop_phu/
-   phu-de-DOT da CHUYEN xuong GD2 (`giai_doan_hinh_anh.py`).** GD1 (`ban_dung`/
-   `ket_xuat`) o day chi con `vung` (lam mo/dien nen) va `bien_tap["toc_do"]`.
+🔴 **Cap nhat B6 (27/09): `toc_do` CUNG da chuyen xuong GD2 — GD1 ⛔ khong con
+   THUC THI mot phep bien tap nao.** Truoc B6, GD1 giu rieng `toc_do` va vi the
+   doi TRUC thoi gian TRUOC khi GD2 cat, bat ba cho khac tu doi truc bang tay
+   (sinh ra T2 · T17 · mot ca cat vao giua cau thoai). Nay GD1 chi con `vung`
+   (lam mo/dien nen), va no o lai vi mot rang buoc VAT LY: toa do cua `vung`
+   thuoc khung NGUON, dat TRUOC `concat`.
+   Hop dong: `docs/auto_scan_video_final/B6_PLAN_MOT_TRUC_THOI_GIAN.md`.
    Bai nay chia lam HAI phia: phia 1 la GD1 con lai (con dung `ban_dung`/
    `ket_xuat`), phia 2 la GD2 moi nhan (dung `che_do_render.loc_cat_hai_dong`/
    `giai_doan_hinh_anh.dung_lenh`) — cung khang dinh DUONG voi `test_474`: moi
@@ -31,17 +35,13 @@ KE_HOACH = {"doan": [{"ma": "s1", "dai_ms": 2000, "dat_tai_ms": 4000,
 
 
 def _ban(bien_tap=None, **them):
+    """⭐ `bien_tap` VAN o chu ky — de bai duoi chung minh GD1 **TU CHOI** no."""
     return ban_dung.dung(
         khoa_video="v/g.mp4", khoa_nen="n.wav", khoa_master="m.wav",
         ke_hoach=KE_HOACH, ban_ke_tieng={"doan": [{"ma": "s1", "khoa": "v/s1.wav"}]},
         phien_ban_ffmpeg="n8", tong_giay=8.0, che_do=cdr.CAT_MA_HOA_LAI,
         bo_ma_hoa="libx264", khoang_giu=[(0.0, 8.0)], preset="smart_localize",
-        rong_khung=1280, cao_khung=720, bien_tap=bien_tap,
-        # ⭐ Nhip NGUON — `ket_xuat` nhan voi `toc_do` de khai `-r`. Fixture phai
-        #    khai no nhu production (`giai_doan_ban_dung` doc tu ho so
-        #    `media_prepare`); thieu no thi lenh nhan mac dinh `auto` va noi dung
-        #    lech 40 ms. 25 x 1,25 = 31,25.
-        fps_nguon=them.pop("fps_nguon", 25.0), **them)
+        rong_khung=1280, cao_khung=720, bien_tap=bien_tap, **them)
 
 
 def _lenh(ban, **kw):
@@ -66,20 +66,32 @@ def test_khong_bien_tap_thi_ban_dung_KHONG_mang_khoa_moi():
     assert _ban()["ra"]["thoi_luong_giay"] == 8.0
 
 
-def test_ban_dung_GD1_CHI_con_toc_do__khung_KHONG_con_hop_le():
-    """`khung_ra` khong con duoc GD1 TINH — chi `toc_do` doi thoi luong ra."""
-    ban = _ban({"toc_do": 1.25})
+def test_ban_dung_GD1_TU_CHOI_moi_ho_so_bien_tap__ke_ca_toc_do():
+    """🔴 **B6: GD1 NEM khi bi truyen `bien_tap`, ke ca chi co `toc_do`.**
+
+    ⭐ Va `thoi_luong_ra` cua GD1 nay = `tong_giay` (8,0) — ⛔ KHONG con chia cho
+       `toc_do` (6,4 truoc B6). Do la phep do truc tiep cua *"GD1 ⛔ khong con
+       doi moc thoi gian"*: neu ai tra lai phep chia thi con so nay doi ngay.
+
+    ⛔ Im lang bo qua se te hon nem: khach xin mot phep ma ⛔ KHONG giai doan nao
+       thuc thi — GD2 chi doc `cai_dat.doc(run)`, ⛔ khong doc ban dung nay.
+    """
+    ban = _ban()
     assert "khung_ra" not in ban["hinh"]
-    assert ban["ra"]["thoi_luong_giay"] == pytest.approx(6.4)
-    # 🔴 `khung`/`zoom`/`cat_khung`/`lat_guong`/`dich_mau` da chuyen xuong GD2:
-    #    mot ban dung GD1 con mang chung la mot hop dong noi doi (khong ai ve no
-    #    len hinh o GD1 nua) — `_kiem_bien_tap` NEM.
-    with pytest.raises(ban_dung.BanDungError, match="không thuộc về nó"):
-        _ban({"toc_do": 1.25, "khung": {"ti_le": "9:16", "cach": "cat"}})
+    assert ban["ra"]["thoi_luong_giay"] == pytest.approx(8.0)
+    for bt in ({"toc_do": 1.25},
+               {"khung": {"ti_le": "9:16", "cach": "cat"}},
+               {"toc_do": 1.25, "khung": {"ti_le": "9:16", "cach": "cat"}}):
+        with pytest.raises(ban_dung.BanDungError, match="giai đoạn 2"):
+            _ban(bt)
 
 
 def test_kiem_chan_bien_tap_o_duong_sao_chep():
-    ban = _ban({"toc_do": 1.25})
+    """⚠️ Tiem `bien_tap` bang TAY: tu B6 `dung()` tu choi no ngay o cua vao, nen
+    duong duy nhat mot ban dung co `hinh.bien_tap` la bi ghi truc tiep — vd mot
+    ban dung CU doc lai tu kho. `kiem` van phai chan."""
+    ban = _ban()
+    ban["hinh"]["bien_tap"] = {"toc_do": 1.25}
     ban["hinh"]["cach_render"] = cdr.SAO_CHEP
     with pytest.raises(ban_dung.BanDungError, match="biên tập lại hình"):
         ban_dung.kiem(ban)
@@ -109,47 +121,96 @@ def test_co_vung_thi_GD1_VAN_ma_hoa_lai():
     assert "-shortest" in cmd
 
 
-def test_toc_do_hinh_va_tieng_CUNG_he_so_trong_MOT_do_thi():
-    cmd = _lenh(_ban({"toc_do": 1.25}))
-    fc = _fc(cmd)
-    assert "setpts=PTS/1.2500[ra]" in fc and "[1:a]atempo=1.2500[a_ra]" in fc
-    assert cmd[cmd.index("[a_ra]") - 1] == "-map" and "1:a:0" not in cmd
-    # 🔴 `-fps_mode passthrough` -> `-r nguon x toc` (27/09, chu du an chi ra).
-    #
-    # `setpts` doi MOC; `-r` moi bao bo ma hoa SAP LAI thanh nhip DEU. Thieu no
-    # thi moc bi lam tron va nhieu khung roi vao cung mot moc — do duoc 269 moc
-    # TRUNG tren mot luot 30 fps, 100 tren 25 fps (T17 do).
-    #
-    # ⭐ Do tren fixture `test_2064` (nguon 25 fps, chop sang phai ra 3,200 s),
-    #    do CA BA cot — vi hai cot thoi da lam toi chon sai hai lan:
-    #      nhip khai (-r)        lech chop   troi A/V   loi DTS   khung
-    #      passthrough             15,9 ms     15,9        40      199
-    #      ⛔ khong khai            40,0 ms     55,9         0      159
-    #      25 = nguon              80,0 ms     95,9         0      159
-    #      **31,25 = nguon x toc**  **0,0**   **15,9**   **0**    **199**
-    #    ⇒ `nguon x toc` la cau tra loi DUY NHAT xanh ca ba, VA giu het khung.
-    assert cmd[cmd.index("-r") + 1] == "31.25", cmd
-    assert "-fps_mode" not in cmd, cmd
-    assert "-fps_mode" not in _lenh(_ban())
-    assert [cmd[i + 1] for i, x in enumerate(cmd) if x == "-c:v"] == ["libx264"]
+def test_GD1_KHONG_BAO_GIO_phat_setpts_atempo_hay_r():
+    """🔴 **Bat bien B6: chuoi cua GD1 ⛔ khong chua MOT phep doi moc thoi gian.**
 
+    `setpts=PTS/` (nen moc hinh), `atempo` (nen moc tieng) va `-r` (khai nhip ra)
+    deu la phep doi truc, va hop dong buoc chung xep o CUOI GD2. Do CA hai duong
+    GD1: co `vung` (ma hoa lai) va ⛔ khong `vung` (remux).
 
-def test_vung_van_o_GD1__dat_TRUOC_toc_do():
+    ⛔ Va `loc_cat_noi` NEM neu bi truyen `toc_do` — mot lan chay giao tep ⛔ CHUA
+       doi toc do la thu khach phat hien ra truoc ta, nen cho nay phai on ao.
+    """
     vung = vung_che.chuan_hoa([{"x0": 0.1, "y0": 0.1, "x1": 0.3, "y1": 0.3,
                                 "loai": "lam_mo"}])
-    ban = _ban({"toc_do": 1.25}, vung=vung)
-    fc = _fc(_lenh(ban))
-    vi_tri = [fc.index(m) for m in ("boxblur=luma_radius=min(w", "setpts=PTS/1.25")]
-    assert vi_tri == sorted(vi_tri), fc
+    for ban in (_ban(), _ban(vung=vung)):
+        cmd = _lenh(ban)
+        assert "-r" not in cmd and "-fps_mode" not in cmd, cmd
+        fc = cmd[cmd.index("-filter_complex") + 1] if "-filter_complex" in cmd else ""
+        assert "setpts=PTS/" not in fc and "atempo" not in fc, fc
+        # ⭐ Tieng di thang tu ban phoi, ⛔ khong qua mot nhan loc nao.
+        assert "1:a:0" in cmd and "[a_ra]" not in cmd
+
+    with pytest.raises(cdr.CheDoError, match="giai đoạn 2"):
+        cdr.loc_cat_noi([(0.0, 8.0)], bien_tap={"toc_do": 1.25})
+
+
+def test_vung_o_GD1_va_toc_do_o_GD2__va_do_la_DUNG_thu_tu():
+    """⭐ Truoc B6 hai phep nay nam trong MOT chuoi va thu tu la mot khang dinh
+    ve chuoi. Nay chung o HAI lenh khac nhau, va thu tu do CHINH DUONG ONG bao
+    dam: GD1 chay truoc GD2. Bai nay chot rang moi phep o dung lenh cua no."""
+    vung = vung_che.chuan_hoa([{"x0": 0.1, "y0": 0.1, "x1": 0.3, "y1": 0.3,
+                                "loai": "lam_mo"}])
+    fc1 = _fc(_lenh(_ban(vung=vung)))
+    assert "boxblur=luma_radius=min(w" in fc1 and "setpts=PTS/" not in fc1
+
+    _, fc2 = _fc_gd2(bien_tap={"toc_do": 1.25})
+    assert "setpts=PTS/1.2500" in fc2 and "boxblur" not in fc2
 
 
 # ══ 2b. GD2 — khung -> diem_anh -> logo -> chu -> phu de, MOT chuoi ═════════
+
+def _kiem_do_thi(loc: str) -> None:
+    """🔴 **Kiem DO THI loc, ⛔ khong kiem VI TRI chuoi.**
+
+    Do 27/09 bang mot phep tiem: doi `hinh_cuoi` ve `NHAN_HINH_RA` (tuc ap toc do
+    ma ⛔ khong noi day chuoi vao no) sinh ra mot do thi **HONG** —
+
+        [v0][a0]concat=...[vr][truoc_toc_a]
+        [truoc_toc]setpts=PTS/1.2500[vr]     <- `truoc_toc` ⛔ KHONG ai sinh,
+                                                va `vr` bi sinh HAI lan
+
+    ffmpeg se tu choi chuoi ay. Nhung moi khang dinh dua tren **vi tri** (*"setpts
+    o buoc thu hai tu duoi"*) van XANH, vi phep tiem ⛔ khong doi thu tu cac buoc
+    duoc noi vao. ⇒ Bai kiem do CACH GO chu ⛔ khong do dieu no chot — dung ho
+    `banh coc do CACH GO thay vi do tinh chat`.
+
+    ⭐ Phep kiem dung la mot BAT BIEN cua do thi: moi nhan trung gian duoc sinh
+       DUNG MOT lan, va moi nhan bi tieu thu phai co ai sinh ra no. No bat ca hai
+       khiem khuyet tren cung luc, va bat moi loi noi day khac ma ⛔ khong ai nghi
+       ra tu truoc.
+    """
+    import re
+
+    sinh: list[str] = []
+    tieu_thu: list[str] = []
+    for buoc in loc.split(";"):
+        # ⭐ Tach VAO / RA bang cho dat: nhan o DAU buoc la dau vao, nhan sau ten
+        #    bo loc la dau ra. Mot buoc co the co NHIEU ca hai (vd `concat`).
+        m_vao = re.match(r"^(\[[^\]]+\])+", buoc)
+        vao = re.findall(r"\[([^\]]+)\]", m_vao.group(0)) if m_vao else []
+        m_ra = re.search(r"(\[[^\]]+\])+$", buoc)
+        ra = re.findall(r"\[([^\]]+)\]", m_ra.group(0)) if m_ra else []
+        # ⛔ Nhan dang `0:v` / `1:a` la dau vao NGOAI (tep), ⛔ khong trung gian.
+        tieu_thu += [n for n in vao if ":" not in n]
+        sinh += ra
+
+    trung = sorted(n for n in set(sinh) if sinh.count(n) > 1)
+    assert not trung, "nhan bi SINH nhieu lan: %s\n%s" % (trung, loc)
+    mo_coi = sorted(set(tieu_thu) - set(sinh))
+    assert not mo_coi, (
+        "nhan bi TIEU THU ma ⛔ khong ai sinh: %s — do thi loc HONG, ffmpeg "
+        "se tu choi\n%s" % (mo_coi, loc))
+
 
 def _fc_gd2(**kw):
     cmd = gdha.dung_lenh("C:/t/gd1.mp4", "C:/t/ra.mp4", khoang=[(0.0, 8.0)],
                          bo_ma_hoa="libx264", ffmpeg_bin="ffmpeg", **kw)
     assert cmd.count("-filter_complex") == 1, cmd
-    return cmd, cmd[cmd.index("-filter_complex") + 1]
+    loc = cmd[cmd.index("-filter_complex") + 1]
+    # ⭐ MOI chuoi GD2 di qua day deu bi kiem DO THI — xem `_kiem_do_thi`.
+    _kiem_do_thi(loc)
+    return cmd, loc
 
 
 def test_thu_tu_khung_diem_anh_logo_chu_phu_de_GD2(tmp_path):
@@ -173,6 +234,56 @@ def test_thu_tu_khung_diem_anh_logo_chu_phu_de_GD2(tmp_path):
     assert vi_tri == sorted(vi_tri), fc
     # ⛔ `toc_do` KHONG co mat o day — no van la viec cua GD1.
     assert "atempo" not in fc and "setpts=PTS/" not in fc
+
+
+def test_toc_do_o_DUOI_CHUOI_GD2__sau_ca_phu_de__tren_CA_HAI_dong(tmp_path):
+    """🔴 **Toc do la buoc CUOI CUNG tuyet doi (B6), ke ca sau `ass`.**
+
+    Vi sao thu tu nay la mot QUYET DINH: moi buoc tren no DOC moc thoi gian (cat
+    theo khoang, dot phu de theo moc). Dat toc do truoc bat ca chung doi truc
+    theo — dung cai gia ma T2/T17 da tra. Dat sau thi ⛔ khong ai phai doi.
+
+    ⭐ Va phu de duoc dot TRUOC `setpts` con mang mot mon qua: moc phu de duoc co
+       gian CUNG hinh, tu dong, ⛔ khong mot phep doi truc nao.
+    """
+    ass = tmp_path / "p.ass"
+    ass.write_text("[Script Info]\n", encoding="utf-8")
+    cmd, fc = _fc_gd2(bien_tap={"toc_do": 1.25}, duong_ass=str(ass),
+                      thoi_luong_ra=8.0, fps_vao=25.0)
+    buoc = fc.split(";")
+    # ⭐ Hai phep doi moc la HAI buoc CUOI, ⛔ khong o giua.
+    assert "setpts=PTS/1.2500" in buoc[-2] and "atempo=1.2500" in buoc[-1], fc
+    assert "ass=" in ";".join(buoc[:-2]), fc
+    # ⭐ CA HAI dong, CUNG he so — `atempo` thieu thi hinh va tieng lech dan.
+    assert f"[{cdr.NHAN_HINH_RA}]" in buoc[-2]
+    assert f"[{cdr.NHAN_TIENG_RA}]" in buoc[-1]
+    # 🔑 **`-r` = nhip VAO x toc (T17): 25 x 1,25 = 31,25.** `setpts` doi MOC;
+    #    `-r` moi bao bo ma hoa SAP LAI thanh nhip DEU. Thieu no thi moc bi lam
+    #    tron va nhieu khung roi vao CUNG mot moc — do duoc 269 moc TRUNG tren
+    #    mot luot 30 fps, 100 tren 25 fps.
+    #
+    # ⭐ Do tren fixture `test_2064` (nguon 25 fps, chop sang phai ra 3,200 s),
+    #    do CA BA cot — vi hai cot thoi da lam chon sai HAI lan:
+    #      nhip khai (-r)           lech chop   troi A/V   loi DTS   khung
+    #      passthrough                15,9 ms     15,9        40      199
+    #      ⛔ khong khai (`auto`)      40,0 ms     55,9         0      159
+    #      25 = nhip vao              80,0 ms     95,9         0      159
+    #      **31,25 = vao x toc**      **0,0**   **15,9**    **0**   **199**
+    #      30                         66,7 ms     82,5         0      191
+    #    ⇒ `vao x toc` la cau tra loi DUY NHAT xanh ca ba cot, VA giu het khung.
+    #
+    # ⚠️ Chu du an de xuat *"fps dau vao = dau ra"*. So do BAC: `-r 25` lam noi
+    #    dung TRE 80 ms — te hon ca viec ⛔ khong khai gi — vi CFR buoc phai BO
+    #    khung. `vao x toc` la nhip ma noi dung VON DA CO sau khi `setpts` nen
+    #    moc, nen khai no thi bo ma hoa dat khung dung luoi, ⛔ bo khung nao.
+    assert cmd[cmd.index("-r") + 1] == "31.25", cmd
+    # 🔑 `-t` = do dai sau cat CHIA cho toc: 8,0 / 1,25 = 6,4. Thieu phep chia thi
+    #    `-t` dai hon tep thuc va ⛔ khong ghim gi (toc > 1).
+    assert cmd[cmd.index("-t") + 1] == "6.400000", cmd
+    # ⛔ Duong `toc_do = 1` ⛔ khong doi mot byte nao.
+    cmd1, fc1 = _fc_gd2(thoi_luong_ra=8.0, fps_vao=25.0)
+    assert "setpts=PTS/" not in fc1 and "atempo" not in fc1
+    assert "-r" not in cmd1 and cmd1[cmd1.index("-t") + 1] == "8.000000"
 
 
 def test_logo_va_chu_dat_theo_khung_BAN_RA_GD2():
@@ -213,14 +324,17 @@ def test_kiem_khung_ra_BAN_GIAO_do_KICH_THUOC():
 
 # ══ 3. Noi mach: COMPOSE chuyen toc_do, GD1 KHONG con logo/khung, GD2 nhan ═══
 
-def test_compose_CHUYEN_toc_do__GD1_KHONG_con_logo_khung__GD2_nhan():
+def test_compose_KHONG_truyen_bien_tap__GD1_khong_logo_khung__GD2_nhan():
     from apps.auto_scan_video import (giai_doan_ban_dung as gdb,
                                       giai_doan_hinh_anh as gh,
                                       giai_doan_ket_xuat as gdk)
 
     kw = {k.arg for n in ast.walk(ast.parse(inspect.getsource(gdb.chay)))
           if isinstance(n, ast.Call) for k in n.keywords if k.arg}
-    assert "bien_tap" in kw
+    # 🔴 **B6: COMPOSE ⛔ khong con truyen `bien_tap` (hay `fps_nguon`) xuong GD1.**
+    #    Dung AST chu ⛔ khong chuoi tho: chu thich giai thich LY DO cua lan tai
+    #    cau truc CO nhac ten chung, va do ⛔ khong phai loi.
+    assert not (kw & {"bien_tap", "fps_nguon"}), kw
     # ⛔ GD1 khong con GOI ham voi cac tu khoa nay (dung AST, khong phai chuoi
     #    tho — chu thich giai thich LY DO cua lan tai cau truc CO the nhac ten
     #    chung, va do khong phai loi).

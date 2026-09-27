@@ -270,6 +270,26 @@ def soi(duong: str, *, hoi_huy=None) -> dict:
 #  Chinh sach dau vao
 # ══════════════════════════════════════════════════════════════════════════════
 
+def nhip_that(tt: dict) -> float:
+    """Nhip THAT cua luong hinh trong mot ho so `soi`, hay `0.0` khi ⛔ khong biet.
+
+    ⭐ **MOT noi tra loi cau *"video nay chay bao nhieu khung mot giay"*.** `soi`
+       ghi BA truong — `fps` (`r_frame_rate`, nhip DANH DINH), `fps_tb`
+       (`avg_frame_rate`, nhip THAT) va `vfr` — va ai doc rieng MOT truong thi
+       doc sai mot nua ca video: voi nguon VFR, `r_frame_rate` thuong CAO hon
+       nhip that, nen khai no o `-r` se bat bo ma hoa NHAN BAN khung.
+
+    ⚠️ `0.0` = *"⛔ khong biet"*, KHAC han *"nhip bang 0"*. Noi goi phai phan
+       biet hai ca do va ⛔ KHONG doan mot con so khi ⛔ khong biet — ep video
+       cua khach ve mot nhip ta bia ra thi te hon la de bo ma hoa tu chon.
+    """
+    try:
+        nhip = float((tt.get("fps_tb") if tt.get("vfr") else tt.get("fps")) or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+    return nhip if nhip > 0 else 0.0
+
+
 def kiem_chinh_sach(tt: dict) -> None:
     """Thi hanh `MVP_CONTRACT.md` muc 2. Nem `MediaError` kem ly do doc duoc.
 

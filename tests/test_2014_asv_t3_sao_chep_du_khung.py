@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from apps.auto_scan_video import (ban_dung, che_do_render as cdr,  # noqa: E402
-                                  ket_xuat, qc)
+                                  ket_xuat, qc, vung_che)
 from tests.fixtures import asv_media as fx  # noqa: E402
 
 #: 🔑 **Dieu kien lam `-shortest` cat luong hinh, do 23/09 tren phim khach:**
@@ -75,12 +75,18 @@ def _ban(cach: str) -> dict:
         ban["hinh"].update({"bo_ma_hoa": "libx264", "rong_khung": 320,
                             "cao_khung": 240,
                             "khoang_giu": [[0.0, DAI_HINH_S]],
-                            # 🔴 gd2-diem-anh: preset CAT ma GD1 KHONG co vung
-                            # /toc_do thi REMUX (khong con `-shortest`, xem
-                            # `ket_xuat.dung_lenh`). `-shortest` chi con y
-                            # nghia khi GD1 THAT SU ma hoa lai — gia lap dieu
-                            # do bang mot `toc_do` khac 1.
-                            "bien_tap": {"toc_do": 1.1}})
+                            # 🔴 **B6 (27/09): `vung` la ly do DUY NHAT con lai
+                            #    de GD1 ma hoa lai.** Preset CAT ma GD1 ⛔ khong
+                            #    co `vung` thi REMUX, va duong remux ⛔ khong con
+                            #    `-shortest` (xem `ket_xuat.dung_lenh`).
+                            #
+                            # ⚠️ Ban truoc gia lap dieu nay bang `toc_do != 1`.
+                            #    Tu B6 `toc_do` ap o GD2, nen mot `bien_tap` o
+                            #    day ⛔ khong con bat GD1 lam gi ca — fixture ay
+                            #    se lang le roi ve duong remux.
+                            "vung": vung_che.chuan_hoa(
+                                [{"x0": 0.1, "y0": 0.1, "x1": 0.3, "y1": 0.3,
+                                  "loai": "lam_mo"}])})
     return ban
 
 

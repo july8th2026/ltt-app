@@ -342,9 +342,20 @@ def do_ban_giao(duong: str, *, bien_tap=None, hoi_huy=None,
     🔴 **`bien_tap` (27/09): chinh cau "khi khong doi toc do" o dong tren la mot
        PHAM VI, va ngoai pham vi do ham nay do SAI.**
 
-       `ket_xuat.dung_lenh` ap `atempo=toc` cho ve tieng khi `toc_do != 1`
+       Duong ong ap `atempo=toc` cho ve tieng khi `toc_do != 1`
        (`che_do_render.loc_toc_do_tieng`). Ban ma hoa thu o day thi ⛔ khong ap,
        nen voi `toc_do = 1,25` no do mot tin hieu **khac** tin hieu khach nhan.
+
+       ⚠️ **Tu B6 (27/09) phep `atempo` ay o GD2** (`loc_cat_hai_dong`, duoi
+       chuoi), ⛔ khong con o `ket_xuat.dung_lenh`. Ly le tren ⛔ KHONG doi — khach
+       VAN nhan tin hieu da qua `atempo`, nen ban thu VAN phai ap no. Nhung HINH
+       DANG chuoi thi doi: truoc B6 la `atempo` + MOT lan AAC; nay la AAC (GD1,
+       ⛔ khong atempo) roi `atempo` + AAC (GD2).
+
+       ⛔ **Con so 0,23 LU duoi day do tren chuoi TRUOC B6** — no ⛔ chua duoc do
+       lai tren chuoi hai lan AAC. Giu lai vi no van chung minh dieu can chung
+       minh (*ban thu phai ap `atempo`*), nhung ⛔ dung tri no nhu do chinh xac
+       cua chuoi hien tai.
 
        Do tren lan chay that `asvr_f997f794` (27/09):
            ban phoi (PCM)        -14,86 LUFS
@@ -365,9 +376,9 @@ def do_ban_giao(duong: str, *, bien_tap=None, hoi_huy=None,
         thu = str(Path(tam) / f"thu.{ban_dung.CODEC_TIENG}")
         cmd = [media.ffmpeg_bin(), "-y", "-hide_banner", "-loglevel", "error",
                "-i", str(duong)]
-        # ⭐ CUNG ham ma `ket_xuat.dung_lenh` dung, ⛔ khong go lai mot chuoi
-        #    `atempo` thu hai: hai ban sao cua mot phep bien doi la thu kho nay
-        #    da tra gia nhieu lan.
+        # ⭐ CUNG ham ma duong ong dung (`loc_cat_hai_dong` o GD2 tu B6), ⛔ khong
+        #    go lai mot chuoi `atempo` thu hai: hai ban sao cua mot phep bien doi
+        #    la thu kho nay da tra gia nhieu lan.
         from . import che_do_render as _cdr
 
         ve = _cdr.loc_toc_do_tieng(bien_tap, nhan_vao="0:a", nhan_ra="a_thu")
