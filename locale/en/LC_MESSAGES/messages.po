@@ -22111,3 +22111,30 @@ msgstr "Character not found."
 
 msgid "Tối đa {a} ảnh · {v} video · {u} audio (tổng {t}) · ảnh/audio ≤20MB · video ≤60MB."
 msgstr "At most {a} images · {v} videos · {u} audio (total {t}) · images/audio <=20MB · video <=60MB."
+
+msgid "Phán quyết không hợp lệ."
+msgstr "Invalid verdict."
+
+msgid "Cần nội dung góp ý để sửa kịch bản."
+msgstr "Feedback text is required to revise the script."
+
+msgid "AI Director đang sửa kịch bản"
+msgstr "AI Director is revising the script"
+
+msgid "Brief chưa đủ điều kiện."
+msgstr "The brief does not meet the requirements yet."
+
+msgid "Không tìm thấy brief."
+msgstr "Brief not found."
+
+msgid "Không tìm thấy lượt."
+msgstr "Iteration not found."
+
+msgid "Nội dung brief tối thiểu {n} ký tự."
+msgstr "The brief must be at least {n} characters."
+
+msgid "đang chuẩn hóa kết quả"
+msgstr "normalizing the result"
+
+msgid "đang ghép góp ý vào brief"
+msgstr "merging feedback into the brief"

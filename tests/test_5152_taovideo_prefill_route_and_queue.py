@@ -159,18 +159,47 @@ def test_video_ref_khong_tu_stage_nhung_duoc_dem_vao_bo_qua(api):
     assert data["bo_qua"] == 1
 
 
-def test_qua_bon_anh_bi_cat_nhung_bao_so_bi_cat(api):
-    """Tran 4 tai san cua `taovideo` thang tran 9 anh cua ben giao bai —
-    va so bi cat phai duoc BAO, khong cat am tham."""
+def test_qua_tran_anh_bi_cat_nhung_bao_so_bi_cat(api):
+    """Vuot tran anh thi bi CAT, va so bi cat phai duoc BAO — khong cat am tham.
+
+    ⭐ Doc `refs.TRAN_ANH` chu KHONG go so: ban truoc khang dinh `== 4` va do
+    ngay khi chu du an dao quyet dinh sang tran 9 (nguyen van BOT GEMINI,
+    `# Seedance 2.0 hard limits`). Mot phep kiem go tay tran la mot phep kiem
+    se do lai lan sau — con hanh vi dang bao ve thi KHONG doi.
+    """
+    from apps.taovideo import refs as tv_refs
     client, csrf, _uid = api
+    # Dung TRAN + 1 de chac chan co dung MOT anh bi cat, bat ke tran la bao nhieu.
+    so_gui = tv_refs.TRAN_ANH + 1
     refs = [{"kind": "image", "url": PNG_DATA_URL,
              "role": "reference_image", "handle": f"@IMG_{i + 1}"}
-            for i in range(6)]
+            for i in range(so_gui)]
     data = client.post("/taovideo/prefill",
                        json={"csrf_token": csrf,
                              "payload": _payload(refs)}).json()
-    assert len(data["ref_keys"]) == 4
-    assert data["bo_qua"] == 2
+    assert len(data["ref_keys"]) == tv_refs.TRAN_ANH
+    assert data["bo_qua"] == 1
+
+
+def test_duoi_tran_thi_khong_cat_gi(api):
+    """Doi chung cho phep tren: DUOI tran thi khong mat anh nao.
+
+    ⛔ Ca nay PHAI la mot phep RIENG, khong phai luot goi thu hai trong phep
+    tren: tai san cua luot truoc VAN CON trong kho cua cung chu so huu, nen luot
+    sau cham `TRAN_TONG` va tra ve mot con so khong noi gi ve viec bi cat. Mot
+    doi chung dung chung TRANG THAI voi phep chinh khong con la doi chung.
+    """
+    from apps.taovideo import refs as tv_refs
+    client, csrf, _uid = api
+    so_gui = tv_refs.TRAN_ANH - 1
+    refs = [{"kind": "image", "url": PNG_DATA_URL,
+             "role": "reference_image", "handle": f"@IMG_{i + 1}"}
+            for i in range(so_gui)]
+    data = client.post("/taovideo/prefill",
+                       json={"csrf_token": csrf,
+                             "payload": _payload(refs)}).json()
+    assert len(data["ref_keys"]) == so_gui
+    assert data["bo_qua"] == 0
 
 
 def test_prefill_khong_co_csrf_thi_tu_choi(api):
