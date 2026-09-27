@@ -52,8 +52,14 @@ def test_typed_and_legacy_references_share_owner_gate_dedupe_and_cap(storage):
 
 
 def test_video_reference_cap_is_enforced_after_dedupe(storage):
+    from apps.taovideo import refs as tai_san
     keys = []
-    for index in range(5):
+    for index in range(tai_san.TRAN_ANH + 1):
         key = f"agent-assets/u1/{index}.png"; storage.put(key, _png(), "image/png"); keys.append(key)
-    with pytest.raises(ValueError, match="tối đa 4"):
+    # Tran nay la tran CUNG cua engine Seedance 2.0 (`refs.TRAN_ANH`),
+    # khong con la so 4 rieng cua app. Duoi tran thi PHAI qua — neu
+    # khong, phep kiem tren co the xanh chi vi ham luon nem.
+    assert len(_reference_specs({"image_keys": keys[:-1]}, "u1", storage)) \
+        == tai_san.TRAN_ANH
+    with pytest.raises(ValueError, match=f"{tai_san.TRAN_ANH} ảnh"):
         _reference_specs({"image_keys": keys}, "u1", storage)

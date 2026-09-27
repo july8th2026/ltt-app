@@ -77,7 +77,12 @@ def test_reference_preview_uses_selected_local_file_and_preserves_safe_dom_contr
     assert "title.textContent=file.name" in page
     assert "insertAdjacentHTML" not in page
     assert "selected=selectedFiles()" in page and "files=selected.length" in page
-    assert "total>4" in page
+    # Tran tong khong con go trong JS — no den tu server. Phep kiem HANH VI
+    # (nop qua tran bi tu choi) nam o tests/test_5200_taovideo_tran_tai_san.py;
+    # o day chi giu bat bien cua HOP DONG DOM: JS doc tran tu `data-tran-*`.
+    assert "total>4" not in page
+    assert 'data-tran-tong="{{ tran_tong }}"' in page
+    assert "total>TRAN.tong" in page
 
 
 def test_empty_library_cannot_force_horizontal_scroll_on_mobile():

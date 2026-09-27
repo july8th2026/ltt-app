@@ -73,15 +73,20 @@ def test_upload_ref_luu_metadata_va_chuan_hoa_role(tmp_path, monkeypatch):
         dbmod.reset_engine()
 
 
-def test_upload_ref_tu_choi_mime_va_qua_bon_file(monkeypatch):
+def test_upload_ref_tu_choi_mime_va_vuot_tran_anh(monkeypatch):
     from apps.taovideo.routes import _luu_refs
+    from apps.taovideo import refs as tai_san
     import platform_core.storage as storage_module
     monkeypatch.setattr(storage_module, "get_storage", lambda: _Storage())
 
     with pytest.raises(ValueError, match="không hỗ trợ"):
         asyncio.run(_luu_refs("u1", [_upload("x.exe", "application/octet-stream")], []))
-    with pytest.raises(ValueError, match="Tối đa 4"):
-        asyncio.run(_luu_refs("u1", [_upload(f"{i}.png", "image/png") for i in range(5)], []))
+    # Trần nay là trần CỨNG của engine (`refs.TRAN_ANH`), không phải số 4
+    # riêng của app; đọc hằng số để phép kiểm không phải sửa lần nữa.
+    with pytest.raises(ValueError, match=f"{tai_san.TRAN_ANH} ảnh"):
+        asyncio.run(_luu_refs(
+            "u1", [_upload(f"{i}.png", "image/png")
+                   for i in range(tai_san.TRAN_ANH + 1)], []))
 
 
 def test_batch_invalid_khong_de_lai_file_da_luu(monkeypatch):
@@ -136,10 +141,24 @@ def test_saved_asset_chi_resolve_tu_lich_su_dung_owner(tmp_path, monkeypatch):
         dbmod.reset_engine()
 
 
-def test_ui_co_asset_library_va_gioi_han_tong_bon():
+def test_ui_co_asset_library_va_gioi_han_tong_lay_tu_server():
+    """Trần trong JS phải ĐẾN TỪ SERVER, không gõ lại trong template.
+
+    Trước 27/09 phép này khẳng định chuỗi `total>4` có trong HTML — nó
+    xanh với BẤT KỲ con số nào, nên không chứng minh trần có hiệu lực.
+    Nay đo tính chất: template không chứa trần trần trụi, và JS đọc trần
+    qua `data-tran-*` do `_render` truyền từ `apps.taovideo.refs`.
+    """
+    from apps.taovideo import refs as tai_san
     page = (ROOT / "apps/taovideo/templates/taovideo.html").read_text(encoding="utf-8")
     assert 'href="#tv-assets"' in page
     assert 'name="saved_ref_keys"' in page
     assert "function syncRefLimit()" in page
-    assert "total>4" in page
     assert "Chưa có tài sản đã lưu" in page
+    # ⛔ không còn trần gõ trần trụi, và trần đi từ server:
+    assert "total>4" not in page and "total>=4" not in page
+    assert 'data-tran-tong="{{ tran_tong }}"' in page
+    assert "total>TRAN.tong" in page and "+d.tranTong" in page
+    # ... va con so server THAT SU cho ra la tran cua engine:
+    from apps.taovideo.routes import _render  # noqa: F401 — cua truyen tran
+    assert tai_san.TRAN_TONG == 12
