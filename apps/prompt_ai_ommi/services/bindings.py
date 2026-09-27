@@ -65,7 +65,7 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _clean_kind(value: str) -> str:
+def _clean_kind(value: str | None) -> str:
     kind = (value or "").strip().lower()
     if kind not in _KINDS:
         raise BindingError(
@@ -73,7 +73,7 @@ def _clean_kind(value: str) -> str:
     return kind
 
 
-def _clean_role(kind: str, value: str) -> str:
+def _clean_role(kind: str, value: str | None) -> str:
     """Anh: dung lai `image_role()` cua taovideo de chuan hoa + remap ten cu,
     nhung tu choi chuoi la (xem doc o dau tep). Video/audio: chi cat do dai,
     khong co bo gia tri dong."""

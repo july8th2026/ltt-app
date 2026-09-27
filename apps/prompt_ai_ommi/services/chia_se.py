@@ -9,6 +9,7 @@ cho ca cac loai da khai trong TARGET_KINDS thay vi chi rieng tung loai).
 from __future__ import annotations
 
 import secrets
+from typing import Any
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
@@ -141,7 +142,11 @@ _SYSTEM_COLUMNS = {
 }
 
 
-def _clone_row(model: type, source, owner_id: str):
+def _clone_row(model: Any, source, owner_id: str):
+    """`model: Any` co y: day la mot lop SQLAlchemy DA MAP, va `__table__` chi
+    ton tai sau khi declarative base map no. `type` tran thi mypy khong thay
+    `__table__`; mot `Protocol` phu `Table` la nhieu may moc hon mot cho dung
+    duy nhat xung dang."""
     data = {col.name: getattr(source, col.name) for col in model.__table__.columns
            if col.name not in _SYSTEM_COLUMNS}
     row = model(owner_id=owner_id, **data)

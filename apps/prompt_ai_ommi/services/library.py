@@ -18,6 +18,7 @@ và không có đường nào thấy bản riêng của người khác.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
@@ -34,7 +35,12 @@ MAX_BODY = 24000
 PAGE_MAX = 100
 
 #: Loại thư viện -> (model, có trường `purpose`/`category` không).
-KINDS = {
+#: ⚠️ `dict[str, Any]` co y: ba model deu co `owner_id` va `archived_at`, nhung
+#:    `DeclarativeBase` khong dien dat duoc rang buoc ay, nen mypy chi thay
+#:    `type[Base]` va bao `attr-defined` o cho dung. Mot `Protocol` phu
+#:    `InstrumentedAttribute` la nhieu may moc hon mot cho dung duy nhat xung
+#:    dang. ⛔ Them model vao day thi PHAI co hai cot tren — khong ai kiem ho.
+KINDS: dict[str, Any] = {
     "meta": OmmiMetaPrompt,
     "snippet": OmmiPromptSnippet,
     "style": OmmiStyle,

@@ -12,7 +12,8 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from apps.prompt_ai_ommi.routes._shared import (
-    MANIFEST, _csrf, _require_run_enabled, _user, router, require_login, get_db)
+    MANIFEST, _csrf, _require_run_enabled, _user, body_khong_bat_buoc, router,
+    require_login, get_db)
 from apps.prompt_ai_ommi.services import nhan_vat as nv
 
 

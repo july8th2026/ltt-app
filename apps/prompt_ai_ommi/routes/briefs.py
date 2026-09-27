@@ -17,7 +17,8 @@ from sqlalchemy.orm import Session
 
 from platform_core.i18n import _ as _t
 from apps.prompt_ai_ommi.routes._shared import (
-    _csrf, _require_run_enabled, _user, get_db, require_login, router)
+    _csrf, _require_run_enabled, _user, body_khong_bat_buoc, get_db,
+    require_login, router)
 from apps.prompt_ai_ommi.services import briefs as bf
 from apps.prompt_ai_ommi.services import iterate as it
 from apps.prompt_ai_ommi.services.bundle import dung_bundle
