@@ -124,6 +124,28 @@ def pick(preset: Preset, frame_w: int, frame_h: int, reserve_mb: int = 3000,
     # Tile chon theo BUDGET (khong theo kich thuoc khung): tile to = it lan ghep
     # bien hon, nhung ton VRAM hon. ⚠️ Anh huong cua tile len DO NET la CHUA DO
     # o day — dung khai "net hon". Moi dai khai dung `est` cua no.
+    # ⭐ CHOT 2026-09-27 — tile 512 duoc GIU CO Y, khong phai vi chua ai do.
+    #
+    # Do duoc (v3 836x576, 60 khung, 3 luot, trung vi — §K cua
+    # `docs/UPSCALE_V2_CORRECTION/08_BENCHMARK_RESULTS.md`):
+    #     tile 256 -> 88,83 s,  4 761 MiB   <- NHANH HON 8,7 %, it VRAM hon 64 %
+    #     tile 512 -> 96,53 s, 13 135 MiB
+    # Bien do nay LON hon nhieu mot bac (ba luot tile 256 lech 0,3 %), nen no la
+    # hieu ung THAT, khong phai nhieu.
+    #
+    # ⛔ NHUNG dau ra KHAC NHAU: so PNG vs PNG tren 12 khung cho PSNR 45,2-46,5 dB,
+    #    SSIM 0,990-0,992, va 0/12 khung giong het tung bit. Nguon 836x576 => tile
+    #    512 chia 2x2 manh, tile 256 chia 4x3 => tile nho NHIEU DUONG GHEP hon.
+    #
+    # Chu du an chot: UU TIEN CHAT LUONG. 8,7 % toc do doi lay mot khac biet chat
+    # luong DO DUOC, trong chinh preset ten la Quality — preset khach chon VI ho
+    # uu tien chat luong hon toc do. Danh doi do tu mau thuan voi ly do ton tai
+    # cua preset.
+    #
+    # ⚠️ Muon lay 8,7 % ve sau thi phai lam TRUOC: (a) mot nguoi NHIN hai dau ra
+    #    canh nhau tren noi dung that, (b) do tren clip co VUNG PHANG / CHUYEN MAU
+    #    MUOT — noi vet ghep lo ro nhat, ma bo 4 video test hien tai KHONG co.
+    #    `tests/test_4906_upscale_chot_tile_quality.py` khoa quyet dinh nay lai.
     FAST_TILE, FAST_ALLOC, SAFETY = 512, 10024, 500
     if budget >= FAST_ALLOC + SAFETY:
         return TuneResult(model=model, tile=FAST_TILE, threads="1:2:2",
