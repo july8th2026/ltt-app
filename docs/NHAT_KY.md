@@ -378,7 +378,32 @@ Kèm hai bất biến: `0` là *không đo được* ⛔ không phải *máy có
 **không** được dùng `status/reboot` để áp CPU/RAM — nó khởi động lại **guest**
 trong cùng tiến trình QEMU cũ, nên máy boot lại mà vẫn giữ số cũ.
 
-### ⏳ CHƯA deploy — chờ làn ASV (chủ dự án chốt 26/09)
+### ✅ ĐÃ deploy 27/09 lúc 11:03 — SHA `b0a1a992b71e`
+
+*(Mục dưới đây giữ nguyên lý do phải chờ — nó vẫn đúng với ngày 26/09.)*
+
+Làn ASV deploy chung; bảy commit VPS đi kèm. Nghiệm thu bằng **trình duyệt thật**
+trên `https://app.lttstudios.com/vps` (⛔ không phải loopback, ⛔ không phải curl):
+bảng giá **159k / 209k / 329k** và cấu hình **2 vCPU · 4 GB · 40 GB** hiện đúng,
+0 lỗi console, 0 request hỏng. Hai máy khách vẫn 2 vCPU / 4096 MB, RDP mở.
+
+⚠️ **Gate chạy trên `251bfc26`, deploy là `b0a1a992`** — SHA gate là **tổ tiên**, và
+   toàn bộ chênh lệch là **một commit tài liệu** (`docs/NHAT_KY.md`, +107 dòng, ⛔
+   không đổi dòng mã nào). Đáng ghi ra chứ ⛔ đừng lờ đi.
+
+⚠️ **Gate ĐỎ 1/37**, chủ dự án chốt deploy vẫn đi. Bản ghi gốc ở
+   `<cây gate>/.gate/20260927T035402Z-24132.json`: hồ sơ `day-du`
+   (⛔ không bị hạ cấp), `cay_da_doi_giua_chung = False`, bước đỏ là *"bo test
+   (song song)"*, và **ba bước frontend BỊ BỎ QUA** — nên một chữ PASS ở đây
+   cũng ⛔ **không** nghĩa là phủ hết. Bốn bài đỏ đều ngoài khu VPS.
+
+⭐ Để chụp được trang cần đăng nhập, cookie phiên của `khach1.thu` lọt vào bản
+   ghi hội thoại. Tài khoản ấy có **18.713 credit** — đủ tạo một VPS và kích hoạt
+   một lượt **mua IP OVH thật** ⇒ đã xoay mật khẩu ngay (lưu vào kho, ⛔ không in)
+   và kiểm lại: cookie cũ trả `303`. ⛔ Một phiên thử ⛔ không phải „không có gì“
+   khi nó tiêu được tiền thật.
+
+### ⏳ (26/09) Chờ làn ASV — lý do, giữ lại làm hồ sơ
 
 Giá mới đang nằm trên `main` nhưng **chưa lên production** — `app.lttstudios.com`
 vẫn bán 149k/179k (bản đang chạy `dff24d4b`, dựng 15:28).

@@ -178,6 +178,19 @@ def _tao(args) -> str:
         "che_do_giong": args.che_do_giong,
         "giong_id": args.giong,
     }
+    # ⭐ `bien_tap` di qua DUNG cua duyet dau vao (`dich_vu_tao.dung_cai_dat`
+    #    -> `bien_tap.tu_form`), nen mot ho so sai bi tu choi o CUA chu ⛔ khong
+    #    xuong tan worker. ⛔ Khong ghi thang vao `cai_dat`: lam vay la di cua sau
+    #    cua chinh cai cua ma san pham dung cho khach.
+    #
+    # 🔴 Vi sao can co nay (27/09): `toc_do != 1` la cau hinh **duy nhat**
+    #    phoi bay hai duong ma ⛔ chua luot chay THAT nao di qua — truc cat cua
+    #    `edit_plan`/`image_finish`, va chuoi tham chieu VMAF cua T18. ⛔ Khong co
+    #    co nay thi moi luot nghiem thu deu chay `toc_do = 1`, va hai duong ay
+    #    ⛔ khong bao gio duoc do tren worker that.
+    if getattr(args, "bien_tap", ""):
+        tho["bien_tap"] = args.bien_tap
+        print("BIEN TAP:", args.bien_tap)
     for s in dbmod.get_session():
         r = s.execute(text("SELECT id FROM users WHERE email = :e"),
                       {"e": args.email}).first()
@@ -573,6 +586,8 @@ def main() -> int:
     t.add_argument("--che-do-giong", dest="che_do_giong", default="USER_SELECTED")
     t.add_argument("--giong", default="Minh Đức")
     t.add_argument("--email", default="khach1.thu@lttstudios.local")
+    t.add_argument("--bien-tap", dest="bien_tap", default="",
+                   help='JSON bien tap khung hinh, vd \'{"toc_do": 1.25}\' (chi preset smart_localize)')
     t.set_defaults(fn=lenh_tao)
 
     d = sub.add_parser("theo-doi")
@@ -590,6 +605,8 @@ def main() -> int:
     c.add_argument("--che-do-giong", dest="che_do_giong", default="USER_SELECTED")
     c.add_argument("--giong", default="Minh Đức")
     c.add_argument("--email", default="khach1.thu@lttstudios.local")
+    c.add_argument("--bien-tap", dest="bien_tap", default="",
+                   help='JSON bien tap khung hinh, vd \'{"toc_do": 1.25}\' (chi preset smart_localize)')
     c.add_argument("--tran-phut", type=float, default=90.0)
     c.add_argument("--nhip", type=float, default=3.0)
     c.add_argument("--json", default="")

@@ -109,8 +109,14 @@ def test_toc_do_hinh_va_tieng_CUNG_he_so_trong_MOT_do_thi():
     fc = _fc(cmd)
     assert "setpts=PTS/1.2500[ra]" in fc and "[1:a]atempo=1.2500[a_ra]" in fc
     assert cmd[cmd.index("[a_ra]") - 1] == "-map" and "1:a:0" not in cmd
-    # Do 22/09: thieu `passthrough` thi CFR 25 bo khung, hinh tre toi +40 ms.
-    assert cmd[cmd.index("-fps_mode") + 1] == "passthrough"
+    # 🔴 `passthrough` -> `vfr` (27/09). Ban 22/09 do TROI va thay `passthrough`
+    # tot hon — dung o 25 fps (2,0 vs 15,0 ms). Nhung no ⛔ khong do MOC TRUNG:
+    # `passthrough` sinh 100 moc trung o 25 fps va 269 o 30 fps, lam dong ra
+    # ⛔ khong hop chuan va T17/T18 do tren MOI ban giao co doi toc do.
+    # `FFmpeg/doc/ffmpeg.texi` dinh nghia `vfr` la che do "dropped so as to
+    # prevent 2 frames from having the same timestamp" — dung bat bien ta thieu.
+    # So do day du: `tests/test_4890_asv_toc_do_truc_va_hop_chuan.py`.
+    assert cmd[cmd.index("-fps_mode") + 1] == "vfr"
     assert "-fps_mode" not in _lenh(_ban())
     assert [cmd[i + 1] for i, x in enumerate(cmd) if x == "-c:v"] == ["libx264"]
 
