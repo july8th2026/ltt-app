@@ -163,7 +163,23 @@ function Editor() {
         duplicateNode={edits.duplicateNode}
         xoaNode={nodeId => { dispatch({type:'delete',ids:[nodeId]}); sel.setSelected([]) }}
         dispatch={dispatch}/>}
-      {(desktopPanel==='inspector'||mobilePanel==='inspector')&&
+      {/* 🔴 Tren MOBILE, inspector chi theo TAB MOBILE — ⛔ khong theo
+          `desktopPanel`. Bam mot node dat `desktopPanel='inspector'`, va dieu
+          kien cu (`desktopPanel==='inspector' || mobilePanel==='inspector'`)
+          lam inspector dinh cung tren man hinh: doi sang tab "Cong cu" hay
+          quay ve "Canvas" no VAN hien, de len khung ve.
+
+          Do tren trinh duyet that 27/09 (390x844), sau khi bam mot node:
+              tab "Chi tiet"  -> inspector hien   ✅
+              tab "Cong cu"   -> inspector VAN hien  ❌
+              tab "Canvas"    -> inspector VAN hien  ❌
+
+          Day la LOI KE THUA tu `CanvasShell` cu, khong phai do lan UI-3 gay ra
+          — ho giu nguyen dieu kien goc dung nhu yeu cau (thuan di chuyen). No
+          chi lo ra khi co nguoi doi tab, va truoc do khong phep kiem nao lam
+          viec ay. `tests/browser/agent_ui_v2_ui3_mobile.js` nay giu cho nay. */}
+      {(readOnly ? mobilePanel==='inspector'
+                 : desktopPanel==='inspector')&&
         <StepInspector dangMo={desktopPanel==='inspector'} selectedNode={selectedNode}
           dinhNghia={selectedDinhNghia} readOnly={readOnly} goiY={goiY}
           liveQuotes={liveQuotes} dispatch={dispatch}/>}

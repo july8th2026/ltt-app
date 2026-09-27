@@ -239,12 +239,38 @@ describe('CanvasShell', () => {
   })
 
   it('exposes responsive panel controls without hiding inspector semantics', async () => {
+    // ⚠️ SUA 27/09: bai nay bam TAB MOBILE ("Chi tiet") trong khi jsdom bao be
+    //    rong 1024. Ngoai doi do la mot trang thai KHONG XAY RA DUOC — thanh
+    //    tab mobile la `display:none` tren man rong (canvas.css @media 640px).
+    //    Truoc day no van xanh vi dieu kien render inspector la
+    //    `desktopPanel==='inspector' || mobilePanel==='inspector'` — chinh
+    //    cai OR do la CON BO: bam mot node (dat `desktopPanel`) roi doi tab
+    //    thi inspector DINH CUNG tren man hinh mobile, de len khung ve.
+    //    Do tren trinh duyet that 390x844: Chi tiet OK, Cong cu HONG, Canvas HONG.
+    //
+    // ⇒ Dat be rong MOBILE that de bai nay do dung thu no dang noi toi.
+    //    ⛔ Day la LAM CHAT, khong phai noi long: truoc no do mot trang thai
+    //    khong the xay ra, nay no do dung mot trang thai co that.
+    //    Luoi hoi quy tren trinh duyet: `tests/browser/agent_ui_v2_ui3_mobile.js`.
+    // ⚠️ `window.innerWidth` la thuoc tinh CHI DOC trong jsdom ban nay —
+    //    gan thang se nem TypeError. Phai qua `defineProperty`.
+    const datRong = (n: number) => {
+      Object.defineProperty(window, 'innerWidth',
+        {value: n, writable: true, configurable: true})
+      window.dispatchEvent(new Event('resize'))
+    }
+    const rongCu = window.innerWidth
+    datRong(390)
     render(<CanvasShell />)
     await screen.findByRole('button',{name:'Mở công cụ'})
     expect(screen.getByRole('navigation',{name:'Khu vực Canvas'})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Chi tiết'}))
     expect(screen.getByRole('button',{name:'Chi tiết'})).toHaveAttribute('aria-pressed','true')
     expect(screen.getByLabelText('Chi tiết node')).toHaveTextContent('Chọn một node')
+    // Doi sang mot tab KHAC phai TAT inspector — day la con bo da sua.
+    fireEvent.click(screen.getByRole('button',{name:'Canvas'}))
+    expect(screen.queryByLabelText('Chi tiết node')).not.toBeInTheDocument()
+    datRong(rongCu)
     // ⛔ Lich su run (`AgentRun` v1) da bo khoi bang chi tiet — trang thai
     //    luot chay v3 chi o ngan keo "Chay workflow".
     expect(screen.queryByLabelText('Run inspector')).not.toBeInTheDocument()
