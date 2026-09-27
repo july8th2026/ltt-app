@@ -445,3 +445,100 @@ một **chế độ chạy có nhiễu thấp hơn** để đo cùng thứ đó.
 ⛔ Điều này ⛔ KHÔNG nói giá sai — lưu trữ và băng thông **có** tỉ lệ với đích
 (§G.2: kích thước đầu ra 1,00 / 1,61 / 3,15×). Nó chỉ nói **cơ sở "thời gian GPU"
 ghi trong `cost.py` là sai**. Chủ dự án chốt giữ giá, điều chỉnh sau (§H.4).
+
+---
+
+# J. ĐÃ ĐO (2026-09-27) — Tile sweep **Fast**: ⛔ không có gì để tối ưu
+
+v3 (836×576) · `threads=4:4:4` · 300 khung · 3 lượt · trung vị.
+
+| tile | tv (s) | min | max | VRAM đỉnh | GPU% tb | ttff | vs tốt nhất |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 200 | **25,76** | 25,54 | 25,81 | 1 665 MiB | 74,4 | 1,02 | 0,0 % |
+| 256 | 26,11 | 25,97 | **33,09** | 1 838 MiB | 76,7 | 1,52 | +1,4 % |
+| 384 | 26,39 | 25,81 | 26,45 | 2 136 MiB | 90,6 | 1,53 | +2,4 % |
+
+## J.1 Kết luận: **giữ nguyên tile**, ⛔ không chỉnh
+
+Biên độ toàn dải **2,4 %**, mà một lượt của tile 256 lệch tới **33,09 s** — tức
+**nhiễu cùng cỡ với hiệu ứng**. Đổi mặc định để lấy 2,4 % trong điều kiện đó
+chính là **tối ưu ảo**: nó sẽ được ghi vào docs như một cải tiến, rồi người sau
+xây tiếp lên trên một con số không phân biệt được với nhiễu.
+
+⭐ Đây là kết quả **"không làm gì"** thứ ba của đợt đo (sau PNG I/O và warmup).
+Cả ba đều tiết kiệm công việc thật, và cả ba chỉ có được nhờ **đo trước khi sửa**.
+
+## J.2 Thứ DUY NHẤT có tỉ lệ thật: VRAM
+
+1 665 → 2 136 MiB (tile 200 → 384), tức tile nhỏ tiết kiệm **22 %** VRAM, đơn
+điệu và nhất quán. GPU util cũng tăng theo tile (74,4 → 90,6 %).
+
+⚠️ Nhưng VRAM ⛔ **không phải thứ đang thiếu**: đồng thời GPU = 1 (ISSUE A) và
+card có 16 GB, còn Fast chỉ chạm ~2,1 GB. Tiết kiệm một tài nguyên đang dư ⛔
+không phải tối ưu. Ghi lại để nếu **sau này** có shared-GPU thật thì có sẵn số.
+
+---
+
+# K. 🔴 ĐÃ ĐO (2026-09-27) — Tile sweep **Quality**: nhanh hơn 8,7 %, nhưng là ĐÁNH ĐỔI
+
+v3 (836×576) · `threads=1:2:2` · 60 khung · 3 lượt · trung vị.
+
+| tile | tv (s) | min | max | VRAM đỉnh | GPU% | vs tốt nhất |
+|---:|---:|---:|---:|---:|---:|---:|
+| **256** | **88,83** | 88,80 | 89,07 | **4 761 MiB** | 96,6 | **0,0 %** |
+| 320 | 94,43 | 93,33 | 94,74 | 6 408 | 97,2 | +6,3 % |
+| 384 | 94,31 | 94,28 | 95,25 | 8 263 | 96,8 | +6,2 % |
+| 448 | 95,91 | 95,80 | 97,00 | 10 516 | 97,1 | +8,0 % |
+| **512** ← mặc định | 96,53 | 96,38 | 104,85 | **13 135 MiB** | 96,8 | **+8,7 %** |
+
+Tile 256 **nhanh hơn 8,7 %** và dùng **ít hơn 64 % VRAM**. Ba lượt tile 256 lệch
+0,3 % ⇒ hiệu ứng **lớn hơn nhiễu một bậc**, ⛔ không phải nhiễu như bên Fast.
+
+## K.1 ⛔ Nhưng đầu ra KHÁC NHAU — đo rồi, không đoán
+
+Mandate §23 bắt đo **output equivalence**, ⛔ không chỉ đo tốc độ. Upscale cùng
+12 khung bằng tile 256 và tile 512, so **PNG với PNG** (⛔ không encode trước —
+encoder thêm nhiễu của chính nó):
+
+| | |
+|---|---|
+| PSNR | 45,15 – 46,46 dB (trung vị **46,02**) |
+| SSIM | 0,9898 – 0,9922 |
+| khung giống hệt từng bit | **0 / 12** |
+
+⚠️ Phép so này nói hai bên **khác nhau**, ⛔ **không** nói bên nào **đúng hơn** —
+không có ảnh ×4 chuẩn để làm tham chiếu.
+
+Nhưng có lập luận cấu trúc: nguồn 836×576 ⇒ tile 512 chia **2×2** mảnh, tile 256
+chia **4×3** mảnh. **Tile nhỏ = nhiều đường ghép hơn**, nên tile 512 gần với
+trạng thái "không chia mảnh" hơn.
+
+## K.2 Khuyến nghị: **GIỮ tile 512**, và đây là lý do
+
+⭐ 8,7 % tốc độ đổi lấy một khác biệt chất lượng đo được, **trong chính preset tên
+là Quality** — preset mà khách chọn *vì* họ ưu tiên chất lượng hơn tốc độ. Đánh
+đổi đó **tự mâu thuẫn với lý do tồn tại của preset**.
+
+⛔ Tôi ⛔ KHÔNG đổi mặc định. Đây là đánh đổi **sản phẩm** (khách nhận gì), thuộc
+quyền chủ dự án (`CLAUDE.md` luật 2).
+
+## K.3 ⚠️ Nhưng có một lý lẽ VẬN HÀNH cho tile 256 — ghi để chủ dự án cân
+
+Quality tile 512 chiếm **13 135 / 16 311 MiB**, chỉ còn **~3,2 GB** cho phần còn
+lại của máy. Mà máy này ⛔ không chỉ chạy upscale: `voice_sidecar_main.py` của
+`C:\LTTPlatform` cũng dùng GPU (quan sát 26/09, engine `cuda` ~95 %), và nó ⛔
+**không** nằm dưới cơ chế `GpuLease` nên ⛔ không bị `UniqueConstraint` chặn.
+
+⇒ Một job Quality tile 512 + một yêu cầu voice cùng lúc có thể ép VRAM. Tile 256
+để lại **11,5 GB** thay vì 3,2 GB.
+
+`CHƯA ĐO`: chưa đo ca hai tải chạy đồng thời thật. Ghi lại như **rủi ro có cơ
+sở**, ⛔ không phải sự cố đã xảy ra.
+
+## K.4 Nếu chủ dự án muốn lấy 8,7 %
+
+Thì cần trước: (a) một người **nhìn** hai đầu ra cạnh nhau trên nội dung thật
+(PSNR 46 dB thường là không phân biệt được bằng mắt — nhưng "thường" ⛔ không phải
+"đã kiểm"), và (b) đo trên nhiều loại nội dung hơn 4 clip hiện có, vì vết ghép
+biên lộ rõ nhất ở **vùng phẳng và chuyển màu mượt**, mà bộ test hiện tại ⛔ không
+có clip nào như thế (§KHÔNG CÓ MẪU).
