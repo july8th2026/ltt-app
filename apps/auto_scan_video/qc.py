@@ -768,7 +768,20 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
                         "preset giu hinh sao chep luong hinh — T3/T14 da chung "
                         "minh giong nguon tung bit, VMAF khong co gi de do",
                         che_do_render=str(che_do_render or SAO_CHEP)))
+    elif vmaf.get("tat") if isinstance(vmaf, dict) else False:
+        # ⭐ TAT CO CHU DICH, khac han ba trang thai kia. Khai ten bien de nguoi
+        #    doc bao cao biet **ai** tat va **bat lai bang gi** — mot "khong ap
+        #    dung" ⛔ khong noi ly do thi ⛔ khong ai bat lai duoc.
+        muc.append(_muc("T18", KHONG_AP_DUNG,
+                        "T18 dang TAT co chu dich (chu du an chot 27/09): phep "
+                        "SO SANH cua no sai — tham chieu va ban giao dung hai "
+                        "chinh sach nhip khac nhau — nen con so khong dang tin, "
+                        "va no ton ~32 s moi job",
+                        bien_bat=str(vmaf.get("tat"))))
     elif vmaf is None:
+        # ⛔ `None` nay nay CHI con nghia "nguoi goi ⛔ khong truyen gi" — mot ca
+        #    ⛔ khong con duong nao trong san pham dan tới, giu lai cho nguoi goi
+        #    ngoai (phep kiem) va de no ⛔ khong im lang.
         muc.append(_muc("T18", KHONG_AP_DUNG, "chua do VMAF"))
     elif vmaf.get("loi"):
         # ⛔ Khong do duoc (thieu libvmaf...) => `khong_kha_dung`, KHONG lui

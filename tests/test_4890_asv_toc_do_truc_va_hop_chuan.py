@@ -319,3 +319,65 @@ def test_4890_tran_phoi_luon_THAP_hon_tran_giao():
     assert am_master.dinh_that_phoi_db() < am_master.dinh_that_db(), (
         f"tran ban phoi {am_master.dinh_that_phoi_db()} ⛔ khong duoc cao hon hay "
         f"bang tran giao {am_master.dinh_that_db()}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  T18 TAT co chu dich (chu du an chot 27/09)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_4890_T18_mac_dinh_TAT_va_NOI_RO_vi_sao(monkeypatch):
+    """🔴 Chu du an chot TAT T18 (27/09) sau khi dieu phoi neu ro cai gia: no la
+    cong DUY NHAT canh chat luong hinh sau ma hoa lai.
+
+    ⚠️ Ly le: con so cua no hien **⛔ khong dang tin**. Do duoc tren BA luot chay
+       that lien tiep: `trung_binh = 53,783` **bit-identical**, `nho_nhat = 1,452`
+       — mot VMAF 1,45 la "gan nhu ⛔ khong giong gi", ⛔ khong the la ton that cua
+       bo ma hoa o `cq = 28`. Goc: tham chieu **1083 khung / 30 fps** vs ban giao
+       **1351 khung / 37,5 fps**, tuc phep SO SANH sai. Cong bao dong vi chinh no
+       hong thi no chan MOI ban giao co doi toc do. Cong them ~32 s moi job.
+
+    ⭐ Bai nay chot BON trang thai phan biet duoc, ⛔ khong ba:
+        `KHONG_AP_DUNG` + "preset giu hinh"        -> theo thiet ke
+        `KHONG_AP_DUNG` + ten bien bat             -> TAT co chu dich  (moi)
+        `KHONG_AP_DUNG` + "khong_kha_dung"         -> ⛔ khong do duoc
+        `DAT`/`HONG`                                -> da do
+
+       Gop hai cai giua lai thi ⛔ khong ai biet **ai** tat va **bat lai bang gi**
+       — dung ho loi `hai trang thai gop thanh mot gia tri` ma ca phien nay sua.
+    """
+    from apps.auto_scan_video import che_do_render as cdr, giai_doan_qc, qc
+
+    monkeypatch.delenv(giai_doan_qc.BIEN_T18, raising=False)
+    assert giai_doan_qc.t18_bat() is False, "T18 phai MAC DINH tat"
+    monkeypatch.setenv(giai_doan_qc.BIEN_T18, "1")
+    assert giai_doan_qc.t18_bat() is True
+    # ⛔ Chi nhan dung "1" — cung khuon voi `giai_doan_qc_ai.bat()`.
+    for xau in ("true", "yes", "0", "", " "):
+        monkeypatch.setenv(giai_doan_qc.BIEN_T18, xau)
+        assert giai_doan_qc.t18_bat() is False, xau
+
+    # ── Bao cao phai NOI RO la "tat", va noi ten bien de bat lai ─────────────
+    def _t18(vmaf):
+        bc = qc.kiem(
+            tt_ra={"thoi_luong": 10.0, "co_video": True, "co_tieng": True,
+                   "rong": 640, "cao": 360, "fps": 30.0},
+            tt_nguon={"thoi_luong": 10.0, "co_video": True, "co_tieng": True},
+            am_luong={"lufs": -14.0, "dinh_that": -2.0},
+            ke_hoach={"doan": []}, ban_ke_tieng={"doan": []},
+            ban_dung_lop=[], bam_ra="", bam_nguon="",
+            che_do_render=cdr.CAT_MA_HOA_LAI, vmaf=vmaf)
+        return next(m for m in bc["muc"] if m["ma"] == "T18")
+
+    tat = _t18({"tat": giai_doan_qc.BIEN_T18})
+    assert tat["trang_thai"] == qc.KHONG_AP_DUNG, tat
+    assert giai_doan_qc.BIEN_T18 in str(tat), (
+        f"bao cao ⛔ khong noi ten bien de bat lai: {tat}")
+
+    # ⭐ Ve DOI CHUNG: ca "⛔ khong do duoc" phai RA KHAC — neu hai ca ra cung mot
+    #    cau thi bai tren chi chot rang T18 khong DAT, ⛔ khong rang ta phan biet
+    #    duoc **vi sao**.
+    hong = _t18({"loi": "thieu libvmaf"})
+    assert hong["trang_thai"] == qc.KHONG_AP_DUNG
+    assert str(hong) != str(tat), (
+        "'TAT co chu dich' va '⛔ khong do duoc' ra cung mot bao cao — hai trang "
+        "thai gop thanh mot gia tri")
