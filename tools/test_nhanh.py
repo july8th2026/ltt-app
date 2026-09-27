@@ -620,7 +620,7 @@ def main() -> int:
         if not _duong:
             # ⛔ RONG thi NOI RA: khong co duong nao = pytest chay CA KHO,
             #    tuc mot pham vi thu hep bien thanh mot luot day du im lang.
-            print(f"[tep danh sach] {_ds} RONG — tu choi chay")
+            print(f"[tep danh sach] {_ds} RONG - tu choi chay")
             return 2
         print(f"  [tep danh sach] {len(_duong)} duong tu {_ds.name}")
         con_lai = [*con_lai, *_duong]
