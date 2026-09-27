@@ -237,6 +237,65 @@ Nhưng con số in ra **gây hiểu nhầm** cho người đọc báo cáo.
 | chữ Hán sót | **cổng kiểm sau dịch + dịch lại đoạn đó** |
 | QC sai trục | **rà TẤT CẢ 18 mục**, ⛔ không chỉ T2/T15 |
 
+## 7b. ĐÃ THI CÔNG — và bốn chỗ phép đo đổi thiết kế giữa chừng
+
+| mã | commit | thứ đã làm |
+|---|---|---|
+| **B9-4** | `9f4d1957` | T2 dựng lại phép giao từ hai bản khai độc lập; T15 áp bản đồ GĐ2 |
+| **B9-1** | `1c14dd60` | `co_chu_vua_khung` — 2 dòng trần cứng, cỡ chữ cơ động |
+| **B9-2b** | `98279ed7` | vùng che RỘNG ở 1/3 dưới = dải phụ đề; lề *title safe* 5 % |
+| **B9-2** | `7805bf40` | `x` của lớp phủ là TÂM chữ |
+| **B9-3** | `4df07ab6` | chữ Hán sót lên được báo cáo + một vòng dịch lại |
+
+### Bốn chỗ phép đo bác bỏ thiết kế ban đầu
+
+1. **`wrap_lines` ⛔ KHÔNG cắt bớt chữ.** Hết dòng thì phần còn lại bị dồn HẾT
+   vào dòng cuối, nên dòng cuối **dài ra** khi `ky_tu` nhỏ đi. Một phép giải
+   thẳng theo `ky_tu` đi **sai chiều**. ⇒ phải đo dòng THẬT sau khi ngắt.
+
+2. **⛔ Không có "khung tham chiếu".** Bản đầu tôi viết `rong_chuan = cao × 16/9`
+   rồi co theo tỉ lệ. Nó cho khung dọc `1080×1920` cỡ chữ **15 px**, vì coi một
+   khung dọc như một khung `3413×1920` bị cắt hẹp. **Một khung dọc ⛔ không phải
+   một khung ngang bị hỏng.** Bỏ hẳn phép quy chiếu ấy.
+
+3. **Bộ dò chữ Hán ⛔ KHÔNG hỏng** — `78/78` đoạn được dò, `5` dính, kèm trích.
+   Thứ hỏng là **đường báo cáo**: `content_process.outputs` ⛔ không có khoá nào
+   nhắc tới chữ Hán. ⇒ B9-3 ⛔ không phải "viết bộ dò", mà là "nối con số lên".
+
+4. **`dich_thuat.dich_ban_ghi` là ĐƯỜNG CHẾT** (`thi_hanh.py:167` ghi rõ). Suýt
+   cài cổng vào một module ⛔ không ai gọi. Đường sống: `giai_doan_noi_dung`.
+
+### Và một giả định chính sách hết hạn
+
+Chú thích ở vòng lô chọn *"ĐÁNH DẤU, ⛔ KHÔNG HUỶ"* với lý do **"0,3 % là hiếm"**.
+T1a đo **6,4 %** — gấp **21 lần**. Tiền đề ấy ⛔ không ai kiểm lại được **vì
+chính con số kiểm nó ⛔ không lên tới nơi có người đọc.**
+
+### ⛔ Đã cân nhắc và KHÔNG làm
+
+- **Mục QC `T19`** đếm chữ Hán: con số đã ở đúng tầng của nó (giai đoạn nội
+  dung). Khai thêm ở tầng QC là *"hai chỗ khai cùng một điều"* giữa hai module.
+- **BBC 68 % bề rộng**: chặt hơn SMPTE, nhưng sang đó làm **mọi** khách 16:9
+  đang chạy thấy phụ đề nhỏ hẳn. Con số ghi ở §6b để lần sau ai muốn siết.
+
+## 6b. Nguồn cộng đồng — chủ dự án yêu cầu tra, ⛔ không tự suy
+
+| nguồn | luật |
+|---|---|
+| **BBC** | **tối đa 2 dòng** (3 chỉ khi chắc ⛔ không che thông tin hình) |
+| **BBC** | 16:9: trong **90 % dọc**, **75 % ngang**; dài dòng ≤ **68 %** bề rộng; **37** ký tự |
+| **Netflix** | căn giữa, đáy màn; nâng lên đỉnh **chỉ khi** đụng chữ có sẵn; **42** ký tự |
+| **Netflix/SMPTE** | title-safe **90 %** (lề 5 %) |
+| **Nimdzi 2023** | ⛔ **CHƯA có chuẩn** cho 9:16 — khuyến nghị đo với người dùng thật |
+
+⭐ **`KY_TU_MOI_DONG = 42` chính là con số Netflix** — hằng số ấy có xuất xứ.
+⭐ **"Tối đa 2 dòng" là chuẩn ngành**, ⛔ không phải lựa chọn riêng của ta.
+⚠️ **Mọi con số ta đặt cho 9:16 là LỰA CHỌN CỦA TA** và phải ghi rõ là lựa chọn.
+
+⚠️ Và một chỗ suýt chép sai: bản tóm tắt tìm kiếm đầu nói BBC có số cho 9:16
+(*"central 75 % vertically"*). Đọc thẳng tài liệu: *"does not specify safe area
+percentages for 9:16 video format"*. **Con số ấy ⛔ không có trong nguồn.**
+
 ## 8. Ngoài phạm vi đợt này
 
 - **Đoạn phụ đề ngắn dưới ngưỡng đọc** — sự kiện 12–15 dài `0,222–0,296 s` trên
