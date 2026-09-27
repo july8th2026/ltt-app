@@ -26,8 +26,14 @@
 //     # Buoc 2:
 //     playwright-cli -s=ui0 run-code --filename=tests/browser/agent_ui_v2_ui0_web_that.js
 async page => {
-  const COOKIE = process.env.LTT_COOKIE_THU;
-  if (!COOKIE) throw new Error('thieu LTT_COOKIE_THU — xem huong dan dau tep');
+  // ⚠️ `process.env` KHONG dung duoc o day: playwright-cli chay ham nay trong
+  //    mot hop cat, khong phai tien trinh node — `process is not defined`.
+  //    Nen cookie di vao bang DAU THAY THE, do `tools/chay_web_that.py` dien
+  //    vao mot BAN SAO trong scratchpad ngay truoc khi chay.
+  // ⛔ Tep NAY (trong kho) khong bao gio chua cookie that.
+  const COOKIE = '__LTT_COOKIE__';
+  if (!COOKIE || COOKIE.startsWith('__LTT_'))
+    throw new Error('chua dien cookie — chay qua `python tools/chay_web_that.py`');
 
   const pageErrors = [], consoleErrors = [], failedRequests = [], serverErrors = [];
   page.on('pageerror',     e => pageErrors.push(e.message));
