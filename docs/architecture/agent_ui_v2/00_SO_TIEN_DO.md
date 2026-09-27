@@ -21,8 +21,9 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-4 Node UX V2 | `ui4` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui4` | `src/nodes/**` · `useDisplayGraph.ts` · `styles/node.css` | — | dải **6000-6099** · `canvas.css` diff **RỖNG** · `app.video.generate` cao **525 → 279 px** (16 hàng cổng → 7 hàng + 9 khay) · ba mức độ zoom **200/280/360 px** · `core.switch` `"1 nhánh"` → **`"5 nhánh"`** · hồi quy cổng UI-0 **y nguyên** · ⚠️ brief ghi 456px, họ đo **285px** — brief sai |
 | UI-7 Execution + Runs | `ui7` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui7` | `ExecutionPanel/**` · `RunV3Panel/Inspector` · `styles/run.css` | — | dải **6100-6199** · chủ **S4** · bảng run **176 → 366 px**, hàng cao nhất **139 → 57 px** · báo giá **12 credit** trên nút · `workflowApi.ts` diff **RỖNG** ⇒ UI-5 không phải chờ · 🔴 báo một `.sr-only` **SAI**, xem nhật ký |
 | UI-5 Inspector + Connections | `ui5` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui5` | `ket_noi_v3.py` (mới) · `src/inspector/**` | — | dải **6300-6399** · Q4 = **C** · node publish được **27 → 60** (+33 mở khoá) · publish **422 → 200** · 4 cửa `/api/v3/ket-noi` · wizard OAuth 6 chặng · 🔴 va UI-3 ở `StepInspector`, xem nhật ký |
-| UI-8a Human approval ⭐ | — | CHƯA MỞ | — | — | — | chặn bởi UI-7 · nâng ưu tiên sau phân tích CrewAI |
-| UI-6 Data picker | — | CHƯA MỞ | — | — | — | chặn bởi UI-5 |
+| UI-8a Human approval ⭐ | `ui8a` | **ĐANG LÀM** (agent) | `phien/agent-ui-v2-ui8a` | `routes/phe_duyet_v3.py` (mới) · `ExecutionPanel/**` · `cho_doi.py` (nếu buộc) | — | dải **6500-6599** · cổng **8206** · 🔴 `core.human` đã ĐỦ (`NHANH_HUMAN`, waitpoint, hết hạn ⇒ `reject`) nhưng ⛔ KHÔNG cửa nào BẤM duyệt được ⇒ mở cửa là TRONG phạm vi phase |
+| UI-6 Data picker | `ui6` | **ĐANG LÀM** (agent) | `phien/agent-ui-v2-ui6` | `src/inspector/FormTuLuocDo.tsx` · `inspector.css` · tệp mới trong `src/inspector/` | — | dải **6400-6499** · cổng **8205** · dùng lại `/bieu-thuc/goi-y` ⇒ ⛔ không cửa mới |
+| UI-9 Mẫu / Templates | `ui9` | **ĐANG LÀM** (agent) | `phien/agent-ui-v2-ui9` | `routes/trang.py` (⭐ giữ) · `templates/agent_templates.html` (mới) · `platform_core/workflow/mau.py` (mới) | — | dải **6600-6699** · cổng **8207** · dùng lại `POST /api/v3/workflows` với `document` ⇒ ⛔ không cửa mới · mỗi mẫu PHẢI publish được thật |
 | UI-8b Agent Designer diff | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
 | UI-9 Templates | — | CHƯA MỞ | — | — | — | chặn bởi UI-1 |
 | UI-10 i18n + trợ năng + mobile | — | CHƯA MỞ | — | — | — | ⛔ **không song song hoá được** — chạm mọi tệp |
@@ -110,6 +111,57 @@ canh rằng không ai lặng lẽ mở một cửa ghi ở tầng trang.
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-28` `điều phối` — **MỞ WAVE 3: UI-6 · UI-8a · UI-9 chạy song song.**
+
+  Cấp tài nguyên **TRƯỚC** khi giao việc, vì đợt trước tôi quên cấp **cổng** và
+  cả bốn brief đều ghi `8198` — suýt giết tiến trình của UI-7.
+
+  | Làn | Dải test | Cổng | Tệp giữ |
+  |---|---|---|---|
+  | UI-6 data picker | 6400-6499 | 8205 | `src/inspector/**` |
+  | UI-8a human approval | 6500-6599 | 8206 | `routes/phe_duyet_v3.py` · `ExecutionPanel/**` |
+  | UI-9 mẫu | 6600-6699 | 8207 | `routes/trang.py` · `templates/agent_templates.html` · `workflow/mau.py` |
+
+  ⭐ **Tệp rời nhau hoàn toàn.** Hai chỗ dễ va nhất đã chỉ định chủ tường minh:
+  `trang.py` → **chỉ** UI-9 (UI-8a bị cấm chạm); `src/inspector/**` → **chỉ**
+  UI-6 (UI-8a bị cấm chạm). `routes/__init__.py` · `locale/` · `canvas.css` ·
+  `editorState.ts` · `workflowApi.ts` → **điều phối giữ**, làn chỉ BÁO dòng cần.
+
+  ### ⭐ Hai làn được bảo DÙNG LẠI cửa đã có, một làn được phép MỞ cửa
+
+  | Làn | Cửa | Vì sao |
+  |---|---|---|
+  | UI-6 | `POST …/bieu-thuc/goi-y` **đã có** | ⛔ không mở cửa mới |
+  | UI-9 | `POST /api/v3/workflows` **đã nhận `document`** | "mở mẫu" = tạo workflow thật, y như *Nhân bản* đã làm |
+  | UI-8a | **ĐƯỢC mở** cửa duyệt/từ chối | phase này tồn tại CHÍNH VÌ cửa ấy thiếu |
+
+  🔴 **UI-8a là ca *lưu trữ workflow* lần thứ hai**: `core.human` đã đủ —
+  waitpoint, `NHANH_HUMAN = ("approve","reject")`, `che_do_het_han` mặc định
+  `reject`, và `runs_v3` **đọc** được waitpoint còn mở — nhưng ⛔ **không cửa nào
+  cho người dùng BẤM**. Nghĩa đã sống, cửa thì chưa.
+  ⇒ Khác lần trước ở một điểm: lần này cửa ⛔ **không phải** một quyết định mới —
+  lộ trình UI-0→UI-10 mà chủ dự án đã duyệt có sẵn mục *"UI-8a Human approval"*,
+  nên cái cửa **là chính nội dung của phase**. Brief vẫn cấm mở **bất kỳ cửa nào
+  khác**.
+
+  ⚠️ Brief UI-8a nhấn hai bất biến tiền, vì cửa duyệt rất dễ trượt sang đó:
+  nó ⛔ **không** tạo run, ⛔ **không** tính tiền, ⛔ **không** đi vòng qua
+  `tao_run.py` (cửa DUY NHẤT tạo run). Nó chỉ **đóng một waitpoint**.
+  Và một bước `WAITING` vì `core.delay` ⛔ **không** được hiện nút duyệt — cùng
+  `status`, **khác `kind`**; phải đọc `kind`, ⛔ đừng suy từ `status`.
+
+  ### ⭐ Brief lần này mang theo bài học của cả ngày
+
+  Ba bộ kiểm **hình dạng cả cây** (`scan_source_secrets` · `check_mypy` ·
+  `check_silent_except`, **< 45 giây**) nay là **bắt buộc trước khi báo xong** —
+  chúng bắt loại lỗi mà test nhắm ⛔ không thể bắt: **mã đúng hành vi mà sai bất
+  biến toàn kho**. Đêm 27-28/09 có **ba** lỗi như vậy lọt lên `main`.
+
+  Kèm ba bẫy làm một lượt Playwright **xong** trông như **chết** (`const` ở mức
+  ngoài cùng ⇒ `SyntaxError` · `click` rồi `goto` ⇒ `ERR_ABORTED` · hồ sơ giữ
+  cookie ⇒ `page.fill` timeout), và luật **đo TÍNH CHẤT chứ đừng đo VĂN BẢN**
+  kèm cả ba ca thật của hôm nay.
 
 - `2026-09-28` `điều phối` — **BA LÀN CÒN LẠI ĐÃ GỘP. `main` = `2cb3f702`.**
   Cùng lượt: **cửa lưu trữ workflow** (chủ dự án duyệt mở bề mặt HTTP mới).
@@ -349,6 +401,9 @@ _(mới nhất ở trên)_
   | UI-7 | 8202 |
   | UI-1 | 8203 |
   | UI-5 | 8204 |
+  | UI-6 | 8205 |
+  | UI-8a | 8206 |
+  | UI-9 | 8207 |
 
   🔴 **Còn treo, và UI-1 dừng ĐÚNG chỗ:** *lưu trữ workflow* chưa làm —
   `archived_at` có trong lược đồ và danh sách **đã lọc** theo nó, nhưng ⛔ không

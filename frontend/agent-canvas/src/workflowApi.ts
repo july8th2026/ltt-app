@@ -4,6 +4,27 @@ export type CanvasNode = {
   position: { x: number; y: number }
   label?: string
   data: Record<string, unknown>
+  /** Khoa vao kho ket noi cua khach (lan UI-5, `/api/v3/ket-noi`).
+   *
+   *  🔴 O **MUC TREN CUNG**, ⛔ KHONG duoi `data`. `bien_dich` doc
+   *     `n.get("credential_ref")` o ba cho (`bien_dich.py` 560, 569, 648) va no
+   *     doc muc tren cung. Ghi vao `data.credential_ref` se lam bien dich doc ra
+   *     rong ⇒ node bi tu choi `credential_thieu` — va ⛔ KHONG mot loi
+   *     TypeScript nao xuat hien, vi `data` la `Record<string, unknown>` nen no
+   *     nhan moi khoa. Do la dung hinh dang cua ba lan `canvas_to_plan()` vut
+   *     cong di trong im lang.
+   *
+   *  ⭐ `undefined` va `''` la HAI trang thai khac nhau o trinh soan: vang =
+   *     *buoc nay chua bao gio can ket noi*; `''` = *nguoi dung da xoa ket noi*.
+   *     May chu lam phang ca hai thanh `''` (`str(... or "")`), nhung trinh soan
+   *     thi ⛔ khong duoc gop — gop la mat kha nang phan biet.
+   *
+   *  ⚠️ Truoc 28/09 truong nay ⛔ khong duoc khai o day, va lan UI-5 phai dung
+   *     mot kieu CUC BO (`BuocCoKetNoi = CanvasNode & { credential_ref?: string }`)
+   *     vi ho khong duoc sua so dung chung S4. Mot kieu chung khong biet ve mot
+   *     truong thi ⛔ khong ai duoc canh bao khi mot phep bien doi danh roi no.
+   *     Bat bien nay nay do o `tests/CredentialRefSongSot.test.tsx`. */
+  credential_ref?: string
 }
 
 export type CanvasEdge = { id: string; source: string; target: string;
