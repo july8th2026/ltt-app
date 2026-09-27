@@ -403,7 +403,19 @@ async def v3_thu_hoi_ket_noi(request: Request, ket_noi_id: str,
     """
     try:
         body = await request.json()
-    except Exception:                               # noqa: BLE001
+    except (ValueError, UnicodeDecodeError):
+        # ⛔ **Bắt ĐÚNG LOẠI, ⛔ không bắt `Exception`.** Một thân rỗng hoặc
+        #    lệch cú pháp là chuyện thường của cửa này, và `{}` là câu trả lời
+        #    đúng cho nó — `_verify_json_csrf` ngay dưới sẽ từ chối.
+        #
+        #    Nhưng `except Exception` ở đây nuốt CẢ những thứ ⛔ không phải
+        #    "thân xấu": một `MemoryError` hay một lỗi lập trình trong chính
+        #    `request.json()` cũng biến thành `{}` rồi trả 403 — một thông điệp
+        #    **thuyết phục và sai**. Bánh cóc `nuot loi lang le` đếm đúng dòng
+        #    đó (`check_silent_except`), và nó ĐỎ trên `main` vì dòng này.
+        #
+        # ⭐ Khuôn này lấy từ `server/nexus/routes.py` — bốn cửa ở đó đọc thân
+        #    JSON tuỳ chọn theo đúng cách này từ trước.
         body = {}
     _verify_json_csrf(request, body if isinstance(body, dict) else {})
     user = _user(request)
