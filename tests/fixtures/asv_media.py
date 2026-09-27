@@ -352,3 +352,37 @@ def _canh_gia(messages) -> dict:
                   else "canh khong co loi thoai nao"),
         "canh_bao": [],
     }
+
+#: Thao tac AI **CO Y** di qua luoc do DICH chung cua `cua_ai_gia`, ⛔ khong can
+#: mot nhanh rieng trong `phan_hoi_ngoai_dich`.
+#:
+#: 🔴 **Vi sao hang so nay phai ton tai.** N-51 (25/09) la dung ca nay: thieu
+#:    nhanh cho `QC_NGU_NGHIA` lam moi loi goi no roi xuong ban gia DICH — mot
+#:    phan hoi SAI HINH DANG hoan toan — va `qc_ai._loc_loi` NUOT no lang le roi
+#:    cham `dat=True`. Bug di qua mot BAN GIA, ⛔ khong qua model that, nen ⛔
+#:    khong phep kiem nao thay.
+#:
+#: ⚠️ Do 27/09: `ai` co **8** thao tac, `phan_hoi_ngoai_dich` xu ly **4**. Ba
+#:    thao tac con lai dang o dung vi tri ma `QC_NGU_NGHIA` da o truoc N-51 —
+#:    trong do `HO_SO_DICH` la mot duong **TRA TIEN** chua bao gio duoc do cuc bo.
+#:
+#: ⭐ Ban va ⛔ khong phai "viet nhanh cho ca 8" — mot so thao tac THAT SU dung
+#:    luoc do dich (chung tra `{"doan": {...}}`). Ban va la lam cho lua chon ay
+#:    duoc **KHAI**: tu day, them mot thao tac AI ma ⛔ khong xep no vao mot trong
+#:    hai o se lam `test_4850_ban_gia_phu_HET_thao_tac_AI` do.
+DUNG_LUOC_DO_DICH: frozenset[str] = frozenset({
+    "dich_thuat",        # chinh no la luoc do dich
+    "chuyen_loi_thoai",  # tra `{"doan": {ma: {chu, cam_xuc}}}` — cung hinh dang
+    "rut_ngan_cho_vua",  # tra `{"doan": {ma: {chu, ...}}}` — cung hinh dang
+    # 🔴 HO_SO_DICH thi ⛔ KHONG cung hinh dang: no tra `{the_loai, bang_dai_tu}`.
+    #    No o day la mot MON NO, ⛔ khong phai mot quyet dinh — xem
+    #    `test_4850_ban_gia_phu_HET_thao_tac_AI`.
+    "ho_so_dich",
+})
+
+#: Thao tac o `DUNG_LUOC_DO_DICH` ma THAT SU ⛔ khong cung hinh dang voi luoc do
+#: dich — tuc mot MON NO da biet, kem nguoi do va ngay.
+MON_NO_HINH_DANG: dict[str, str] = {
+    "ho_so_dich": "tra {the_loai, bang_dai_tu}, ⛔ khong phai {doan} "
+                  "(lan B do 27/09; day la mot duong TRA TIEN)",
+}
