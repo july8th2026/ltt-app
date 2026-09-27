@@ -246,6 +246,39 @@ bất kỳ con số nào và ⛔ không chứng minh trần có hiệu lực —
 
 ---
 
+### 4.5 🔴 Cổng bánh cóc quét CẢ CÂY là điểm tuần tự hoá ẨN giữa các làn
+
+Luật "một tệp một chủ" ngăn **xung đột merge**, nhưng ⛔ không ngăn cái này:
+`ban-dich-thieu` và `chuoi-chua-dich` đếm trên **cả cây**, nên **một chuỗi chưa
+dịch của một làn chặn commit của MỌI làn** — kể cả làn không chạm tệp đó.
+
+⭐ **27/09: ba làn đứng cùng lúc.** Làn C xong C1–C5 nhưng không commit được C6;
+tôi không commit được hai lượt của mình. Và triệu chứng nguy hiểm nhất là làn C
+báo: *"số mục thiếu TĂNG mỗi lần thử commit"* — vì các làn khác vẫn đang thêm
+chuỗi. ⛔ **Đuổi theo từng chuỗi là sai cách**: mục tiêu đang di động.
+
+**Cách xử lý:**
+1. `locale/` là **của điều phối**, ⛔ không của làn nào. Làn dùng `_t("...")` rồi
+   **báo msgid nguyên văn**; điều phối dịch, biên dịch `.mo`, nghiệm thu bằng
+   `gettext()`. (Làn C từ chối tự sửa `locale/` — đúng.)
+2. ⛔ Đừng dịch từng chuỗi khi làn còn đang chạy. **Quét một lượt** rồi dịch hết:
+   `PYTHONIOENCODING=utf-8 python -u tools/check_dich_thieu.py` (console cp1252
+   ⛔ không in nổi tiếng Việt — không ép UTF-8 thì mất đúng danh sách cần).
+3. **Lấy msgid TỪ đầu ra bộ kiểm** (tách bằng regex), ⛔ đừng chép tay: chép tay
+   là một cơ hội sai một dấu, và sai thì bản dịch thành **mục mồ côi** — hook đỏ
+   lại mà ⛔ không báo lỗi gì.
+4. ⭐ **Bắt làn tham số hoá số ra khỏi chuỗi**: `_t('Tối đa {n} ảnh.').format(n=TRAN)`,
+   ⛔ không `'Tối đa 9 ảnh.'`. Nhúng số vào chuỗi ⇒ mỗi lần đổi trần là một msgid
+   mới và một vòng dịch nữa. Làn T tự làm điều này mà không cần ai bảo.
+
+⚠️ **Nghiệm thu ⛔ KHÔNG bằng cách đọc lại `.po`.** Một msgid **trùng** làm
+`msgfmt` lấy mục **đầu tiên** (thường là mục rỗng), nên `.po` trông đúng mà ứng
+dụng vẫn hiện tiếng Việt. Kênh thật là `gettext()`, kèm một **đối chứng**: một
+msgid không tồn tại phải trả về chính nó — không thì phép kiểm vô nghĩa vì "mọi
+thứ đều dịch được".
+
+---
+
 ## 5. Nắn agent — đo bằng gì, can thiệp lúc nào
 
 ⛔ **"Agent chưa báo xong" không phải phép đo.** Agent im lặng trông giống agent
