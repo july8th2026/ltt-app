@@ -166,8 +166,28 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
   z-index: 2;
+  width: var(--handle-size, 12px);
+  height: var(--handle-size, 12px);
+  transform: translate(-50%, -50%);
+}
+/* 🔴 VUNG BAM 24px CHO CONG TRONG KHAY — ⛔ ĐUNG BO LUAT NAY.
+ *
+ * `canvas.css` dat lop gia `::after` cho `.node-cong .react-flow__handle`, tuc
+ * CHI cho cong o HANG. Cong trong khay khong khop bo chon do, nen khong co
+ * luat nay thi cham cham bam la 12px — duoi san WCAG 2.2 AA (2.5.8), va Chrome
+ * cung khong bat noi mot cu keo 12px cho chac.
+ *
+ * ⚠️ Day dung la hinh dang "luat thieu ve ngoai le": bo chon cu dung o thoi
+ *    diem chi co MOT kieu cong, va no im lang sai ngay khi co kieu thu hai. */
+.node-khung[data-muc-do] .node-khay-o .react-flow__handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--handle-hit, 24px);
+  height: var(--handle-hit, 24px);
+  transform: translate(-50%, -50%);
 }
 
 /* Mau cham theo KIEU (`09 §5` P0). Mot bang nho, ⛔ khong mot ten app nao. */
