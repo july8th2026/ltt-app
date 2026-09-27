@@ -108,3 +108,80 @@ def thu_hoi(db: Session, *, code: str, owner_id: str, is_admin: bool = False
     share.revoked_at = _now()
     db.flush()
     return share
+
+
+def _kiem_con_hieu_luc(share: OmmiShareCode) -> None:
+    if share.revoked_at is not None:
+        raise ShareError("Ma chia se da bi thu hoi.")
+    if share.expires_at is not None and share.expires_at <= _now():
+        raise ShareError("Ma chia se da het han.")
+
+
+def xem_truoc(db: Session, *, code: str) -> dict:
+    share = _load(db, code)
+    _kiem_con_hieu_luc(share)
+    model = TARGET_KINDS.get(share.target_kind)
+    row = db.get(model, share.target_id) if model else None
+    if row is None:
+        raise ShareNotFound("Muc duoc chia se khong con ton tai.")
+    return {
+        "target_kind": share.target_kind,
+        "name": getattr(row, "name", getattr(row, "title", "")),
+        "uses": share.uses,
+        "max_uses": share.max_uses,
+        "expires_at": share.expires_at.isoformat() if share.expires_at else None,
+    }
+
+
+#: Cot he thong khong duoc sao khi clone - moi ban sao la BAN GHI MOI, doc lap.
+_SYSTEM_COLUMNS = {
+    "id", "owner_id", "created_at", "updated_at", "archived_at",
+    "deprecated_at", "deprecated_note", "cloned_from_id", "version",
+    "is_catalog", "is_builtin", "use_count", "share_level",
+}
+
+
+def _clone_row(model: type, source, owner_id: str):
+    data = {col.name: getattr(source, col.name) for col in model.__table__.columns
+           if col.name not in _SYSTEM_COLUMNS}
+    row = model(owner_id=owner_id, **data)
+    if hasattr(row, "share_level"):
+        row.share_level = "private"
+    if hasattr(row, "cloned_from_id"):
+        row.cloned_from_id = source.id
+    return row
+
+
+def nhan(db: Session, *, code: str, owner_id: str):
+    share = _load(db, code)
+    _kiem_con_hieu_luc(share)
+    if share.max_uses is not None and share.uses >= share.max_uses:
+        raise ShareError("Ma chia se da dung het luot.")
+    model = TARGET_KINDS.get(share.target_kind)
+    if model is None:
+        raise ShareError(f"Loai chia se khong duoc ho tro: {share.target_kind!r}.")
+    source = db.get(model, share.target_id)
+    if source is None:
+        raise ShareNotFound("Muc duoc chia se khong con ton tai.")
+    copy = _clone_row(model, source, owner_id)
+    db.add(copy)
+    share.uses = int(share.uses or 0) + 1
+    db.flush()
+    return copy
+
+
+def dat_muc_chia_se(db: Session, *, target_kind: str, item_id: str, owner_id: str,
+                    is_admin: bool, level: str):
+    if level not in _VALID_LEVELS:
+        raise ShareError(f"Muc chia se khong hop le: {level!r}.")
+    if level == "catalog" and not is_admin:
+        raise ShareError("Chi admin duoc dat muc 'catalog'.")
+    model = _model(target_kind)
+    row = db.get(model, item_id)
+    if row is None or (row.owner_id != owner_id and not is_admin):
+        raise ShareNotFound("Khong tim thay muc.")
+    row.share_level = level
+    if hasattr(row, "updated_at"):
+        row.updated_at = _now()
+    db.flush()
+    return row
