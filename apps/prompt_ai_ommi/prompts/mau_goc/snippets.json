@@ -1,0 +1,69 @@
+{
+  "items": [
+    {
+      "name": "action_chase",
+      "body": "{\"template_id\": \"action_chase\", \"label\": \"🏃 Hành động — rượt đuổi\", \"icon\": \"🏃\", \"description\": \"Phim hành động ngắn 9 cảnh với pha rượt đuổi tốc độ cao\", \"form\": {\"title\": \"[Tên cảnh quay] — Hành động\", \"story_text\": \"Nhân vật chính chạy trên mái nhà thành phố lúc hoàng hôn. Kẻ thù xuất hiện từ phía sau. Cuộc rượt đuổi bắt đầu, băng qua nhiều mái nhà, leo trèo, nhảy qua các khe hở. Cuối cùng đối đầu trực diện trên đỉnh tòa nhà cao nhất.\", \"aspect\": \"16:9\", \"key_moments_mode\": \"9\", \"duration_sec\": 30, \"style_pack_id\": \"cinematic_35mm\", \"model_used\": \"gemini-2.5-flash-image\"}}",
+      "category": "storyboard.template"
+    },
+    {
+      "name": "anime",
+      "body": "{\"label\": \"Anime / Manga\", \"style\": \"high quality anime illustration, clean line art, vibrant colors, cel shading, dynamic composition, studio Ghibli inspired lighting\", \"negative\": \"no realistic photo, no 3D render, no text bubbles, do NOT change character design, do NOT change outfit\"}",
+      "category": "storyboard.pack"
+    },
+    {
+      "name": "cinematic_35mm",
+      "body": "{\"label\": \"Cinematic 35mm\", \"style\": \"cinematic photography, 35mm film grain, anamorphic lens, shallow depth of field, natural color grading, warm highlights, professional film still, 4K detail\", \"negative\": \"do NOT change character face, do NOT change outfits, do NOT change time of day, no text, no watermark, no logo, no extra limbs, no distorted hands\"}",
+      "category": "storyboard.pack"
+    },
+    {
+      "name": "doc_portrait",
+      "body": "{\"template_id\": \"doc_portrait\", \"label\": \"📹 Tài liệu — chân dung\", \"icon\": \"📹\", \"description\": \"Phim tài liệu 4 cảnh: portrait realistic về 1 nhân vật\", \"form\": {\"title\": \"[Tên nhân vật] — Tài liệu\", \"story_text\": \"Người thợ thủ công ngồi trong xưởng làm việc lúc sáng sớm. Bàn tay khéo léo định hình từng chi tiết. Sản phẩm hoàn thành dưới ánh nắng ban trưa. Người thợ ngắm tác phẩm với niềm tự hào lặng lẽ.\", \"aspect\": \"16:9\", \"key_moments_mode\": \"4\", \"duration_sec\": 25, \"style_pack_id\": \"documentary\", \"model_used\": \"gemini-2.5-flash-image\"}}",
+      "category": "storyboard.template"
+    },
+    {
+      "name": "documentary",
+      "body": "{\"label\": \"Documentary realism\", \"style\": \"documentary photography, natural lighting, candid composition, neutral color grading, journalistic framing, photo-real detail\", \"negative\": \"no stylization, no anime, do NOT change subject identity, no over-saturation, no fantasy elements\"}",
+      "category": "storyboard.pack"
+    },
+    {
+      "name": "drama_dialogue",
+      "body": "{\"template_id\": \"drama_dialogue\", \"label\": \"🎭 Drama — đối thoại 2 nhân vật\", \"icon\": \"🎭\", \"description\": \"Cảnh tâm lý 4 cảnh: gặp nhau, ngồi xuống, đối thoại sâu, chia tay\", \"form\": {\"title\": \"[Tên cảnh quay] — Drama\", \"story_text\": \"Hai người gặp lại nhau sau nhiều năm tại quán cà phê cũ. Họ ngồi đối diện, ánh mắt nói lên những điều chưa nói. Cuộc trò chuyện về quá khứ, những hối tiếc, và lời chia tay cuối cùng dưới ánh đèn vàng ấm áp.\", \"aspect\": \"16:9\", \"key_moments_mode\": \"4\", \"duration_sec\": 20, \"style_pack_id\": \"cinematic_35mm\", \"model_used\": \"gemini-2.5-flash-image\"}}",
+      "category": "storyboard.template"
+    },
+    {
+      "name": "kids_storybook",
+      "body": "{\"template_id\": \"kids_storybook\", \"label\": \"👧 Trẻ em — truyện cổ tích\", \"icon\": \"👧\", \"description\": \"Storybook minh hoạ 9 cảnh cho trẻ em, phong cách watercolor ấm áp\", \"form\": {\"title\": \"[Tên truyện] — Trẻ em\", \"story_text\": \"Cô bé bước vào khu rừng kỳ diệu. Cô gặp một chú thỏ trắng biết nói. Họ cùng nhau khám phá những ngôi nhà nấm của các tiên nữ. Họ giải cứu chú nhím bị mắc kẹt. Cuối cùng cô bé trở về nhà với những người bạn mới và những bài học quý báu.\", \"aspect\": \"1:1\", \"key_moments_mode\": \"9\", \"duration_sec\": 60, \"style_pack_id\": \"storybook\", \"model_used\": \"gemini-2.5-flash-image\"}}",
+      "category": "storyboard.template"
+    },
+    {
+      "name": "sb.breakdown.llm_gemini",
+      "body": "Bạn là đạo diễn AI. Hãy chia câu chuyện sau thành {n_scenes} cảnh kể chuyện súc tích, mỗi cảnh là 1 panel trong storyboard.\nNgôn ngữ: {language}\n\nSTORY:\n{story_text}\n\nTrả về JSON array với mỗi phần tử có: order_index, scene_label, action_desc, camera, lighting, mood, refs_used.",
+      "category": "storyboard"
+    },
+    {
+      "name": "sb.composite.header",
+      "body": "Create ONE single comic-style storyboard IMAGE with {n} numbered panels arranged in a {layout} grid (rows × cols). All panels MUST be drawn in the SAME image (not separate images).",
+      "category": "storyboard"
+    },
+    {
+      "name": "sb.composite.negative_footer",
+      "body": "Avoid: separate disconnected images, mismatched character designs between panels, missing panel numbers.",
+      "category": "storyboard"
+    },
+    {
+      "name": "sb.composite.rules",
+      "body": "  - Output ONE image divided into {n} panels in a {layout} grid\n  - Each panel separated by a thin black border (~4px)\n  - Number each panel in the top-left corner (1, 2, 3...)\n  - All characters retain IDENTICAL design across every panel\n  - Consistent style and color grading throughout\n  - Overall aspect ratio: {aspect}",
+      "category": "storyboard"
+    },
+    {
+      "name": "scifi_journey",
+      "body": "{\"template_id\": \"scifi_journey\", \"label\": \"🚀 Sci-fi — hành trình vũ trụ\", \"icon\": \"🚀\", \"description\": \"Phim viễn tưởng 9 cảnh: tàu không gian khám phá hành tinh mới\", \"form\": {\"title\": \"[Tên cảnh quay] — Sci-fi\", \"story_text\": \"Tàu không gian rời khỏi Trái Đất tiến vào không gian sâu. Phi hành đoàn quan sát các thiên hà xa xôi. Họ phát hiện một hành tinh mới với sự sống lạ. Cuộc tiếp xúc đầu tiên với nền văn minh ngoài hành tinh. Trở về với những bài học thay đổi nhân loại mãi mãi.\", \"aspect\": \"16:9\", \"key_moments_mode\": \"9\", \"resolution\": \"2K\", \"duration_sec\": 45, \"style_pack_id\": \"cinematic_35mm\", \"model_used\": \"imagen-3\"}}",
+      "category": "storyboard.template"
+    },
+    {
+      "name": "storybook",
+      "body": "{\"label\": \"Children's storybook\", \"style\": \"warm storybook illustration, soft watercolor texture, friendly characters, simple background shapes, consistent character design across pages\", \"negative\": \"no photorealism, no horror, no text, do NOT change character clothing across scenes\"}",
+      "category": "storyboard.pack"
+    }
+  ]
+}
