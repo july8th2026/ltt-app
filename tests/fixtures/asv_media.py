@@ -251,6 +251,26 @@ def phan_hoi_ngoai_dich(thao_tac, messages):
         return {"noi_dung": json.dumps(
             {"dat": True, "do_tin": 0.9, "ly_do": ""}, ensure_ascii=False),
             "su_dung": None}
+    if ma == ai.HO_SO_DICH.ma:
+        # 🔴 **Mon no da tra (27/09).** Thieu nhanh nay thi moi loi goi
+        #    `HO_SO_DICH` roi xuong ban gia DICH chung (`{"doan": {...}}`) — sai
+        #    hinh dang so voi `ho_so_dich._doc`, no NEM `HoSoDichLoi`, va
+        #    `ho_so_dich.dung` NUOT ngoai le ay roi di tiep voi **ho so RONG**.
+        #
+        # ⇒ Duong nay CO chay va CO tinh tien trong moi phep kiem dau-cuoi, nhung
+        #   ket qua cua no LUON rong, nen ⛔ khong phep kiem nao tung do duoc
+        #   rang ho so that su nan ban dich. Dung ho `ban gia tra dung thu ma ma
+        #   muon nhan` cong `loi bi NUOT` — hai ho gap nhau o mot cho.
+        #
+        # ⭐ Tra dung hop dong cua `ho_so_dich.KHOA`, va tra gia tri KHAC RONG:
+        #    mot ban gia tra rong lai lam bai kiem xanh ma ⛔ khong chung minh gi.
+        return {"noi_dung": json.dumps({
+            "the_loai": "phim truyen",
+            "so_nguoi_noi": 2,
+            "bang_dai_tu": {"我": "tôi", "你": "bạn"},
+            "bang_ten_rieng": {"小明": "Tiểu Minh"},
+            "giong_van": "trung tinh, cau ngan",
+        }, ensure_ascii=False), "su_dung": None}
     if ma == ai.QC_NGU_NGHIA.ma:
         # ⭐ N-51 (25/09): TRUOC day, thieu nhanh nay lam moi loi goi
         #    `QC_NGU_NGHIA` roi xuong ban gia DICH chung o `cua_ai_gia`
@@ -374,15 +394,11 @@ DUNG_LUOC_DO_DICH: frozenset[str] = frozenset({
     "dich_thuat",        # chinh no la luoc do dich
     "chuyen_loi_thoai",  # tra `{"doan": {ma: {chu, cam_xuc}}}` — cung hinh dang
     "rut_ngan_cho_vua",  # tra `{"doan": {ma: {chu, ...}}}` — cung hinh dang
-    # 🔴 HO_SO_DICH thi ⛔ KHONG cung hinh dang: no tra `{the_loai, bang_dai_tu}`.
-    #    No o day la mot MON NO, ⛔ khong phai mot quyet dinh — xem
-    #    `test_4850_ban_gia_phu_HET_thao_tac_AI`.
-    "ho_so_dich",
 })
 
 #: Thao tac o `DUNG_LUOC_DO_DICH` ma THAT SU ⛔ khong cung hinh dang voi luoc do
 #: dich — tuc mot MON NO da biet, kem nguoi do va ngay.
-MON_NO_HINH_DANG: dict[str, str] = {
-    "ho_so_dich": "tra {the_loai, bang_dai_tu}, ⛔ khong phai {doan} "
-                  "(lan B do 27/09; day la mot duong TRA TIEN)",
-}
+#: ⭐ RONG tu 27/09: mon no `ho_so_dich` da tra (nhanh rieng o
+#:    `phan_hoi_ngoai_dich`). Giu hang so lai vi `test_4850` chot rang no la TAP
+#:    CON cua `DUNG_LUOC_DO_DICH` — mot cai bay da co cua de canh.
+MON_NO_HINH_DANG: dict[str, str] = {}

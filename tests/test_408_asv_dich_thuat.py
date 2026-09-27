@@ -1274,3 +1274,39 @@ def test_ho_so_dich_KHONG_trang_bi_cua_chan__phuong_an_B():
     assert "uoc_credit" not in kw, (
         "van truyen uoc_credit — mot trong sau loi goi co cua, nam cho kia khong")
     assert "item_key" in kw, "thieu item_key thi SO CAI khong co khoa"
+
+
+def test_408_ban_gia_lam_ho_so_dich_ra_KHAC_RONG():
+    """🔴 **Duong TRA TIEN nay chua bao gio duoc do cuc bo** (lan B, 27/09).
+
+    `fixtures/asv_media.phan_hoi_ngoai_dich` ⛔ khong co nhanh cho `HO_SO_DICH`,
+    nen moi loi goi roi xuong ban gia DICH chung (`{"doan": {...}}`). Hinh dang ay
+    sai so voi `ho_so_dich._doc` ⇒ no nem `HoSoDichLoi` ⇒ `ho_so_dich.dung` **NUOT**
+    ngoai le (`except Exception`, ⛔ co y, vi ho so la thu lam ban dich TOT HON chu
+    ⛔ khong phai thu no can de CHAY) roi di tiep voi **ho so RONG**.
+
+    ⇒ Duong nay CO chay va CO tinh tien trong moi phep kiem dau-cuoi, nhung ket qua
+      cua no **LUON rong**, nen ⛔ khong phep kiem nao tung do duoc rang ho so that
+      su nan ban dich. Hai ho loi gap nhau: *"ban gia tra dung thu ma ma muon
+      nhan"* va *"loi bi NUOT"*.
+
+    ⭐ Bai nay chot ve DUONG DI, ⛔ khong chot noi dung ho so: ho so la du lieu cua
+       model. Dieu phai dung la *"ban gia di qua `_doc` ma ⛔ khong nem, va ra KHAC
+       RONG"* — mot ban gia tra rong lai lam bai xanh ma ⛔ khong chung minh gi.
+    """
+    from apps.auto_scan_video import ai, ho_so_dich
+    from tests.fixtures.asv_media import phan_hoi_ngoai_dich
+
+    goi = phan_hoi_ngoai_dich(ai.HO_SO_DICH, [{"role": "user", "content": "{}"}])
+    assert goi is not None, (
+        "ban gia ⛔ khong co nhanh cho HO_SO_DICH — moi loi goi se roi xuong luoc "
+        "do DICH, `_doc` nem, `dung` nuot, va ho so LUON rong")
+
+    ho_so = ho_so_dich._doc(goi["noi_dung"])
+    assert set(ho_so) == set(ho_so_dich.KHOA), (
+        f"ban gia ⛔ khong tra dung hop dong: {sorted(ho_so)}")
+    # ⛔ Ve DOI CHUNG: mot ho so RONG di qua `_doc` cung khong nem, nen "khong
+    #    nem" mot minh ⛔ khong chung minh gi.
+    assert ho_so["bang_dai_tu"], "bang dai tu rong — ban gia ⛔ khong do duoc gi"
+    assert ho_so["the_loai"], "the loai rong"
+    assert ho_so["so_nguoi_noi"] > 0, "so nguoi noi = 0"
