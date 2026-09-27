@@ -317,7 +317,7 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
             #
             # ⚠️ Khoi nay CHI chay khi `ve_tieng` (tuc `toc_do != 1`), nen no
             #    ⛔ khong doi mot byte nao cua duong `toc_do = 1`.
-            cmd += ["-fps_mode", "vfr"]
+            cmd += ["-fps_mode", "passthrough"]
         cmd += list(cdr.tham_so(bo))
 
     # ── Tieng: BAN PHOI cua pha 16, khong tron lai ───────────────────────

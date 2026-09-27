@@ -116,7 +116,7 @@ def test_toc_do_hinh_va_tieng_CUNG_he_so_trong_MOT_do_thi():
     # `FFmpeg/doc/ffmpeg.texi` dinh nghia `vfr` la che do "dropped so as to
     # prevent 2 frames from having the same timestamp" — dung bat bien ta thieu.
     # So do day du: `tests/test_4890_asv_toc_do_truc_va_hop_chuan.py`.
-    assert cmd[cmd.index("-fps_mode") + 1] == "vfr"
+    assert cmd[cmd.index("-fps_mode") + 1] == "passthrough"
     assert "-fps_mode" not in _lenh(_ban())
     assert [cmd[i + 1] for i, x in enumerate(cmd) if x == "-c:v"] == ["libx264"]
 
