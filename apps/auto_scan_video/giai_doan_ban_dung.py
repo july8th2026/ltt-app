@@ -100,30 +100,6 @@ class NguonHinh(NamedTuple):
     rong: int
     cao: int
     ly_do: str
-    #: Nhip DANH DINH (`r_frame_rate`). `0.0` = ⛔ khong doc duoc.
-    fps: float = 0.0
-    #: Nhip TRUNG BINH THAT (`avg_frame_rate`) — dung cho nguon VFR.
-    fps_tb: float = 0.0
-    #: `True` khi hai nhip tren lech > 1 %, tuc nguon nhip BIEN THIEN.
-    vfr: bool = False
-
-    def nhip_nguon(self) -> float:
-        """Nhip THAT cua luong hinh nguon, hay `0.0` khi ⛔ khong biet.
-
-        🔴 **Vi sao truong nay ton tai (T17, 27/09).** `setpts=PTS/toc` doi MOC
-           cua tung khung; neu ⛔ khong ai khai NHIP RA thi bo ma hoa giu nguyen
-           nhung moc ⛔ khong bieu dien duoc va sinh moc TRUNG (do: 269 cai tren
-           mot luot 30 fps, 100 tren 25 fps). Do tren hai nhip nguon, `-r` cho
-           **0 troi VA 0 loi DTS** o ca hai — `passthrough` cho 40-48 loi.
-
-        ⭐ Nguon VFR thi lay `fps_tb`, ⛔ khong `fps`: `r_frame_rate` la nhip
-           DANH DINH va voi VFR no thuong cao hon han nhip that, nen khai no se
-           bat bo ma hoa NHAN BAN khung. Chinh `nhap_media.soi` da canh bao dieu
-           nay: *"moc thoi gian se troi neu giai doan ha nguon gia dinh nhip co
-           dinh"* — nay ta ⛔ khong gia dinh nua, ta doc `vfr` ma no da ghi.
-        """
-        nhip = self.fps_tb if self.vfr else self.fps
-        return float(nhip) if nhip and nhip > 0 else 0.0
 
 
 def _khung_nguon(db, kho: Storage, run) -> NguonHinh:
@@ -151,11 +127,6 @@ def _khung_nguon(db, kho: Storage, run) -> NguonHinh:
         #    cat sai truc.
         if int(ho_so.get("xoay") or 0) % 180 == 90:
             rong, cao = cao, rong
-        # ⭐ CUNG lan doc: nhip nguon. Doc rieng o mot lan thu hai la hai co hoi
-        #    de chung lech nhau — dung ly le docstring nay da noi cho rong/cao.
-        _fps = float(ho_so.get("fps") or 0.0)
-        _fps_tb = float(ho_so.get("fps_tb") or 0.0)
-        _vfr = bool(ho_so.get("vfr"))
     except (OSError, ValueError, TypeError) as loi:
         # ⛔ Van ⛔ khong nem o day: mot lan chay ⛔ khong dung `vung` thi kich
         #    thuoc khung ⛔ khong rang buoc gi, va nem se giet mot lan chay dung
@@ -167,7 +138,7 @@ def _khung_nguon(db, kho: Storage, run) -> NguonHinh:
         log.warning("asv compose: %s - ho so %s doc duoc nhung rong=%r cao=%r",
                     KHUNG_KHONG_KHAI, khoa, rong, cao)
         return NguonHinh(0, 0, KHUNG_KHONG_KHAI)
-    return NguonHinh(rong, cao, "", _fps, _fps_tb, _vfr)
+    return NguonHinh(rong, cao, "")
 
 
 def _doi_khung_cho_vung(vung, rong: int, cao: int, ly_do: str) -> None:
@@ -371,16 +342,16 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    thanh mot ban dung sai. Chi duong CAT truyen `vung`, nen chi chan o do.
     if cach == cdr.CAT_MA_HOA_LAI:
         _doi_khung_cho_vung(cai.vung, _rong_khung, _cao_khung, _ly_do_khung)
-    # 🔴 **`bien_tap` GD1 CHI con `toc_do` (gd2-diem-anh, 25/09).**
+    # 🔴 **GD1 ⛔ KHONG con mang MOT truong bien tap nao (B6, 27/09).**
     #
-    #    `cai.bien_tap` co the mang CA `toc_do` LAN `cat_khung`/`zoom`/`khung`/
-    #    `lat_guong`/`dich_mau` — nhung bon truong sau gio thuc thi o GD2
-    #    (`giai_doan_hinh_anh.py`, doc thang `cai_dat.doc(run)`, KHONG qua ban
-    #    dung nay). Loc CHI `toc_do` o day, ⛔ khong truyen ca dict: `ban_dung.
-    #    _kiem_bien_tap` NEM neu mot truong la lot vao — mot ban dung GD1 vua co
-    #    `khung` trong ho so vua khong ai ve no len hinh la mot hop dong noi doi.
-    _bt_gd1 = ({"toc_do": cai.bien_tap["toc_do"]}
-               if (cai.bien_tap or {}).get("toc_do") is not None else None)
+    #    `cat_khung`/`zoom`/`khung`/`lat_guong`/`dich_mau` sang GD2 tu 25/09;
+    #    `toc_do` — ke lac dan cuoi cung — sang GD2 tu B6, vi no la mot phep DOI
+    #    TRUC thoi gian va hop dong buoc moi phep doi truc xep SAU moi buoc doc
+    #    moc. GD2 doc ca nam truong thang tu `cai_dat.doc(run)`.
+    #
+    # ⛔ Va GD1 ⛔ khong con khai `fps_nguon`: GD2 tu SOI tep vao cua chinh no
+    #    (`nhap_media.nhip_that`), nen ⛔ khong ai phai mang ho mot con so di
+    #    ngang qua mot artifact chi de giai doan sau doc lai.
     ban = ban_dung.dung(
         khoa_video=run.source_key,
         khoa_nen=khoa_nen,
@@ -411,11 +382,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    diem anh); phu de co HAI, va truc `.srt` chay duoc o CA HAI preset.
         #    Xem `_ho_so_phu_de`.
         phu_de=_ho_so_phu_de(db, kho, run, ke_hoach, cai, cach),
-        bien_tap=(_bt_gd1 if cach == cdr.CAT_MA_HOA_LAI else None),
-        rong_khung=_rong_khung,
-        # ⭐ Nhip cua LUONG HINH NGUON. `nhip_nguon()` tu chon `fps_tb` khi
-        #    nguon VFR — xem docstring cua no. `ket_xuat` nhan voi `toc_do`.
-        fps_nguon=_nguon_hinh.nhip_nguon(), cao_khung=_cao_khung)
+        rong_khung=_rong_khung, cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.
     if ctx is not None and getattr(ctx, "progress", None):

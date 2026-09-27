@@ -200,9 +200,9 @@ def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict, bien_tap=None) -> flo
          T2 mong doi     = 28,862 s   (= 36,077 / 1,25 — SAI, chia lan hai)
          ⇒ `lech = 7,215 s`, va T2 **hong tren mot ban giao dung**.
 
-    ⭐ Ban va: ham TU dua ca hai nhanh ve **mot truc** — truc cua tep ma cong nay
-       dang do — nen nguoi goi ⛔ khong con phep doi truc nao de lam sai. Mot ham
-       tra hai truc tuy nhanh la mot hop dong ⛔ khong ai doc duoc.
+    ⭐ Ban va 27/09: ham TU dua ca hai nhanh ve **mot truc**. B6 di xa hon va bo
+       han NGUYEN NHAN: `render` thoi doi moc thoi gian, nen hai nhanh vao ham
+       nay ⛔ khong con o hai truc — phep chia ra NGOAI nhanh, ap dung MOT lan.
 
     ⭐ MOT noi tra loi cau hoi nay, va no tra loi tu mot BAN KHAI:
 
@@ -218,16 +218,23 @@ def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict, bien_tap=None) -> flo
     from . import ke_cat as _kc
     from .bien_tap import moc_ban_ra
 
+    # ⭐ **Sau B6 (27/09) CA HAI nhanh o CUNG mot truc — truc NGUON.** `render` ⛔
+    #    khong con doi moc thoi gian, nen `KeCat.ban_do().thoi_luong_ra` (do dai
+    #    sau cat) va `tong_ms` (do dai nguon) deu la mocs TRUOC `toc_do`.
+    #
+    # 🔑 **Va vi the phep chia ra NGOAI nhanh.** Do chinh la ban sua tan goc cho
+    #    T2: truoc B6 hai nhanh tra hai TRUC khac nhau, nen mot phep chia dat
+    #    ngoai nhanh thi sai mot nhanh, dat trong nhanh thi ⛔ khong ai doc noi
+    #    hop dong. Nay chi co MOT truc vao va MOT truc ra, nen `moc_ban_ra` la
+    #    phep cuoi cung, ap MOT lan, cho MOI duong.
     if goi_ke_cat:
         ke = _kc.KeCat.tu_dict(goi_ke_cat)
         _kc.kiem(ke)
-        # ⛔ DA o truc ban ra: `image_finish` cat chinh tep ma `render` giao, va
-        #    tep do da mang `setpts=PTS/toc`. ⛔ Khong doi truc o day.
-        return float(ke.ban_do().thoi_luong_ra)
-    # ⭐ `tong_ms` la do dai NGUON (giai doan 1 ⛔ khong cat), tuc truc BIEN TAP.
-    #    Doi sang truc ban ra o DAY, chu ⛔ khong de nguoi goi doi — nguoi goi
-    #    ⛔ khong biet nhanh nao da chay.
-    return moc_ban_ra(float(ke_hoach.get("tong_ms") or 0) / 1000.0, bien_tap)
+        tho = float(ke.ban_do().thoi_luong_ra)
+    else:
+        # ⭐ `tong_ms` = do dai NGUON (giai doan 1 ⛔ khong cat gi).
+        tho = float(ke_hoach.get("tong_ms") or 0) / 1000.0
+    return moc_ban_ra(tho, bien_tap)
 
 
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
@@ -312,8 +319,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    nhanh nao da chay. Ap `moc_ban_ra` o day lam nhanh "co ke cat" bi
         #    chia `toc_do` LAN THU HAI — T2 hong tren mot ban giao dung. Xem
         #    docstring cua ham do de co so do.
-        mong_doi = _thoi_luong_mong_doi(
-            ke_hoach, goi_kc, (ban_dung.get("hinh") or {}).get("bien_tap"))
+        # 🔴 **Nguon cua `toc_do` doi tu ARTIFACT sang CAI DAT (B6, 27/09).**
+        #    Truoc B6, GD1 ghi `toc_do` vao `ban_dung.hinh.bien_tap` va QC doc no
+        #    o day. Nay GD1 ⛔ khong con thuc thi — hay ghi — phep bien tap nao;
+        #    tep ma cong nay DO la ban ra cua GD2, va GD2 doc `cai_dat.doc(run)`.
+        #
+        # ⭐ Doc CUNG nguon va CUNG ham loc (`loc_bien_tap_gd2`) voi GD2: hai noi
+        #    doc cung mot cai dat ma tu loc rieng la hai co hoi de lech, va lech
+        #    o day nghia la QC do mot lan chay KHAC lan chay that.
+        from . import giai_doan_hinh_anh as _gdha_bt
+
+        _bt_gd2 = _gdha_bt.loc_bien_tap_gd2(cai_dat.doc(run).bien_tap)
+        mong_doi = _thoi_luong_mong_doi(ke_hoach, goi_kc, _bt_gd2)
 
         # 🔑 Ly do KHONG do duoc cua tung phep kiem — di vao `tom_tat`, tuc vao
         #    `asv_stage.outputs`. Xem `tom_tat_kem_khong_do`.
@@ -391,7 +408,13 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    su kien phu de DA CHOT. Khong truyen thi ca hai luon tra
             #    `KHONG_AP_DUNG` — mot phep kiem ton tai ma khong ai di qua,
             #    dung hang `nang-luc-co-nhung-khong-ai-di-tren-duong`.
-            ban_hinh=(ban_dung.get("hinh") or {}))
+            # ⭐ **`bien_tap` ghep vao TU CAI DAT (B6).** T15 doi moc phu de
+            #    sang truc ban giao theo `toc_do`, va tu B6 ban dung GD1 ⛔ khong
+            #    con mang truong ay. Thieu no thi moi dong phu de bi so voi mot
+            #    do dai NGAN hon dung he so toc do ⇒ T15 bao `hong` tren mot ban
+            #    giao dung.
+            ban_hinh={**(ban_dung.get("hinh") or {}),
+                      **({"bien_tap": _bt_gd2} if _bt_gd2 else {})})
 
     goi = json.dumps(bao_cao, sort_keys=True, ensure_ascii=False).encode("utf-8")
     vt = _van_tay(kho, khoa_ra, khoa_kh)
@@ -474,14 +497,13 @@ def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, run, duong_nguon: str,
         # ⭐ Tham chieu chay qua CUNG phep cat cua giai doan 2 — xem
         #    `qc.loc_tham_chieu`. Thieu no thi hai ben lech tung khung va T18
         #    bao `hong` du bo ma hoa khong lam gi sai.
-        # 🔴 `toc_do` (27/09): `bt_gd2` da **co chu y bo** `toc_do` (viec cua GD1),
-        #    nhung `duong_ra` DA mang phep doi moc do, con `duong_nguon`
-        #    (`run.source_key`) thi chua. Truyen RIENG, ⛔ khong nhet lai vao
-        #    `bt_gd2` — hinh hoc GD2 phai giu dung phan cua no.
+        # ⭐ `toc_do` ⛔ KHONG con la tham so rieng (B6, 27/09): `bt_gd2` nay GIU
+        #    `toc_do` vi GD2 la noi ap no, nen `loc_tham_chieu` doc he so tu
+        #    chinh ho so ay. Mot con so di RIENG canh ho so cua no la hai cho
+        #    khai mot su that — dung hinh dang da sinh ra T2.
         loc = qc.loc_tham_chieu(hinh, duong_chu=duong_chu, duong_ass=duong_ass,
                                 khoang_giu=khoang_gd2, ds_logo=ds_logo,
-                                lop_phu=lop_phu_ds, bien_tap=bt_gd2,
-                                toc_do=_bt.toc_do(cai.bien_tap))
+                                lop_phu=lop_phu_ds, bien_tap=bt_gd2)
         return qc.do_vmaf(duong_nguon=duong_nguon, duong_ra=duong_ra,
                           loc_hinh=loc, duong_logo=duong_logo,
                           rong=int(tt_ra.get("rong") or 0),

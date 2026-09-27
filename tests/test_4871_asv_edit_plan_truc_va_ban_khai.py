@@ -163,83 +163,94 @@ def test_khai_thuong_nguon_DOC_DUOC_bang_banh_coc_pipeline():
     assert P.THEO_TEN[P.EDIT_PLAN].sau == (P.RENDER,)
 
 
-def test_BAN_CHEP_LOI_cung_phai_ve_truc_ban_giao_truoc_khi_hoi_co_thoai():
-    """🔴 `transcribe` chay tren `audio_full.wav` cua NGUON ⇒ `doan[].bat/ket` la
-    moc NGUON. `ci.canh` (tu ban ra cua `render`) la moc SAU `toc_do`.
+def test_MOT_TRUC__ban_chep_loi_va_canh_KHONG_con_phep_doi_nao():
+    """🔴 **B6 (27/09): ba phep doi truc o day BI XOA, ⛔ khong bi sua.**
 
-    ⇒ Voi `toc_do = 1,25`, mot cau thoai o nguon [20 s, 25 s) nam o ban giao
-      [16 s, 20 s). Canh [16 s, 20 s) cua ban giao **CO tieng**, nhung neu ta hoi
-      `_co_thoai` bang moc nguon thi cau tra loi la KHONG ⇒ nguong tu 0,85 tut ve
-      0,65 va canh thanh ung vien cat.
+    Truoc B6: `render` (GD1) ap `setpts=PTS/toc` **roi** `image_finish` (GD2) cat
+    tren tep da doi toc. Nen `ci.canh` (tach tu ban ra cua `render`) o truc SAU
+    `toc_do`, con `ban_ghi` cua `transcribe` (chay tren `audio_full.wav` cua
+    NGUON) o truc NGUON. Hoi *"canh nay co thoai khong"* bang hai truc khac nhau
+    la cach mot canh CO tieng bi doc thanh *"khong thoai"* ⇒ ha nguong ⇒ thanh
+    ung vien cat ⇒ **mot cau thoai bi cat giua cau**.
+
+    Ban va cu: mot ham `_ban_ghi_truc_ban_giao` doi moc bang tay. Ban va B6: doi
+    TRUC DI — `toc_do` ap o cuoi GD2, nen hai ve cua phep so **cung mot truc** va
+    ⛔ khong con gi de doi.
+
+    ⭐ Bai nay chot dieu MANH hon ban cu: su lech truc ⛔ khong con **co the xay
+       ra**, ⛔ khong phai "da duoc sua dung". Do la khac biet giua mot bat bien
+       cau truc va mot phep tinh dung.
     """
-    from apps.auto_scan_video import ban_bien_tap as bbt
+    from apps.auto_scan_video import (ban_bien_tap as bbt,
+                                      giai_doan_hinh_anh as gdha)
 
+    # (a) ⛔ Ham doi truc ⛔ KHONG con ton tai — o ca hai noi no tung o.
+    assert not hasattr(gdbbt, "_ban_ghi_truc_ban_giao"), (
+        "phep doi truc ban chep loi con song ⇒ no dang doi mot truc ma GD1 ⛔ "
+        "khong con tao ra, tuc dang lam SAI")
+    assert not hasattr(gdha, "_khe_thoai_truc_ban_giao"), (
+        "phep doi truc khe thoai con song ⇒ nhu tren")
+
+    # (b) Va cung mot truc thi phep so tra dung ma ⛔ khong ai doi gi: cau thoai
+    #     o nguon [20 s, 25 s), canh nguon [20 s, 25 s) ⇒ CO thoai.
     goc = {"doan": [{"bat": 20.0, "ket": 25.0, "chu": "mot cau thoai"}]}
-    bt = {"toc_do": 1.25}
-
-    # (a) Truc NGUON: canh ban giao [16, 20) doc ra "khong thoai" — doi chung.
-    assert not bbt._co_thoai(goc, 16.0, 20.0), (
-        "neu truc nguon da tra dung thi bai nay vo nghia")
-
-    # (b) Sau khi doi truc: canh do CO thoai.
-    moi = gdbbt._ban_ghi_truc_ban_giao(goc, bt)
-    assert moi["doan"][0]["bat"] == pytest.approx(16.0)
-    assert moi["doan"][0]["ket"] == pytest.approx(20.0)
-    assert bbt._co_thoai(moi, 16.0, 20.0), (
-        "ban chep loi chua ve truc ban giao — canh CO tieng bi doc thanh "
-        "'khong thoai' va bi ha nguong")
-
-    # (c) ⛔ `toc_do == 1`: ⛔ khong bien doi gi, va ⛔ khong sua tai cho.
-    assert gdbbt._ban_ghi_truc_ban_giao(goc, None) is goc
-    assert goc["doan"][0]["bat"] == 20.0, "da sua ban chep loi TAI CHO"
+    assert bbt._co_thoai(goc, 20.0, 25.0)
+    assert not bbt._co_thoai(goc, 30.0, 35.0)
 
 
-def test_CONG_CUNG_khong_cat_vao_tieng_phai_doc_khe_tieng_DUNG_TRUC():
-    """🔴 `ke_cat.co_thoai` la cong CUNG thuc thi *"CHI cat vung KHONG co loi
-    thoai"*. Nhung `timing_align` ⛔ khong biet `toc_do` — `dat_tai_ms` cua no o
-    truc BIEN TAP, con tep bi cat la ban ra cua `render`, **sau** `setpts`.
+def test_MOT_TRUC__ke_cat_KHONG_con_nhan_bien_tap_nen_KHONG_THE_lech():
+    """🔴 **Bat bien cau truc: `_ke_cat` ⛔ khong con tham so `bien_tap`.**
 
-    ⇒ Voi `toc_do = 1,25`: mot cau thoai dat tai 25 s (ke hoach) THAT SU phat o
-      20 s cua ban giao. Mot ung vien cat [20 s, 23 s) **chong lan cau thoai do**
-      — nhung neu cong doc khe tieng o truc cu thi no thay khe o 25 s va **cho
-      qua**, va khach nhan mot cau bi cat giua cau.
+    Truoc B6 no phai nhan ho so DAY DU cua khach chi de doi truc khe thoai. Mot
+    tham so nhu the la mot cho co the truyen SAI (hay quen truyen) — va lich su
+    cua tep nay chinh la mot lan quen. Nay tham so ⛔ khong ton tai, nen loi ay
+    ⛔ khong the tai dien.
+
+    ⚠️ Chot bang `inspect.signature`, ⛔ khong bang chuoi: mot chu thich nhac ten
+       `bien_tap` la hop le va ⛔ khong phai loi.
     """
+    import inspect
+
     from apps.auto_scan_video import giai_doan_hinh_anh as gdha
 
+    ts = inspect.signature(gdha._ke_cat).parameters
+    assert "bien_tap" not in ts, (
+        "`_ke_cat` con nhan `bien_tap` ⇒ van con mot truc thu hai de lech: %s"
+        % list(ts))
+    assert "thoi_luong" in ts
+
+
+def test_MOT_TRUC__cong_khong_cat_vao_tieng_chan_dung_tren_truc_NGUON():
+    """⭐ **`ke_cat.co_thoai` la cong CUNG** thuc thi *"CHI cat vung KHONG co loi
+    thoai"* (chu du an chot). Bai nay do cong ay **tren truc thuc te**.
+
+    Sau B6 `timing_align` va ung vien cat cung o truc NGUON, nen mot cau thoai
+    dat tai 25 s ke hoach THAT SU o 25 s cua tep ma GD2 cat:
+
+      · ung vien [25 s, 27 s) **chong lan** ⇒ cong phai CHAN;
+      · ung vien [20 s, 23 s) ⛔ khong chong ⇒ cong phai CHO QUA.
+
+    🔴 Truoc B6, ve thu hai la cho con bug nam: khe thoai bi doi ve 20 s nen cong
+       CHAN mot ung vien hoan toan hop le — tuc ⛔ khong chi cat sai, ma con **bo
+       sot** nhung cho dang cat. Mot phep doi truc sai hong theo CA HAI chieu.
+    """
     ke_hoach = {"doan": [{"dat_tai_ms": 25_000, "dai_ms": 3_000}]}
-    bt = {"toc_do": 1.25}
+    khe = ke_cat.khe_thoai_tu_ke_hoach(ke_hoach)
+    assert khe == ((25.0, 28.0),), khe
 
-    # (a) Truc cu (⛔ khong doi) — cong CHO QUA, tuc cat vao tieng.
-    tho = ke_cat.khe_thoai_tu_ke_hoach(ke_hoach)
-    assert not ke_cat.co_thoai(tho, 20.0, 23.0), (
-        "neu truc cu da chan duoc thi bai nay vo nghia")
+    assert ke_cat.co_thoai(khe, 25.0, 27.0), "chong lan thoai ma cong CHO QUA"
+    assert not ke_cat.co_thoai(khe, 20.0, 23.0), (
+        "⛔ khong chong lan ma cong CHAN — day la chieu hong THU HAI cua mot "
+        "phep doi truc sai: bo sot cho dang cat")
 
-    # (b) Truc BAN GIAO — cong phai CHAN.
-    dung = gdha._khe_thoai_truc_ban_giao(ke_hoach, bt)
-    assert dung == ((20.0, 22.4),), dung
-    assert ke_cat.co_thoai(dung, 20.0, 23.0), (
-        "khe tieng chua duoc doi ve truc ban giao — `co_thoai` cho cat vao tieng")
-
-    # (c) ⛔ Va ⛔ khong duoc doi khi ⛔ khong co `toc_do`: mot phep chia cho 1,0
-    #     vo hai nhung mot phep doi khong dieu kien la mot cho de sai them.
-    assert gdha._khe_thoai_truc_ban_giao(ke_hoach, None) == tho
-    assert gdha._khe_thoai_truc_ban_giao(ke_hoach, {"toc_do": 1.0}) == tho
-
-
-def test_ke_cat_LOAI_ung_vien_chong_lan_tieng_sau_khi_doi_truc():
-    """⭐ Cai gia do o dau ra cua `ke_cat.chon`, ⛔ khong chi o ham doi truc."""
-    from apps.auto_scan_video import giai_doan_hinh_anh as gdha
-
-    ke_hoach = {"doan": [{"dat_tai_ms": 25_000, "dai_ms": 3_000}]}
-    uv = [ke_cat.UngVien(bat=20.0, ket=23.0, diem_kem=0.9)]
-    # Truc cu: NHAN — cat vao tieng.
-    assert ke_cat.chon(uv, thoai=ke_cat.khe_thoai_tu_ke_hoach(ke_hoach),
-                       thoi_luong=80.0).co_cat
-    # Truc ban giao: LOAI, va co KHAI RA ly do.
-    ke = ke_cat.chon(uv, thoai=gdha._khe_thoai_truc_ban_giao(
-        ke_hoach, {"toc_do": 1.25}), thoi_luong=80.0)
+    # ⭐ Va cai gia the hien o dau ra cua `ke_cat.chon`, ⛔ chi o ham tren.
+    uv_cham = [ke_cat.UngVien(bat=25.0, ket=27.0, diem_kem=0.9)]
+    ke = ke_cat.chon(uv_cham, thoai=khe, thoi_luong=80.0)
     assert not ke.co_cat
     assert [b["ly_do"] for b in ke.bo_qua] == [ke_cat.LY_DO_CO_THOAI]
+
+    uv_sach = [ke_cat.UngVien(bat=20.0, ket=23.0, diem_kem=0.9)]
+    assert ke_cat.chon(uv_sach, thoai=khe, thoi_luong=80.0).co_cat
 
 
 # ══════════════════════════════════════════════════════════════════════════════

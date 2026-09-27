@@ -63,7 +63,7 @@ CHE_DO_HINH = "copy"
 #: ⬆️ 1 -> 2 (gd2-diem-anh): `dung()` thoi nhan `lop_phu`/`ds_logo`, va
 #:    `bien_tap` gio CHI con y nghia o truong `toc_do` (khung/lat guong/dich
 #:    mau da chuyen xuong GD2) — hai ly do doc lap, cung mot lan bump.
-PHIEN_BAN_BAN_DUNG = 2
+PHIEN_BAN_BAN_DUNG = 3
 
 
 class BanDungError(ValueError):
@@ -76,7 +76,7 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
          bo_ma_hoa: str = "", khoang_giu=None, preset: str = "",
          vung=None, cao_khung: int = 0,
          rong_khung: int = 0, phu_de=None,
-         bien_tap=None, fps_nguon: float = 0.0) -> dict:
+         bien_tap=None) -> dict:
     """Dung ban dung tu cac tai lieu chinh tac. Khong cham mot tep media nao.
 
     `ke_hoach`      ket qua cua `thoi_gian.lap_ke_hoach`
@@ -167,12 +167,29 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
     #    MP4 GD1 giao (ma GD1 khong con doi kich thuoc). Chi `toc_do` con anh
     #    huong toi `thoi_luong_ra` cua GD1: no doi MOC THOI GIAN, khong doi
     #    KICH THUOC khung.
+    # 🔑 **`thoi_luong_ra` = `tong_giay`, ⛔ KHONG chia cho `toc_do` (B6, 27/09).**
+    #    GD1 ⛔ khong con doi moc thoi gian, nen ban ra cua no dai DUNG bang nguon
+    #    (sau cat). Phep chia cho `toc_do` nay o CUOI GD2, dung mot lan, o
+    #    `giai_doan_hinh_anh` — xem
+    #    `docs/auto_scan_video_final/B6_PLAN_MOT_TRUC_THOI_GIAN.md`.
+    #
+    # ⛔ Va ban dung GD1 ⛔ khong con ghi `bien_tap`/`fps_nguon`: GD2 doc `toc_do`
+    #    thang tu `cai_dat.doc(run)` va tu SOI tep vao cua chinh no de biet nhip
+    #    (`nhap_media.nhip_that`). Ghi lai o day mot `toc_do` ma GD1 ⛔ khong ap
+    #    la dung hai cho khai MOT su that — dung hinh dang da sinh ra T2.
+    #
+    # 🔴 **NEM khi bi truyen `bien_tap`, ⛔ khong lang le bo qua.** GD1 ⛔ khong
+    #    con thuc thi MOT phep bien tap nao, nen mot `bien_tap` toi day nghia la
+    #    noi goi dang tin rang co ai se ve no len hinh. Bo qua im lang thi khach
+    #    xin mot phep ma ⛔ KHONG giai doan nao thuc thi — GD2 chi doc `cai_dat`,
+    #    ⛔ khong doc ban dung nay. Dung ly le ma `_kiem_bien_tap` da viet cho
+    #    `khung`, nay ap cho ca `toc_do`.
+    if bien_tap:
+        raise BanDungError(_t(
+            'Bản dựng giai đoạn 1 không nhận hồ sơ biên tập: mọi phép biên tập '
+            '(kể cả đổi tốc độ) thực thi ở giai đoạn 2.'))
     thoi_luong_ra = float(tong_giay)
     them_hinh: dict = {}
-    if bien_tap:
-        from . import bien_tap as _bt
-        them_hinh = {"bien_tap": dict(bien_tap)}
-        thoi_luong_ra = _bt.moc_ban_ra(float(tong_giay), bien_tap)
 
     ban = {
         "schema": SCHEMA_BAN_DUNG,
@@ -217,45 +234,6 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
             # ⚠️ Luu ca khi bang 0: mot ban dung khong co khoa nay va mot ban
             #    dung co `cao_khung: 0` la hai thu khac nhau voi nguoi doc lai.
             "cao_khung": int(cao_khung or 0),
-            # 🔴 **Nhip cua LUONG HINH NGUON — T17, 27/09.**
-            #
-            #    `setpts=PTS/toc` doi MOC cua tung khung. Neu ⛔ khong ai khai
-            #    NHIP RA thi bo ma hoa giu nguyen nhung moc ⛔ khong bieu dien
-            #    duoc, va sinh moc TRUNG: do duoc **269** cai tren mot luot 30 fps
-            #    va **100** tren 25 fps. Do lam T17 do va lam VMAF so lech.
-            #
-            # ⭐ Do tren HAI nhip nguon, do CA HAI cot:
-            #      cach                      troi ms   loi DTS
-            #      `-fps_mode passthrough`    0,0        40 / 48
-            #      ⛔ khong khai gi (`auto`)   0,0 / 33,3   0
-            #      **`-r` = nhip nguon**      **0,0**    **0**
-            #    ⇒ `-r` la cach duy nhat xanh CA HAI cot.
-            #
-            # ⭐ **Ghi nhip NGUON, ⛔ khong ghi nhip RA.** `ket_xuat` tinh nhip
-            #    ra = `fps_nguon * toc_do`, vi phep nhan ay thuoc ve cho co
-            #    `setpts` — mot con so "nhip ra" ghi san o day se sai ngay khi ai
-            #    doi `toc_do` ma quen tinh lai.
-            #
-            # 🔑 **Va nhip ra PHAI la `nguon x toc`, ⛔ khong phai `nguon`.** Do
-            #    tren fixture `test_2064` (nguon 25 fps, chop sang o 4,0 s, toc
-            #    1,25 ⇒ phai ra 3,200 s), do CA BA cot:
-            #
-            #      nhip khai (-r)       lech chop   troi A/V   loi DTS   khung
-            #      ⛔ khong khai           40,0 ms     55,9         0      159
-            #      25 = nguon              80,0 ms     95,9         0      159
-            #      **31,25 = nguon x toc**  **0,0**   **15,9**   **0**    **199**
-            #      30                      66,7 ms     82,5         0      191
-            #
-            #    `nguon x toc` la nhip ma noi dung VON DA CO sau khi `setpts` nen
-            #    moc, nen khai no thi bo ma hoa dat khung dung luoi va ⛔ khong bo
-            #    khung nao. Khai `nguon` thi CFR buoc phai BO khung ⇒ noi dung
-            #    TRE 80 ms — te hon ca viec ⛔ khong khai gi.
-            #
-            # ⚠️ `0.0` = *"⛔ khong biet nhip nguon"* (ho so `media_prepare` thieu
-            #    hay hong), KHAC han *"nhip bang 0"*. `ket_xuat` phan biet hai ca
-            #    do va ⛔ khong khai `-r` khi ⛔ khong biet — thay vi doan mot con
-            #    so roi ep ca video cua khach ve mot nhip ta bia ra.
-            "fps_nguon": round(float(fps_nguon or 0.0), 6),
             # ⭐ Ho so phu de, KHONG phai duong dan `.ass`/`.srt`. Duong dan la
             #    mot tep tam doi ten moi lan chay; ban dung phai mang QUYET
             #    DINH, con tep thi do `giai_doan_hinh_anh` (GD2, kenh DOT) hoac

@@ -12,6 +12,108 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-27 (khuya, tiếp) — ⭐ B6: CHUẨN HOÁ GĐ1/GĐ2 — một trục thời gian
+
+Chủ dự án: *"Triển khai kỹ #6"* → *"Cần nghiên cứu logic các bước của GĐ2 cho
+chuẩn luôn lần này. Chuẩn hoá logic GĐ1 và GĐ2."*
+
+Hợp đồng đầy đủ: `docs/auto_scan_video_final/B6_PLAN_MOT_TRUC_THOI_GIAN.md`.
+
+### Chẩn đoán: bệnh ⛔ không phải "tốc độ sai chỗ" — mà là tốc độ chạy TRƯỚC cắt
+
+Cả đường ống chỉ có **hai** phép làm `t_ra ≠ t_vao`: **CẮT** (`concat`, ở GĐ2,
+mang bản đồ tường minh `KeCat.ban_do()`) và **TỐC ĐỘ** (`setpts`, ở GĐ1). GĐ1 đổi
+trục **trước**, nên bản đồ của phép cắt làm việc trên một trục mà ⛔ không một kẻ
+quyết định nào nói. Giá phải trả: **ba** chỗ tự đổi trục bằng tay —
+`_ban_ghi_truc_ban_giao`, `_khe_thoai_truc_ban_giao`, `_thoi_luong_mong_doi` +
+`loc_tham_chieu(toc_do=)`.
+
+⇒ **T2 · T17 · một ca cắt vào giữa câu thoại: bốn con bọ, MỘT bệnh.** Vá từng cái
+là vá triệu chứng — đúng điều chủ dự án đã chỉ ra.
+
+### Lý lẽ cũ ở `giai_doan_hinh_anh.py:51` khai NGƯỢC, và đo thì thấy
+
+Nó viết: *"chuyển `toc_do` xuống GĐ2 sẽ làm kế cắt và tốc độ tranh nhau trên HAI
+trục"*. Đo thì **HAI trục là tình trạng của chính cách cũ**. Dời `toc_do` xuống
+**cuối** GĐ2 thì `edit_plan` → `ke_cat` → khe thoại → phụ đề → QC **tất cả** ở
+trục NGUỒN, và ba phép đổi trục kia **biến mất** — ⛔ không phải chuyển chỗ.
+
+### Tinh tuý lấy từ Viral
+
+`xu_ly_video.py:1140` của `D:/Viral` — `setpts=PTS/{speed}` nối **ngay sau**
+zoom + hflip trong **cùng** chuỗi, `atempo` ở chuỗi tiếng (`:1179`), ⛔ không bước
+cắt riêng. ⭐ Trong kho ta cả họ `khung`/`zoom`/`lật gương`/logo/phụ đề **đã dời
+xuống GĐ2 hôm 25/09** — chỉ `toc_do` bị để lại. Nó là **kẻ lạc đàn**.
+
+### Hai dữ kiện làm phép dời thành phép XOÁ RÒNG
+
+1. GĐ2 đã có **cả hai dòng** trong một `filter_complex` (`NHAN_HINH_RA` +
+   `NHAN_TIENG_RA`) ⇒ áp tốc độ = **nối vào đuôi**, ⛔ không dựng gì mới.
+2. GĐ2 **đã tự soi tệp vào** (`nhap_media.soi`, `:306`), mà `soi` chính là chỗ ghi
+   `fps`/`fps_tb`/`vfr` ⇒ `-r` của T17 lấy nhịp **miễn phí từ chính đầu vào**,
+   ⛔ không phải luồn `fps_nguon` qua bản dựng như GĐ1 buộc phải làm.
+
+### Hai luật đã chốt, và mọi thứ suy ra từ chúng
+
+- **Luật TRỤC** — mọi bước QUYẾT ĐỊNH ở trục NGUỒN; đổi trục là việc CUỐI, và mỗi
+  phép đổi trục mang một **đối tượng bản đồ** tường minh.
+- **Luật CHỖ ĐỨNG** — một bước thuộc GĐ1 **khi và chỉ khi** nó cần *từng khoảng
+  nguồn, TRƯỚC `concat`* (chỉ `vung` thoả — ràng buộc **vật lý**). Mọi bước khác
+  thuộc GĐ2, và GĐ2 mã hoá lại **đúng MỘT lượt**.
+
+Thứ tự chuỗi GĐ2, mỗi mũi một lý do kiểm được:
+`cắt → khung → điểm ảnh → logo → chữ → phụ đề → TỐC ĐỘ`.
+
+⭐ Và phụ đề đốt **trước** `setpts` mang một món quà: mốc phụ đề được co giãn
+**cùng hình, tự động** — ⛔ không một phép đổi trục nào.
+
+### Ba hệ quả tôi ⛔ không lường trước, và cả ba đều là lỗ IM LẶNG
+
+1. **GĐ1 im lặng bỏ qua `bien_tap`.** Sau khi GĐ1 thôi áp tốc độ, `ban_dung.dung`
+   vẫn *nhận* tham số ấy mà ⛔ không làm gì ⇒ khách xin một phép mà ⛔ KHÔNG giai
+   đoạn nào thực thi. ⇒ `dung()` nay **NÉM**.
+2. **QC mất hệ số** — nó đọc `toc_do` từ *artifact bản dựng GĐ1*, mà GĐ1 thôi ghi.
+   T15 và T2 sẽ so mọi dòng phụ đề với một độ dài ngắn hơn đúng hệ số tốc độ.
+   ⇒ `giai_doan_qc` và `giai_doan_qc_ai` nay đọc từ **`cai_dat.doc(run)`**, qua
+   **cùng** `loc_bien_tap_gd2` mà GĐ2 dùng.
+3. **Remux nuốt tốc độ.** Đường `-c copy` của GĐ2 ⛔ không có bộ lọc nào ⇒ một lần
+   chạy lọt vào đấy với `toc_do != 1` giao tệp **CHƯA đổi tốc** — ⛔ không lỗi,
+   ⛔ không log. `co_diem_anh` đã chặn, nhưng đó là phép chặn ở **chỗ gọi**.
+   ⇒ `dung_lenh` **NÉM** khi cả hai sự thật cùng tới: bất biến thuộc về **BIÊN**.
+
+### Đo
+
+- `test_2064` (ffmpeg **thật**) nay chạy **CẢ HAI** giai đoạn — đây là phép đo
+  mạnh nhất cho B6, vì một bài chỉ chạy GĐ1 sẽ xanh mãi mãi trên một tệp **chưa
+  đổi tốc độ**:
+
+  ```
+  GĐ1: 8,000 s · chớp sáng 4,00 s      ⇐ GĐ1 ⛔ KHÔNG đổi mốc
+  GĐ2: 6,400 s · chớp 3,20 s · bíp 3,20 s · A/V 0,00 · 0 mốc trùng
+  QC : T1 T2 T7 T11 T15 T16 = DAT
+  ```
+
+- `test_2061` chốt hợp đồng mới: GĐ1 ⛔ **không bao giờ** phát `setpts`/`atempo`/
+  `-r`; `loc_cat_noi` **NÉM** nếu bị truyền `toc_do`.
+- `test_4871` đổi từ chốt *phép đổi trục* sang chốt **sự vắng mặt** của nó, bằng
+  `inspect.signature` — mạnh hơn: lệch trục ⛔ không còn **có thể xảy ra**.
+- `test_4880`: các khẳng định về nhịp dời sang `nhap_media.nhip_that` — nơi `soi`
+  ghi ba trường ấy. Một nguồn cho câu *"video này bao nhiêu fps"*.
+
+### Một bài ĐỎ SẴN trên `main`, ⛔ không phải của B6
+
+`test_2011::test_preset_CAT_do_that_VMAF_den_dong_va_giai_ma` đỏ (`QC: pending`).
+Đo bằng cây tạm: đỏ **ở cả `270a659f` và `cff52e84`** — cũ hơn cả T17. Ghi lại
+làm một mục riêng; ⛔ chưa truy nguyên.
+
+### Bài học về công cụ của chính mình
+
+`thay()` trong script vá của tôi ⛔ không khẳng định *bản mới KHÁC bản cũ*, nên
+một phép thay **rỗng** lọt qua im lặng — `_ban_ghi_truc_ban_giao` tưởng đã xoá mà
+vẫn còn, và chỉ `pyflakes` bắt được (`undefined name`). Đã thêm
+`assert moi != cu`. ⭐ *Một phép biến đổi không đổi gì mà báo thành công là cùng
+họ với một phép kiểm không khẳng định gì.*
+
 ## 2026-09-27 (khuya) — ✅ T17 XÁC MINH trên worker thật: `qc_muc_hong = []`
 
 Chủ dự án chốt *"cứ deploy"*. Deploy mang **62 commit**, **58 của phiên

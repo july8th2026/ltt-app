@@ -452,18 +452,22 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "ke hoach thoi gian cua timing_align: 'co thoai' doc tieng VIET "
                  "DA SINH o day, ⛔ khong doc ban chep loi NGUON "
                  "(ke_cat.khe_thoai_tu_ke_hoach)",
-                 # 🔴 Bo sung 27/09. Dong tren khai DUNG *nguon nao*, nhung no im
-                 #    ve *TRUC nao* — va tu khi `edit_plan` chay SAU `render`, truc
-                 #    la cho lech. `khe_thoai_tu_ke_hoach` tra khe tren truc BAN RA
-                 #    CUA timing_align (truoc `toc_do`), con tep ma giai doan nay
-                 #    cat la MP4 cua GD1 (**sau** `toc_do`). Doi truc o
-                 #    `giai_doan_hinh_anh._khe_thoai_truc_ban_giao`; thieu phep doi
-                 #    ay thi voi `toc_do = 1,25` mot cau thoai o giay 90 bi doc
-                 #    thanh "⛔ khong thoai" va bi cat vao giua loi.
-                 "khe tieng phai DOI TRUC tu truc bien tap (truoc `toc_do`) sang "
-                 "truc MP4 cua GD1 (sau `toc_do`) truoc khi dung — hai truc chi "
-                 "trung nhau khi `toc_do = 1` "
-                 "(giai_doan_hinh_anh._khe_thoai_truc_ban_giao)",
+                 # 🔴 Bo sung 27/09, VIET LAI o B6. Ban 27/09 khai rang khe thoai
+                 #    phai DOI TRUC — dung voi kien truc luc do (`render` doi moc
+                 #    thoi gian TRUOC khi giai doan nay cat), va chinh phep doi
+                 #    truc ay la mot trong ba cho sinh ra T2/T17.
+                 #
+                 # ⭐ Tu B6 `toc_do` ap o CUOI giai doan nay, nen khe thoai cua
+                 #    `timing_align`, ung vien cat va tep bi cat **cung mot truc**
+                 #    — truc NGUON. Bat bien nay doi tu *"phai doi truc"* thanh
+                 #    *"⛔ KHONG duoc doi truc"*, va do la mot bat bien MANH hon:
+                 #    no do su VANG MAT cua mot phep, chu ⛔ khong do mot phep
+                 #    tinh co the sai. Xem
+                 #    `docs/auto_scan_video_final/B6_PLAN_MOT_TRUC_THOI_GIAN.md`.
+                 "khe tieng dung TRUC NGUON, ⛔ KHONG doi truc: tu B6 `toc_do` ap "
+                 "o CUOI giai doan nay nen khe thoai, ung vien cat va tep bi cat "
+                 "cung mot truc — mot phep doi truc o day nay la phep SAI "
+                 "(giai_doan_hinh_anh._ke_cat)",
                  "tran 5 % la BAT BIEN O BIEN: `ke_cat.kiem` NEM khi vuot, nen "
                  "mot ke cat hong ⛔ khong bao gio ton tai (ke_cat.py)",
                  "cua so `cat_dau_cuoi` cua khach GIAO SAU ke cat, va CO Y nam "

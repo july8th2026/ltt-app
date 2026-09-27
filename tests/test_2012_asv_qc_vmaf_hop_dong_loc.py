@@ -114,58 +114,64 @@ def _cua_so_trim(chuoi: str) -> list[tuple[float, float]]:
             re.findall(r"trim=start=([\d.]+):end=([\d.]+)", chuoi)]
 
 
-def test_2012_tham_chieu_MANG_toc_do_va_cua_so_o_TRUC_NGUON():
+def test_2012_tham_chieu_MANG_toc_do_va_cua_so_KHONG_doi_truc():
     """🔴 `duong_nguon` la tep NGUON (`run.source_key`), `duong_ra` la ban giao —
-    **da** qua `setpts=PTS/toc` cua GD1. Ban tham chieu ⛔ khong ap `toc_do` thi hai
-    ben lech tung khung, VMAF do mot thu khong ai hoi, va **T18 bao `hong` tren mot
-    tep khong sai gi ca** — dung hau qua ma docstring cua `loc_tham_chieu` da canh
-    bao cho `khoang_giu`, chi la o mot chieu khac.
+    **da** qua `setpts=PTS/toc` (o GD2 tu B6). Ban tham chieu ⛔ khong ap `toc_do`
+    thi hai ben lech tung khung, VMAF do mot thu khong ai hoi, va **T18 bao `hong`
+    tren mot tep khong sai gi ca**.
 
-    Goc: `_do_vmaf` truyen `bien_tap=loc_bien_tap_gd2(...)`, va ham ay **co chu y
-    bo `toc_do`** (no la viec cua GD1). Dung cho hinh hoc GD2; sai cho MOC THOI
-    GIAN, vi tep DUOC DO da mang phep doi moc do roi.
+    🔴 **Doi kep o B6 (27/09), va chung NGUOC chieu nhau:**
+      1. `toc_do` ⛔ khong con la tham so RIENG — `bien_tap` cua GD2 nay GIU no,
+         nen `loc_tham_chieu` doc he so tu chinh ho so ay. Mot con so di rieng
+         canh ho so cua no la hai cho khai MOT su that, dung hinh dang sinh T2.
+      2. Cua so cat ⛔ KHONG con duoc doi truc. Truoc B6, `khoang_giu` cua
+         `image_finish` nam tren truc BAN RA CUA GD1 (sau `setpts`) nen phai nhan
+         voi `toc`. Nay GD1 ⛔ khong doi moc, nen `khoang_giu` o truc NGUON —
+         **cung truc voi tep ma `loc_cat_noi` cat**. Mot phep nhan o day bay gio
+         la mot phep SAI.
 
-    ⭐ Chot CA HAI chieu, vi sua mot chieu thoi con lech NANG hon mot chieu:
-      1. chuoi tham chieu phai CO `setpts` cua toc do;
-      2. cua so cat phai o **truc NGUON** (`loc_cat_noi` cat nguon TRUOC roi moi
-         ap `setpts`), trong khi `khoang_giu` cua `image_finish` nam tren truc
-         BAN RA CUA GD1 — tuc `t_nguon = t_gd1 * toc`.
+    ⭐ Chot CA HAI chieu: chuoi phai CO `setpts` VA cua so phai GIU NGUYEN. Sua
+       mot chieu thoi thi lech NANG hon la ⛔ khong sua gi.
 
     ⚠️ Chot bang TONG THOI LUONG, ⛔ khong bang chuoi ky tu: mot bai chot
-       `"start=3.125000"` la mot banh coc do CACH GO — no do khi ai do doi dinh dang
-       so, va no im khi he so sai ma dinh dang dung.
+       `"start=3.125000"` la mot banh coc do CACH GO — no do khi ai do doi dinh
+       dang so, va no im khi he so sai ma dinh dang dung.
     """
     toc = 1.25
-    khoang_gd1 = [(0.0, 2.0), (2.5, 4.0)]      # truc BAN RA cua GD1
-    hinh = {"khoang_giu": [list(k) for k in khoang_gd1], "vung": (),
+    khoang_nguon = [(0.0, 2.0), (2.5, 4.0)]      # ⭐ truc NGUON (B6)
+    hinh = {"khoang_giu": [list(k) for k in khoang_nguon], "vung": (),
             "rong_khung": 640, "cao_khung": 360}
 
-    mot = qc.loc_tham_chieu(hinh, duong_chu=[], duong_ass="", toc_do=1.0)
-    nhanh = qc.loc_tham_chieu(hinh, duong_chu=[], duong_ass="", toc_do=toc)
+    mot = qc.loc_tham_chieu(hinh, duong_chu=[], duong_ass="",
+                            bien_tap={"toc_do": 1.0})
+    nhanh = qc.loc_tham_chieu(hinh, duong_chu=[], duong_ass="",
+                              bien_tap={"toc_do": toc})
 
-    # (1) `setpts` cua toc do: vang khi toc = 1, co khi toc != 1.
+    # (1) `setpts` cua toc do: vang khi toc = 1, co khi toc != 1 — va o CUOI.
     assert "setpts=PTS/" not in mot, (
         "toc_do = 1 ma tham chieu van ap mot phep doi moc: " + mot)
     assert "setpts=PTS/" in nhanh, (
         f"toc_do = {toc} ma tham chieu ⛔ khong ap phep doi moc — T18 se bao hong "
         f"tren mot tep khong sai gi: {nhanh}")
+    assert "setpts=PTS/" in nhanh.split(";")[-1], (
+        "toc do phai la buoc CUOI cua chuoi tham chieu, dung thu tu voi ban "
+        "giao (`loc_cat_hai_dong` dat no o duoi): " + nhanh)
 
-    # (2) Cua so o truc NGUON. Do bang TONG, va doi chung voi ca hai phia:
-    #     tong nguon = tong GD1 * toc, va tong GD1 = tong nguon / toc.
-    tong_gd1 = sum(k - b for b, k in khoang_gd1)
+    # (2) Cua so GIU NGUYEN — ca hai nhanh doc CUNG mot luong giay tu tep nguon.
+    tong_nguon = sum(k - b for b, k in khoang_nguon)
     tong_mot = sum(k - b for b, k in _cua_so_trim(mot))
     tong_nhanh = sum(k - b for b, k in _cua_so_trim(nhanh))
 
-    assert tong_mot == pytest.approx(tong_gd1), (
-        f"toc_do = 1: cua so phai giu nguyen, {tong_mot} != {tong_gd1}")
-    assert tong_nhanh == pytest.approx(tong_gd1 * toc), (
-        f"cua so ⛔ khong doi ve truc nguon: doc {tong_nhanh} giay tu tep nguon, "
-        f"can {tong_gd1 * toc} (= {tong_gd1} giay ban ra * toc {toc})")
+    assert tong_mot == pytest.approx(tong_nguon), (
+        f"toc_do = 1: cua so phai giu nguyen, {tong_mot} != {tong_nguon}")
+    assert tong_nhanh == pytest.approx(tong_nguon), (
+        f"cua so bi DOI TRUC ({tong_nhanh} thay vi {tong_nguon}) — `khoang_giu` "
+        f"cua GD2 da o truc NGUON tu B6, mot phep nhan voi toc la phep SAI")
 
-    # ⭐ Ve DOI CHUNG: sau khi ap `setpts`, tham chieu phai dai DUNG bang tep
-    #    duoc do. Day la tinh chat ma T18 that su can, va no chot CA HAI buoc
-    #    tren cung mot luc — mot buoc dung mot buoc sai thi so nay lech.
-    assert tong_nhanh / toc == pytest.approx(tong_gd1), (
+    # ⭐ Ve DOI CHUNG: sau khi ap `setpts`, tham chieu dai DUNG bang tep duoc do
+    #    (`tong_nguon / toc`). Day la tinh chat ma T18 that su can, va no chot CA
+    #    HAI buoc tren cung mot luc — mot buoc dung mot buoc sai thi so nay lech.
+    assert tong_nhanh / toc == pytest.approx(tong_nguon / toc), (
         "tham chieu sau setpts ⛔ khong dai bang ban giao")
 
 

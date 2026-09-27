@@ -22141,3 +22141,12 @@ msgstr "merging feedback into the brief"
 
 msgid "Chưa chọn prompt meta."
 msgstr "No meta prompt selected."
+
+msgid "Bản dựng giai đoạn 1 không nhận hồ sơ biên tập: mọi phép biên tập (kể cả đổi tốc độ) thực thi ở giai đoạn 2."
+msgstr "The stage-1 render manifest does not accept an edit profile: every edit (including speed changes) runs in stage 2."
+
+msgid "Không thể đổi tốc độ trên đường sao chép nguyên vẹn: đường này không có bộ lọc nào."
+msgstr "Speed cannot be changed on the passthrough copy path: that path has no filters."
+
+msgid "Tốc độ áp ở giai đoạn 2 (hoàn thiện hình), không phải ở render."
+msgstr "Speed is applied in stage 2 (picture finishing), not in render."

@@ -374,8 +374,20 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 SO_LAN_HOI_HINH = 2
 
 
-def _bien_tap_cua_ban_dung(ban_dung: dict) -> dict | None:
-    return (ban_dung.get("hinh") or {}).get("bien_tap")
+def _bien_tap_gd2(run) -> dict | None:
+    """Ho so bien tap ma GIAI DOAN 2 thuc thi — nguon chan ly la `cai_dat`.
+
+    🔴 **Doi nguon tu ARTIFACT sang CAI DAT (B6, 27/09).** Truoc B6, GD1 ghi
+       `toc_do` vao `ban_dung.hinh.bien_tap` va lop soat nay doc no o do. Nay GD1
+       ⛔ khong con thuc thi — hay ghi — phep bien tap nao: tep duoc soat la ban
+       ra cua GD2, va GD2 doc `cai_dat.doc(run)`.
+
+    ⭐ Dung CUNG ham loc voi GD2 va voi QC so (`loc_bien_tap_gd2`): ba noi doc
+       cung mot cai dat ma tu loc rieng la ba co hoi de lech.
+    """
+    from . import cai_dat as _cd, giai_doan_hinh_anh as _gdha
+
+    return _gdha.loc_bien_tap_gd2(_cd.doc(run).bien_tap)
 
 
 def _ban_do_cua_tep_soat(db, kho: Storage, run, ke_hoach: dict):
@@ -445,7 +457,9 @@ def _soat_hinh(db, kho: Storage, *, run, lc, tu_vi_tri: int, ctx=None,
         return [], {"khong_kha_dung": f"thieu ban ra cua {', '.join(thieu)}"}
 
     ke_hoach = _doc_json(kho, khoa_kh)
-    ban_dung = _doc_json(kho, khoa_bd)
+    # ⛔ `khoa_bd` van duoc DOI CHIEU o tren (`compose` phai co ban ra) nhung ⛔
+    #    khong con duoc DOC: tu B6 ho so bien tap den tu `cai_dat`, ⛔ khong tu
+    #    artifact GD1. Doc mot tep roi ⛔ khong dung la mot phep I/O vo ich.
     # ── Ban do cua TEP DANG SOAT (b4 hai giai doan, 25/09) ─────────────────
     #
     # 🔴 Truoc b4, dong nay doc `ke_hoach["ban_do"]` — cac canh `edit_plan` giu.
@@ -454,7 +468,7 @@ def _soat_hinh(db, kho: Storage, *, run, lc, tu_vi_tri: int, ctx=None,
     #    giai doan 2 (`giai_doan_hinh_anh`), va lop soat hinh nay doc ke cat cua
     #    giai doan do — xem `_ke_cat_da_giao`.
     bdo = _ban_do_cua_tep_soat(db, kho, run, ke_hoach)
-    ho_so_bt = _bien_tap_cua_ban_dung(ban_dung)
+    ho_so_bt = _bien_tap_gd2(run)
     td = float(bien_tap.toc_do(ho_so_bt) or 1.0)
 
     # 🔑 Chi muc canh + danh sach canh BI CAT: thu bien mot phan quyet thanh
