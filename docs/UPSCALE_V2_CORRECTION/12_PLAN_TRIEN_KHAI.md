@@ -110,9 +110,23 @@ chỉ còn khả năng cache OS/driver, và đó là thứ phải **ĐO** chứ 
 | `ffmpeg -encoders` liệt kê QSV/AMF | bản **LIỆT KÊ** năng lực | *"có được biên dịch vào không"* | cả 4 **chết lúc chạy** — phải DÒ mới biết |
 | `grep -c $'\r'` đo kết dòng | shell không hiểu `$'\r'` ⇒ mẫu rỗng | *"tệp có bao nhiêu dòng"* | tôi **trách nhầm** một agent phá kết dòng |
 | đọc `.mo` để kiểm `.po` | `msgfmt` dễ dãi hơn parser PO | *"gettext có dịch được không"* | 3 mục PO hỏng mà vẫn báo "ổn cả" |
+| nghiệm thu qua **hàng đợi job thật** | worker chạy `C:\LTTPlatform\app` — bản **ĐÃ CÀI** | *"đường ống CŨ có chạy không"* | một phiên đọc kết quả như thể nó kiểm mã của mình, mất một lượt chạy |
+| `--max-frames` của bộ đo | tham số **rơi mất** giữa parser và chỗ dùng | *"trọn video mất bao lâu"* | mỗi lượt 11 phút thay vì 8 giây; khoá máy giữ 41,6 phút |
+| `cpu_giay_process_tree` | CPU **tích luỹ** của tiến trình cha | *"script đã chạy tổng bao nhiêu CPU"* | tăng đều +20 s/lượt ⇒ tôi chẩn đoán sai nguyên nhân nhiễu |
 
 ⭐ Điểm chung: **cả ba kênh đều KHÔNG báo lỗi.** Chúng trả lời rành mạch — chỉ
 là trả lời một câu **khác**. Im lặng đọc lên giống "không sao".
+
+⭐ Hai dòng cuối bảng đắt hơn ba dòng đầu: chúng ⛔ không sai ở **giá trị** mà sai
+ở **đối tượng được đếm**. Một chỉ số sai kiểu đó ⛔ không chỉ cho số sai — nó làm
+hỏng cả **kết luận rút ra từ nó**. Trước khi suy diễn từ một đại lượng, hỏi nó
+một câu: **"mày đang đếm CÁI GÌ, trong PHẠM VI nào?"**
+
+⚠️ Ca `C:\LTTPlatform\app` do một phiên khác trả lại (27/09). Nó đáng nhớ vì
+phép nghiệm thu **trông đúng hơn cả**: chạy job THẬT, qua hàng đợi THẬT, đọc kết
+quả THẬT — mà vẫn đo nhầm cây. Tôi đã tự kiểm bộ đo của mình sau cảnh báo đó:
+`engine/jobs/quality_gate/ff` và engine nhị phân đều nạp **từ worktree**, và nó
+gọi thẳng `engine.run_upscale` chứ ⛔ không qua hàng đợi.
 
 Phép kiểm đúng kênh:
 ```
