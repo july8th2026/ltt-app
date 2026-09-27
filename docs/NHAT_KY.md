@@ -12,6 +12,131 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-28 (khuya) — Gate phát hành: 4 bước đỏ, và hai ĐÍNH CHÍNH của chính tôi
+
+Chủ dự án chốt: *"Triển khai theo quy trình gate rồi deploy"* → *"Nếu của ta xanh hết
+thì cứ gate - deploy, để phiên kia giải quyết các hạng mục đỏ còn lại"* → *"Fix lỗi
+đỏ đó xong là chạy gate riêng phép đỏ đó rồi ta deploy"*.
+
+### Chọn `--ho-so phat-hanh`, ⛔ không `--doi` — và lý do là một phép đo
+
+`--doi` **tự hạ cấp** khi diff chạm tệp dùng chung, và diff này chạm `locale/`,
+`tools/`, `platform_core/workflow/`, `frontend/` ⇒ nó sẽ in `PASS` mà ⛔ **không
+chạy bộ test**. ⭐ *Một lượt `PASS` rỗng tệ hơn ⛔ không gate, vì ⛔ không ai đi điều
+tra một lượt xanh.*
+
+### 🔴 Chờ HẾT 37 bước thay vì sửa ngay hai bước đầu — và nó trả công gấp bốn
+
+Tôi báo chủ dự án **2** bước đỏ, rồi đọc hết log: thực tế **4 bước / 8 phép**. Nếu mở
+băng sớm thì ta đi **hai** vòng gate, và vòng hai mới lộ bước 13.
+
+⭐ *Một danh sách lỗi **chưa đọc hết** là một danh sách **SAI**, ⛔ không phải một danh
+sách thiếu.*
+
+| phép đỏ | của ai | quy bằng gì |
+|---|---|---|
+| `mypy` +12 · `nuot_loi` +2 | `prompt_ai_ommi` | mypy ở **5 SHA**: 292 ở `849f45a5` → 304 ở `3b31ec36` |
+| `test_211` 10 bảng `ommi_*` | `prompt_ai_ommi` | cây tạm ở `3c90e775` — **đỏ sẵn** |
+| `ffmpeg trần` | **tôi** | bánh cóc nêu đúng tệp mới của tôi |
+| `test_424` ma trận | **tôi** | viện dẫn bài tôi đã xoá |
+| `test_2011` · `test_220` | — | cây tạm ở `3c90e775` — **đỏ sẵn** |
+
+⇒ B6/B7/B8 thêm **0** lỗi mypy — đo ở `118f265a` và HEAD, cả hai đều 304.
+
+### `ffmpeg trần` — bánh cóc bắt thứ phép thử của tôi ⛔ KHÔNG THỂ bắt
+
+Bộ sinh tài nguyên B7 gọi `ffmpeg` bằng **tên trần** — hỏng dưới `LocalSystem` và
+hỏng **im lặng**. 🔴 Tôi **đã chạy nó thành công** trước khi commit, nhưng trong
+**phiên người dùng**, nơi `ffmpeg` **có** trên PATH.
+
+⭐ *Một bánh cóc có ích nhất khi nó đo một điều mà **môi trường của người viết ⛔
+KHÔNG THỂ đo**.* Ghép với vế của phiên `prompt_ai_ommi` (*đo nhánh, tuyên bố cho
+`main`*) thành một luật đủ: **mỗi con số cổng phải đi kèm SHA và MÔI TRƯỜNG đo nó.**
+`PATH` là một **trạng thái**, ⛔ không phải một hằng số.
+
+### `test_424` — đổi một bất biến sản phẩm, để lại một tham chiếu chết
+
+Ma trận nghiệm thu viện dẫn `test_QC_hong_thi_RUN_KHONG_ve_done` — bài chứng minh
+hành vi **CŨ**, mà chính tôi đảo hành vi ấy (`52bc8c50`). Tôi sửa **cả lời khai** của
+hàng S13, ⛔ không chỉ tên bài: giữ *"QC từ chối bản ra hỏng"* sẽ để lại một ma trận
+**nói dối** — khai hệ thống **có** một cổng mà nó ⛔ không còn có.
+
+⭐ Ba ca cùng ngày (chú thích cũ trong `pipeline.py`; `axe.min.js` tôi tưởng nằm trong
+`$VAN_CHUYEN`; ma trận này): **một tham chiếu chết ⛔ không trung tính — nó TRỪ ĐI một
+phép kiểm thật**, vì người đọc tin chỗ ấy đã có ai canh.
+
+---
+
+## 🔴 ĐÍNH CHÍNH 1 — `test_220` ⛔ không phải rò GPU, và bản sửa phải ĐẢO
+
+Tôi báo chủ dự án rằng đường hết-giờ *"có thể để mồ côi giữ GPU"*. **Sai.**
+
+Agent đo **20/20 lượt**: đường cũ **vẫn giết** mồ côi. Khuyết điểm chỉ là **mã thoát
+1 thay vì 3** — và `job_worker.py:230` **chỉ ghi log** nó rồi thay worker vô điều kiện,
+⛔ không ai rẽ nhánh theo nó. Mức: **thẩm mỹ**.
+
+⭐ Và agent **tự bác lượt đo đầu của chính nó**: nó báo *"8/8 sống sót"* rồi phát hiện
+đó là **lỗi harness** — con được spawn từ harness chứ ⛔ không phải con **thật** của
+tiến trình tự-giết, nên ⛔ không nằm trong cây `/T`. *Phép đo ⛔ không tái hiện đúng
+**hình thái** thật thì nó trả lời câu khác.*
+
+### Và bản sửa ấy sai CHIỀU — `test_4908` bắt được
+
+Bản vá (liệt kê con rồi giết từng PID) làm **hai** tệp khác đỏ. Hai bài khai **hai bất
+biến trái nhau**, và ⛔ không thể có cả hai (`/T` trên pid của chính ta **LÀ** thứ giết
+ta):
+
+```
+test_220   doi ma thoat 3   => tien trinh phai SONG
+test_4908  doi taskkill NHAM PID CUA CHINH TA
+```
+
+`test_4908` **đúng**, vì nó canh một bất biến **AN TOÀN**: *"phạm vi phải là con cháu
+CỦA TA… luật 'chỉ giết thứ mình khởi động' được **OS thi hành**, ⛔ không phải do ta
+nhớ."* Liệt-kê-rồi-giết mở lại cửa sổ **PID tái dụng** ⇒ giết tiến trình người khác.
+Kho này đã một lần làm **PostgreSQL production sập 4 phút** vì đúng chuyện đó.
+
+⇒ **Đảo** bản vá, và sửa **kỳ vọng** của `test_220` thành `!= 0`: mã thoát ở đó là kết
+quả một **CUỘC ĐUA**, và **chốt một giá trị của cuộc đua là đo CÁCH GÕ**. Tính chất
+bài ấy thật cần đã có ở ba khẳng định dưới — ⛔ không chạy tiếp, trạng thái bền vững,
+credit đã hoàn.
+
+⭐ *Một phép kiểm chốt một giá trị mà **sản phẩm ⛔ không hề rẽ nhánh theo** là một
+phép kiểm chốt **cách gõ**.*
+
+---
+
+## 🔴 ĐÍNH CHÍNH 2 — `test_2011` ⛔ không phải `pending`
+
+Tôi báo nguyên nhân là `QC: pending`. Agent đo lại xác định ở **hai** SHA: **cả 13
+giai đoạn `succeeded`**, và lỗi tất định là `T18 = khong_ap_dung` — do **chính tôi**
+tắt T18 mặc định (`5d568ffe`), còn bài ra đời `23/09` nên ⛔ không tự bật cờ.
+
+⚠️ Cái `pending` tôi gặp là **nhạy TẢI**: tôi chạy nghiệm thu nặng + gate song song
+nên `qc` ⛔ không được nhặt kịp trong vòng `advance`. ⇒ Tôi **đuổi theo triệu chứng**
+và báo sai nguyên nhân. Bài vẫn còn tính nhạy-tải — **nợ có tên**, ⛔ chưa sửa.
+
+---
+
+## ⭐ Nợ công cụ: `[WinError 206]` chặn hẳn đường KHÉP
+
+`gate.py --doi` chết ở bước test **trong 0,0 giây**:
+
+```
+khong chay duoc: [WinError 206] The filename or extension is too long
+```
+
+Gate truyền **từng** đường dẫn test vào một dòng lệnh `pytest`; phạm vi 972–1001 tệp
+vượt trần **32 767 ký tự** của Windows. Bước test **⛔ không chạy** mà gate vẫn chạy 32
+bước còn lại.
+
+⚠️ Và dòng *"CHẠY LẠI ĐÚNG PHÉP ĐO"* mà chính gate in ra **cũng** liệt kê 1001 tệp ⇒
+**chỉ dẫn nó đưa cũng ⛔ không chạy nổi**. Phạm vi lớn dần theo tệp **dùng chung**: một
+commit chạm `platform_core/job_runner.py` làm nó nhảy 825 → 1001.
+
+⇒ Thuốc: truyền danh sách qua **tệp đối số** (`pytest @tep`), sửa cả `tools/gate.py`
+lẫn `tools/test_nhanh.py`. ⛔ Chưa làm — mục riêng.
+
 ## 2026-09-27 (khuya, tiếp) — 🔴 B8: dải CHỮ GỐC ⛔ không đổi trục sang khung RA
 
 Chủ dự án hỏi: *"Tính năng xoá/làm mờ text trong video gốc nó vận hành như thế nào?
