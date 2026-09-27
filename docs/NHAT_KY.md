@@ -12,6 +12,98 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-27 (tối) — ⭐ ĐƯỜNG ỐNG THÔNG: phim khách thật ra file, và QC thôi làm cổng cấm
+
+### Bằng chứng: hai lượt chạy THẬT ra bản giao
+
+| lượt | cấu hình | kết quả | tôi tự đo bản giao |
+|---|---|---|---|
+| `asvr_60b19a7e` | preset mặc định, phim 45 s | `done`, 10 credit, **13/13** | — |
+| `asvr_1001b588` | **phim khách THẬT 190 s** Trung→Việt | `done`, **40 credit** | giải mã **0 lỗi** · **−14,0 LUFS** đúng đích · CFR **30 fps** · thời lượng khớp nguồn |
+| `asvr_2ce58a54` | `smart_localize` + `toc_do=1,25` | `done`, 10 credit | −14,7 LUFS · đỉnh −1,7 dBTP · **269 mốc DTS trùng** (T17, còn mở) |
+
+🔴 **Sai phương pháp của điều phối, ghi trước**: ba lượt job test đầu đều chạy cấu
+hình **khó nhất** (`toc_do=1,25`) vì làn D đo được đó là cấu hình **duy nhất** phơi
+bày bug trục. Nhưng điều phối ⛔ **không** chạy một job **bình thường** — nên chủ dự
+án chờ nhiều giờ cho một câu hỏi (*"app dùng được chưa"*) mất **3 phút** để trả lời.
+⇒ Chọn mẫu theo *"cái gì phơi bày bug"* thay vì *"cái gì khách thật sự dùng"*.
+
+### 🔴 QC thôi làm cổng cấm phát hành (chủ dự án chốt)
+
+Trước: `_qc_hong` ⇒ `danh_dau_hong` ⇒ `QcChan` ⇒ run `error`, khách nhận **⛔ không
+gì**. Lý lẽ cũ (*"một cổng ⛔ không chặn thì ⛔ không phải cổng"*) đúng **về nguyên
+tắc**, nhưng chỉ đúng khi **con số của cổng đáng tin** — và ba lượt thật cho thấy
+chúng ⛔ không:
+
+- **T2 SAI** — chính QC chia `toc_do` **hai lần**
+- **T18 SAI** — tham chiếu 1083 khung/30 fps vs bản giao 1351 khung/37,5 fps
+- **T17 THẬT** nhưng vô hại với người xem (mọi trình phát bỏ qua)
+
+⇒ Một cổng chặn bằng những con số như thế ⛔ không bảo vệ khách — nó **giữ hàng của
+khách lại**.
+
+⭐ Thứ **⛔ không** được mất là **phát hiện**: `qc_muc_hong`, `qc_ky_thuat_dat`,
+`qc_report.json`, một dòng `warning`. *Một bộ đo bị tắt cổng vẫn là bộ đo; một bộ đo
+bị **xoá sổ** thì ⛔ không còn gì.* Hai phép kiểm được **đảo chiều** (⛔ không xoá) và
+mỗi bài chốt **hai vế**: run vẫn `done` **và** phát hiện vẫn được ghi — chốt một vế
+thôi thì một bản *"sửa"* vứt hết phát hiện cũng sẽ xanh.
+
+**Triệt để, đã xác minh**: `qc_ky_thuat_dat` chỉ được **đọc để hiển thị**
+(`quan_sat.py:845`); `qc_do_luong`/`qc_ai` chỉ `raise` khi **thiếu đầu vào**.
+⇒ `thi_hanh.py` là cổng **duy nhất**.
+
+### ⭐ T17 — chủ dự án chỉ ra cái cơ bản mà điều phối bỏ sót
+
+> *"Làm sao gắn tag time ảnh để tính được, vốn dĩ tính năng này là cơ bản của ffmpeg?
+> Fps đầu vào nên = đầu ra."*
+
+Đúng. `setpts` đổi **mốc**; **`-r` ở đầu ra** mới bảo bộ mã hoá **sắp lại thành nhịp
+đều**. Điều phối đã thử bỏ `passthrough`, thử `fps=` (đặt sai chỗ ⇒ no-op), thử
+`-video_track_timescale` — **⛔ chưa thử `-r`**. Đo trên hai nhịp nguồn:
+
+| cách | khung | trôi ms | lỗi DTS |
+|---|---|---|---|
+| `passthrough` (đang chạy) | 200 / 240 | 0,0 | **40 / 48** |
+| ⛔ không khai gì (`auto`) | 160 / 193 | 0,0 / **33,3** | 0 |
+| **`-r` = nhịp NGUỒN** | 160 / 192 | **0,0** | **0** |
+| **`-r` = nguồn × tốc** | **200 / 240** | **0,0** | **0** |
+| `-r 24000/1001` | 153 | 18,6 | 0 |
+
+⇒ `-r` cho **0 trôi và 0 lỗi** ở cả hai. ⚠️ Cần thêm `fps` vào bản dựng —
+`media_prepare` đã đo sẵn (`nhap_media.soi` trả `fps`) nhưng `ban_dung` ⛔ không ghi.
+
+**Và `D:\Viral` xác nhận**: `xu_ly_video.py` (công cụ đang chạy thật, cùng bài
+Trung→Việt) dùng **đúng** `setpts=PTS/{speed}` + `atempo={speed}` như ta và **⛔ không
+đặt `-fps_mode`/`-vsync`/`-r`** — tức để ffmpeg mặc định, chính cái đo ra 0 lỗi.
+
+### ⭐ Bản sửa TẬN GỐC mà chủ dự án chỉ, còn để lại
+
+> *"Phần speed nằm ở bước cuối của pipeline ở giai đoạn 2. Tránh xung đột các mắt
+> xích. Gặp bug thì do GĐ2 phân bố logic vận hành chưa chuẩn."*
+
+Hiện `render` (GĐ1) đổi tốc độ **rồi** `image_finish` (GĐ2) cắt trên tệp **đã đổi**
+⇒ **hai trục**, và **mọi** bug trục hôm nay sinh từ đấy: T2 (QC chia hai lần), bug
+`edit_plan` làn D sửa, và chuỗi tham chiếu T18. Dời `toc_do` xuống **cuối GĐ2** ⇒
+**một trục** từ `edit_plan` → `ke_cat` → khe tiếng → QC. Đó là bản sửa cho cả một
+**họ** bug, ⛔ không phải một chỗ — và nó là việc lớn, cần plan riêng có phép đo từng
+bước.
+
+### T4 — nay là hai BỘ ĐO lệch nhau, ⛔ không còn là bug độ to
+
+Lượt `asvr_2ce58a54`: QC báo T4 `hong` với `lufs = -15,01` — thiếu **0,01 LU**.
+Nhưng điều phối tự đo **cùng tệp đó** bằng `ebur128`: **−14,7 LUFS**, và bản mã hoá
+thử ghi **−14,75**.
+
+⇒ **Ba con số cho một đại lượng, lệch tới 0,31 LU.** Đường ống tối ưu theo bộ đo của
+bản thử, QC phán quyết bằng `loudnorm` trên mp4 cuối. Đúng cái *"tung đồng xu"* mà
+chú thích `am_master` từng cảnh báo (−14,98 ĐẠT / −15,02 HỎNG, cách nhau 0,04 dB).
+Bản sửa bền vững vẫn là **một vòng đo-và-sửa cho ĐỘ TO** dùng `lufs_giao` (đã ghi
+được từ bản vá `atempo` hôm nay) — ⛔ chưa làm vì hai vòng (độ to ↔ đỉnh) **tranh
+nhau** và cần thiết kế.
+
+⚠️ T5 `dat` (`đỉnh −1,7` dưới trần `−1,5`) ⇒ bản sửa biên codec `2,0 → 0,25` **⛔
+không** làm hỏng đỉnh, đúng như vòng ghim đã đo trước.
+
 ## 2026-09-27 (chiều) — Job test THẬT trên worker production: ba bug chỉ lộ ra khi `toc_do ≠ 1`
 
 Sau khi deploy `47b277ca7080`, chạy **một** job đầy đủ trên worker thật:
