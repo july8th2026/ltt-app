@@ -10,7 +10,17 @@ export type EditorState = {
 }
 
 export type EditorAction =
-  | { type: 'replace'; document: CanvasDocument }
+  /** Thay CẢ tài liệu.
+   *
+   *  ⚠️ `giuLichSu` phân biệt hai lời gọi khác hẳn nhau, ⛔ đừng bỏ nó đi:
+   *
+   *    · **NẠP** workflow lúc mở trang (mặc định, `giuLichSu` vắng) — tài liệu
+   *      trước đó là `emptyDocument()`. Đẩy nó vào `past` là mở cho người dùng
+   *      Ctrl+Z **về canvas trắng**, một "hoàn tác" xoá hết đồ thị họ vừa mở.
+   *    · **GHI ĐÈ** tài liệu người dùng đang dựng (`giuLichSu: true`) — "Soạn
+   *      bằng AI". Ở đây lịch sử là đường sống duy nhất: cửa `/soan` thay cả
+   *      đồ thị, và không xoá được thì Ctrl+Z là thứ cứu công việc của họ. */
+  | { type: 'replace'; document: CanvasDocument; giuLichSu?: boolean }
   | { type: 'graph'; nodes: CanvasNode[]; edges: CanvasEdge[] }
   | { type: 'sync'; nodes: CanvasNode[]; edges: CanvasEdge[] }
   | { type: 'commit'; before: CanvasDocument }
@@ -93,7 +103,12 @@ function clearEdgeReferences(nodes:CanvasNode[],removed:CanvasEdge[]){
 
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
-    case 'replace': return { document: clone(action.document), past: [], future: [] }
+    // ⭐ GHI ĐÈ đi qua `changed` — cùng một đường bánh cóc lịch sử như mọi
+    //    thao tác sửa khác (cắt `past` ở 49, xoá `future`, và LƯU BẢN SAO chứ
+    //    không giữ tham chiếu). NẠP thì đặt lại lịch sử: xem `EditorAction`.
+    case 'replace': return action.giuLichSu
+      ? { ...changed(state, clone(action.document)), selectedId: undefined }
+      : { document: clone(action.document), past: [], future: [] }
     case 'select': return { ...state, selectedId: action.id }
     case 'graph': return changed(state, updateActive(state.document, page =>
       ({ ...page, nodes: action.nodes, edges: action.edges })))

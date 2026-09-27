@@ -1,6 +1,6 @@
 # Sổ tiến độ — Agent UI V2
 
-Cập nhật lần cuối: 2026-09-27 · bởi: điều phối (phiên audit)
+Cập nhật lần cuối: 2026-09-27 · bởi: làn `ui3` (tách CanvasShell)
 
 > ⛔ **Trạng thái công việc ghi vào TỆP NÀY, không chỉ trong hội thoại.** Một phiên
 > bị `/compact` mất hội thoại; tệp thì còn.
@@ -14,7 +14,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | Pha | Làn | Trạng thái | Nhánh | Tệp SỞ HỮU | Gộp main | Ghi chú |
 |---|---|---|---|---|---|---|
 | UI-0 Lỗi P0 cơ khí | `ui0` | ✅ **ĐÃ GỘP** (`72ee199b`) | `claude/ltt-agent-automation-ux-audit-9e3764` | *(đã trả phiếu)* | ✅ | dải **5600-5699** · nghiệm thu trình duyệt PASS · ⏸ chưa deploy (chủ dự án: deploy CUỐI) |
-| UI-3 Tách CanvasShell | `ui3` | **ĐANG LÀM** (agent) | worktree riêng | mọi `**/*.tsx` · `editorState.ts` · `workflowApi.ts` | — | dải **5700-5799** · ⛔ cấm đụng `canvas.css`, ⛔ cấm đổi `className` |
+| UI-3 Tách CanvasShell | `ui3` | **CHỜ DUYỆT** | `phien/agent-ui-v2-ui3` | `src/**/*.tsx` · `editorState.ts` · `features/editor/**` | — | dải **5700-5799** · **ĐÃ MỞ KHOÁ song song hoá** — 31 tệp, lớn nhất 179 dòng · 165 test xanh · trình duyệt PASS |
 | UI-2 Design system | `ui2` | **ĐANG LÀM** (agent) | worktree riêng | **chỉ** `canvas.css` + `src/styles/` | — | dải **5800-5899** · ⛔ cấm đụng mọi `.tsx` |
 | UI-N Nhãn ngắn node LTT | `uiN` | ✅ **ĐÃ GỘP** (`868f9db2`) | — | *(đã trả phiếu)* | ✅ | dải **5900-5999** · LTT_APPS 16/17 → **0/17** nhãn > 40 ký tự |
 | UI-1 Automation Studio | — | CHƯA MỞ | — | — | — | **chặn bởi Q1** · chủ S5 (bảng định tuyến) |
@@ -38,6 +38,8 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | ui0 | `frontend/agent-canvas/src/canvas.css` | 27/09 | **S1** (bàn giao UI-2) |
 | ui0 | `frontend/agent-canvas/src/nodes/NodeKhung.tsx` | 27/09 | — |
 | ui0 | `frontend/agent-canvas/src/CanvasEdgeView.tsx` | 27/09 | — |
+| ui3 | `frontend/agent-canvas/src/CanvasShell.tsx` → `src/features/editor/**` | 27/09 | **S2** |
+| ui3 | `frontend/agent-canvas/src/editorState.ts` | 27/09 | **S3** (nhận bàn giao từ ui0) |
 
 
 **Sáu sổ dùng chung và chủ của chúng** — đụng vào thì DỪNG và báo điều phối:
@@ -81,7 +83,7 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 | **R3** | Task 2 của UI-0 **đổi hành vi**: `core.if` nay chạy **một** nhánh thay vì cả hai | ⚠️ phải báo chủ dự án **trước khi deploy** |
 | R7 | 3 hạng mục (media preview, test một bước, run history) **không đạt 98 bằng công việc UI** | đã ghi ở `10_IMPLEMENTATION_PLAN.md` §3 |
 | R8 | Phình phạm vi ở UI-1 (chia sẻ, phân quyền, marketplace) | UI-1 chỉ làm điều hướng + 5 trang |
-| R10 | Hai làn cùng sửa `canvas.css`/`CanvasShell.tsx` | UI-2 và UI-3 ⛔ không chạy song song |
+| R10 | Hai làn cùng sửa `canvas.css`/`CanvasShell.tsx` | ✅ **KHÉP phía UI-3**: đo được `git diff -- canvas.css` RỖNG và tập `className` 97→97 (MẤT 0/THÊM 0) |
 
 ## Nhật ký
 
@@ -108,7 +110,46 @@ _(mới nhất ở trên)_
   ⚠️ **Chưa chắc, cần chủ dự án chốt:** `text.chat` → "Sinh văn bản bằng LLM". Mô tả
   của nó phủ 4 việc khác nhau (coding/chat/agent/tóm tắt); tên này an toàn nhưng
   chung chung.
+- `2026-09-27` `ui3` — **UI-3 XONG — `CanvasShell.tsx` 959 dòng → `features/editor/` (31 tệp).**
+  Nghiệm thu trình duyệt thật (chế độ A): **`status: PASS`**, 0 pageerror · 0 console
+  error · 0 request hỏng · 0 phản hồi 5xx.
+  ⚠️ Cổng **8197**, không 8198 — một phiên khác đang giữ 8198; ⛔ không giết tiến
+  trình của làn khác để lấy một con số cho đẹp.
 
+  | Phép đo | Trước | Sau |
+  |---|---|---|
+  | tệp lớn nhất của trình soạn | **959 dòng** (`Editor()` 740) | **177 dòng** (`useWorkflowRun`) |
+  | `useState` trong một hàm | **33** | **5** (`EditorShell`) |
+  | tệp > 250 dòng trong `features/editor/` | — | **0** |
+  | test vitest | 156 xanh | **165 xanh**, ⛔ không sửa một test cũ nào |
+  | tập hợp `className` | 97 | **97** — MẤT 0, THÊM 0 (đo bằng script) |
+  | `git diff -- canvas.css` | — | **RỖNG** (S1 của UI-2 còn nguyên) |
+  | autosave trên mạng THẬT | chưa ai đo | **0 PUT @400ms · đúng 1 PUT @1,8s** |
+
+  **Sửa lỗi đi kèm:** `case 'replace'` trả `past: []` ⇒ "Soạn bằng AI" ghi đè đồ thị
+  và **Ctrl+Z không cứu được**. Nay đi qua `changed()` khi `giuLichSu: true`; lượt
+  NẠP lúc mở trang vẫn đặt lại lịch sử (nếu không, Ctrl+Z về **canvas trắng**).
+
+  🔴 **Đặc tả trước khi di chuyển.** Kiểm kê 6 hành vi tinh vi của R4: 4 đã có phép
+  kiểm, **2 thì không** (autosave 800 ms, `updateNodeInternals` theo rAF). Viết
+  `tests/CanvasShellDacTa.test.tsx` cho hai cái ấy, xanh TRƯỚC khi tách.
+  ⚠️ Bẫy đã tránh: `workflowApi.test.ts` có bài *"debounces autosave"* — nó đo
+  `createAutosave(save,500)`, một helper `CanvasShell` **không hề gọi**. Đọc thứ
+  ĐẠI DIỆN thay vì thứ THẬT thì tách xong vẫn xanh trong lúc autosave thật đã chết.
+  Cả 4 phép đo mới đều **tiêm lỗi để chứng minh không xanh giả**.
+
+  🔴 **Hai lần phép đo của TÔI sai, không phải mã sai** — cùng dạng bẫy `ui0` đã ghi:
+  1. bản dọn rAF đo bằng `spyOn(cancelAnimationFrame)` ⇒ **XANH GIẢ**:
+     `@xyflow/react` tự gọi hàm ấy cho việc của nó, nên phép đo vẫn xanh sau khi
+     tôi gỡ hẳn khối rAF. Đổi sang đo **hệ quả** (callback đang chờ không được chạy).
+  2. kịch bản trình duyệt khẳng định `rail.x < stage.x` và ĐỎ — nhưng
+     `canvas.css:112` đặt `.canvas-rail{position:absolute}` **đè lên** khung vẽ
+     (`x=0`). Tôi đo một quan hệ **chưa bao giờ tồn tại**. Đổi sang đo thứ đáng
+     đo: nút ở thanh dọc có **bấm được** không (`elementFromPoint`).
+
+  ⚠️ **Ba chỗ suýt mất hành vi lúc tách** (chi tiết ở commit `refactor(canvas)`):
+  `xoaLuaChon` vs `boChon` · phải chuột KHÔNG mở inspector · `commandQuery` phải
+  ở `EditorShell` (bản gốc chỉ xoá nó sau khi CHẠY một lệnh, nên `Esc` giữ chữ).
 
 - `2026-09-27` `ui0` — **Task 6 XONG — nghiệm thu trên TRÌNH DUYỆT THẬT: `status: PASS`**
   (chế độ A, máy chủ cô lập 8198, sqlite scratchpad; production 8100 vẫn 200 sau đó).
