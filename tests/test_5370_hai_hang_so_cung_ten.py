@@ -71,3 +71,40 @@ def test_gia_kep_o_dung_hang_so_chu_khong_o_so_go_tay():
     # vi ham tra hang so bat ke dau vao.
     assert mf._cost({"operation": "director", "scene_count": 1}) != \
         mf._cost({"operation": "director", "scene_count": MAX_SCENES})
+
+
+def test_tran_so_canh_di_ra_frontend_tu_HANG_SO_backend():
+    """Frontend ⛔ không được gõ lại trần — nó phải nhận qua `data-max-scenes`.
+
+    Trước khi có đường này, `StudioShell.tsx` gõ `TRAN_SO_CANH = 20` trong khi
+    backend kẹp ở `project_schema.MAX_SCENES = 20`. Hai chỗ khai cùng một đại
+    lượng, và chỗ lệch nằm ngay trong `max` của input **khách đang gõ**.
+
+    ⭐ Phép kiểm đo **cả đường**, không đo một đầu: hằng số đi vào ngữ cảnh
+    template (`_render_workspace`) và template thật có đúng thuộc tính đó.
+    """
+    import inspect
+    import pathlib
+
+    from apps.prompt_ai_ommi.routes import _shared
+
+    # 1. Ham dung ngu canh template phai DOC hang so, khong go so.
+    src = inspect.getsource(_shared._render_workspace)
+    assert '"max_scenes": MAX_SCENES' in src, (
+        "_render_workspace khong dua MAX_SCENES ra template")
+    assert '"max_scenes": 20' not in src, "go tay so 20 thay vi hang so"
+
+    # 2. Template phai THAT SU mang thuoc tinh do (mot bien ngu canh khong ai
+    #    doc thi bang khong co).
+    html = (pathlib.Path("apps/prompt_ai_ommi/templates")
+            / "prompt_ai_ommi_workspace.html").read_text(encoding="utf-8")
+    assert 'data-max-scenes="{{ max_scenes }}"' in html
+
+    # 3. Frontend phai DOC dataset do, khong go lai tran.
+    tsx = (pathlib.Path("frontend/prompt-ai-ommi/src/main.tsx")
+           .read_text(encoding="utf-8"))
+    assert "root.dataset.maxScenes" in tsx
+
+    # Doi chung: neu ba phep tren chi la "tim chuoi trong tep" thi mot chuoi bia
+    # cung phai KHONG tim thay — khong the ca ba deu xanh vi tep qua lon.
+    assert "data-khong-he-ton-tai" not in html

@@ -59,20 +59,34 @@ const GROUPS: Group[] = [
 ]
 
 /* Moi khoa man DA XAY. Dung de loc hash — mot hash la duong vao tu ngoai,
- * nen khong duoc tin. `#/khong-co-that` phai roi ve `overview`, khong duoc
- * render mot vung trong. */
+ * nen khong duoc tin. `#/khong-co-that` phai roi ve `MAN_MAC_DINH`, khong duoc
+ * render mot vung trong. ⚠️ Dung go ten man vao chu thich nay: mac dinh da
+ * doi mot lan (Q-3: overview -> studio) va chu thich cu o lai noi sai. */
 const KHOA_HOP_LE = new Set(
   GROUPS.flatMap((g) => g.items.filter((i) => i.built).map((i) => i.key)),
 )
 
-const MAN_MAC_DINH = 'studio'
+/** Loi vao mac dinh (Q-3). XUAT ra de phep kiem doc duoc thay vi go ten man:
+ *  mot phep kiem go 'Tong quan' da DO ngay khi mac dinh doi sang 'studio'. */
+export const MAN_MAC_DINH = 'studio'
+
+/** Nhan hien thi cua mot khoa man. Xuat ra vi phep kiem phai tim nut tren rail
+ *  theo nhan, ma nhan la thu chi GROUPS biet. */
+export function nhanMan(khoa: string): string {
+  for (const g of GROUPS) {
+    for (const i of g.items) if (i.key === khoa) return i.label
+  }
+  throw new Error(`khoa man khong co that: ${khoa}`)
+}
 
 function docHash(): string {
   const h = (window.location.hash || '').replace(/^#\/?/, '')
   return KHOA_HOP_LE.has(h) ? h : MAN_MAC_DINH
 }
 
-export function OmmiShell({ csrfToken }: { csrfToken: string }) {
+export function OmmiShell(
+  { csrfToken, maxScenes = 20 }: { csrfToken: string; maxScenes?: number },
+) {
   setCsrfToken(csrfToken)
 
   /* 🔴 VI SAO CO DINH TUYEN O DAY. Truoc 07/09 man hinh chi nam trong
@@ -159,7 +173,7 @@ export function OmmiShell({ csrfToken }: { csrfToken: string }) {
       </nav>
 
       <section className="ommi-main">
-        {screen === 'studio' ? <StudioShell /> : null}
+        {screen === 'studio' ? <StudioShell maxScenes={maxScenes} /> : null}
         {screen === 'overview' ? <OverviewScreen onGo={setScreen} /> : null}
         {screen === 'projects' || screen === 'brief' ? (
           <ProjectScreen key={screen} mode={screen} />

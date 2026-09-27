@@ -3,7 +3,8 @@
 {% block page_mode %}immersive{% endblock %}
 {% block content %}
   {% if workspace_js %}
-  <div id="prompt-ai-ommi-root" aria-busy="true" data-csrf-token="{{ csrf_token }}">
+  <div id="prompt-ai-ommi-root" aria-busy="true" data-csrf-token="{{ csrf_token }}"
+       data-max-scenes="{{ max_scenes }}">
     <p class="dim">{{ _("Đang tải workspace…") }}</p>
   </div>
   {% for href in workspace_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}

@@ -16,7 +16,14 @@
  */
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { OmmiShell } from '../src/OmmiShell'
+import { MAN_MAC_DINH, nhanMan, OmmiShell } from '../src/OmmiShell'
+
+/* ⭐ Ba phep duoi doc `MAN_MAC_DINH` thay vi go ten man. Hanh vi dang bao ve
+ *    la "hash bay ba phai roi ve mot man THAT, khong render vung trong" — no
+ *    KHONG doi khi mac dinh doi. Ban truoc go /Tổng quan/ va DO ngay khi Q-3
+ *    doi mac dinh sang `studio`: mot phep kiem go con so/ten cua mot quyet dinh
+ *    la mot phep kiem se do khi quyet dinh doi. */
+const NHAN_MAC_DINH = new RegExp(nhanMan(MAN_MAC_DINH))
 
 function dat(hash: string) {
   window.location.hash = hash
@@ -45,19 +52,19 @@ describe('dinh tuyen theo hash', () => {
     expect(nut.getAttribute('aria-current')).toBe('page')
   })
 
-  it('hash bay ba roi ve overview, KHONG render vung trong', () => {
+  it('hash bay ba roi ve man mac dinh, KHONG render vung trong', () => {
     // ⛔ Hash la duong vao TU NGOAI — khong duoc tin. Mot `#/khong-co-that`
     //    ma render mot vung trong la mot trang trang khong ai giai thich duoc.
     dat('#/khong-co-that')
     render(<OmmiShell csrfToken="x" />)
-    const nut = nutRail(/Tổng quan/)
+    const nut = nutRail(NHAN_MAC_DINH)
     expect(nut.getAttribute('aria-current')).toBe('page')
   })
 
-  it('khong co hash thi mo overview', () => {
+  it('khong co hash thi mo man mac dinh', () => {
     dat('')
     render(<OmmiShell csrfToken="x" />)
-    const nut = nutRail(/Tổng quan/)
+    const nut = nutRail(NHAN_MAC_DINH)
     expect(nut.getAttribute('aria-current')).toBe('page')
   })
 
@@ -65,7 +72,7 @@ describe('dinh tuyen theo hash', () => {
     // Nut cua man chua xay bi `disabled`; hash khong duoc la duong vong qua do.
     dat('#/chua-xay')
     render(<OmmiShell csrfToken="x" />)
-    const nut = nutRail(/Tổng quan/)
+    const nut = nutRail(NHAN_MAC_DINH)
     expect(nut.getAttribute('aria-current')).toBe('page')
   })
 })

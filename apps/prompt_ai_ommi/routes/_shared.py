@@ -26,8 +26,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apps.prompt_ai_ommi.manifest import MANIFEST
-from apps.prompt_ai_ommi.project_schema import (SCHEMA_VERSION, clean_project,
-                                                empty_project, prompt_job_params)
+from apps.prompt_ai_ommi.project_schema import (MAX_SCENES, SCHEMA_VERSION,
+                                                clean_project, empty_project,
+                                                prompt_job_params)
 from apps.prompt_ai_ommi.services.composer import load_catalog
 from platform_core.frontend_bundle import bundle_assets
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
@@ -163,6 +164,10 @@ def _render_workspace(request: Request):
         "user": _user(request).email, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "workspace_js": scripts, "workspace_css": styles,
+        # Tran so canh di RA frontend thay vi frontend tu go lai. Hai cho khai
+        # cung mot dai luong thi som muon lech, va cho lech o day nam ngay
+        # trong `max` cua input KHACH DANG GO.
+        "max_scenes": MAX_SCENES,
     })
 
 def _resource_error(exc: Exception) -> HTTPException:

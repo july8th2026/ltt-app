@@ -245,6 +245,14 @@ describe('Storyboard', () => {
 })
 
 describe('Tổng quan, Chi phí, Dự án', () => {
+  /* ⚠️ Dat hash TUONG MINH. Nhom nay do NOI DUNG man Tổng quan, KHONG do loi
+   *    vao mac dinh — nen no phai doc lap voi quyet dinh "man nao mo dau".
+   *    Truoc Q-3 mac dinh la `overview` nen khong dat hash van dung; sau Q-3
+   *    mac dinh la `studio` va hai phep nay DO, du khong cai gi cua man
+   *    Tổng quan bi hong. Mot phep kiem dua vao gia tri mac dinh cua thu
+   *    KHAC la mot phep kiem do nho thu khac. */
+  beforeEach(() => { window.location.hash = '#/overview' })
+  afterEach(() => { window.location.hash = '' })
   it('người mới thấy hướng dẫn ba bước chứ không phải sáu ô số 0', async () => {
     render(<OmmiShell csrfToken="t"/>)
     await waitFor(() => expect(screen.getByText('Bắt đầu từ ba bước')).toBeTruthy())

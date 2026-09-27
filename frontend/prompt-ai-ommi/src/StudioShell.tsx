@@ -44,7 +44,10 @@ import {
  * thêm vào response của `GET /api/briefs/{bid}` hoặc một endpoint cấu hình
  * riêng, để đổi trần ở một chỗ là đủ.
  */
-const TRAN_SO_CANH = 20
+/** Luoi cuoi khi backend khong truyen `data-max-scenes`. ⛔ KHONG phai ban khai
+ *  thu hai: tran THAT la `project_schema.MAX_SCENES`, di ra qua
+ *  `_render_workspace` -> template `data-max-scenes` -> `main.tsx`. */
+const TRAN_MAC_DINH = 20
 
 /**
  * Ngưỡng cảnh báo (quyết định Q-17, 27/09/2026, `docs/PROMPT_AI/QUYET_DINH_26-09.md`).
@@ -84,7 +87,9 @@ function draftOf(brief: Brief): Draft {
   }
 }
 
-export function StudioShell() {
+export function StudioShell({ maxScenes = TRAN_MAC_DINH }:
+                            { maxScenes?: number } = {}) {
+  const TRAN_SO_CANH = maxScenes
   const [selectedId, setSelectedId] = useState('')
   const [reloadToken, setReloadToken] = useState(0)
 
