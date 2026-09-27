@@ -12,6 +12,133 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-27 (chiều) — Job test THẬT trên worker production: ba bug chỉ lộ ra khi `toc_do ≠ 1`
+
+Sau khi deploy `47b277ca7080`, chạy **một** job đầy đủ trên worker thật:
+`asvr_3059dc3d77f0456bb3a3ab3705b6fae` — phim khách thật 45,121 s / 30 fps /
+1353 khung, preset `smart_localize`, **`toc_do = 1,25`** (cấu hình mà **⛔ chưa
+lượt nghiệm thu nào từng chạy**).
+
+**10/13 giai đoạn xong, `qc` chặn với bốn mục: T2 · T4 · T17 · T18.**
+Tôi tự đo lại **cả bốn** thay vì đọc báo cáo QC:
+
+| mục | tôi đo độc lập | kết luận |
+|---|---|---|
+| **T17** | tái hiện đúng **269** lỗi `non monotonic dts` bằng **một** lệnh | 🔴 thật |
+| **T18** | VMAF trung bình 53,8 / ngưỡng 75, **min 1,45**, p5 9,26 | 🔴 cùng gốc T17 |
+| **T4** | `ebur128` = −15,2 trên tệp giao; bản phối −15,24 | 🔴 thật |
+| **T2** | compose hứa 36,097 s, tệp giao 36,077 s ✓ | ❌ **QC tự sai** |
+
+### 🔴 Bug 1+2 — `-fps_mode passthrough` làm dòng ra ⛔ KHÔNG hợp chuẩn
+
+Dòng ra có **1351 khung nhưng chỉ 1081 mốc thời gian** ⇒ 270 khung xếp chồng
+cách nhau **1 tick**. Đo trực tiếp: khoảng cách khung là `512 tick`
+(= 15360/30, nhịp **nguồn**) cộng 80/400 cặp `(1, 511)` ⇒ scale lên 1351 khung
+= **270**, khớp đúng số lỗi.
+
+⚠️ **Hai lần tôi tái hiện bằng tay đều ra dòng SẠCH** — vì chúng mặc định về
+CFR. Chỉ khi gọi **chính `ket_xuat.dung_lenh`** mới thấy `-fps_mode passthrough`.
+⇒ Bản tái hiện gõ tay là một **thứ đại diện**; lệnh thật phải lấy từ hàm dựng
+lệnh của sản phẩm.
+
+Bản 22/09 thêm `passthrough` để chữa trôi hình/tiếng. Đo trên **hai** nhịp nguồn:
+
+| nguồn | chế độ | khung | trôi ms | lỗi DTS |
+|---|---|---|---|---|
+| 30 fps | `passthrough` | 1351 | **43,7** | **269** |
+| 30 fps | `vfr` | 1082 | 10,3 | **0** |
+| 25 fps | `passthrough` | 500 | **2,0** | **100** |
+| 25 fps | `vfr` | 400 | 15,0 | **0** |
+
+⇒ Trôi **đổi chiều** theo nhịp nguồn, nên bản 22/09 đo **đúng cho nguồn của họ**.
+Thứ họ ⛔ không đo là **mốc trùng**, và `passthrough` sinh mốc trùng ở **cả hai**
+nhịp. Họ lỗi *"mọi cần gạt đo riêng, tổng chưa ai đo"*.
+
+⭐ **Bản sửa có NGUỒN, ⛔ không phải suy luận.** `FFmpeg/doc/ffmpeg.texi`, mục
+`-fps_mode`, nguyên văn:
+- `passthrough` — *"Each frame is passed with its timestamp from the demuxer to
+  the muxer."*
+- `vfr` — *"Frames are passed through with their timestamp **or dropped so as to
+  prevent 2 frames from having the same timestamp**."*
+
+Bất biến thứ hai **đúng** là thứ ta thiếu, và `vfr` vẫn giữ ý định 22/09 (⛔ không
+ép CFR). ⛔ Không để trống (mặc định `auto`): tài liệu định nghĩa `auto` bằng
+**cơ chế** (*"chooses between cfr and vfr depending on muxer capabilities"*),
+⛔ không bằng **bất biến**.
+
+### 🔴 Bug 2 — T2 chia `toc_do` HAI LẦN
+
+`_thoi_luong_mong_doi` trả **hai trục khác nhau** tuỳ nhánh — *có kế cắt* trả
+`thoi_luong_ra` của `image_finish` (đã **sau** `toc_do`), *⛔ không có* trả
+`tong_ms` (**trước** `toc_do`) — mà người gọi áp `moc_ban_ra` cho **cả hai**.
+⇒ T2 mong đợi `28,862` = 36,077/1,25, lệch **7,215 s**, và **hỏng trên một bản
+giao đúng**.
+
+⚠️ **Ba phép kiểm đầu của tôi ⛔ KHÔNG bắt được nó**: chúng gọi hàm **trực tiếp**
+nên đo *hợp đồng của hàm*, còn bug thì ở **chỗ gọi** — đo được bằng cách tiêm lại
+và thấy **7/7 vẫn xanh**. Đã thêm một phép đọc **cây AST** của `chay()`. Đúng họ
+*"phạm vi phép đo hẹp hơn lời tuyên bố"*, xảy ra **ngay trong** loạt bài viết để
+sửa họ lỗi ấy.
+
+### 🔴 Bug 3 — biên dư cho codec ăn hết độ chính xác của `loudnorm` (T4)
+
+**Hai giả thuyết của tôi bị bác bằng phép đo:**
+1. *"Xung đột giữa đích −14 LUFS và trần −3,5 dBTP"* — nới trần chỉ được **0,1 LU**,
+   và ở −2,5 đỉnh ⛔ không đụng trần. **SAI.**
+   ⚠️ Phép đo ấy nhắm **sai kênh**: tôi đo trên bản phối **đã chuẩn âm** (một
+   lượt) — một **thứ đại diện**. Trên chuỗi thật từ bản trộn thô, nới trần được
+   **0,6 LU**.
+2. *"Hai mất mát xếp chồng: `loudnorm` rồi bộ hạn đỉnh"* — đo bằng chính
+   `am_master.loc_han_dinh`: bộ hạn đỉnh cost **0,00 LU**. **SAI.**
+
+**Giả thuyết thứ ba, có nguồn và đã đo**: `loudnorm ... linear=true` áp một gain
+tuyến tính để trúng đích, nhưng **lùi về chế độ động** khi gain ấy làm vượt `TP`
+— và chế độ động sai ~1 LU. Đo trên **chính ba lượt của sản phẩm** với dữ liệu
+thật của lượt chạy:
+
+| `BIEN_CHO_CODEC_DB` | trần phối | LUFS ra | đỉnh giao | vòng ghim |
+|---|---|---|---|---|
+| **2,0** | −3,5 | **−15,0** | −3,35 | 1 | ← **hỏng T4** |
+| 1,0 | −2,5 | −14,8 | −2,38 | 1 |
+| **0,5** | −2,0 | **−14,6** | −1,92 | 1 | ← **chọn** |
+| 0,0 | −1,5 | −14,5 | −1,78 | 2 |
+
+⇒ `2,0 → 0,5` lấy lại **0,4 LU**, đưa T4 vào trong khoảng với dư 0,4 LU, đỉnh
+giao −1,92 (dư 0,42 dB dưới trần T5), và **1 vòng ghim** — ⛔ không tốn lượt mã
+hoá nào thêm.
+
+🔑 **Dám hạ vì lưới an toàn là một PHÉP ĐO, ⛔ không phải một lời khai**: ở trần
+−1,5 vòng ghim đo bản giao **−1,47** (vượt T5 0,03), tự hạ xuống −1,83, đo lại
+**−1,78** ⇒ **hội tụ**. Nó mã hoá **thử** bằng đúng tham số giao hàng, nên biên
+dư chỉ còn là một phép tối ưu **số vòng**.
+
+⚠️ Và chính chú thích của hằng số đã **tiên đoán** điều này: *"đặt quá thấp thì
+bản phối bị hạn nhiều hơn cần (**LUFS tụt, T4 hẹp dần**)"*.
+
+### ⭐ Bốn mục QC hôm nay là một thí nghiệm tự nhiên về *"bộ đo phải tải về"*
+
+| mục | lớp TÍNH | kết quả |
+|---|---|---|
+| T18 | **libvmaf** (thư viện chuẩn) | ✅ đúng — bắt lệch thời gian mà ⛔ không phép kiểm nào khác thấy |
+| T4 | **EBU R128** (`loudnorm`) | ✅ đúng — lệch 0,26 LU so với `ebur128` khi tôi đối chứng |
+| T17 | ta **tự grep** stderr | ⚠️ đúng **tình cờ** — đếm chuỗi, ⛔ không kiểm hợp chuẩn |
+| T2 | ta **tự tính** số học | ❌ **SAI** |
+
+⇒ Chi phí bảo trì QC đến từ **lớp tự suy**, ⛔ không từ việc có một cổng. Và nếu
+⛔ không có QC, lượt này **giao cho khách** một tệp 270 mốc trùng, VMAF 53 —
+`credit_actual = 0` nên khách ⛔ không bị thu tiền. **Đề xuất còn mở**: thay T17
+bằng kiểm hợp chuẩn thật (`MP4Box -info` / `mediainfo` + kiểm mốc đơn điệu đọc
+từ `ffprobe -show_packets`), và hỏi chủ dự án việc `qc` đỏ nên **chặn cứng** hay
+**giao kèm cảnh báo** cho những mục ⛔ không phải an toàn.
+
+### Thứ ⛔ chưa đo được
+
+- `edit_plan` **cắt 0 cảnh** trên lượt này — ⛔ chưa đo được là đúng hay sai.
+- ①→⑤ (`media_prepare` → `voice_synthesis`) chỉ có `succeeded`; tôi ⛔ **chưa tự
+  đo** artifact của chúng, nên ⛔ không tuyên bố chúng đúng.
+- `D:\Viral` ⛔ **không** có câu trả lời cho hai câu này (nó nói về hiệu năng và
+  bug che mép).
+
 ## 2026-09-27 — Soát một vòng code VẬN HÀNH của ASV: 5 làn, 13 bug, và ba lời khai sai đi ra CHO KHÁCH
 
 Chủ dự án: *"Có lẽ hệ thống lttstudiosapp đang bị chồng chéo khoá, logic vận
