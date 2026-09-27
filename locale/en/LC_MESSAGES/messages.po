@@ -6606,6 +6606,18 @@ msgstr "Not enough credits."
 msgid "Không đặt"
 msgstr "Not enough credits."
 
+#: apps/auto_scan_video/giai_doan_ban_bien_tap.py
+msgid "Chưa có bản chép lời nên chưa thể quyết định cắt cảnh nào. Hãy chạy lại từ bước chép lời, hoặc chọn chế độ giữ nguyên hình."
+msgstr "There is no transcript yet, so no cut decision can be made. Please rerun from the transcription step, or choose the keep-original-picture mode."
+
+#: apps/auto_scan_video/giai_doan_ban_bien_tap.py
+msgid "Không đo được hình (khung đen / đứng hình) của bản kết xuất nên chưa thể cắt thông minh. Hãy chạy lại, hoặc chọn chế độ giữ nguyên hình."
+msgstr "Could not measure the picture (black frames / frozen frames) of the render, so smart cutting is not possible. Please retry, or choose the keep-original-picture mode."
+
+#: apps/auto_scan_video/giai_doan_ban_bien_tap.py
+msgid "Chưa có bằng chứng hình cho {thieu}/{tong} cảnh nên chưa thể cắt thông minh ({ly_do}). Hãy chạy lại, hoặc chọn chế độ giữ nguyên hình."
+msgstr "There is no picture evidence for {thieu}/{tong} scenes, so smart cutting is not possible ({ly_do}). Please retry, or choose the keep-original-picture mode."
+
 #: apps/auto_scan_video/giai_doan_ban_bien_tap.py:190
 msgid "Không đọc được hình của {thieu}/{tong} cảnh nên chưa thể cắt thông minh. Hãy chạy lại, hoặc chọn chế độ giữ nguyên hình."
 msgstr "Could not read the frames for {thieu}/{tong} scenes, so smart cutting is not possible. Please retry, or choose the keep-original-picture mode."
