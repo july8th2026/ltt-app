@@ -12,6 +12,73 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-27 (khuya) — ✅ T17 XÁC MINH trên worker thật: `qc_muc_hong = []`
+
+Chủ dự án chốt *"cứ deploy"*. Deploy mang **62 commit**, **58 của phiên
+`prompt-ai-seedance-analysis`**, gồm **ba migration** trên CSDL production.
+
+### Kiểm an toàn migration TRƯỚC khi bấm — đọc AST, ⛔ không tin tên commit
+
+```
+alembic heads   : ec6f58abae71  (DUNG MOT head ✓)
+production hien : edb8b0fc0ac9
+```
+
+| tệp | `upgrade()` | phá huỷ trong `upgrade()` |
+|---|---|---|
+| `ommi_binding.py` | `create_table=1` | **⛔ không có** |
+| `ommi_handoff.py` | `create_table=1` | **⛔ không có** |
+| `ommi_pha3.py` | `create_table=8` | **⛔ không có** |
+
+⇒ **10 bảng mới + 1 cột, thuần THÊM.** Mọi `drop_table`/`drop_column`/`drop_index`
+chỉ nằm trong `downgrade()`. Deploy: `EXITCODE=0`, `[OK] Luoc do CSDL: da chay 3
+migration`, production `3c90e775dd4b`, nghiệm thu **ĐẠT** 0 lệch, CSDL
+`ec6f58abae71 (head)`.
+
+### ✅ T17 khỏi, đo trên bản giao của worker thật
+
+Lượt `asvr_a17a3a53eb964dd48a258984964d073` — cấu hình từng bị chặn **ba** lần:
+
+| | trước | sau |
+|---|---|---|
+| lỗi DTS | **269** | **0** |
+| `r_frame_rate` / `avg_frame_rate` | `60/1` ≠ `40530/1081` | **`75/2` = `75/2`** |
+| khung | 1351 nhồi lên 1081 mốc | **1352** trên đúng 1352 mốc |
+
+`75/2` = 30 × 1,25 — **đúng** nguồn × tốc. Hai nhịp nay **bằng nhau** ⇒ CFR sạch,
+giữ **hết** khung.
+
+⭐ Và QC ghi: **`qc_ky_thuat_dat = true`, `qc_so_muc_hong = 0`,
+`qc_so_muc_khong_do = 0`** — cả ba mục T2/T4/T17 sạch, **và** `qc_so_muc_khong_do`
+bằng 0 nghĩa là nó **đo đủ**, ⛔ không phải *"ĐẠT vì ⛔ không đo gì"* (chính cái Đ8
+được thêm để phân biệt). Tôi tự đo bản giao: **−14,7 LUFS**, **0 lỗi DTS**.
+
+### Rủi ro phiên khác nêu — đo xong, ⛔ KHÔNG sống
+
+Họ lo màn `StudioShell` (mới, ⛔ chưa chạy trong trình duyệt thật) sẽ **trắng** cho
+khách, và hỏi `LTT_ENV` có thật là `production`.
+
+- `LTT_ENV = 'production'` ✓ **nhưng** `LTT_PROMPT_AI_OMMI_ROLLOUT = 'public'` được
+  đặt **tường minh** ⇒ nhánh mặc định `"off" if production` ⛔ không chạy, khách
+  **tạo job được ngay**. Lo của họ là **thật**, ⛔ không phải giả định.
+- Màn **⛔ không** trắng, hai lớp chặn: `server/static/prompt-ai-ommi/.vite/manifest.json`
+  **có** cả ở cây nguồn lẫn máy chủ; `GET /static/prompt-ai-ommi/assets/main-DXgZGVDj.js`
+  ⇒ **HTTP 200 · 249.540 byte · text/javascript**; và template có
+  `{% if workspace_js %}` với đường lui *"Workspace chưa sẵn sàng"* thay vì vỏ trống.
+
+⚠️ **Nhưng phạm vi phải nói đúng**: tôi chứng minh được *"bundle có mặt và được phục
+vụ 200"*, ⛔ **chưa** chứng minh *"nó mount và vẽ ra"* — Cloudflare chặn cả trình
+duyệt của điều phối (`/login?next=` → *"Performing security verification"*). Hai câu
+khác nhau, ⛔ không gộp. Nợ nghiệm thu của họ vẫn là nợ, chỉ nhỏ hơn.
+
+### 🔴 Còn lại: #6 — dời `toc_do` xuống cuối GĐ2
+
+`-r` sửa **triệu chứng ở đúng chỗ**, nhưng nguyên nhân cấu trúc vẫn còn: `render`
+(GĐ1) đổi tốc độ **rồi** `image_finish` (GĐ2) cắt trên tệp **đã đổi** ⇒ **hai trục**.
+Mọi bug trục hôm nay sinh từ đấy (T2, bug `edit_plan` làn D sửa, chuỗi tham chiếu
+T18). Dời xuống cuối GĐ2 ⇒ **một trục** từ `edit_plan` → `ke_cat` → khe tiếng → QC.
+Cần **plan riêng** có phép đo từng bước, ⛔ không vá tiếp.
+
 ## 2026-09-27 (đêm) — ⭐ T17 sửa TẬN GỐC: khai **nhịp ra** (`-r` = nguồn × tốc)
 
 Chủ dự án chỉ ra cái cơ bản mà điều phối bỏ sót:
