@@ -17,7 +17,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-3 Tách CanvasShell | `ui3` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui3` | `src/**/*.tsx` · `editorState.ts` · `features/editor/**` | — | dải **5700-5799** · **ĐÃ MỞ KHOÁ song song hoá** — 31 tệp, lớn nhất 179 dòng · 165 test xanh · trình duyệt PASS |
 | UI-2 Design system | `ui2` | ✅ **ĐÃ GỘP** | `worktree-agent-a710623353e7caab2` | **chỉ** `canvas.css` | — | dải **5800-5899** · hex 482→**63** · lớp chết 79→**0** · `@media 640px` 6→**1** · theme sáng 20/20 ô tối→**0/20** · ⚠️ 2 tiêu chí KHÔNG đạt, xem nhật ký |
 | UI-N Nhãn ngắn node LTT | `uiN` | ✅ **ĐÃ GỘP** (`868f9db2`) | — | *(đã trả phiếu)* | ✅ | dải **5900-5999** · LTT_APPS 16/17 → **0/17** nhãn > 40 ký tự |
-| UI-1 Automation Studio | `ui1` | **CHỜ DUYỆT** (xong, chưa gộp) | `phien/agent-ui-v2-ui1` | `apps/agent/routes/**` · `apps/agent/templates/**` · `apps/agent/manifest.py` · `useWorkflowDocument.ts` | — | dải **6200-6299** · Q1 = **B** · chủ **S5** · 3 commit: `7064389d` `a5ef5803` `ab03d20e` · trang HTML **2 → 8** · trình duyệt (8198) **PASS** · 🔴 **lưu trữ CHƯA làm — cần cửa HTTP mới, chờ điều phối** |
+| UI-1 Automation Studio | `ui1` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui1` | `apps/agent/routes/**` · `apps/agent/templates/**` · `apps/agent/manifest.py` · `useWorkflowDocument.ts` | — | dải **6200-6299** · Q1 = **B** · chủ **S5** · 3 commit: `7064389d` `a5ef5803` `ab03d20e` · trang HTML **2 → 8** · trình duyệt (8198) **PASS** · 🔴 **lưu trữ CHƯA làm — cần cửa HTTP mới, chờ điều phối** |
 | UI-4 Node UX V2 | `ui4` | **ĐANG LÀM** (agent) | worktree riêng | `src/nodes/**` · `WorkflowCanvas.tsx` · `useDisplayGraph.ts` | — | dải **6000-6099** |
 | UI-7 Execution + Runs | `ui7` | **ĐANG LÀM** (agent) | worktree riêng | `ExecutionPanel/**` · `RunV3Panel/Inspector/Diff` · `workflowApi.ts` | — | dải **6100-6199** · chủ **S4** |
 | UI-5 Inspector + Connections | `ui5` | **ĐANG LÀM** (agent) | worktree riêng | `ket_noi_v3.py` (mới) · `StepInspector/**` · `src/inspector/**` | — | dải **6300-6399** · Q4 đã chốt |
@@ -57,6 +57,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | S4 | `workflowApi.ts` | UI-0 → rồi UI-7 |
 | S5 | bảng định tuyến `apps/agent/routes/` | UI-1 |
 | S6 | `tools/thanh_phan.toml` | UI-3 |
+| **S7** | **cổng máy chủ thử** (⛔ sổ tôi BỎ SÓT — xem nhật ký 28/09) | điều phối cấp |
 
 ## Bảng độ phủ nghiệm thu
 
@@ -109,6 +110,63 @@ canh rằng không ai lặng lẽ mở một cửa ghi ở tầng trang.
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-28` `điều phối` — **UI-1 KIỂM XONG, ĐÃ GỘP.** Nghiệm thu trình duyệt
+  thật `PASS`, và mệnh đề chốt được chứng minh **đúng dạng cần**:
+
+  ```
+  items_0             9480a1bd...   <- workflow sửa gần nhất
+  id_da_nap           86839463...   <- workflow tôi YÊU CẦU mở
+  so_loi_goi_workflow 1             <- đúng MỘT lời gọi
+  ```
+
+  Hai id **khác nhau** — đó mới là bằng chứng, ⛔ không phải *"trang mở được"*.
+  Route HTML của app **2 → 5** (+ 5 trang đặt chỗ nói rõ *"đang xây"*).
+  93 pytest + 167 vitest.
+
+  ⭐ `id ? loadWorkflowV3(id) : loadOrCreateWorkflowV3(csrf)` — `items[0]` **còn
+  sống có chủ đích**, làm lối lui cho `/agent/canvas` (đường cũ, không id). Và
+  họ đọc id **từ DOM** chứ ⛔ không bóc từ `location.pathname`, vì máy chủ mới là
+  nơi đã lọc theo chủ sở hữu và trả 404 cho id của người khác — bóc lại ở trình
+  duyệt là đoán lại một câu đã có đáp án đúng.
+
+  🔴 **UI-1 bắt được một hồi quy CỦA TÔI:** 3 bài `test_1728` **đã đỏ sẵn trên
+  `main`** — tôi gộp UI-3 mà ⛔ không chạy chúng. Bộ dò khớp đường import một
+  hoặc hai cấp, đúng khi mọi tệp còn phẳng trong `src/`; UI-3 đẩy xuống
+  `features/editor/hooks/` nên import thành ba cấp và bộ dò **mù** với 24/31 chỗ
+  gọi (đọc ra **1** tên hàm thay vì **22**). Đã sửa: `984888cc`.
+
+  ⭐ Bánh cóc ấy **tự bắt được mình đã mù** (`test_bai_2_KHONG_xanh_vi_canvas_rong`)
+  thay vì im lặng báo *"không có đường chết nào"*. Một cổng tự kiểm là một cổng
+  đáng tin — ngược hẳn với `.typed-port 44px`, một lớp bảo vệ **tưởng tượng**.
+
+  🔴 **Luật mới, và đây là LỖI ĐIỀU PHỐI:** tôi chọn bộ test nhắm theo **CHỦ ĐỀ**
+  (cổng biên dịch, động cơ) nên `1728` không thuộc nhóm nào. Nhưng UI-3 là một
+  pha **DI CHUYỂN TỆP**, còn `1728` là một phép kiểm **QUÉT TỆP** — chúng hỏng
+  theo một **trục khác**.
+  ⇒ *Một pha di chuyển/đổi tên tệp thì bộ test nhắm **phải** gồm mọi phép kiểm
+  quét tệp (đường dẫn, import, tên lớp, số tệp), ⛔ không chỉ các phép cùng chủ đề.*
+
+  ⚠️ **Sổ dùng chung thứ BẢY tôi bỏ sót: CỔNG máy chủ thử.** Tôi cấp dải số test
+  cho từng làn nhưng ⛔ không cấp cổng, và cả bốn brief đều ghi `8198`. Suýt giết
+  tiến trình của UI-7: phép kiểm cổng của tôi trả `000` đúng khoảnh khắc máy chủ
+  họ đang khởi động lại, nên **trông như rảnh**.
+  ⇒ Cấp dải cổng từ đầu, và ⛔ **không bao giờ** kết luận *"cổng rảnh"* từ **một**
+  lần thử — một cổng đang khởi động lại trả y hệt một cổng trống.
+
+  | Làn | Cổng |
+  |---|---|
+  | điều phối | 8196 |
+  | UI-4 | 8201 |
+  | UI-7 | 8202 |
+  | UI-1 | 8203 |
+  | UI-5 | 8204 |
+
+  🔴 **Còn treo, và UI-1 dừng ĐÚNG chỗ:** *lưu trữ workflow* chưa làm —
+  `archived_at` có trong lược đồ và danh sách **đã lọc** theo nó, nhưng ⛔ không
+  cửa nào **đặt** được nó ⇒ cần một cửa HTTP mới ⇒ họ **dừng và hỏi** thay vì tự
+  mở bề mặt. Đúng luật.
+  `test_6200::test_khong_mo_cua_POST_moi_o_tang_trang` canh việc này.
 
 - `2026-09-28` `điều phối` — **CHỐT Q4 = C, chủ dự án NHẬN RỦI RO. Mở UI-5.**
   LTT quản lý OAuth app cho **nhà cung cấp chính**, khách **tự mang app** cho
