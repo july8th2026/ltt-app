@@ -485,3 +485,149 @@ class TestViSaoHong:
 
         assert quan_sat.vi_sao_hong(db, run) == []
         db.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4 Duong DUNG LAI — `im_lang` phai song qua mot luot chay LAI
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 §1 do duong **MOI SINH**. `[F]` co BA duong ra cho mot doan, va hai duong
+#    con lai — dung lai tep cu (`"cu"`) va dung lai ban ghi lat (`"lat"`) — dung
+#    ra khoi khoi `[F0]` hoan toan. Truoc ban sua nay chung ⛔ khong mang
+#    `im_lang` va ⛔ khong dem, nen MOI luot chay lai bao `so_doan_im_lang = 0`
+#    cho dung nhung doan khach da mat.
+#
+# ⚠️ Va no ⛔ khong chi la mot con so bao cao sai: `qc_do_luong` doc
+#    `la_dong_im_lang` de KHONG cham WER mot khoang lang. Mot dong mat co ⇒
+#    `wer ≈ 1,0` ⇒ `sua_chua.giong_khong_dat` ⇒ **mot vong sua tra tien** cho mot
+#    doan ⛔ khong co gi de doc. Dung dieu docstring cua `la_dong_im_lang` cam.
+
+def test_LUOT_CHAY_LAI_dung_lai_khoang_lang_van_phai_DEM_va_GAN_CO(
+        tmp_path, monkeypatch):
+    """Chay `voice_synthesis` HAI lan tren cung mot run.
+
+    Luot hai di vao nhanh **dung lai** (`_doan_trong_staging` thay tep cua luot
+    mot), va bat bien cua Task 25 phai giu nguyen o do:
+
+      · `so_doan_im_lang` / `doan_im_lang` ⛔ khong duoc ve 0 / `[]`;
+      · dong `ban_ke` cua doan ay van phai `la_dong_im_lang`.
+
+    ⭐ Bai nay cung chot rang luot hai ⛔ KHONG goi lai may sinh tieng — tuc no
+       that su di duong dung lai chu ⛔ khong sinh lai tat ca (neu sinh lai thi
+       bat bien tren xanh mot cach vo nghia).
+    """
+    from apps.auto_scan_video import giai_doan_giong, nan_thoi_luong
+
+    db, kho, run = _dung_moi_truong(
+        tmp_path, monkeypatch, so_doan=3, cau={"seg_0002": CHU_VO_HINH})
+    dem: list = []
+    # ⭐ `giay=0.9` ⛔ khong tuy y: khe cua `ban_ghi_gia` la 0,8 s va moc sau la
+    #    1,0 s, nen 0,9 s la `giay > khe` NHUNG `giay <= ngan_sach` — tuc no lam
+    #    `so_doan_nan_oan` KHAC 0. Voi `giay=0.4` (mac dinh) bo dem ay bang 0 o
+    #    ca hai luot va phep so duoi day se xanh ma ⛔ khong do gi.
+    _gan_may_sinh_tieng(monkeypatch, tmp_path, dem, giay=0.9)
+
+    ra1 = giai_doan_giong.chay(db, kho, run=run)
+    assert ra1["tom_tat"]["so_doan_im_lang"] == 1, \
+        "khung sai: luot MOI SINH da khong dem duoc (§1 moi la cho do dieu do)"
+    assert ra1["tom_tat"]["so_doan_nan_oan"] > 0, \
+        "khung sai: luot dau ⛔ khong co doan `nan oan` nao de so o luot hai"
+    sinh_luot_1 = len(dem)
+
+    # ── Luot HAI: cung run, cung ban dich, cung giong ───────────────────────
+    ra2 = giai_doan_giong.chay(db, kho, run=run)
+    tt = ra2["tom_tat"]
+
+    assert len(dem) == sinh_luot_1, (
+        f"luot hai goi lai may sinh tieng {len(dem) - sinh_luot_1} lan ⇒ no "
+        f"⛔ khong di duong dung lai, nen bai nay ⛔ khong do dieu no noi")
+    assert tt["so_doan_im_lang"] == 1, (
+        f"luot chay LAI bao `so_doan_im_lang = {tt['so_doan_im_lang']}` — khach "
+        f"mat mot cau thoai va bao cao ⛔ khong noi ra. Cai gia cua quyet dinh "
+        f"Task 25 phai DEM DUOC o ca ba duong ra cua `[F]`, ⛔ khong chi duong "
+        f"moi sinh")
+    assert "seg_0002" in (tt.get("doan_im_lang") or []), (
+        f"luot chay LAI ⛔ khong GOI TEN doan im lang: "
+        f"{tt.get('doan_im_lang')!r} — mot con so buoc nguoi doc di tim")
+    # ⭐ Truong THU BA cua cung ho loi (dieu phoi xin "dem ca tap"):
+    #    `so_doan_nan_oan` la tinh chat cua DOAN, ⛔ khong cua luot doc — nen hai
+    #    luot cua cung mot video phai ra cung con so. Truoc ban sua, luot chay
+    #    lai bao 0 va `asv_doi_soat` ⛔ khong so sanh duoc hai luot.
+    assert tt["so_doan_nan_oan"] == ra1["tom_tat"]["so_doan_nan_oan"], (
+        f"luot chay LAI bao `so_doan_nan_oan = {tt['so_doan_nan_oan']}` trong "
+        f"khi luot dau bao {ra1['tom_tat']['so_doan_nan_oan']} — cung mot video, "
+        f"cung nhung doan, hai con so")
+
+    khoa_ke = [p for p in ra2["phan"] if p["kind"] == "json"]
+    with kho.open(khoa_ke[0]["staging_key"]) as f:
+        ban_ke = json.loads(f.read().decode("utf-8"))
+    dong = next(d for d in ban_ke["doan"] if str(d["ma"]) == "seg_0002")
+    assert nan_thoi_luong.la_dong_im_lang(dong), (
+        f"dong `ban_ke` cua doan DUNG LAI mat co `im_lang` ({dong!r}) ⇒ "
+        f"`qc_do_luong` se ASR mot khoang lang, cham WER voi mot cau chu, ra "
+        f"`wer ≈ 1,0` va keo ca lan chay vao MOT VONG SUA tra tien cho mot "
+        f"doan ⛔ khong co gi de doc")
+    db.close()
+
+
+#: Khoa duy nhat duoc phep CHI co o nhanh DUNG LAI. No la ca y nghia cua nhanh
+#: ay (`tom_tat.so_doan_dung_lai` / `so_doan_moi_sinh` dem bang no), nen no la
+#: mot ngoai le CO TEN — ⛔ khong phai mot lech duoc tha.
+KHOA_CHI_CUA_DUNG_LAI = {"tu_cu"}
+
+
+def test_BAT_BIEN_O_BIEN_dong_ban_ke_co_CUNG_TAP_KHOA_du_den_tu_nhanh_nao(
+        tmp_path, monkeypatch):
+    """🔴 **Hai lan, cung mot cho noi, cung mot thieu sot.**
+
+        nhanh SINH MOI   do that / ghi co that
+        nhanh DUNG LAI   tra `0.0` (`edd5409f`) / ⛔ khong ghi co (`im_lang`)
+
+    Hai ban sua le ⛔ khong ngan lan thu ba: `[F]` co BA duong ra dung mot dong
+    `ban_ke`, va ⛔ khong cho nao doi chieu chung. Bai nay la **phep do co hoc**
+    thay cho loi dan do — no so **TAP KHOA** cua dong `ban_ke` cua CUNG mot `ma`
+    giua luot MOI SINH va luot DUNG LAI.
+
+    ⭐ Vi sao tap khoa chu ⛔ khong gia tri: mot truong bi ROI mat ha nguon (hong
+       im lang, cach day bon buoc — `qc_do_luong`, `thoi_gian.lap_ke_hoach`), con
+       mot gia tri khac nhau giua hai luot thi thuong la DUNG (`tu_cu`, va `giay`
+       do lai co the lech vai phan nghin). ⇒ Do cai ma su khac biet **luon** la
+       bug.
+
+    ⛔ Va bai nay co **hai** loai dong de so: dong DAU cua mot nhom va dong THEO
+       SAU (`no_ban_ke` co y dung hai hinh dang khac nhau), nen no so theo `ma`
+       chu ⛔ khong tron ca danh sach lai.
+    """
+    from apps.auto_scan_video import giai_doan_giong
+
+    db, kho, run = _dung_moi_truong(
+        tmp_path, monkeypatch, so_doan=3, cau={"seg_0002": CHU_VO_HINH})
+    _gan_may_sinh_tieng(monkeypatch, tmp_path, [])
+
+    def _ke(ra):
+        khoa_ke = [p for p in ra["phan"] if p["kind"] == "json"]
+        with kho.open(khoa_ke[0]["staging_key"]) as f:
+            return {str(d["ma"]): d
+                    for d in json.loads(f.read().decode("utf-8"))["doan"]}
+
+    moi = _ke(giai_doan_giong.chay(db, kho, run=run))      # nhanh SINH MOI
+    lai = _ke(giai_doan_giong.chay(db, kho, run=run))      # nhanh DUNG LAI
+
+    assert set(moi) == set(lai), (
+        f"hai luot phu khac tap `ma`: chi o luot dau {sorted(set(moi) - set(lai))}, "
+        f"chi o luot hai {sorted(set(lai) - set(moi))}")
+
+    lech: dict[str, tuple] = {}
+    for ma in sorted(moi):
+        a = set(moi[ma]) | KHOA_CHI_CUA_DUNG_LAI
+        b = set(lai[ma]) | KHOA_CHI_CUA_DUNG_LAI
+        if a != b:
+            lech[ma] = (sorted(a - b), sorted(b - a))
+
+    assert not lech, (
+        "dong `ban_ke` cua nhanh DUNG LAI ⛔ khong mang cung tap khoa voi nhanh "
+        "SINH MOI — {ma: (ROI o luot dung lai, chi co o luot dung lai)} = "
+        f"{lech}. Mot truong bi roi o day no ra o mot giai doan cach day bon "
+        "buoc (`qc_do_luong`, `thoi_gian.lap_ke_hoach`), va do dung la khuon "
+        "cua `edd5409f` (`giay = 0.0`) va cua `im_lang` — hai lan cung mot cho.")
+    db.close()

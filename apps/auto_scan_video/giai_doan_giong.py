@@ -232,6 +232,55 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #: khong. Cung ly do voi `vi_sao_hong` (Task 25, Bug 2).
     ma_im_lang: list[str] = []
 
+    def _dem_im_lang(m: dict) -> None:
+        """Dem MOT khe im lang — theo `ma` GOC, ⛔ khong theo luot doc bi bo qua.
+
+        ⭐ Mot khe GOP im lang nghia la **moi** thanh vien cua no rong (van ban
+           gop la phep noi cua chung), nen khach mat `len(_thanh_vien)` cau chu
+           ⛔ khong phai mot cau.
+
+        🔴 **MOT cho khai, va do la ly do ham nay ton tai.** `[F]` co BA duong
+           ra cho mot doan — moi sinh, dung lai tep cu (`"cu"`), dung lai ban ghi
+           lat (`"lat"`) — va truoc ban sua nay chi duong **moi sinh** dem. Tuc
+           MOI luot chay lai va MOI lat cat noi tiep bao `so_doan_im_lang = 0`
+           va `doan_im_lang = []` cho dung nhung doan khach da mat. Cai gia cua
+           quyet dinh Task 25 phai DEM DUOC o **ca ba** duong, khong thi no la
+           mot quyet dinh khac.
+        """
+        ma_nhom = [str(x.get("ma") or "") for x in m["_thanh_vien"]]
+        dong_ho["so_doan_im_lang"] += len(ma_nhom)
+        ma_im_lang.extend(ma_nhom)
+
+    def _dem_nan_oan(giay: float, khe: float, ngan_sach: float) -> None:
+        """Đ4: doan `giay > khe` NHUNG `giay <= ngan_sach` — tung bi TINH TIEN OAN.
+
+        🔴 **Ba duong ra cua `[F]` phai dem cung mot dai luong.** `so_doan_nan_oan`
+           la tinh chat cua **DOAN** (do dai doc ra so voi khe va so voi ngan
+           sach), ⛔ khong phai cua **luot doc**. Truoc ban sua nay chi duong MOI
+           SINH dem, nen mot luot chay LAI — noi moi doan deu dung lai — bao
+           `so_doan_nan_oan = 0` va `asv_doi_soat` ⛔ khong so sanh duoc hai luot
+           chay cua cung mot video.
+
+        ⛔ ⛔ Khong dem tren UOC LUONG: `giay` o day la giay **DO DUOC** cua tep
+           (moi sinh: `kiem_tep_tieng`; dung lai: `_doan_con_dung` /
+           `_doan_trong_staging`; lat: giay da do o lat truoc).
+        """
+        if giay > khe and giay <= ngan_sach:
+            dong_ho["so_doan_nan_oan"] += 1
+
+    def _im_lang_dung_lai(chu: str) -> bool:
+        """Doan DUNG LAI nay la mot khoang lang? — hoi bang CHINH phep cua `[F0]`.
+
+        ⛔ ⛔ Khong `if not chu`: `chu` cua mot doan im lang **⛔ KHONG rong** (no
+           la chuoi goc, vd toan ky tu vo hinh `U+200B`) — xem
+           `giong_noi.chu_se_doc` va `nan_thoi_luong.la_dong_im_lang`. Mot phep
+           thu hai o day la mot ban thu hai cua cung mot luat, va hai ban se lech.
+
+        ⭐ Ham nay TINH THUAN va ⛔ khong goi ra ngoai, nen hoi lai o duong dung
+           lai ⛔ khong ton mot byte mang nao.
+        """
+        return not giong_noi.chu_se_doc(chu, tu_dien_rieng=tu_dien or None)
+
     # 🔑 LAT CAT (`lat_cat.py`): ~2.000 doan cua 120 phut video khong vua MOT
     #    job. Don vi te nhat = (VONG_TOI_DA + 1) luot TTS + VONG_TOI_DA lan xin
     #    viet lai, moi cai o tran timeout cua lop goi.
@@ -451,8 +500,21 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 #    ve nhieu dong). Ban ghi cu la mot dict — nhan ca hai, vi mot
                 #    luot noi tiep co the doc diem chot cua luot truoc ban nang.
                 _cu = lat["ban_ke"]
-                ban_ke.extend(dict(x) for x in
-                              (_cu if isinstance(_cu, list) else [_cu]))
+                _dong_lat = [dict(x) for x in
+                             (_cu if isinstance(_cu, list) else [_cu])]
+                # ⭐ Bo dem im lang cua CA GIAI DOAN, ⛔ khong chi cua luot nay.
+                #    Ban ghi lat DA mang `im_lang` tren tung dong (ha nguon doc
+                #    duoc), nhung `dong_ho`/`ma_im_lang` la bien CUA LUOT — nen
+                #    mot video nhieu lat bao `so_doan_im_lang = 0` cho moi doan
+                #    im lang cua cac lat truoc. Hoi lai bang `_im_lang_dung_lai`
+                #    (⛔ khong tin co tren dong: ban ghi lat cua mot luot TRUOC
+                #    Task 25 ⛔ khong co co nao).
+                if _im_lang_dung_lai(str(lat["chu"])):
+                    _dem_im_lang(m)
+                    for _d in _dong_lat:
+                        _d[nan_thoi_luong.KHOA_IM_LANG] = True
+                ban_ke.extend(_dong_lat)
+                _dem_nan_oan(float(lat["giay"]), khe, ngan_sach)
                 if lat.get("phan"):
                     phan.append(dict(lat["phan"]))
                 da_sinh += int(lat.get("so_luot_doc") or 0)
@@ -496,9 +558,28 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 kq = nan_cho_vua.ket_luan(
                     m["ma"], chu=chu, giay=float(ho_so["cu"]), khe=khe,
                     so_vong=int(so_vong_theo_ma.get(str(m["ma"]), 0)))
+                # 🔴 **`im_lang` phai di theo tep DUNG LAI, va truoc ban sua nay
+                #    no ⛔ khong di.** Mot khe im lang cua luot dau tro thanh mot
+                #    `AsvAsset` (tep khoang lang that, co do dai that), nen luot
+                #    chay lai tim thay no o `[A]` va di vao dung nhanh nay — voi
+                #    mot dong `ban_ke` ⛔ KHONG co `im_lang`. Hai hong, ca hai la
+                #    dung dieu `nan_thoi_luong.la_dong_im_lang` cam:
+                #      · `qc_do_luong` ASR mot khoang lang, cham WER voi mot cau
+                #        chu, ra `wer ≈ 1.0` ⇒ `sua_chua.giong_khong_dat` danh
+                #        dau va MOT VONG SUA chay (tra tien) cho mot doan ⛔ khong
+                #        co gi de doc;
+                #      · bao cao dem no la mot ban doc ⇒ khach mat thoai ma ⛔
+                #        khong ai biet.
+                im_lang_cu = _im_lang_dung_lai(chu)
+                if im_lang_cu:
+                    _dem_im_lang(m)
+                _dem_nan_oan(float(ho_so["cu"]), khe, ngan_sach)
                 ban_ke.extend(nan_thoi_luong.no_ban_ke(
                     {"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
-                     "giay": float(ho_so["cu"]), "tu_cu": True, **_ke_nan(kq)},
+                     "giay": float(ho_so["cu"]), "tu_cu": True,
+                     **({nan_thoi_luong.KHOA_IM_LANG: True} if im_lang_cu
+                        else {}),
+                     **_ke_nan(kq)},
                     m["_thanh_vien"]))
                 cac_nan.append(kq)
                 continue
@@ -593,9 +674,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 #    gop la phep noi cua chung), nen khach mat `len(_thanh_vien)`
                 #    cau chu ⛔ khong phai mot cau — va con so phai tra loi CAU
                 #    HOI CUA KHACH, ⛔ khong cau hoi cua vong lap.
-                _ma_nhom = [str(x.get("ma") or "") for x in m["_thanh_vien"]]
-                dong_ho["so_doan_im_lang"] += len(_ma_nhom)
-                ma_im_lang.extend(_ma_nhom)
+                _dem_im_lang(m)
             else:
                 # ⛔ Truyen `chu` GOC, ⛔ khong `chu_doc`: `doc_mot_doan` tu
                 #    chuan hoa, va dua ban da chuan hoa vao la chuan hoa HAI
@@ -643,8 +722,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    `ngan_sach` nên ⛔ không ai bị gọi oan nữa — bộ đếm này là thứ
             #    CHỨNG MINH điều đó trên số liệu của mỗi lượt chạy, đo trên giây
             #    THẬT chứ ⛔ không trên ước lượng.
-            if giay > khe and giay <= ngan_sach:
-                dong_ho["so_doan_nan_oan"] += 1
+            _dem_nan_oan(giay, khe, ngan_sach)
 
             kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=giay, khe=khe,
                                       so_vong=so_vong)
@@ -1125,19 +1203,55 @@ def _ghi_so(db, run, *, ma: str, van_tay: str, giay: float, kq,
         log.info("so cai da co doan tieng %s - bo qua lan ghi trung", ma)
 
 
+def _do_tu_kho(kho: Storage, khoa: str):
+    """Tai `khoa` ve tep tam roi DO bang DUNG ham cua san pham, hoac None.
+
+    🔑 **Duong cho kho ⛔ KHONG co duong dan tren dia.** `Storage.local_path`
+       la mot phuong thuc cua LOP NEN va no tra `None` cho backend doi tuong,
+       nen `hasattr(kho, "local_path")` LUON dung va `kho.local_path(...)` LUON
+       `None` tren production (`R2Storage`; `LTT_STORAGE_LOCAL_PREFIXES=voice/`
+       chi keo tien to `voice/` ve dia, ⛔ khong `asv/` lan `asv-staging/`).
+
+    ⛔ Nen `if not duong: <bo cuoc>` ⛔ khong phai mot duong lui — no la **duong
+       DUY NHAT** tren production. `LocalStorage` CO `local_path`, nen moi phep
+       kiem cuc bo di nhanh con lai va ⛔ khong bao gio do duoc nhanh nay.
+    """
+    try:
+        with kho.open(khoa) as f:
+            byte = f.read()
+    except Exception:                       # noqa: BLE001 - khong doc duoc = khong cache
+        return None
+    with tempfile.TemporaryDirectory(prefix="asv_doan_cu_") as thu_muc:
+        tep = Path(thu_muc) / "doan.wav"
+        tep.write_bytes(byte)
+        try:
+            return giong_noi.kiem_tep_tieng(str(tep))
+        except giong_noi.GiongError:
+            return None
+
+
 def _doan_trong_staging(kho: Storage, khoa_tam: str):
     """So giay cua mot doan con nam trong staging, hoac None.
 
     Khong doi mot ban ghi `AsvAsset` — do la thu chua kip ghi khi giai doan
     truot giua chung. Nhung van **do lai tren tep that**: mot tep dang do trong
     kho trong y het mot tep xong.
+
+    🔴 **Ban truoc `return None` khi kho ⛔ khong co `local_path`, va tren
+       production do la MOI lan** — cung ho loi voi `_doan_con_dung` (sua
+       `edd5409f`), chi khac cho **con so gia** la `0.0` thi o day la *"⛔ khong
+       co cache"*. Hau qua: duong dung lai STAGING — thu ton tai dung de mot lan
+       truot giua giai doan ⛔ khong bat khach tra tien hai lan — **chet 100 %**
+       tren R2, va moi luot chay lai sau mot lan sap doc lai TOAN BO doan da
+       tra tien. Hoa don x2, ⛔ khong mot dong log nao (nhanh nay tra `None`
+       TRUOC ca tay bat o duoi, nen ca mot dong log cung ⛔ khong co).
     """
     try:
         if not kho.exists(khoa_tam):
             return None
         duong = kho.local_path(khoa_tam) if hasattr(kho, "local_path") else None
         if not duong:
-            return None
+            return _do_tu_kho(kho, khoa_tam)
         return giong_noi.kiem_tep_tieng(duong)
     except Exception as loi_doc:    # noqa: BLE001 - khong doc duoc = khong dung lai
         # ⛔ Khong nuot im: mot tep staging khong doc duoc **khong** phai su co
@@ -1192,15 +1306,9 @@ def _doan_con_dung(db, kho: Storage, run, khoa: str):
     # ⇒ Tai ve tep tam roi DO bang DUNG ham cua san pham. Ta da mo duoc doi tuong
     #   (`kiem_toan_ven` o tren vua doc no), nen day khong them mot lan tai ve nao
     #   ma ta chua tra.
-    try:
-        with kho.open(khoa) as f:
-            byte = f.read()
-    except Exception:                       # noqa: BLE001 - khong doc duoc = khong cache
-        return None
-    with tempfile.TemporaryDirectory(prefix="asv_doan_cu_") as thu_muc:
-        tep = Path(thu_muc) / "doan.wav"
-        tep.write_bytes(byte)
-        try:
-            return giong_noi.kiem_tep_tieng(str(tep))
-        except giong_noi.GiongError:
-            return None
+    #
+    # ⭐ MOT cho khai phep do nay (`_do_tu_kho`), va `_doan_trong_staging` goi
+    #    CHINH no: hai ban cua cung mot duong lui la hai ban se lech nhau — va
+    #    chung DA lech mot lan (nhanh staging con `return None` sau khi nhanh nay
+    #    da duoc sua).
+    return _do_tu_kho(kho, khoa)
