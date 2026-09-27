@@ -20,7 +20,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-1 Automation Studio | `ui1` | **ĐANG LÀM** (agent) | worktree riêng | `apps/agent/routes/**` · `templates/**` | — | dải **6200-6299** · Q1 đã chốt = **B** · chủ **S5** |
 | UI-4 Node UX V2 | `ui4` | **ĐANG LÀM** (agent) | worktree riêng | `src/nodes/**` · `WorkflowCanvas.tsx` · `useDisplayGraph.ts` | — | dải **6000-6099** |
 | UI-7 Execution + Runs | `ui7` | **ĐANG LÀM** (agent) | worktree riêng | `ExecutionPanel/**` · `RunV3Panel/Inspector/Diff` · `workflowApi.ts` | — | dải **6100-6199** · chủ **S4** |
-| UI-5 Inspector + Connections | — | CHƯA MỞ | — | — | — | **chặn bởi Q4** |
+| UI-5 Inspector + Connections | `ui5` | **ĐANG LÀM** (agent) | worktree riêng | `ket_noi_v3.py` (mới) · `StepInspector/**` · `src/inspector/**` | — | dải **6300-6399** · Q4 đã chốt |
 | UI-8a Human approval ⭐ | — | CHƯA MỞ | — | — | — | chặn bởi UI-7 · nâng ưu tiên sau phân tích CrewAI |
 | UI-6 Data picker | — | CHƯA MỞ | — | — | — | chặn bởi UI-5 |
 | UI-8b Agent Designer diff | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
@@ -70,7 +70,7 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 | # | Câu | Chốt | Ngày | Ai |
 |---|---|---|---|---|
 | Q1 | Kiến trúc thông tin | ✅ **B — Automation Studio** | 28/09 | điều phối (bằng chứng đã quyết) |
-| Q4 | Tầng OAuth (khuyến nghị **C**, độ tin **THẤP** — cần chủ dự án) | **CHƯA** | | |
+| Q4 | Tầng OAuth | ✅ **C** — CLOUD cho nhà cung cấp chính + self-managed | 28/09 | **chủ dự án**, và **nhận rủi ro** |
 | Q11 | Trigger: mở `trigger.manual`? | ✅ **ĐÃ MỞ** — `ba51c9f0` | 28/09 | đo được sau UI-0; schedule/webhook vẫn là plan backend RIÊNG |
 | Q2 | UI-0 làm thành phase riêng, deploy độc lập | **CHƯA** | | khuyến nghị A, độ tin CAO |
 | — | Giữ `@xyflow/react` | ✅ CHỐT | 27/09 | bằng chứng: dùng 11/30 API |
@@ -88,6 +88,41 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-28` `điều phối` — **CHỐT Q4 = C, chủ dự án NHẬN RỦI RO. Mở UI-5.**
+  LTT quản lý OAuth app cho **nhà cung cấp chính**, khách **tự mang app** cho
+  phần còn lại. Đây là câu duy nhất tôi ⛔ không tự quyết được, vì nó cam kết LTT
+  đi xin duyệt app với Google/YouTube và **chịu hạn mức API thay khách** — ràng
+  buộc pháp lý/vận hành nằm **ngoài mã**.
+
+  ⭐ **Và hoá ra UI-5 nhỏ hơn audit ước lượng.** Audit xếp nó cỡ **L** với lý do
+  *"cần CRUD credential + OAuth callback"*. Đọc `platform_core/credential.py` thì
+  phần khó nhất **đã có và làm rất kỹ**:
+
+  ```
+  tao · liet_ke · kiem_ref · thay_bi_mat · thu_hoi · lay_de_dung · xoay_khoa
+  Fernet (MultiFernet — xoay khoá được) · sổ nhật ký CredentialNhatKy
+  META_CAM = access_token · refresh_token · client_secret · password  <- CẤM trong `meta`
+  ```
+
+  Và hai cửa chặn đã đấu sẵn: `bien_dich._node_tu_dinh_nghia` **đã đọc**
+  `credential_ref`, `dinh_nghia._kiem_credential` **đã chặn ở publish**.
+
+  ⇒ Thiếu đúng **hai** thứ: cửa HTTP cho khách, và giao diện. Đó là việc **nối
+  dây**, ⛔ không phải xây mới. Brief bắt UI-5 dùng lại, ⛔ cấm viết lại lớp lưu
+  trữ hay tự mã hoá. *(Đúng luật "dùng lại trước, tự viết sau" — và nó vừa cắt
+  một hạng mục từ L xuống M.)*
+
+  ⚠️ **Phần LTT-quản-lý-app ⛔ không làm được trong phiên này:** đăng ký OAuth app
+  là thao tác trên dashboard ngoài + bí mật vào `secrets/`, tức **việc chỉ chủ dự
+  án làm được**. Brief chỉ định dựng **cấu trúc** + trạng thái *"chưa cấu hình"*
+  rõ ràng, và **sinh một wizard** để chủ dự án tự làm. ⛔ Tuyệt đối không tự nhập
+  bí mật, ⛔ không bịa một luồng giả vờ hoạt động.
+
+  **Bốn làn đang chạy song song:** UI-4 · UI-7 · UI-1 · UI-5. Tệp sở hữu rời nhau;
+  một chỗ **cố ý** để lại cho điều phối: UI-5 viết module route **mới** và ⛔
+  không đụng `routes/__init__.py` (của **UI-1**, chủ **S5**) — điều phối đấu dòng
+  import lúc gộp.
 
 - `2026-09-28` `điều phối` — **ĐỢT 2: mở ba làn song song.** UI-3 đã tách
   `CanvasShell` nên mỗi mặt có chủ riêng; đây là lần đầu ba làn **thật sự** không
