@@ -22324,3 +22324,26 @@ msgstr "Compose a workflow by describing the goal, review the proposal, then cho
 
 msgid "Giao diện, ngôn ngữ và các giá trị mặc định cho workflow mới."
 msgstr "Theme, language and the defaults for a new workflow."
+
+# -- Luu tru workflow (dieu phoi UI, 28/09/2026) --
+# Tu vung: archive (kho) / restore (mo lai). ⛔ khong 'delete':
+# luu tru KHONG xoa gi ca, va mot nhan sai o day lam khach
+# tuong minh vua mat du lieu.
+
+msgid "Kho lưu trữ"
+msgstr "Archive"
+
+msgid "Mở lại"
+msgstr "Restore"
+
+msgid "Đã lưu trữ"
+msgstr "Archived"
+
+msgid "Về danh sách đang dùng"
+msgstr "Back to the active list"
+
+msgid "Kho lưu trữ đang trống. Không có workflow nào bị cất đi."
+msgstr "The archive is empty. No workflow has been put away."
+
+msgid "Các workflow bạn đã cất đi. Chúng không chạy được và không hiện ở danh sách chính, nhưng không bị xoá — mở lại là dùng được ngay."
+msgstr "The workflows you have put away. They cannot run and do not appear in the main list, but they are not deleted — restore one and it works straight away."

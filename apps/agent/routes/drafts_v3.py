@@ -28,6 +28,7 @@ do — va no se trong y het mot tien nghi cho nguoi dung giao dien.
 from __future__ import annotations
 
 import math
+from datetime import datetime, timezone
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -76,16 +77,26 @@ def _json(wf: Workflow, draft: WorkflowDraft | None) -> dict:
 
 
 @router.get("/api/v3/workflows")
-def v3_danh_sach(request: Request, _identity: str = Depends(require_login),
+def v3_danh_sach(request: Request, luu_tru: int = 0,
+                 _identity: str = Depends(require_login),
                  db: Session = Depends(get_db)):
+    """Workflow cua nguoi dang dang nhap.
+
+    ⭐ `?luu_tru=1` doi sang **kho luu tru** — hai tap RIENG BIET, khong phai
+       mot tap rong hon. Khong co cua nay thi `/mo-lai` ton tai nhung
+       KHONG VOI TOI DUOC: mot workflow da luu tru bien mat khoi moi danh sach,
+       nen giao dien khong con cho nao de bam mo lai no.
+    """
     user = _user(request)
+    dieu_kien = (Workflow.archived_at.is_not(None) if luu_tru
+                 else Workflow.archived_at.is_(None))
     rows = db.execute(
-        select(Workflow).where(Workflow.owner_id == user.id,
-                               Workflow.archived_at.is_(None))
+        select(Workflow).where(Workflow.owner_id == user.id, dieu_kien)
         .order_by(Workflow.updated_at.desc())).scalars().all()
     return JSONResponse({"items": [
         {"id": w.id, "name": w.name,
-         "published": bool(w.published_version_id)} for w in rows]})
+         "published": bool(w.published_version_id),
+         "da_luu_tru": w.archived_at is not None} for w in rows]})
 
 
 @router.post("/api/v3/workflows")
@@ -136,6 +147,64 @@ async def v3_luu(request: Request, workflow_id: str,
         raise HTTPException(status_code=409, detail=str(exc)) from None
     db.commit()
     return JSONResponse(_json(wf, draft))
+
+
+@router.post("/api/v3/workflows/{workflow_id}/luu-tru")
+async def v3_luu_tru(request: Request, workflow_id: str,
+                     _identity: str = Depends(require_login),
+                     db: Session = Depends(get_db)):
+    """Dat `Workflow.archived_at` — chu du an duyet mo be mat nay 28/09/2026.
+
+    ## Vi sao cua nay khong ton tai tu truoc
+
+    `archived_at` co trong luoc do tu dau va **ba** noi da DOC no:
+    `v3_danh_sach` (loc khoi danh sach), `tao_run.tao_run` (tu choi run moi) va
+    `nut.type_version_thieu` (bo qua khi do drift). Toan bo NGHIA da song;
+    thieu dung mot cua DAT no. Lan UI-1 gap cho nay va **dung lai hoi** thay vi
+    tu mo mot cua POST — dung luat.
+
+    ## ⛔ Day KHONG phai xoa, va no KHONG dung luot dang chay
+
+    Ban ghi, ban nhap va moi `workflow_version` o lai nguyen ven; `/mo-lai` dua
+    tat ca tro lai. Va no chi chan **tao run MOI** — mot luot dang chay chay
+    not. Huy mot luot la mot hanh dong khac, co cua rieng; gop hai viec vao mot
+    nut la lam khach huy mat mot luot da tieu tien ma khong dinh.
+
+    ## ⭐ Luy dang, va day khong phai chi tien nghi
+
+    Bam lan hai **khong lam moc troi**. Bat ky danh sach nao sap theo
+    `archived_at` se doi thu tu moi lan ai do bam lai, va do la mot thay doi
+    khong ai yeu cau.
+    """
+    body = await request.json()
+    _verify_json_csrf(request, body)
+    user = _user(request)
+    wf = _cua_toi(db, workflow_id, user.id)
+    if wf.archived_at is None:
+        wf.archived_at = datetime.now(timezone.utc)
+        db.commit()
+    return JSONResponse({"id": wf.id, "da_luu_tru": True,
+                         "luu_tru_luc": wf.archived_at.isoformat()})
+
+
+@router.post("/api/v3/workflows/{workflow_id}/mo-lai")
+async def v3_mo_lai(request: Request, workflow_id: str,
+                    _identity: str = Depends(require_login),
+                    db: Session = Depends(get_db)):
+    """Xoa `archived_at` — duong ve tu `?luu_tru=1`.
+
+    ⭐ Luy dang y nhu `/luu-tru`: giao dien co the goi tu mot danh sach da cu
+       (hai tab, hoac mot tab mo tu truoc khi ai do mo lai o tab khac), va mot
+       `409` o day chi bat khach lam lai dung viec ho vua lam.
+    """
+    body = await request.json()
+    _verify_json_csrf(request, body)
+    user = _user(request)
+    wf = _cua_toi(db, workflow_id, user.id)
+    if wf.archived_at is not None:
+        wf.archived_at = None
+        db.commit()
+    return JSONResponse({"id": wf.id, "da_luu_tru": False})
 
 
 @router.post("/api/v3/workflows/{workflow_id}/publish")
