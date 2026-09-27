@@ -341,3 +341,60 @@ số đo, và chỉ chủ dự án mới chốt được lý do thật là gì.
 ⚠️ Phạm vi: **một** nguồn 836×576, preset **fast**, ⛔ không stabilize/smooth.
 Nguồn có độ phân giải khác sẽ đổi chi phí tầng SR (vì SR tỉ lệ với **nguồn**),
 nhưng kết luận "đích không điều khiển chi phí GPU" ⛔ không phụ thuộc điều đó.
+
+---
+
+# H. 🔴 ĐÃ ĐO (2026-09-27) — **Quality chậm hơn Fast 15,7 lần, tính tiền gấp 2,5**
+
+Nguồn **v3** (836×576) · đích **1080** · `--max-frames 300` · 3 lượt · trung vị.
+Autotune chọn dải **cao nhất**: `x4plus tile=512 threads=1:2:2 est=10024
+budget=11791 fast_path=True` (VRAM trống 15 050 MiB lúc đo ⇒ **không** bị tụt dải).
+
+| | Fast | Quality | tỉ lệ |
+|---|---:|---:|---:|
+| tốc độ | 9,97 khung/s | **0,64 khung/s** | **15,7×** |
+| GPU util tb | 83,4 % | **98,0 %** | bão hoà thật |
+| VRAM đỉnh | 2 378 MiB | **13 267 MiB** | |
+| tầng SR | 96,6 % | **99,6 %** | |
+| **hệ số giá** | 1,0 | **2,5** | |
+
+⭐ Ba lượt Quality: **472,3 / 472,2 / 471,8 s** — lệch **< 0,1 %**. Quality bão hoà
+GPU và **rất tất định**; con số này ⛔ không phải nhiễu.
+
+## H.1 Doanh thu trên tài nguyên khan hiếm nhất
+
+Máy có **một** GPU và `UniqueConstraint` khoá đồng thời ở **1** (ISSUE A), nên
+phút-GPU là tài nguyên bị chặn cứng.
+
+| | credit | đ | phút GPU | **đ / phút-GPU** |
+|---|---:|---:|---:|---:|
+| fast 1080 | 54 | 5 400 | 5,4 | **1 008** |
+| fast 2160 | 214 | 21 400 | 5,4 | **3 994** |
+| quality 1080 | 134 | 13 400 | **83,5** | **161** |
+| quality 2160 | 535 | 53 500 | 83,5 | 641 |
+
+⇒ **Chênh 25 lần** giữa ô sinh lời nhất (`fast 2160`) và kém nhất
+(`quality 1080`) — trên cùng một cái card, cùng một hàng đợi.
+
+⇒ Một job `quality 1080` chiếm **CẢ card ~83 phút** để thu 13 400 đ, và trong 83
+phút đó ⛔ **không job nào khác chạy được**.
+
+## H.2 Phân biệt ĐO và NGOẠI SUY
+
+- **ĐO**: 300 khung trong 472,2 s ⇒ 0,64 khung/giây. 3 lượt, lệch < 0,1 %.
+- **NGOẠI SUY**: 3205 khung ⇒ 5 045 s ≈ **83,5 phút**. Tuyến tính theo số khung.
+  Hợp lý vì tầng SR chiếm **99,6 %** và làm việc theo từng khung — nhưng ⛔ đây
+  **không** phải phép đo trực tiếp. Muốn chắc thì chạy trọn 3205 khung
+  (~83 phút, **vượt ngưỡng khoá 30 phút** ⇒ phải xin cách khác).
+
+## H.3 Phạm vi — ⛔ đừng đọc rộng hơn
+
+Một nguồn **836×576**, đích **1080**, ⛔ không stabilize/smooth_motion. Nguồn có
+độ phân giải khác sẽ đổi chi phí **cả hai** preset (SR tỉ lệ với **nguồn**), nên
+tỉ lệ 15,7× có thể đổi. `quality × 1440/2160`: **CHƯA ĐO**.
+
+## H.4 ⛔ KHÔNG đổi giá ở lượt này
+
+Chủ dự án chốt 27/09: *"phần giá cứ để như hiện tại, tôi sẽ điều chỉnh thực tế
+sau."* Số đo ghi ở đây và ở docstring `cost.py` để khi điều chỉnh thì có căn cứ.
+"Tính gì tiền" là đánh đổi **sản phẩm** (`CLAUDE.md` luật 2).
