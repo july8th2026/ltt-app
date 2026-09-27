@@ -398,3 +398,50 @@ tỉ lệ 15,7× có thể đổi. `quality × 1440/2160`: **CHƯA ĐO**.
 Chủ dự án chốt 27/09: *"phần giá cứ để như hiện tại, tôi sẽ điều chỉnh thực tế
 sau."* Số đo ghi ở đây và ở docstring `cost.py` để khi điều chỉnh thì có căn cứ.
 "Tính gì tiền" là đánh đổi **sản phẩm** (`CLAUDE.md` luật 2).
+
+---
+
+# I. ⭐ DỰ ĐOÁN → KIỂM → ĐÚNG: đích ⛔ không tốn thời gian GPU
+
+Đây là lần đầu trong đợt đo tôi **dự đoán trước rồi mới kiểm**, thay vì đo xong
+mô tả lại. Ghi cả dự đoán lẫn kết quả để người sau đánh giá được cách suy luận,
+⛔ không chỉ đánh giá con số.
+
+**Dự đoán** (rút từ dữ liệu *Fast*, §G): `ENGINE_SCALE = 4` nên engine **luôn**
+upscale ×4 từ **nguồn** bất kể đích; đích chỉ đổi khâu co lại + encode. Nếu đúng
+thì `quality × 2160` phải tốn **xấp xỉ** `quality × 1080`.
+
+**Kiểm** trên preset *Quality* — một preset **độc lập**, và sạch hơn vì nó bão hoà
+GPU (98 %) nên rất tất định:
+
+| đích | n | total (tv) | khung/s | VRAM đỉnh | GPU% | tile | đầu ra |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 1080 | 3 | 472,2 s | 0,64 | 13 269 MiB | 98,0 | 512 | 1568×1080 |
+| 2160 | 3 | **471,4 s** | 0,64 | 13 266 MiB | 98,1 | 512 | 3136×2160 |
+
+**Chênh: −0,19 %.** 2160 còn *nhanh hơn* một chút. ⇒ **DỰ ĐOÁN ĐÚNG.**
+
+## I.1 Vì sao phép kiểm này mạnh hơn dữ liệu Fast
+
+Fast dao động ±4 % và **không đơn điệu** — đủ để nghi ngờ nhưng chưa đủ để chốt,
+vì biên độ nhiễu cùng cỡ với hiệu ứng cần đo. Quality bão hoà GPU nên lệch **<
+0,2 %**, tức nhiễu nhỏ hơn hiệu ứng **một bậc**. Cùng một kết luận, nhưng chỉ
+phép đo thứ hai mới **chứng minh** được nó.
+
+⭐ Bài học: khi một hiệu ứng chìm trong nhiễu, đừng chỉ lặp lại nhiều lần — tìm
+một **chế độ chạy có nhiễu thấp hơn** để đo cùng thứ đó.
+
+## I.2 Bảng hệ số giá so với thời gian GPU — đủ bốn ô
+
+| | credit | thời gian GPU đo được | hệ số giá | hệ số GPU |
+|---|---:|---:|---:|---:|
+| quality 1080 | 134 | 472,2 s | 1,0 | 1,00 |
+| quality 2160 | 535 | 471,4 s | **4,0** | **1,00** |
+| fast 1080 | 54 | 321,4 s | — | — |
+| fast 2160 | 214 | 330,7 s | 4,0 | 1,03 |
+
+⇒ Ở **cả hai** preset, đích nhân giá lên **4,0×** cho **~1,0×** thời gian GPU.
+
+⛔ Điều này ⛔ KHÔNG nói giá sai — lưu trữ và băng thông **có** tỉ lệ với đích
+(§G.2: kích thước đầu ra 1,00 / 1,61 / 3,15×). Nó chỉ nói **cơ sở "thời gian GPU"
+ghi trong `cost.py` là sai**. Chủ dự án chốt giữ giá, điều chỉnh sau (§H.4).
