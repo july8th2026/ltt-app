@@ -197,7 +197,46 @@ def dinh_that_db() -> float:
 #: ⚠️ Van con la mot con so co ich: dat qua thap thi ban phoi bi han nhieu hon
 #:    can (LUFS tut, T4 hep dan); dat qua cao thi hau het lan chay ton them mot
 #:    vong ghim. 2,0 la muc da do tren bon phim that: khong lan nao can vong hai.
-BIEN_CHO_CODEC_DB = 2.0
+#:
+#: 🔴 **2,0 -> 0,5 (27/09). Chinh canh bao "LUFS tut, T4 hep dan" o dong tren da
+#:    thanh su that tren mot lan chay THAT.**
+#:
+#:    Lan chay `asvr_3059dc3d77f0456bb3a3ab3705b6fae` (27/09, phim khach that,
+#:    preset cat + `toc_do = 1,25`) lam **T4 HONG**: ban phoi ra `-15,24 LUFS`
+#:    (`loudnorm`) / `-15,0` (doi chung bang `ebur128`), trong khi dich la
+#:    `-14,0 ± 1,0`, tuc ngoai khoang cho phep.
+#:
+#: ⭐ **Do tren CHINH ba luot cua san pham, voi du lieu THAT cua lan chay do**
+#:    (nen + hai lop tieng tai tu kho, `am_master.tron_lo` + `tron_cuoi`):
+#:
+#:      BIEN   tran phoi   LUFS ra   dinh giao   so vong ghim
+#:       2,0      -3,5      -15,0      -3,35          1        <- HONG T4
+#:       1,0      -2,5      -14,8      -2,38          1
+#:       0,5      -2,0      -14,6      -1,92          1        <- CHON
+#:      0,25     -1,75      -14,5      -1,64          1
+#:       0,0      -1,5      -14,5      -1,78          2
+#:
+#:    ⇒ Tran DANG rang buoc: no lam `loudnorm ... linear=true` mat tinh tuyen
+#:      tinh (tai lieu: gain tuyen tinh nao lam vuot `TP` thi no LUI ve che do
+#:      dong, va che do dong sai ~1 LU). Noi tran tu 2,0 xuong 0,5 lay lai
+#:      **0,4 LU** va dua T4 vao trong khoang voi du 0,4 LU.
+#:
+#: ⛔ Va no ⛔ KHONG lam hong T5: o BIEN = 0,5 ban giao do duoc **-1,92 dBTP**,
+#:    du 0,42 dB duoi tran T5 (-1,5), va `ghim_tran_phoi` chi can **1 vong** —
+#:    tuc ban sua nay ⛔ khong tra them mot luot ma hoa nao.
+#:
+#: 🔑 **Vi sao dam ha: luoi an toan la mot PHEP DO, ⛔ khong phai mot loi khai.**
+#:    Do 27/09: o tran -1,5 vong ghim do ban giao **-1,47** (vuot T5 0,03), tu ha
+#:    tran xuong -1,83, do lai **-1,78** ⇒ **hoi tu va an toan**. Tuc ngay ca khi
+#:    vot lo lon hon bien, vong ghim bat duoc va sua — no ma hoa THU bang dung
+#:    tham so giao hang. Bien du chi con la mot phep toi uu **so vong**, ⛔ khong
+#:    con la mot lan doan ve an toan.
+#:
+#: ⚠️ Cai gia neu sai: vot lo cua mot phim khac lon hon 0,5 dB (nghien cuu cu do
+#:    `0,00-2,78 dB` o mot cho va `0,00-0,85` o cho khac) ⇒ vong ghim chay 2-3
+#:    vong, tuc ton them 1-2 luot ma hoa THU (giay), ⛔ khong phai mot ban giao
+#:    vuot dinh: `SO_VONG_GHIM = 3` va T5 la trong tai cuoi.
+BIEN_CHO_CODEC_DB = 0.5
 
 
 def dinh_that_phoi_db() -> float:
