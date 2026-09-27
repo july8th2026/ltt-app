@@ -22228,3 +22228,99 @@ msgstr "A short-lived ticket used to send one scene to another app (for example 
 
 msgid "Vector đặc trưng khuôn mặt, suy từ ảnh nhân vật do khách tải lên, dùng để giữ đúng một mặt qua nhiều cảnh. Là dữ liệu sinh trắc học nên ⛔ không ra API; đi cùng nhân vật khi nhân vật bị xoá."
 msgstr "A facial feature vector derived from a character image the customer uploaded, used to keep the same face across scenes. It is biometric data, so it never leaves through the API; it goes with the character when the character is deleted."
+
+# ── UI-1 · LTT Automation Studio (IA dich `09_TARGET_DESIGN.md` §1, 28/09/2026) ──
+# Tu vung: step · workflow · run · connection. ⛔ khong 'block', 'node', 'tool'.
+
+msgid "Workflows"
+msgstr "Workflows"
+
+msgid "Lượt chạy"
+msgstr "Runs"
+
+msgid "Các kết nối"
+msgstr "Connections"
+
+msgid "Agent"
+msgstr "Agents"
+
+msgid "Cài đặt Agent"
+msgstr "Agent settings"
+
+msgid "AI Studio"
+msgstr "AI Studio"
+
+msgid "Mở Workflows"
+msgstr "Open Workflows"
+
+msgid "Tên workflow"
+msgstr "Workflow name"
+
+msgid "Tổng số workflow"
+msgstr "Total workflows"
+
+msgid "Khớp"
+msgstr "Matching"
+
+msgid "Xoá bộ lọc"
+msgstr "Clear filter"
+
+msgid "Sửa lần cuối"
+msgstr "Last edited"
+
+msgid "Bản nháp"
+msgstr "Draft"
+
+msgid "Đã xuất bản"
+msgstr "Published"
+
+msgid "(bản sao)"
+msgstr "(copy)"
+
+msgid "Mã theo dõi nội bộ"
+msgstr "Internal tracking code"
+
+msgid "Mục này chưa làm xong"
+msgstr "This section is not finished"
+
+msgid "Về danh sách workflow"
+msgstr "Back to the workflow list"
+
+msgid "Mỗi workflow là một chuỗi bước bạn dựng và chạy được. Mở một workflow để sửa, hoặc tạo một workflow mới."
+msgstr "Each workflow is a chain of steps you build and can run. Open a workflow to edit it, or create a new one."
+
+msgid "Bạn chưa có workflow nào. Tạo một workflow mới để bắt đầu dựng các bước trong Canvas."
+msgstr "You do not have any workflow yet. Create a new workflow to start building steps in the Canvas."
+
+msgid "Không có workflow nào khớp tên đang tìm."
+msgstr "No workflow matches the name you searched for."
+
+msgid "Không tạo được workflow. Thử lại, hoặc tải lại trang."
+msgstr "Could not create the workflow. Try again, or reload the page."
+
+msgid "Dựng một chuỗi bước chạy được: mỗi bước làm một việc, workflow nối chúng lại. Báo giá hiện ra trước khi chạy, chưa duyệt thì không giữ credit."
+msgstr "Build a chain of steps you can run: each step does one job, the workflow links them together. The quote appears before the run, and nothing holds credit until you approve it."
+
+msgid "Workflows là nơi bạn xem, tìm và mở các workflow của mình. Mở một workflow ra là vào Canvas — chỗ bạn thêm bước, nối chúng với nhau và chạy thử."
+msgstr "Workflows is where you browse, search and open your own workflows. Opening one takes you into the Canvas, where you add steps, link them together and test a run."
+
+msgid "Lượt chạy, Mẫu, Các kết nối và Agent đã có chỗ trong thanh mục phía trên; những mục đó còn đang xây và trang của chúng nói rõ điều đó."
+msgstr "Runs, Templates, Connections and Agents already have a place in the menu above; those sections are still being built and their pages say so."
+
+msgid "Phần này đã có chỗ trong điều hướng nhưng nội dung chưa được dựng. Trang này nói thẳng điều đó thay vì hiện một danh sách trống trông như đã hoạt động."
+msgstr "This section already has a place in the navigation, but its content has not been built. This page says so outright instead of showing an empty list that looks like it works."
+
+msgid "Lịch sử mọi lượt chạy của bạn: lọc theo trạng thái, mở lại một lượt để xem từng bước."
+msgstr "The history of all your runs: filter by status, reopen a run to inspect it step by step."
+
+msgid "Mẫu chạy được: mở một mẫu ra là một workflow thật của bạn, sửa được ngay."
+msgstr "Templates you can run: opening one gives you a real workflow of your own, editable straight away."
+
+msgid "Kết nối tới dịch vụ ngoài để một bước dùng lại mà không phải dán khoá mỗi lần."
+msgstr "Connections to outside services, so a step can reuse one instead of you pasting a key every time."
+
+msgid "Soạn workflow bằng cách mô tả mục tiêu, xem bản đề xuất rồi chọn nhận hay bỏ."
+msgstr "Compose a workflow by describing the goal, review the proposal, then choose to accept or discard it."
+
+msgid "Giao diện, ngôn ngữ và các giá trị mặc định cho workflow mới."
+msgstr "Theme, language and the defaults for a new workflow."

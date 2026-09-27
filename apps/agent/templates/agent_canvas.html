@@ -4,7 +4,16 @@
 {% block title %}Canvas · LTT Agent AI{% endblock %}
 {% block content %}
 <h1 class="sr-only">{{ _("Canvas") }} · LTT Agent AI</h1>
+{#- `data-workflow-id` la CACH DUY NHAT trinh soan biet no phai mo workflow nao.
+    Rong (loi vao `/agent/canvas`) ⇒ giu hanh vi cu: mo cai moi nhat, tao neu
+    chua co. Co gia tri (`/agent/workflows/{id}`) ⇒ mo DUNG cai do.
+
+    ⭐ Id di theo URL chu khong theo trang thai phien: nen tai lai trang van
+       dung workflow do, va hai tab mo hai workflow khac nhau khong danh nhau.
+       Mot "workflow dang mo" luu trong phien se lam tab thu nhat doi noi dung
+       khi tab thu hai mo mot cai khac. -#}
 <div id="agent-canvas-root" aria-busy="true" data-csrf-token="{{ csrf_token }}"
+     data-workflow-id="{{ workflow_id | default('', true) }}"
      data-presentation="{{ canvas_presentation }}"><p class="muted">{{ _("Đang tải Canvas…") }}</p></div>
 {% for href in canvas_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
 {% for src in canvas_js %}<script type="module" src="{{ src }}"></script>{% endfor %}
