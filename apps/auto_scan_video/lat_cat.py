@@ -41,6 +41,7 @@ import contextvars
 import functools
 import inspect
 import logging
+import os
 import time
 import uuid
 from dataclasses import dataclass
@@ -59,6 +60,55 @@ HE_SO_TRAN = 0.85
 #: nhuong du con tran. Ly do: mot job giu suat `llm_remote` hang gio la chan
 #: moi run khac; 30 phut la du dai de chi phi noi tiep (vai giay) khong dang ke.
 LUOT_MUC_TIEU_S = 30 * 60
+
+#: Can gat o cap NGUOI VAN HANH: THU NHO moc mem cua mot luot.
+BIEN_MUC_TIEU = "LTT_ASV_LUOT_MUC_TIEU_S"
+
+#: San cua can gat. Duoi moc nay thi moi don vi thanh mot lat, va mot lan chay
+#: bien thanh hang tram job noi tiep — cham, nhung van DUNG (moi lat lam >= 1
+#: don vi nen tien do van bao dam).
+SAN_MUC_TIEU_S = 5.0
+
+
+def luot_muc_tieu_s() -> float:
+    """Moc mem cua mot luot, giay. Mac dinh `LUOT_MUC_TIEU_S`.
+
+    🔴 **Duong LAT CAT chua tung chay tren mot job THAT.** Chinh chu thich cua
+       `dong_ho` o tep nay noi ro: *"Phep kiem thay bang dong ho gia de 'chay'
+       120 phut trong vai giay."* Tuc moi bang chung ve lat cat den tu dong ho
+       GIA — va ba loi TIEN cua Task 19 (nan lai moi lat ⇒ hoa don x12; `[E]`
+       khong nhuong duoc ⇒ job hong HAN; `item_key` thieu `attempt` ⇒ so cai mat
+       ~60 dong) deu **chi hien khi co lat cat**. Mot video 107 giay ⛔ khong bao
+       gio cham moc 30 phut, nen mot lan chay that tren no ⛔ khong phu duoc ba
+       ban sua ay.
+
+    ⇒ Can gat nay cho phep mot lan chay THAT (CSDL that, `commit` that, `item_key`
+      that, may sinh tieng that) di qua duong lat cat, chi voi dong ho la that
+      nhung moc thi ngan. Do la do phu manh hon han mot dong ho gia.
+
+    ⛔ **CHI THU NHO duoc, ⛔ khong noi ra** (`min`). Ly do la chinh ly do cua
+       `LUOT_MUC_TIEU_S`: *"mot job giu suat `llm_remote` hang gio la chan moi run
+       khac"*. Mot can gat noi duoc moc ay len se bien mot loi cau hinh thanh mot
+       lan chan ca he — nen chieu do bi khoa bang ma, ⛔ khong bang loi dan.
+
+    ⛔ Gia tri khong doc duoc (rong, khong phai so, <= 0) ⇒ mac dinh, ⛔ khong nem:
+       mot bien moi truong go sai ⛔ khong duoc lam sap worker production.
+    """
+    raw = str(os.environ.get(BIEN_MUC_TIEU, "")).strip()
+    if not raw:
+        return float(LUOT_MUC_TIEU_S)
+    try:
+        v = float(raw)
+    except ValueError:
+        log.warning("%s=%r khong phai so — dung mac dinh %ss",
+                    BIEN_MUC_TIEU, raw, LUOT_MUC_TIEU_S)
+        return float(LUOT_MUC_TIEU_S)
+    if v <= 0:
+        log.warning("%s=%r khong duong — dung mac dinh %ss",
+                    BIEN_MUC_TIEU, raw, LUOT_MUC_TIEU_S)
+        return float(LUOT_MUC_TIEU_S)
+    return float(min(LUOT_MUC_TIEU_S, max(SAN_MUC_TIEU_S, v)))
+
 
 #: Tran so luot noi tiep cua MOT giai doan. Moi luot lam >= 1 don vi nen tran
 #: nay chi cham khi co loi logic (vd con tro khong tien) — khi do hong han
@@ -203,7 +253,7 @@ class LatCat:
             return False            # moi luot phai tien it nhat mot don vi
         troi = self.da_troi()
         return (troi + self.du_phong_s > self.ngan_sach_s()
-                or troi >= LUOT_MUC_TIEU_S)
+                or troi >= luot_muc_tieu_s())
 
     def xong_mot(self) -> None:
         self.da_lam += 1

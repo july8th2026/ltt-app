@@ -62,6 +62,27 @@ GPU_HEARTBEAT_S = 60.0
 # Mọi GPU đều bận thì hoãn job bao lâu trước khi thử lại. Đủ dài để không quay
 # vòng đốt CPU, đủ ngắn để người dùng không thấy job đứng im.
 GPU_RETRY_DELAY_S = 20
+
+#: Trần số lần hoãn vì tài nguyên trước khi job hỏng **hẳn và đọc được**.
+#:
+#: ⭐ Vì sao phải có trần (Task 23, 26/09/2026): hoãn ⛔ KHÔNG tăng `attempts` —
+#:    cố ý, vì kẹt card ⛔ không phải lỗi của job. Nhưng hệ quả là một job bị bỏ
+#:    đói có `attempts = 0`, `status = queued`, `next_run_at` nhích 20 giây một
+#:    lần và CPU ≈ 0: nó ⛔ **không bao giờ hỏng hẳn**, nên nó ⛔ không bao giờ
+#:    lộ ra. Một vòng lặp vô hạn IM LẶNG tệ hơn một lần hỏng thẳng — nó biểu hiện
+#:    thành *"treo"*, và đã tốn một buổi chẩn đoán.
+#:
+#: Con số: 200 × `GPU_RETRY_DELAY_S` (20 s) ≈ **67 phút** bị bỏ đói liên tục.
+#: Quá mức đó thì *"tài nguyên đang bận"* ⛔ không còn là lời giải thích hợp lý,
+#: và một thất bại đọc được **kèm hoàn tiền** tốt hơn một job đứng im vô hạn.
+#: ⚠️ Đếm theo số sự kiện `resource_wait` của job, tức đếm cả đời job.
+TRAN_HOAN_TAI_NGUYEN = 200
+
+#: Mã sự kiện của một lần tụt xuống CPU vì tiến trình ⛔ không dùng được CUDA.
+#: Hằng số chứ ⛔ không phải chuỗi gõ lại ở hai nơi — `tests/test_151` đọc chính
+#: hằng này, nên phép kiểm ⛔ không thể trôi khỏi mã.
+EVENT_GPU_KHONG_DUNG_DUOC = "gpu_khong_dung_duoc"
+
 EVENT_PURGE_INTERVAL_S = 6 * 60 * 60
 
 #: Bao lâu quét `ExecutionLease` mồ côi một lần. **Bằng** `HEARTBEAT_SECONDS`
@@ -528,6 +549,27 @@ def _giu_gpu(worker_id: str, job_id: str, job_type: str, need_mb: int):
         return
 
     from platform_core import gpu_lease as gl
+
+    # ⭐ ĐỪNG XIN MỘT TÀI NGUYÊN MÌNH KHÔNG DÙNG ĐƯỢC (Task 23, đo 26/09/2026).
+    #
+    #    `nvidia-smi` thấy card ⛔ không có nghĩa tiến trình này dùng được card.
+    #    Với `torch 2.11.0+cpu` thì `cuda.is_available() = False` mà `acquire`
+    #    VẪN cấp lease, nên: `ctx.has_gpu = True` ⇒ handler bật `--buoc-gpu` ⇒
+    #    `demucs_runner` trả `thieu_card` ⇒ giai đoạn hỏng trong ~0 giây ⇒ hoãn
+    #    ⇒ **hoãn ⛔ không tính là một lần thử** ⇒ quay vòng VÔ HẠN, CPU ≈ 0.
+    #
+    # ⛔ `het_gpu=False`, ⛔ không phải True: hoãn ở đây là hoãn mãi mãi — thiếu
+    #    CUDA ⛔ không tự lành ở lượt sau. Chạy CPU (chậm) và NÓI RA.
+    dung_duoc, vi_sao = gl.gpu_mod.cuda_dung_duoc()
+    if not dung_duoc:
+        log.warning("job %s (%s) khai can %s MB VRAM nhung tien trinh nay KHONG "
+                    "dung duoc CUDA (%s) — chay CPU, KHONG giu lease. Giu lease "
+                    "roi hong trong 0 giay la mot vong lap vo han im lang.",
+                    job_id[:8], job_type, need_mb, vi_sao)
+        _khai_tut_ve_cpu(job_id, job_type, need_mb, vi_sao)
+        yield None, False
+        return
+
     gen = get_session(); db = next(gen)
     lease = None
     try:
@@ -563,12 +605,76 @@ def _giu_gpu(worker_id: str, job_id: str, job_type: str, need_mb: int):
     finally:
         dung.set()
         t.join(timeout=5)
+        nha_duoc = False
         try:
-            gl.release(db, lease)
+            nha_duoc = gl.release(db, lease)
         except Exception:                   # noqa: BLE001
-            log.exception("Không trả được lease GPU — sẽ hết hạn theo mồ côi")
+            # Session này đã hỏng sau khi `commit` ném; `rollback` để `close`
+            # bên dưới không ném thêm một lỗi che mất lỗi thật.
+            try: db.rollback()
+            except Exception: log.debug("rollback sau release loi cung loi")  # noqa: BLE001
+            log.exception(
+                "Khong tra duoc lease GPU cua job %s — dong lease se duoc "
+                "`reclaim_orphans` thu hoi NGAY khi trang thai cuoi cua job "
+                "hien ra trong CSDL (luat 'job da ket thuc'), KHONG cho het %s",
+                job_id[:8], gl.ORPHAN_TIMEOUT)
         try: next(gen)
         except StopIteration: pass
+        if not nha_duoc:
+            _canh_lease_con_sot(job_id)
+
+
+def _canh_lease_con_sot(job_id: str) -> int:
+    """Đo BẤT BIẾN Ở BIÊN: rời `_giu_gpu` rồi thì job này ⛔ không được còn lease.
+
+    ⭐ Một phép kiểm **cơ học** thắng một lời dặn dò. Trước Task 23 bất biến này
+       chỉ nằm trong docstring của `gpu_lease.hold` (*"Quên trả lease thì GPU
+       khoá tới khi hết hạn mồ côi"*) — nên khi nó vỡ, ⛔ không con số nào đổi và
+       ⛔ không dòng log nào xuất hiện. Nó đã vỡ suốt một lượt nghiệm thu.
+
+    ⚠️ Đo bằng một session SẠCH: chính session vừa ném ⛔ không phải người làm
+       chứng đáng tin. Và ⛔ không bao giờ ném ra ngoài — đây là phép ĐO, làm chết
+       một job vì phép đo là đổi một lỗi chậm thành một lỗi nhanh hơn.
+    """
+    from platform_core import gpu_lease as gl
+    try:
+        for db in _one_session():
+            con = gl.lease_cua_job(db, job_id)
+            if con:
+                log.error("BAT BIEN VO: job %s da roi `_giu_gpu` ma con %d lease "
+                          "(%s) — card dang bi giu cho mot job khong con chay",
+                          job_id[:8], len(con),
+                          ", ".join(x.gpu_uuid[:20] for x in con))
+            return len(con)
+    except Exception:                       # noqa: BLE001
+        log.exception("khong do duoc bat bien lease cho job %s", job_id[:8])
+    return 0
+
+
+def _khai_tut_ve_cpu(job_id: str, job_type: str, need_mb: int, vi_sao: str) -> None:
+    """Ghi lại một lần tụt xuống CPU, ở mức cảnh báo. ⛔ Không im lặng.
+
+    ⭐ Docstring `demucs_runner.chon_thiet_bi` nói một lần tụt xuống im lặng *"tắc
+       cả hàng đợi chứ không chỉ làm chậm một job"*, và cảnh báo đó **đúng**. Thứ
+       Task 23 bỏ là **vòng lặp vô hạn**, ⛔ không phải sự phân biệt: giai đoạn
+       vẫn chạy, nhưng mọi con số giây của nó là số CPU và người đọc phải biết.
+
+    `visibility="internal"`: đây là câu kỹ thuật cho người vận hành (bản torch,
+    driver), ⛔ không phải câu cho khách.
+    """
+    try:
+        for db in _one_session():
+            job = db.get(Job, job_id)
+            if job is None:
+                return
+            job_events.append(
+                db, job, EVENT_GPU_KHONG_DUNG_DUOC,
+                details={"vi_sao": vi_sao, "vram_mb_da_khai": int(need_mb),
+                         "job_type": job_type, "thiet_bi": "cpu"},
+                level="warning", visibility="internal")
+            db.commit()
+    except Exception:                       # noqa: BLE001
+        log.exception("khong ghi duoc su kien tut ve CPU cho job %s", job_id[:8])
 
 
 def _tra_ve_hang_doi(job_id: str, job_type: str, *, resource: str = "gpu") -> None:
@@ -578,6 +684,20 @@ def _tra_ve_hang_doi(job_id: str, job_type: str, *, resource: str = "gpu") -> No
     for db in _one_session():
         job = db.get(Job, job_id)
         if job is not None and job.status not in (JOB_CANCELLED,):
+            so_hoan = _dem_hoan_tai_nguyen(db, job_id)
+            if so_hoan >= TRAN_HOAN_TAI_NGUYEN:
+                # ⛔ Không hoãn lần thứ `TRAN+1`: xem `TRAN_HOAN_TAI_NGUYEN`.
+                log.error("job %s (%s) da hoan %d lan vi tai nguyen %r — qua "
+                          "tran %d, cho hong han de co nguoi doc duoc",
+                          job_id[:8], job_type, so_hoan, resource,
+                          TRAN_HOAN_TAI_NGUYEN)
+                jobq.fail(db, job,
+                          f"Hoan {so_hoan} lan vi tai nguyen {resource!r} van "
+                          f"khong chay duoc (tran {TRAN_HOAN_TAI_NGUYEN}). Job "
+                          f"bi bo doi, khong phai loi xu ly.", retry=False)
+                db.commit()
+                _hoan_tien_neu_can(db, job)
+                return
             job.status = JOB_QUEUED
             # App khai được thì dùng của app: 20 giây hợp với job render dài
             # hàng phút, và đốt 75% thông lượng của một job 5 giây (xem
@@ -594,6 +714,30 @@ def _tra_ve_hang_doi(job_id: str, job_type: str, *, resource: str = "gpu") -> No
             db.commit()
     log.info("job %s (%s) hoãn %ss: tài nguyên %s đang bận",
              job_id[:8], job_type, _cho_tai_nguyen(job_type), resource)
+
+
+def _dem_hoan_tai_nguyen(db, job_id: str) -> int:
+    """Job này đã bị hoãn vì tài nguyên bao nhiêu lần. 0 nếu ⛔ không đọc được.
+
+    ⚠️ Đếm sự kiện `resource_wait`, và sự kiện đó có **HAI người ghi**:
+    `_tra_ve_hang_doi` ở đây (worker hoãn trước khi chạy) và
+    `jobs.defer_resource` (handler ném lỗi tài nguyên giữa chừng). Đếm ở tầng sự
+    kiện bắt được cả hai; đếm bằng một cột riêng chỉ bắt được một.
+
+    ⛔ Lỗi đọc ⇒ trả 0 (fail-open): một `SELECT` hỏng ⛔ không được biến thành
+       một job chết. Trần là lưới bắt vòng lặp vô hạn, ⛔ không phải một cửa.
+    """
+    from sqlalchemy import func
+
+    from platform_core.models import JobEvent
+    try:
+        return int(db.execute(
+            select(func.count()).select_from(JobEvent).where(
+                JobEvent.job_id == job_id,
+                JobEvent.event_code == "resource_wait")).scalar() or 0)
+    except Exception:                       # noqa: BLE001
+        log.exception("khong dem duoc so lan hoan cua job %s", job_id[:8])
+        return 0
 
 
 def _cho_tai_nguyen(job_type: str) -> int:

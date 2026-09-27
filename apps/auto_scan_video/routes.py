@@ -48,7 +48,7 @@ from . import bien_tap as bien_tap_mod
 from . import de_xuat_vung as de_xuat_vung_mod
 from . import (am_thanh as am_thanh_mod, cai_dat as cai_dat_mod, logo as logo_mod,
                lop_phu as lop_phu_mod, ngon_ngu as ngon_ngu_mod,
-               nguon_loi as nguon_loi_mod, phu_de as phu_de_mod,
+               phu_de as phu_de_mod,
                tach_tieng as tach_tieng_mod)
 from .manifest import MANIFEST
 
@@ -186,20 +186,20 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         "giong_chon": nl.get("giong_id") or "",
         "che_do_giong_chon": (nl.get("che_do_giong")
                               or hop_dong_v4.CHE_DO_GIONG_MAC_DINH),
-        #: ── Cap ngon ngu + nguon loi thoai (asv-final 23/09) ───────────────
+        #: ── Cap ngon ngu ──────────────────────────────────────────
         #:
-        #: ⭐ Ba o nay nap lai duoc, khac `vung`: chung noi "xu ly the nao",
+        #: ⭐ Hai o nay nap lai duoc, khac `vung`: chung noi "xu ly the nao",
         #:    khong noi "o cho nao tren khung hinh nay". Xem docstring tren.
         #:
-        #: ⛔ Mien gia tri lay TU `ngon_ngu`/`nguon_loi`, khong go `zh`/`ocr`
-        #:    vao template — cung luat voi `preset_can_cho_vung`.
+        #: ⛔ Mien gia tri lay TU `ngon_ngu`, khong go `zh` vao template — cung
+        #:    luat voi `preset_can_cho_vung`.
+        #:
+        #: ⛔ `nguon_loi` DA RUT 26/09 (Task 21): mot duong duy nhat voice->voice
+        #:    ⇒ khong con gi de chon, nen khong con o nao de nap lai.
         "ngon_ngu": ngon_ngu_mod.cho_giao_dien(),
         "ngon_ngu_nguon_chon": nl.get("ngon_ngu_nguon") or ngon_ngu_mod.TU_DOAN,
         "ngon_ngu_dich_chon": (nl.get("ngon_ngu_dich")
                                or ngon_ngu_mod.DICH_MAC_DINH),
-        "nguon_loi": nguon_loi_mod.cho_giao_dien(),
-        "nguon_loi_chon": (nl.get("nguon_loi")
-                           or nguon_loi_mod.CHE_DO_MAC_DINH),
         "nap_lai_tu": nl.get("_tu_run") or "",
         "preset": gia.PRESET_BANG,
         "preset_mac_dinh": gia.preset_mac_dinh(),
@@ -301,8 +301,6 @@ async def tao(request: Request,
               #: Cap ngon ngu (22/09): nguon {auto,zh,en,vi}, dich {vi,en}.
               ngon_ngu_nguon: str = Form(""),
               ngon_ngu_dich: str = Form(""),
-              #: Nguon loi thoai: auto|embedded|ocr|asr (`nguon_loi.py`).
-              nguon_loi: str = Form(""),
               tu_dien: str = Form(""),
               #: Vung che, JSON do trinh sua vung dung. Rong = khong co vung nao,
               #: va do la truong hop BINH THUONG cua phan lon lan chay.
@@ -345,8 +343,7 @@ async def tao(request: Request,
             "giong_id": giong_id, "ngon_ngu_nguon": ngon_ngu_nguon,
             "ngon_ngu_dich": ngon_ngu_dich, "vung": vung, "cat": cat,
             "lop_phu": lop_phu, "tu_dien": tu_dien, "phu_de": phu_de,
-            "am_thanh": am_thanh, "bien_tap": bien_tap, "lop": lop,
-            "nguon_loi": nguon_loi})
+            "am_thanh": am_thanh, "bien_tap": bien_tap, "lop": lop})
     except dich_vu_tao.LoiCaiDat as exc:
         return _lai_voi_loi(request, db, u, str(exc))
     preset = ho_so["preset"]
@@ -495,9 +492,8 @@ def chi_tiet(request: Request, run_id: str,
         #    hai ban cua mot nhan la hai ban se lech.
         "preset": gia.PRESET_BANG,
         "che_do": gia.CHE_DO_THOI_GIAN,
-        # ⛔ Cung luat: nhan ngon ngu + nguon loi song o module cua chung.
+        # ⛔ Cung luat: nhan ngon ngu song o module cua no.
         "ngon_ngu_nhan": ngon_ngu_mod.NHAN,
-        "nguon_loi_nhan": nguon_loi_mod.NHAN_CHE_DO,
         # ⭐ Hai con so cua ho so (V6 pha 07). Truoc do khong ai tra loi duoc
         #    *"ho so nay theo schema nao"* va *"ca cau hinh bam ra gi"* — va cau
         #    thu hai la cau hoi DAU TIEN khi mot khach hoi vi sao hai lan chay

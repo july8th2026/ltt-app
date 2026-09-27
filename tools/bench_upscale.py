@@ -3,7 +3,6 @@
     python tools\\bench_upscale.py --dry-run
     python tools\\bench_upscale.py --dry-run --preset fast --target 1080 --feature normal
     python tools\\bench_upscale.py --mode matrix --preset fast --target 1080 --feature normal --video v3 --repeat 3
-    python tools\\bench_upscale.py --mode warmup --preset fast --repeat 5
     python tools\\bench_upscale.py --mode tile-sweep --preset fast --video v3 --max-frames 200 --repeat 3
     python tools\\bench_upscale.py --mode thread-sweep --preset quality --tile 384 --video v3 --max-frames 200
     python tools\\bench_upscale.py --report <scratch>\\results.jsonl > 08_ket_qua.md
@@ -25,8 +24,9 @@ Bo do nay KHONG tu dung lai pipeline. No goi thang cac ham that trong
     `ff.encode_full` / `ff.concat_and_mux` — dung nguyen ham san xuat.
   - `autotune.pick` — chon tile/threads that (tru mode sweep, no CHU DINH
     tile/threads de do rieng tung o).
-  - `engine.run_upscale` — dung nguyen, ke ca duong fallback OOM va bien moi
-    truong `LTT_UPSCALE_WARMUP`.
+  - `engine.run_upscale` — dung nguyen, ke ca duong fallback OOM (warmup +
+    `LTT_UPSCALE_WARMUP` da bi go khoi `engine.py`, 26/09/2026 — xem `## Ma
+    tran` duoi).
   - `jobs._resolve_encoder`, `jobs._output_fps`, `jobs._upscale_batched`,
     `jobs._BATCH_SIZE`, `jobs._PREVIEW_SECONDS` — cac ham/hang so noi bo cua
     `jobs.handle()` duoc goi THANG (khong qua DB/credit/storage/checkpoint,
@@ -47,12 +47,13 @@ smooth_motion,preview} x video {v1..v4}`. 4 video test that (chi doc, xem
 khong co portrait/VFR/mat nguoi/nhieu nang — nhung o do la `KHONG CO MAU`,
 xem `MEDIA_KHONG_CO_MAU` duoi).
 
-`--mode warmup`: PHEP DO CHOT — warmup (`engine._warmup_model`) spawn mot
-tien trinh `subprocess.run` CHO THOAT HAN truoc khi job that spawn mot
-`Popen` MOI (`engine.py:87-89` vs `:127-129`) nen no KHONG the giu model
-trong VRAM; loi ich (neu co) chi co the la cache tep OS / shader cache
-driver. Mode nay chay CA HAI trang thai `LTT_UPSCALE_WARMUP=1|0` cho cung
-mot preset/video, do time-to-first-frame + tong thoi gian, nhieu lan lap.
+⭐ `--mode warmup` DA BI GO (26/09/2026): no la PHEP DO CHOT xac nhan
+warmup (`engine._warmup_model`, cung da go) KHONG co loi ich do luong duoc
+— A/B xen ke n=13/canh, moi delta <1% VA dau trai chieu giua ttff/upscale
+(nhieu, khong phai tin hieu). Ket qua day du:
+`docs/UPSCALE_V2_CORRECTION/08_BENCHMARK_RESULTS.md`; ly do khong the giu
+model trong VRAM: comment dau `apps/upscalevideo/engine.py`. Dung git
+history (truoc 26/09) neu can xem lai co che xen ke on/off tung dung o day.
 
 `--mode tile-sweep` / `--mode thread-sweep`: do RIENG tang upscale (khong
 chay lai probe/tach khung/encode moi lan) tren MOT bo khung da tach san —
@@ -140,7 +141,6 @@ from apps.upscalevideo.schemas import PRESET_MODEL, Codec, Preset, TuneResult  #
 PRESETS = ["fast", "quality"]
 TARGETS = [1080, 1440, 2160]
 FEATURES = ["normal", "stabilize", "smooth_motion", "preview"]
-WARMUP_STATES = ["on", "off"]
 TILE_SWEEP = {"fast": [200, 256, 384], "quality": [256, 320, 384, 448, 512]}
 THREAD_SWEEP = ["1:2:2", "2:2:2", "4:4:4"]
 
@@ -167,7 +167,17 @@ MEDIA_KHONG_CO_MAU = [
     ("clip nhieu hat/nen toi rieng (noisy)", "khong co clip quay dem/nhieu ISO cao rieng trong bo 4"),
 ]
 
-_BUSY_THRESHOLD_MAC_DINH = 15
+#: ⭐ SUA 26/09/2026 (tu 15 → 40): `utilization.gpu` cua nvidia-smi la TONG
+#: 3D+compute gop lam mot — card tieu dung KHONG co truong rieng cho
+#: "compute engine util". Desktop compositing thuong (dwm.exe/explorer.exe/
+#: cua so app Claude, v.v.) da day con so nay len ~16% NGAY CA KHI khong co
+#: viec compute nao — do that 26/09. Nguong 15 (cu) coi luon ca may DANG
+#: RANH la "ban", huy lan do oan. 40 chua qua TREN baseline desktop do that
+#: nhung van THAP hon nhieu so voi mot workload upscale/encode that (>90%
+#: quan sat duoc). Tin hieu CHINH van la `_TIEN_TRINH_LA_TRANH_GPU` (ten
+#: tien trinh) o duoi; `gpu_util_pct` chi la LUOI AN TOAN cho mot workload
+#: nang KHONG duoc nhan dien qua ten (vd binary khac ten realesrgan/ffmpeg).
+_BUSY_THRESHOLD_MAC_DINH = 40
 _WAIT_TIMEOUT_MAC_DINH_S = 1800
 
 
@@ -302,13 +312,25 @@ _TIEN_TRINH_LA_TRANH_GPU = ("realesrgan", "ffmpeg")
 
 
 def _may_ranh(nguong_pct: int) -> tuple[bool, dict]:
+    """GPU coi la RANH khi: (a) khong co tien trinh nao khop TEN mot workload
+    upscale/encode that, VA (b) `gpu_util_pct` duoi nguong AN TOAN.
+
+    ⭐ (b) la LUOI AN TOAN, khong phai tin hieu chinh — `utilization.gpu` gop
+    CA 3D lan compute nen desktop compositing (dwm.exe/explorer.exe/cua so
+    app) tu no da ~16% (do that 26/09) du KHONG co viec gi. Doc con so nay
+    nhu "GPU co dang ban khong" la cung mot loi voi "doc Task Manager thay
+    vi dong co compute" — chi khac o cho o day KHONG co truong compute-only
+    de doc tu nvidia-smi tren card tieu dung, nen nguong AN TOAN duoc dat
+    CAO HON han baseline compositing (xem `_BUSY_THRESHOLD_MAC_DINH`) thay
+    vi bo han tin hieu nay.
+    """
     snap = _gpu_snapshot()
     if "loi" in snap:
         return False, snap
     la = [p for p in snap["tien_trinh_compute"]
          if any(ten in p.lower() for ten in _TIEN_TRINH_LA_TRANH_GPU)]
     snap["tien_trinh_tranh_gpu"] = la
-    ranh = snap["gpu_util_pct"] < nguong_pct and not la
+    ranh = not la and snap["gpu_util_pct"] < nguong_pct
     return ranh, snap
 
 
@@ -347,6 +369,18 @@ class LayMauTaiNguyen:
        ke voi cac lenh dai vai giay-vai chuc phut o day. Bao ca `giay_cpu`
        (phan quyet) LAN `dong_ho_tuong` (dieu kien do) — hai cot tra loi hai
        cau khac nhau (`docs/QUY_TAC_CHAY_LENH_NANG.md` §2b).
+
+    🔴 VA CHAM 26/09: `pid_goc` la PID cua CHINH tien trinh `bench_upscale.py`
+       (`os.getpid()`), SONG SUOT ca vong lap matrix/warmup — `cpu_times()`
+       cua no la TONG CONG DON tu luc script khoi dong, khong phai rieng
+       luot nay. Mot `LayMauTaiNguyen` MOI moi lan lap KHONG lam no reset ve
+       0. Da do that: 6 luot lien tiep ra `cpu_giay` tang DON DIEU +~20s/luot
+       bat ke warmup on/off, trong khi `total` phang — dau hieu do CONG DON,
+       khong phai tai may that. Sua: chup mot moc `cpu_times()` cua CHINH
+       `pid_goc` (chua co con) tai `__enter__` (truoc khi luot chay bat dau),
+       roi TRU moc do khoi tong (self + con) o moi lan lay mau — con cai la
+       tien trinh MOI sinh trong luot nay nen cpu_times() cua chung von da
+       la "cua luot nay", khong can tru.
     """
 
     def __init__(self, pid_goc: int, chu_ky: float = 0.3):
@@ -357,6 +391,7 @@ class LayMauTaiNguyen:
         self.mau_gpu_temp: list[int] = []
         self.mau_ram_mb: list[float] = []
         self.giay_cpu_cuoi = 0.0
+        self._moc_cpu_goc = 0.0
         self.tien_trinh_la_ngoai: list[str] = []
         self._dung = threading.Event()
         self._t: threading.Thread | None = None
@@ -390,7 +425,7 @@ class LayMauTaiNguyen:
                 cay = [goc] + goc.children(recursive=True)
             except psutil.Error:
                 continue
-            giay = 0.0
+            giay = -self._moc_cpu_goc
             ram = 0.0
             for p in cay:
                 try:
@@ -399,10 +434,19 @@ class LayMauTaiNguyen:
                     ram += p.memory_info().rss
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
-            self.giay_cpu_cuoi = max(self.giay_cpu_cuoi, giay)
+            self.giay_cpu_cuoi = max(self.giay_cpu_cuoi, giay, 0.0)
             self.mau_ram_mb.append(ram / (1024 * 1024))
 
     def __enter__(self) -> "LayMauTaiNguyen":
+        # 🔴 Chup moc CPU cua CHINH pid_goc TRUOC khi luot chay bat dau, de
+        # _vong() tru di duoc phan CONG DON tu cac luot truoc (xem docstring
+        # lop nay). Chi chup rieng pid_goc — con cai chua sinh ra tai day.
+        if psutil is not None:
+            try:
+                ctm = psutil.Process(self.pid_goc).cpu_times()
+                self._moc_cpu_goc = ctm.user + ctm.system
+            except psutil.Error:
+                self._moc_cpu_goc = 0.0
         self._t = threading.Thread(target=self._vong, daemon=True)
         self._t.start()
         return self
@@ -501,9 +545,28 @@ def _cfr_cho(info: dict, preserve_fps: bool, smooth_motion: bool):
     return "30" if not preserve_fps else None
 
 
+def _max_sec_tu_so_khung(fps_str: str | None, max_frames: int | None) -> float | None:
+    """Doi so khung toi da (`--max-frames`) sang so giay cho `-t` cua ffmpeg.
+
+    `ff.extract_frames` chi nhan `max_seconds`, khong nhan so khung truc
+    tiep — ham nay la CHO NOI DUY NHAT giua co `--max-frames` va tham so
+    thuc te dung, dung o CA `_chuan_bi_khung` (sweep) LAN
+    `chay_mot_luot_pipeline` (matrix).
+    """
+    if not max_frames:
+        return None
+    fps = fps_str or "30/1"
+    try:
+        num, den = fps.split("/")
+        fps_f = float(num) / float(den)
+    except (ValueError, ZeroDivisionError):
+        fps_f = 30.0
+    return max_frames / max(fps_f, 1.0)
+
+
 def chay_mot_luot_pipeline(video: dict, preset: str, target_h: int, feature: str,
-                           warmup: str, scratch_dir: Path, gpu_index, env,
-                           codec: str = "h264") -> dict:
+                           scratch_dir: Path, gpu_index, env,
+                           codec: str = "h264", max_frames: int | None = None) -> dict:
     """Mot lan chay HET pipeline (khong DB/storage/credit/checkpoint).
 
     Tai su dung `ff.*`, `autotune.pick`, `engine.run_upscale`,
@@ -511,6 +574,16 @@ def chay_mot_luot_pipeline(video: dict, preset: str, target_h: int, feature: str
     _PREVIEW_SECONDS` — dung NGUYEN duong san xuat, chi thay `ctx=None` (bo
     checkpoint/progress DB) va "upload R2" bang copy-vao-scratch (khong co
     thong tin dang nhap storage trong mot cong cu do doc lap).
+
+    🔴 VA CHAM 26/09: `max_frames` TRUOC DAY chi duoc dung o `_chuan_bi_khung`
+       (tile/thread-sweep) — mode=matrix goi thang ham nay ma KHONG truyen
+       `max_frames` nao ca, nen `--max-frames` bi lang le BO QUA cho mode do
+       va luon tach/upscale CA video (~3205 khung, do that 26/09). Nay
+       `max_frames` duoc doi sang giay qua `_max_sec_tu_so_khung` va gop
+       (min) voi gioi han cua `feature=preview` neu co ca hai.
+
+    (Tham so `warmup` da bi go 26/09/2026 cung voi `LTT_UPSCALE_WARMUP` —
+    xem comment dau `apps/upscalevideo/engine.py`.)
     """
     do = DoPha()
     t_bat_dau = time.perf_counter()
@@ -532,7 +605,10 @@ def chay_mot_luot_pipeline(video: dict, preset: str, target_h: int, feature: str
         with do("probe"):
             info = ff.probe_video(tmp_video, env=env)
 
+        max_sec_khung = _max_sec_tu_so_khung(info.get("fps_str"), max_frames)
         eff_dur = min(info["duration"], up_jobs._PREVIEW_SECONDS) if preview else info["duration"]
+        if max_sec_khung is not None:
+            eff_dur = min(eff_dur, max_sec_khung)
 
         working_video = tmp_video
         if stabilize:
@@ -544,6 +620,8 @@ def chay_mot_luot_pipeline(video: dict, preset: str, target_h: int, feature: str
         output_fps = up_jobs._output_fps(info["fps_str"], True, smooth_motion)
         cfr = _cfr_cho(info, True, smooth_motion)
         max_sec = up_jobs._PREVIEW_SECONDS if preview else None
+        if max_sec_khung is not None:
+            max_sec = max_sec_khung if max_sec is None else min(max_sec, max_sec_khung)
         in_dir = str(tmp / "in")
         # ⚠️ "interpolation" (minterpolate) KHONG phai mot tien trinh rieng —
         #    no la mot bo loc noi vao CUNG lenh ffmpeg tach khung (ff.py:137-
@@ -555,7 +633,6 @@ def chay_mot_luot_pipeline(video: dict, preset: str, target_h: int, feature: str
                                          max_seconds=max_sec, env=env)
 
         tune = autotune.pick(Preset(preset), info["w"], info["h"])
-        os.environ["LTT_UPSCALE_WARMUP"] = "1" if warmup == "on" else "0"
         encoder = up_jobs._resolve_encoder(Codec(codec))
 
         moc = {"t0": time.perf_counter(), "khung_dau": None}
@@ -634,15 +711,7 @@ def _chuan_bi_khung(video: dict, scratch_dir: Path, gpu_index, env, max_frames: 
     tmp_video = str(tmp / ("src" + Path(video["duong"]).suffix))
     shutil.copyfile(video["duong"], tmp_video)
     in_dir = str(tmp / "in")
-    max_sec = None
-    if max_frames:
-        fps = video.get("fps_str", "30/1")
-        try:
-            num, den = fps.split("/")
-            fps_f = float(num) / float(den)
-        except (ValueError, ZeroDivisionError):
-            fps_f = 30.0
-        max_sec = max_frames / max(fps_f, 1.0)
+    max_sec = _max_sec_tu_so_khung(video.get("fps_str"), max_frames)
     ff.extract_frames(tmp_video, in_dir, max_seconds=max_sec, env=env)
     return in_dir
 
@@ -724,7 +793,7 @@ def in_dry_run(args: argparse.Namespace) -> None:
     o_list = [(p, t, feat, v) for p in presets for t in targets for feat in features for v in vids]
     _in(f"\n[4] Ma tran (mode={args.mode}) — {len(o_list)} o, --repeat {args.repeat}:")
     for p, t, feat, v in o_list[:25]:
-        _in(f"    preset={p} target={t} feature={feat} video={v} warmup={args.warmup or 'on'}")
+        _in(f"    preset={p} target={t} feature={feat} video={v}")
     if len(o_list) > 25:
         _in(f"    ... con {len(o_list) - 25} o nua (dung --preset/--target/--feature/--video de thu hep)")
 
@@ -780,7 +849,7 @@ def _tao_parser() -> argparse.ArgumentParser:
         prog="bench_upscale.py",
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--mode", choices=["matrix", "warmup", "tile-sweep", "thread-sweep"],
+    p.add_argument("--mode", choices=["matrix", "tile-sweep", "thread-sweep"],
                    default="matrix")
     p.add_argument("--dry-run", action="store_true",
                    help="Chi in ke hoach/lenh/provenance. KHONG dung GPU.")
@@ -789,15 +858,15 @@ def _tao_parser() -> argparse.ArgumentParser:
     p.add_argument("--feature", choices=FEATURES, action="append")
     p.add_argument("--video", choices=list(VIDEO_TEN_TEP), action="append",
                    help="v1..v4 — mac dinh ca 4")
-    p.add_argument("--warmup", choices=WARMUP_STATES, default=None,
-                   help="matrix/tile-sweep/thread-sweep: mot trang thai co dinh "
-                        "(mac dinh 'on', khop mac dinh cua app). mode=warmup LUON chay CA HAI.")
     p.add_argument("--repeat", type=int, default=1, help="so lan lap moi o (median/min/max/N)")
     p.add_argument("--tile", type=int, help="thread-sweep: tile co dinh")
     p.add_argument("--max-frames", type=int, default=None,
                    help="tile/thread-sweep: gioi han so khung tach de sweep nhanh hon")
     p.add_argument("--on-busy", choices=["wait", "abort"], default="abort")
-    p.add_argument("--busy-threshold-pct", type=int, default=_BUSY_THRESHOLD_MAC_DINH)
+    p.add_argument("--busy-threshold-pct", type=int, default=_BUSY_THRESHOLD_MAC_DINH,
+                   help="Luoi AN TOAN cho gpu_util_pct (TONG 3D+compute — xem "
+                        "_may_ranh); tin hieu CHINH la ten tien trinh compute "
+                        "that (_TIEN_TRINH_LA_TRANH_GPU), khong phai co nay.")
     p.add_argument("--wait-timeout-s", type=int, default=_WAIT_TIMEOUT_MAC_DINH_S)
     p.add_argument("--out", default=None,
                    help="thu muc scratch (mac dinh %%TEMP%%/ltt_bench_upscale — KHONG duoc "
@@ -863,7 +932,6 @@ def main() -> int:
     vids = args.video or list(videos)
 
     if args.mode == "matrix":
-        warmup = args.warmup or "on"
         for p in presets:
             for t in targets:
                 for feat in features:
@@ -873,11 +941,12 @@ def main() -> int:
                         for i in range(1, args.repeat + 1):
                             nen = cho_gpu_ranh(args.busy_threshold_pct, args.on_busy, args.wait_timeout_s)
                             with LayMauTaiNguyen(os.getpid()) as mau:
-                                kq = chay_mot_luot_pipeline(videos[vid], p, t, feat, warmup,
-                                                            scratch, gpu_index, env, args.codec)
+                                kq = chay_mot_luot_pipeline(videos[vid], p, t, feat,
+                                                            scratch, gpu_index, env, args.codec,
+                                                            max_frames=args.max_frames)
                             ban_ghi = {"kind": "matrix",
                                       "matrix": {"preset": p, "target": t, "feature": feat,
-                                                "video": vid, "warmup": warmup,
+                                                "video": vid,
                                                 "repeat_index": i, "repeat_total": args.repeat},
                                       "provenance": dict(prov, background_load_start=nen,
                                                          gpu_index=gpu_index, tile=kq.get("tune", {}).get("tile") if kq.get("tune") else None,
@@ -887,23 +956,6 @@ def main() -> int:
                             ghi_ban_ghi(jsonl, ban_ghi)
                             _in(f"[{p}/{t}/{feat}/{vid} #{i}] {kq['trang_thai']} "
                                f"total={kq['stage_timings_s'].get('total')}s")
-    elif args.mode == "warmup":
-        for p in presets:
-            vid = vids[0]
-            for warmup in WARMUP_STATES:
-                for i in range(1, args.repeat + 1):
-                    nen = cho_gpu_ranh(args.busy_threshold_pct, args.on_busy, args.wait_timeout_s)
-                    with LayMauTaiNguyen(os.getpid()) as mau:
-                        kq = chay_mot_luot_pipeline(videos[vid], p, 1080, "normal", warmup,
-                                                    scratch, gpu_index, env, args.codec)
-                    ban_ghi = {"kind": "warmup",
-                              "matrix": {"preset": p, "video": vid, "warmup": warmup,
-                                        "repeat_index": i, "repeat_total": args.repeat},
-                              "provenance": dict(prov, background_load_start=nen, gpu_index=gpu_index),
-                              "ket_qua": kq, "tai_nguyen": mau.tom_tat()}
-                    ghi_ban_ghi(jsonl, ban_ghi)
-                    _in(f"[warmup={warmup} {p} #{i}] ttff={kq['time_to_first_frame_s']}s "
-                       f"total={kq['stage_timings_s'].get('total')}s")
     elif args.mode == "tile-sweep":
         for p in presets:
             vid = vids[0]

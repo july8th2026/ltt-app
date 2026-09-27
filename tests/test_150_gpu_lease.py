@@ -10,6 +10,7 @@ Các test dưới đây kiểm chính cái đó, không kiểm "hàm có chạy 
 """
 from __future__ import annotations
 
+import logging
 import threading
 from datetime import timedelta
 
@@ -206,3 +207,50 @@ def test_neo_bang_uuid_chu_khong_bang_index(db, monkeypatch):
     assert gpu_lease.busy_uuids(db) == {"GPU-bbb"}, "lease phải bám UUID, không bám số"
     khac = gpu_lease.acquire(db, worker_id="w2", job_id="jb")
     assert khac.gpu_uuid != "GPU-bbb", "cấp trùng card đang bận vì đọc theo index"
+
+
+def test_release_khong_thay_dong_thi_NOI_RA_chu_khong_im_lang(db, monkeypatch, caplog):
+    """`if obj is not None:` rồi thôi là một **no-op im lặng**.
+
+    Task 23: đúng nhánh này đã che một lỗi thật suốt một lượt nghiệm thu. Khi
+    `release` chạy mà dòng đã biến mất, có đúng hai khả năng — `reclaim_orphans`
+    đã dọn trước (tức lease của ta bị người khác thu hồi), hoặc `release` bị gọi
+    hai lần. Cả hai đều đáng biết, và cả hai trước đây đều không để lại dấu.
+
+    ⇒ Phải **đếm được** và **log được**, không chỉ "không sao cả".
+    """
+    monkeypatch.setattr(gpu_mod, "list_gpus", lambda: [_gpu(0, "GPU-mot")])
+    a = gpu_lease.acquire(db, worker_id="w1", job_id="ja")
+    assert gpu_lease.release(db, a) is True, "lần đầu phải xoá được dòng thật"
+
+    truoc = gpu_lease.THONG_KE["release_khong_thay_dong"]
+    caplog.clear()
+    with caplog.at_level(logging.WARNING, logger="platform_core.gpu_lease"):
+        assert gpu_lease.release(db, a) is False, (
+            "release phải khai là nó KHÔNG xoá được gì — `None` cho cả hai ca "
+            "là gộp hai trạng thái khác nhau vào một giá trị")
+    assert gpu_lease.THONG_KE["release_khong_thay_dong"] == truoc + 1, (
+        "không đếm được: một no-op không đếm được là một no-op im lặng")
+    assert [r for r in caplog.records if r.levelno >= logging.WARNING], (
+        "không log gì ở mức cảnh báo khi dòng lease đã biến mất")
+
+
+def test_reclaim_khong_no_khi_khong_co_bang_jobs(db, monkeypatch):
+    """`reclaim_orphans` đọc trạng thái job — nhưng nó là mã NỀN TẢNG.
+
+    CSDL của fixture này chỉ có bảng `gpu_leases` (cố ý: phần lớn phép kiểm
+    lease không cần `jobs`). Một `SELECT` trên bảng không tồn tại phải là chuyện
+    module tự xử, không phải một ngoại lệ vọt ra giữa vòng worker — và session
+    phải còn dùng được sau đó.
+    """
+    from datetime import timedelta
+    monkeypatch.setattr(gpu_mod, "list_gpus", lambda: [_gpu(0, "GPU-mot")])
+    a = gpu_lease.acquire(db, worker_id="w1", job_id="job-khong-co-bang")
+    assert gpu_lease.reclaim_orphans(db) == 0, (
+        "không đọc được trạng thái job ⇒ phải giữ nguyên lease (fail-closed), "
+        "không thu hồi bừa card của một job có thể đang chạy")
+    a.heartbeat_at = gpu_lease._now() - timedelta(hours=2)
+    db.commit()
+    assert gpu_lease.reclaim_orphans(db) == 1, (
+        "session không còn dùng được sau khi SELECT lỗi, hoặc nhánh mồ côi theo "
+        "nhịp đập đã bị nhánh mới che mất")

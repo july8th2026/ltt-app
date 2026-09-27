@@ -151,6 +151,26 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    do la cai dung de doi chieu voi tep.
             if nan_thoi_luong.la_dong_theo_sau(d):
                 continue
+            # 🔴 **Doan IM LANG ⛔ khong duoc do WER** (Task 25, 27/09/2026).
+            #
+            #    `giai_doan_giong` thay mot doan ⛔ khong con chu (sau chuan hoa)
+            #    bang mot khoang lang dung do dai khe, va dong `ban_ke` cua no
+            #    mang `im_lang=True`. `chu` cua dong ay ⛔ KHONG rong — no la
+            #    chuoi goc (vd toan ky tu vo hinh) — nen phep `if not chu` ben
+            #    duoi ⛔ khong loc duoc no.
+            #
+            # ⇒ Thieu dong nay thi ASR nghe mot khoang lang, doi chieu voi mot
+            #   cau chu, ra `wer ≈ 1.0`, `sua_chua.giong_khong_dat` danh dau, va
+            #   **vong sua chay cho mot doan ⛔ khong co gi de doc** — tuc quyet
+            #   dinh "bo qua" bien thanh mot vong lap tra tien GPU.
+            #
+            # ⭐ Day la cho `im_lang` duoc TIEU THU. Mot co khong ai doc la mot
+            #    co khong ton tai, va ⛔ khong bao cao nao bat duoc dieu do.
+            #
+            # ⛔ Hoi qua `nan_thoi_luong.la_dong_im_lang`, ⛔ khong `d.get(...)`
+            #    tai cho — cung ly do voi `la_dong_theo_sau` ngay tren.
+            if nan_thoi_luong.la_dong_im_lang(d):
+                continue
             ma = str(d.get("ma") or "")
             khoa = str(d.get("khoa") or "")
             # 🔑 `chu` cua ban ke = cau CUOI CUNG may da doc (sau bac thang nan).

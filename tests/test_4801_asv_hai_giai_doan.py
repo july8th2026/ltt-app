@@ -77,10 +77,22 @@ def test_ke_hoach_cua_hai_preset_LA_MOT__tren_cung_dau_vao():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def test_image_finish_nam_GIUA_render_va_qc():
-    """⭐ Hai ranh gioi, hai ly do — xem chu thich o `pipeline.IMAGE_FINISH`."""
+    """⭐ Hai ranh gioi, hai ly do — xem chu thich o `pipeline.IMAGE_FINISH`.
+
+    🔴 **26/09/2026: `edit_plan` chen vao GIUA `render` va `image_finish`** (B1
+       §9a), nen phu thuoc TRUC TIEP cua `image_finish` doi tu `RENDER` sang
+       `EDIT_PLAN`. Hai ranh gioi cua `image_finish` ⛔ khong doi — no van nam
+       sau `render` va truoc `qc` — va do la thu bai nay noi.
+
+    ⛔ Va phu thuoc phai la `EDIT_PLAN` chu khong `RENDER`: `ke_tiep` tra ve
+       DANH SACH, nen neu con khai `RENDER` thi hai buoc nop duoc CUNG LUC va
+       mot luot `image_finish` chay truoc se cat 0 khung roi bao `succeeded`.
+    """
     thu_tu = {g.ten: i for i, g in enumerate(P.CHUOI)}
     assert thu_tu[P.RENDER] < thu_tu[P.IMAGE_FINISH] < thu_tu[P.QC]
-    assert P.THEO_TEN[P.IMAGE_FINISH].sau == (P.RENDER,)
+    assert thu_tu[P.RENDER] < thu_tu[P.EDIT_PLAN] < thu_tu[P.IMAGE_FINISH]
+    assert P.THEO_TEN[P.IMAGE_FINISH].sau == (P.EDIT_PLAN,)
+    assert P.THEO_TEN[P.EDIT_PLAN].sau == (P.RENDER,)
     assert P.THEO_TEN[P.QC].sau == (P.IMAGE_FINISH,)
 
 

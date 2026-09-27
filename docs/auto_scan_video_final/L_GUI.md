@@ -47,7 +47,7 @@ là câu hỏi duy nhất một ô chết không trả lời được.
 |---|---|---|
 | `ngon_ngu_nguon` (auto/zh/en/vi) | **tầng cơ bản**, cột "Bạn muốn gì" | ASR đọc bằng bảng chữ nào; `kiem_nguon_da_doan` chốt lại sau ASR |
 | `ngon_ngu_dich` (vi/en) | **tầng cơ bản**, ngay trên ô Giọng | lọc danh sách giọng **ngay lập tức**; LLM dịch sang đâu |
-| `nguon_loi` (auto/embedded/ocr/asr) | nâng cao | `nguon_loi.dinh_tuyen`; nguồn THẬT hiện ở màn một lần chạy |
+| ~~`nguon_loi` (auto/embedded/ocr/asr)~~ ⛔ **Ô ĐÃ RÚT 26/09 (Task 21)** | — | MỘT đường duy nhất voice → voice ⇒ ⛔ không còn gì để chọn. Nguồn THẬT vẫn hiện ở màn một lần chạy — nó là **provenance**, ⛔ không phải một lựa chọn. `B1_PLAN_DUONG_ONG_GD1.md` §11 |
 
 **Cặp ngôn ngữ ở tầng cơ bản, không ở nâng cao** — chúng không phải tinh chỉnh:
 chúng quyết định ASR nghe bằng gì, LLM dịch sang đâu, và **giọng nào còn chọn

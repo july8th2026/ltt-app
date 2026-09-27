@@ -312,8 +312,7 @@ def _mot_job(db, jobs, _provider_failure_kind, handler, job, ctx,
 
 def _nop_qua_form(client, csrf: str, nguon: Path, *, preset: str,
                   che_do_giong: str, giong_id: str,
-                  ngon_ngu_nguon: str = "", ngon_ngu_dich: str = "",
-                  nguon_loi: str = "") -> str:
+                  ngon_ngu_nguon: str = "", ngon_ngu_dich: str = "") -> str:
     """Nop qua CHINH cai form khach dung. Tra ve `run_id`.
 
     Cap ngon ngu phai nop TUONG MINH khi nghiem thu mot cap cu the. Bo trong thi
@@ -326,9 +325,12 @@ def _nop_qua_form(client, csrf: str, nguon: Path, *, preset: str,
 
     du_lieu = {"csrf_token": csrf, "che_do": "fit_original", "preset": preset,
                "che_do_giong": che_do_giong, "giong_id": giong_id}
+    # ⛔ `nguon_loi` da RUT 26/09 (Task 21): `routes.tao` khong con nhan truong
+    #    do, nen nop no la nop mot truong KHONG AI DOC. ⚠️ Giu tham so lai se
+    #    dung y bay G-02 ma docstring tren mo ta: khuon do noi *"toi dang ep
+    #    nguon nay"* trong khi lan chay di duong mac dinh, va bao cao van XANH.
     for ten, gt in (("ngon_ngu_nguon", ngon_ngu_nguon),
-                    ("ngon_ngu_dich", ngon_ngu_dich),
-                    ("nguon_loi", nguon_loi)):
+                    ("ngon_ngu_dich", ngon_ngu_dich)):
         if gt:
             du_lieu[ten] = gt
     with open(nguon, "rb") as f:
@@ -411,7 +413,7 @@ def _tom_tat(giai_doan: list[dict], ten: str) -> dict:
 def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
               nhan: str, preset: str, che_do_giong: str, giong_id: str,
               su_that=None, khoa=None, ngon_ngu_nguon: str = "",
-              ngon_ngu_dich: str = "", nguon_loi: str = "") -> dict:
+              ngon_ngu_dich: str = "") -> dict:
     """Mot lan chay day du, tu form den tep tai ve. Tra ve phan bao cao.
 
     ⚠️ `su_that=None` khi nguon la PHIM KHACH THAT: phim that khong di kem cau
@@ -431,7 +433,7 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
     run_id = _nop_qua_form(client_chu, csrf, nguon, preset=preset,
                            che_do_giong=che_do_giong, giong_id=giong_id,
                            ngon_ngu_nguon=ngon_ngu_nguon,
-                           ngon_ngu_dich=ngon_ngu_dich, nguon_loi=nguon_loi)
+                           ngon_ngu_dich=ngon_ngu_dich)
 
     db = next(dbmod.get_session())
     try:
@@ -533,14 +535,19 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
             loi_do_ban_ra = f"{type(exc).__name__}: {exc}"
         # ⛔ Doc TRUOC khi phien dong: `AsvUsage` la doi tuong ORM, va doc
         #    no sau khi phien dong se nem `DetachedInstanceError`.
-        from sqlalchemy import select as _select
-        from apps.auto_scan_video.tables import AsvUsage as _AsvUsage
-        vi_sao = [
-            {"nang_luc": r.nang_luc, "trang_thai": r.trang_thai,
-             "ly_do": str((r.ghi_chu or {}).get("ly_do") or "")[:300]}
-            for r in db.execute(_select(_AsvUsage).where(
-                _AsvUsage.run_id == run.id)).scalars()
-            if r.trang_thai != "da_giao"]
+        # ⭐ **Đọc BA nguồn, ⛔ không chỉ sổ cái** (Task 25, 27/09).
+        #
+        # 🔴 Bản trước dựng `vi_sao` CHỈ từ `AsvUsage` có `trang_thai != "da_giao"`.
+        #    Lượt G17 hỏng trên phim khách thật ⛔ không có dòng nào như vậy — mọi
+        #    dòng đều `da_giao` — nên nó in `[]`, trong khi `asv_stage.error` VÀ
+        #    `asv_run.error` đều mang đúng câu *"Tệp tiếng sinh ra quá ngắn (0.0s)"*.
+        #
+        # ⚠️ Và `[]` đọc **y hệt** *"lượt hỏng mà ⛔ không có lý do"* — đúng họ *hai
+        #    trạng thái gộp thành một giá trị*. `quan_sat.vi_sao_hong` gộp ba nguồn
+        #    và trả một dòng `nguon="khong_doc_duoc"` khi thật sự ⛔ không đọc được,
+        #    nên hai trạng thái ấy ⛔ không còn lẫn vào nhau.
+        from apps.auto_scan_video import quan_sat
+        vi_sao = quan_sat.vi_sao_hong(db, run)
         so_ke = su_dung.so_ke(db, run)
         doi_soat = quan_sat.doi_soat_nhanh(db, run)
         khach = quan_sat.tom_tat_cho_khach(db, run)
@@ -574,9 +581,12 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
 
     return {
         "nhan": nhan, "preset": preset, "che_do_giong": che_do_giong,
+        # ⛔ `nguon_loi` ra khoi bao cao 26/09 (Task 21): MOT duong duy nhat
+        #    voice->voice ⇒ mot truong bao cao luon in cung mot gia tri la mot
+        #    truong khong tra loi cau hoi nao. Nguon THAT da dung van doc duoc o
+        #    `giai_doan[...]["dinh_tuyen"]["nguon_loi"]`.
         "cap_ngon_ngu": {"nguon": ngon_ngu_nguon or "(mac dinh)",
-                         "dich": ngon_ngu_dich or "(mac dinh)",
-                         "nguon_loi": nguon_loi or "(mac dinh)"},
+                         "dich": ngon_ngu_dich or "(mac dinh)"},
         "tang_vat": tang_vat,
         "giong_id": giong_id,
         "trang_thai_run": run.status, "giay_tong": round(time.time() - t0, 1),
@@ -1109,23 +1119,90 @@ def test_tieng_long_NAM_DUNG_CHO_trong_tep_ra(bc):
 #    dong TODO nam lai them mot nam."* No da bao XPASS o lan chay E2E dau tien
 #    sau khi B22-01 duoc sua, tren mot luot chay THAT: `so_canh 4, so_giu 3,
 #    so_cat 1, so_canh_da_doc 4`.
-def test_preset_CAT_phai_cat_it_nhat_MOT_canh_khong_co_thoai(bc):
-    """🔴 Ban nguon co han mot canh **khong co loi thoai nao** (canh thu tu), va
-    preset cat van giu nguyen no.
+#
+# 🔴 **Task 26 (27/09/2026) — ky vong `so_cat >= 1` da bi GO, va day la cai gia
+#    cua no.** Luot 27/09 tren CUNG phim mau, CUNG 4 canh, CUNG do phu 1,0 cho
+#    `so_cat = 0`. Phep do (dung phim mau cua `fixtures/asv_e2e.nguon_hoi_thoai`,
+#    chay `_do_cac_canh` hom nay va tai hien bang chung hinh dang 25/09) noi ro
+#    day la **HE QUA CO CHU Y** cua `defba7b2` (Task 10 — thay VLM bang phep do
+#    TAT DINH), ⛔ khong phai hoi quy:
+#
+#      * Canh bi cat hom 25/09 la `canh_0004` (27,292 -> 32,189 s). No **KHONG co
+#        loi thoai** (cau cuoi ket o 26,389 s) — dung nhu ten bai kiem noi.
+#      * Nhung no bi cat vi **ban thay the VLM** (`asv_e2e._phan_hoi`, nhanh
+#        `ai.DOC_CANH`) tra `de_xuat="bo", do_tin=0.9` cho MOI canh khong thoai,
+#        va `_quyet_dinh_mot_canh` cat o `0,90 >= nguong 0,65`. Tuc tieu chi that
+#        su chay hom do la *"khong thoai la DU de cat"* — mot tieu chi ⛔ CHUA
+#        TUNG co trong ma san pham, chi co trong ban gia.
+#      * Tieu chi chu du an la mot PHEP HOI: *"cat vung KHONG co loi thoai, chat
+#        luong doan kem, ⛔ khong qua 5 %"*. Hinh cua `canh_0004` la `testsrc` —
+#        phep do tat dinh dem **0,000 s** khung den / dung hinh tren 4,897 s ⇒
+#        `ti_le = 0,00 < 0,65` ⇒ GIU. ⭐ Va canh DUY NHAT cua phim nay co hinh
+#        kem that (`canh_0003`, `color=c=0x101830`, 100 % den + dung hinh) thi
+#        **CO thoai**, nen no duoc bao ve — dung loi hua san pham.
+#      * ⇒ Phim mau nay ⛔ khong con mot canh nao vua KHONG thoai vua hinh kem,
+#        nen `so_cat = 0` la cau tra loi DUNG tren no. (Va ke ca neu co: lat cat
+#        ay dai 15,2 % thoi luong, tren `ke_cat.TRAN_CAT_TI_LE` = 5 %.)
+#
+# ⚠️ **Nhung mot preset `cat_thong_minh` ma ⛔ khong phep kiem nao chot no CO cat
+#    la mot preset ⛔ khong ai canh.** Ky vong do ⛔ khong bi ha xuong — no duoc
+#    **doi cho**, sang du lieu DUNG SAN, o `test_2025_asv_doc_canh_hong.py`:
+#      `test_canh_KHONG_THOAI_va_hinh_KEM_thi_BAN_BIEN_TAP_that_su_CAT`
+#      `test_cat_canh_KHONG_THOAI_do_bang_ffmpeg_THAT_tren_PHIM_DUNG_SAN`
+#    Bai duoi chay phep do THAT (⛔ khong ban thay the nao) tren mot phim dung
+#    san CO canh vua khong thoai vua den — tuc no ⛔ khong phu thuoc vao viec
+#    phim mau tinh co co canh nao.
+def test_preset_CAT_do_du_MOI_canh_va_KHONG_cat_canh_CO_THOAI(bc):
+    """🔴 Thu bai nay chot, sau Task 26: **phep do da chay tren MOI canh**, va
+    **⛔ khong canh CO THOAI nao bi cat**.
 
-    ⭐ `xfail(strict=True)` chu khong phai mot chu thich: ngay ai do noi VLM vao
-       chuoi, phep kiem nay **thanh cong** va pytest bao XPASS — tuc bo test tu
-       noi rang khiem khuyet da het, thay vi de mot dong TODO nam lai them mot
-       nam.
+    ⭐ Hai ve nay la thu phim mau con chung minh duoc, va ve dau chinh la lo hong
+       23/09 (luot nen v3): 2/6 canh do hong ⇒ `so_cat = 0/6` ⇒ khac biet san
+       pham giua hai preset bien mat, va giai doan van bao `succeeded`. Mot bai
+       chi doc `so_cat` ⛔ khong phan biet duoc *"khong co gi dang cat"* voi
+       *"khong do duoc gi"* — nen o day ta chot `do_phu_bang_chung == 1,0` va
+       `canh_hong == []` TRUOC, roi moi doc `so_cat`.
+
+    ⚠️ Ve thu hai do tren **su that doc lap** (`bc["nguon"]`), ⛔ khong doc lai
+       mot dong tom tat: so canh KHONG thoai duoc tinh tu moc cau thoai nguon,
+       va `so_cat` ⛔ khong duoc vuot con so do. Mot lat cat vao canh CO thoai la
+       *"nguoi xem nghe mot cau tra loi cho mot cau hoi khong con"* — hong nang
+       hon han cat thua mot canh im lang.
+
+    ⛔ Bai nay ⛔ KHONG con chot `so_cat >= 1`; xem khoi ghi chu ngay tren, kem
+       ngay va kem `defba7b2`.
     """
     from apps.auto_scan_video import hop_dong_v4
 
     cat = next(l for l in bc["luot"]
                if l["preset"] == hop_dong_v4.PRESET_CAT_THONG_MINH)
-    assert int(cat["ban_bien_tap"].get("so_cat") or 0) >= 1, (
-        f"so_canh={cat['ban_bien_tap'].get('so_canh')}, "
-        f"so_cat={cat['ban_bien_tap'].get('so_cat')}, "
-        f"so_co_bang_chung={cat['ban_bien_tap'].get('so_co_bang_chung')}")
+    bt = cat["ban_bien_tap"]
+    so_canh = int(bt.get("so_canh") or 0)
+
+    # ── (1) Phep do da chay tren MOI canh — bat bien, ⛔ khong tham so ──────
+    assert so_canh >= 1, bt
+    assert int(bt.get("so_canh_hong") or 0) == 0 and bt.get("canh_hong") == [], bt
+    assert float(bt.get("do_phu_bang_chung") or 0.0) == 1.0, bt
+    assert int(bt.get("so_co_bang_chung") or 0) == so_canh, bt
+
+    # ── (2) SU THAT doc lap: canh nao giao mot cau thoai NGUON ─────────────
+    def _co_thoai(c) -> bool:
+        return any(float(l["bat"]) < float(c["ket"])
+                   and float(l["bat"]) + float(l["giay"]) > float(c["bat"])
+                   for l in bc["nguon"]["loi"])
+
+    khong_thoai = [c["ten"] for c in bc["nguon"]["canh"] if not _co_thoai(c)]
+    assert khong_thoai, (
+        "ban nguon ⛔ khong con canh nao KHONG co thoai — `HINH_CANH` cua "
+        "fixtures/asv_e2e.py chu dinh giu mot canh nhu vay, va thieu no thi "
+        "ve (3) duoi day ⛔ khong con noi gi")
+
+    # ── (3) ⛔ Khong canh CO THOAI nao bi cat ───────────────────────────────
+    so_giu, so_cat = int(bt.get("so_giu") or 0), int(bt.get("so_cat") or 0)
+    assert so_giu + so_cat == so_canh, bt
+    assert so_cat <= len(khong_thoai), (
+        f"cat {so_cat} canh trong khi chi co {len(khong_thoai)} canh KHONG "
+        f"thoai ({khong_thoai}) — mot lat cat da vao canh co loi thoai. {bt}")
 
 
 def test_QC_moi_muc_deu_co_phan_quyet_va_khong_muc_nao_hong(bc):
@@ -1352,6 +1429,32 @@ def test_G17_hai_preset_tren_PHIM_KHACH_THAT(moi_truong, tmp_path, monkeypatch):
             "duoc cau hoi 'no CO cat khong' chu khong phai 'no khong co gi de "
             "cat'. Duoi nhan: " + ", ".join(fx.DUOI_PHIM))
 
+    # ⭐ **Cửa thứ hai: model GIẢ thì G17 ⛔ không chứng minh được gì** (Task 25, 27/09).
+    #
+    # 🔴 `_dich_gia` là một **bảng tra 4 câu** (`TU_DIEN` `l1..l4`) khớp theo từ ASCII
+    #    chung. Với một phim ⛔ không phải tiếng Anh nó **luôn** trả nguyên văn nguồn:
+    #    đo được trên phim Trung thật — 95/95 đoạn chữ Trung nguyên văn mà vẫn khai
+    #    `ngon_ngu_dich="vi"`.
+    #
+    # ⚠️ Trước bản này, lượt đó chạy tiếp rồi hỏng ở `voice_synthesis` — **cách
+    #    nguyên nhân bốn giai đoạn** — với thông báo *"Tệp tiếng sinh ra quá ngắn
+    #    (0.0s)"*, thứ chỉ tay vào **máy sinh tiếng**. Một phiên đã mất nhiều giờ vì
+    #    câu đó. Nay `[F0]` gọi tên đúng chỗ, nhưng một cổng ⛔ không nên **hỏng** vì
+    #    một điều kiện ta biết trước là ⛔ không thể thoả.
+    #
+    # ⇒ `skip` **có gọi tên**, kèm đúng thứ cần đặt để chạy thật. Hai bí mật đó
+    #    **chỉ chủ dự án đặt được** (`secrets\` chặn ACL **cố ý**), nên đây là một
+    #    việc của chủ dự án, ⛔ không phải một lỗi của sản phẩm.
+    if not fx.dung_model_that():
+        pytest.skip(
+            "G17 chua chung minh duoc tren phim khach that: dang chay MODEL GIA "
+            "(`_dich_gia` la bang tra 4 cau tieng Anh, voi phim ngon ngu khac no "
+            "TRA NGUYEN VAN nguon). Muon chay that, dat CA HAI: "
+            "LTT_ASV_MODEL_THAT=1 va LTT_ASV_POOL_URL=postgresql://... "
+            "(⛔ KHONG phai LTT_DATABASE_URL — fixture `moi_truong` ghi de bien do "
+            "bang mot SQLite dung-mot-lan). Phim da co: "
+            + ", ".join(t.name for t in phim))
+
     _app, a, csrf_a, b, _csrf_b = moi_truong
     monkeypatch.setenv("LTT_AUTOSUB_WHISPER_DEVICE", "cpu")
     monkeypatch.setenv("LTT_AUTOSUB_WHISPER_COMPUTE", "int8")
@@ -1427,11 +1530,35 @@ def test_G17_hai_preset_tren_PHIM_KHACH_THAT(moi_truong, tmp_path, monkeypatch):
     # ⚠️ Chot nay chi co nghia neu chu du an tha dung loai clip duoc yeu cau, nen
     #    thong bao phai noi ro khi no do la ban NGUON khong hop le, khong phai
     #    san pham hong — hai ket luan rat khac nhau tu cung mot dong do.
+    # ⚠️ **Task 26 (27/09): chốt này là một câu về VẬT LIỆU, ⛔ không phải về sản
+    #    phẩm — nên khi nó không đúng thì đây là `skip` CÓ TÊN, ⛔ không phải `fail`.**
+    #
+    # 🔴 Cùng hình dạng lỗi Task 26 vừa gỡ ở `test_preset_CAT_...`: ở đó kỳ vọng
+    #    *"cắt ≥ 1"* hoá ra là **chính sách của BẢN GIẢ VLM** (`de_xuat="bo"` cho mọi
+    #    cảnh không thoại), còn hợp đồng thật chỉ cắt cảnh **không thoại VÀ hình
+    #    kém**. Một phim khách thật hoàn toàn có thể ⛔ **không có** cảnh nào như vậy
+    #    — và khi đó `so_cat = 0` là câu trả lời **ĐÚNG**.
+    #
+    # ⭐ Để `fail` thì dòng tóm tắt đọc y như *"sản phẩm hỏng"*, trong khi sự thật là
+    #    *"vật liệu ⛔ không có gì đáng cắt"* — hai kết luận rất khác nhau từ cùng một
+    #    con số. Và chính tệp này đã chốt nguyên tắc: thiếu vật liệu thì **`skip` phải
+    #    NÓI TÊN thứ còn thiếu**.
     cat = [k for k in luot if k["nhan"].endswith("cat_thong_minh")]
-    assert any(int(k["ban_bien_tap"].get("so_cat") or 0) > 0 for k in cat), (
-        "khong clip nao bi cat canh nao. Neu san pham dung, thi ban nguon khong "
-        "co canh nao dang cat — G17 can mot clip CO canh dang cat, khong phai "
-        "mot clip bat ky")
+    for k in cat:
+        bt = k["ban_bien_tap"]
+        # Hai vế của HỢP ĐỒNG thì vẫn là `assert` — chúng ⛔ không phụ thuộc vật liệu.
+        assert bt.get("canh_hong") == [], (
+            f"{k['nhan']}: co canh KHONG DO DUOC hinh — {bt.get('canh_hong')}")
+        assert (int(bt.get("so_giu") or 0) + int(bt.get("so_cat") or 0)
+                == int(bt.get("so_canh") or 0)), bt
+    if not any(int(k["ban_bien_tap"].get("so_cat") or 0) > 0 for k in cat):
+        pytest.skip(
+            "G17 chua chung minh duoc duong CAT tren phim khach that: "
+            + ", ".join(f"{k['nhan']}={k['ban_bien_tap'].get('so_canh')} canh, "
+                        f"cat {k['ban_bien_tap'].get('so_cat')}" for k in cat)
+            + " — moi clip deu KHONG co canh vua 'khong thoai' vua 'hinh kem'. "
+              "Can mot clip CO canh dang cat; day la thieu VAT LIEU, "
+              "⛔ khong phai san pham hong")
 
     duong = Path(os.environ.get("LTT_ASV_G17_RA")
                  or (tmp_path / "g17_phim_that.json"))

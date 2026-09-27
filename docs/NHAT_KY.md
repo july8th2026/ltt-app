@@ -12,6 +12,214 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-26 (Task 21) — MỘT đường duy nhất: voice → voice. Bỏ `ocr`/`embedded`/`auto`
+
+Chủ dự án chốt: *"Hệ thống của ta chỉ đi theo đúng 1 đường là voice to voice,
+⛔ không đọc chữ trên video để thành text rồi dịch."* Auto Scan Video từ nay
+chỉ còn `nguon_loi = asr`. Đã xóa: `phu_de_cung.py`,
+`apps/asv_gpu/do_luong/ocr_khung.py`, `rapidocr` + `onnxruntime` khỏi
+`setup/qc_models_requirements.txt`, nhóm nút *"Lời thoại gốc lấy từ đâu"*,
+`CaiDat.nguon_loi`, và vế `+dinh_tuyen/ +ocr/` trong vân tay engine của
+`transcribe`. Lý do đầy đủ + ba mệnh đề kiểm được:
+`docs/auto_scan_video_final/B1_PLAN_DUONG_ONG_GD1.md` §11.
+
+### ⛔ Hai ranh giới đã GIỮ, vì chúng rất dễ bị xoá lẫn
+
+1. **Dò VỊ TRÍ dải chữ** (`do_vung.do_dai_chu`, tính năng *làm mờ sub gốc* chủ dự
+   án đặt hàng) chạy **OpenCV**, đọc **không một chữ nào**, và ⛔ không bị chạm. Đọc
+   **CHỮ** là việc bỏ. ⭐ Chính vì hai việc này dễ lẫn, phép kiểm *"⛔ không module
+   nào trong `apps/` gọi RapidOCR"* đo bằng **đường nhập (AST)** chứ ⛔ không bằng
+   chuỗi: `do_vung.py` còn nhắc tên RapidOCR trong một chú thích ghi một phép **ĐO
+   có thật** (RapidOCR 73,5–82,1 % vs OpenCV 74,9–80,7 % trên cùng một video) —
+   bằng chứng, ⛔ không phải một người gọi.
+2. **`L_OCR.md` + `l_ocr_gt_v2*.json`** ⛔ không bị xoá, chỉ **dán nhãn**. Tệp JSON
+   ấy vẫn là **chân lý nền phân đoạn của cổng B1**, nên cổng B1 ⛔ không hề bị ảnh
+   hưởng — nó đã luôn đọc tệp đóng băng chứ ⛔ không sinh chân lý nền.
+
+### ⚠️ Cái giá — nói ra chứ ⛔ không chôn
+
+`tests/test_3009_asv_bench_b1_chay_that.py` **đã xóa**: nó sinh chân lý nền bằng
+chính đường `ocr` (chạy `transcribe` hai lượt). ⇒ Một phim **bất kỳ** từ nay ⛔
+không còn được đo CER tự động; muốn đo thì phải có một **bản chép tay**, và đó
+là việc **chưa ai làm**. Ghi ở `B1_CHEP_LOI.md` đầu tệp để nó ⛔ không biến
+thành một **sự vắng mặt không ai đếm được**.
+
+### ⭐ Một ràng buộc đỔI CHỖ thay vì biến mất
+
+`test_3602::..._fps_doc_ocr_khong_duoc_ha_duoi_muc_da_hieu_luc` đọc `FPS_DOC` để
+chạn việc hạ fps đọc OCR (hạ là vô hiệu hoá cổng B1, **trong im lặng**). Hằng số
+đó biến, nhưng mối lo thì còn — và nó đã có chỗ ở `luoi_s` của tệp chân lý nền
+(hai bài sẵn có trong cùng tep). ⚠️ Và đọc lại hai bài đó lộ ra một điều bài cũ
+⛔ không nói: lưới của `l_ocr_gt_v2.json` (**0,5 s**) **thô hơn** dung sai 0,3 s —
+bản 10 fps (0,1 s) mới đủ mịn. Bài cũ ghim `FPS_DOC = 4,0` như *"mức đã hiệu
+lực"*, tức nó đo một **hằng số trong mã** chứ ⛔ không đo lưới của **dữ liệu đang
+dùng thật** — đúng bài học `doc-thu-dai-dien-thay-vi-doc-thu-that`.
+
+
+## 2026-09-27 (đêm) — ASV khép GĐ1: **bốn ổ khoá**, và một gate ĐỎ mà chủ dự án chốt deploy
+
+Phiên `Auto Scan Video final closure`. Gộp Task 19 → 26 vào `main` (`251bfc26`).
+
+### 🔴 Quyết định của chủ dự án: DEPLOY với gate ĐỎ (phương án C)
+
+Gate đầy đủ trên cây riêng ghim `251bfc26`: **FAIL 1/37** — đúng một bước đỏ, là bộ
+test. Điều phối nêu rõ C đi ngược luật *"deploy cần gate XANH trên đúng SHA deploy"*;
+chủ dự án chốt C, và đây là bản ghi để lượt sau đọc đúng.
+
+Bốn bài đỏ, **đã đo phân loại từng bài** (⛔ không suy):
+
+| bài | app | gate (song song) | `main` tuần tự | mốc `0e4f1783` | kết luận |
+|---|---|---|---|---|---|
+| `test_2091` | ASV tải lên | ĐỎ | **XANH** | — | nhiễu song song |
+| `test_143` | ommi storyboard | ĐỎ | **XANH** | — | nhiễu song song |
+| `test_970` | canvas | ĐỎ | ĐỎ | **ĐỎ** | **có sẵn** |
+| `test_975` | cmc | ĐỎ | ĐỎ | **ĐỎ** | **có sẵn** |
+
+⇒ Việc của phiên này đưa vào **0 bài đỏ mới**. Hai bài thật đều ⛔ không thuộc ASV và
+**đã đỏ tại mốc trước khi plan bắt đầu** — đo bằng cây tạm ở `0e4f1783`, ⛔ không phải
+bằng lập luận.
+
+⚠️ **Nợ còn lại, ⛔ không ai sửa:** `test_970` chốt một ràng buộc **tương thích ngược**
+ở lớp canvas — thứ mà quyết định 07/09 của chủ dự án (*"chưa có khách ở lớp
+Agent/Canvas/Workflow, ⛔ đừng viết lớp tương thích"*) có thể đã làm **lỗi thời**.
+`test_975` là một **băm chép tay đã trôi** khỏi giá trị tính được. Cả hai thuộc app của
+làn khác nên điều phối ⛔ không tự xoá chốt của họ.
+
+### ⭐ Lượt gate ĐẦU TIÊN ⛔ không phải một gate — và nó suýt lừa được điều phối
+
+Lượt `--doi --tu 0e4f1783` in `FAIL (2/33)`, kèm một dòng dễ bỏ qua:
+
+```
+HA CAP: luot `--doi` khong thu hep duoc (cham tep dung chung).
+=> ho so `nhanh`: GIU moi buoc tinh, BO bo test day du.
+RESULT: FAIL (2/33)  [HA CAP tu `--doi` xuong `nhanh` - BO TEST KHONG CHAY]
+```
+
+Việc phiên này chạm `platform_core/`, `tools/`, `tests/conftest.py` — **tệp dùng
+chung** — nên gate theo diff ⛔ **không thể** thu hẹp, và cấp đúng là **đầy đủ**.
+🔴 Nếu hai bước kia đã xanh thì lượt ấy in **PASS** mà ⛔ không phủ một bài test nào.
+
+### Bốn ổ khoá — cùng MỘT triệu chứng *"treo, CPU 0, tái hiện được"*
+
+| # | ổ | gốc thật |
+|---|---|---|
+| 1 | lease GPU ⛔ không nhả ⇒ mỗi giai đoạn GPU chờ **mồ côi 10 phút** | `DELETE` bị `database is locked` (worker giữ khoá ghi vì `jobs.complete()` chỉ `flush`) rồi **lỗi bị nuốt** |
+| 2 | nền tảng cấp card cho tiến trình ⛔ không dùng được CUDA, rồi hoãn **vô hạn** | hoãn ⛔ không tính là một lần thử ⇒ ⛔ không bao giờ hỏng hẳn để lộ ra |
+| 3 | bọc `pytest` trong `chay_nang.py` = **tự khoá chính mình** | `conftest` tự xin `cpu_nhieu` khi ≥20 tệp; `chay_nang.py` sống **ngoài kho** nên ⛔ không được miễn. Lỗ thứ hai cùng họ: `do_phu_diff.py` |
+| 4 | `singleton_leases` mồ côi | **⛔ KHÔNG BAO GIỜ** được dọn (`reclaim_expired` chỉ nhắm *một tên*) |
+
+Điều phối chẩn đoán **sai sáu lần** trong phiên, và cả sáu lần cứu được là vì đi **đo**
+thay vì tin — kể cả khi phép đo bác chính giả thuyết vừa viết vào brief.
+
+### Ba ca "đọc bản GIẢ thành sự thật sản phẩm"
+
+1. Job test đầu đo **bản ĐÃ CÀI** (`C:/LTTPlatform/app`, `edit_plan` còn ở GĐ1) —
+   điều phối tưởng là bug thứ tự giai đoạn.
+2. *"Hồi quy preset CẮT"* (`so_cat` 1→0): cảnh bị cắt hôm 25/09 bị cắt vì **bản thay
+   thế VLM** trả `de_xuat="bo"` cho **mọi** cảnh không thoại. Luật *"không thoại ⇒
+   cắt"* **chưa từng có trong mã**. Kỳ vọng của bài kiểm là **chính sách của bản giả**.
+3. `voice_synthesis` chết trên phim khách thật: ⛔ không đoạn nào rỗng (0/95) — bản dịch
+   **chưa dịch** (chữ Trung nguyên văn) + SAPI en-US trả **46 byte/0,000 s** cho CJK,
+   **byte-y-hệt** thứ nó trả cho `''`.
+   🔴 Và với **engine THẬT** thì `doan_ngon_ngu(<chữ Trung>)` trả `None` ⇒ `quyet_dinh`
+   **CHO QUA** ⇒ giọng Việt đọc chữ Hán, ⛔ không cửa nào chặn. Hôm nay bắt được
+   **nhờ may** (SAPI trả 0 byte), ⛔ không nhờ một cửa.
+
+### Môi trường + bằng chứng
+
+- `torch 2.11.0+cpu` → **`+cu128`** (chủ dự án chốt A). Đo qua đường sản phẩm:
+  `demucs_runner --buoc-gpu` → `"thiet_bi": "cuda"`, `f0_trung_vi = 101,91`.
+- Bằng chứng nghiệm thu **04/09 và 25/09 → 27/09**, sinh từ lượt thật, **13/13** giai đoạn.
+  🔴 Vì sao nó cũ tới 22 ngày mà ⛔ không ai thấy: người **GHI** đọc `LTT_ASV_*_RA` và
+  mặc định ghi vào `tmp_path` (rồi mất), người **ĐỌC** thì ghim cứng `docs/.../evidence/`.
+  Hai mặc định **lệch nhau** ⇒ mọi lượt nghiệm thu trước **⛔ chưa bao giờ** cập nhật.
+- ⚠️ **Phạm vi chữ "nghiệm thu"**: `giong_that = False`, `model_that = False` — khoá
+  provider và `LTT_VOICE_SIDECAR_TOKEN` nằm trong `secrets\` (ACL chặn **cố ý**). Lượt
+  đó chạy **thật** ffmpeg/whisper/demucs/CSDL/hàng đợi/lease/sổ credit, **giả** LLM và
+  toàn bộ đường sinh tiếng — đúng hai chỗ phiên này thiết kế lại.
+
+### ⚠️ Lượt deploy này mang BA thay đổi HÀNH VI KHÁCH THẤY ĐƯỢC của app `upscalevideo`
+
+Phiên `upscale-video-v2-correction [5fa61a]` khai khi được báo trước, và ghi ra đây để
+lượt sau ⛔ **không đọc nhầm triệu chứng**:
+
+1. **Job có đầu ra HỎNG nay ĐỎ thay vì XANH.** Trước đây thành công chỉ dựa
+   `os.path.isfile()`, nên một tệp hỏng-mà-khác-rỗng vẫn báo `SUCCEEDED` **và vẫn thu
+   tiền**. Nay có cổng kỹ thuật chạy **trước upload**: sai chiều cao / sai tỉ lệ nguồn /
+   codec thật khác encoder đã dùng / `ffprobe` ⛔ không đọc được / tệp < 10 KB ⇒ job đỏ.
+   Thiếu tiếng chỉ **cảnh báo**, ⛔ không làm đỏ.
+   ⇒ 🔑 Sau deploy, một job upscale ĐỎ **khả năng cao là cổng mới bắt được đầu ra hỏng**,
+     ⛔ không phải deploy làm hỏng. Tắt khẩn cấp: `LTT_UPSCALE_TECH_GATE=0`.
+2. **Hết dính cảnh báo chất lượng GIẢ.** Cổng cũ gọi `ffprobe` để lấy PSNR/SSIM/VMAF —
+   ba đại lượng chỉ `ffmpeg` tính được — nên nó **luôn** thất bại, dán cảnh báo sai lên
+   **mọi** job thành công và `.read()` cả MP4 từ R2 vào RAM mỗi lượt. Đã bỏ.
+3. **Xin HEVC mà máy ⛔ không có NVENC-HEVC ⇒ báo lỗi rõ**, thay vì lặng lẽ giao H.264
+   rồi khai là HEVC. Máy A **có** `hevc_nvenc` chạy được nên production ⛔ không đổi.
+
+### Việc của chủ dự án
+
+- 🔴 **Xoay `LTT_CF_DNS_TOKEN`** (vẫn treo từ 26/09).
+- Tuỳ chọn, để bộ test trong tiến trình chạy chế độ **thật**: `LTT_ASV_GIONG_THAT=1` +
+  `LTT_VOICE_SIDECAR_TOKEN`, và `LTT_ASV_MODEL_THAT=1` + `LTT_ASV_POOL_URL=postgresql://…`
+  (⛔ **không** phải `LTT_DATABASE_URL` — fixture ghi đè biến đó bằng SQLite dùng-một-lần).
+
+## 2026-09-26 (tối) — TCN nextgen: sửa 6 lỗi mypy + tiếp nhận 3 ratchet, FF-merge `main` (`0b2ae6f6`)
+
+Nhánh `phien/tcn-nextgen` (worktree `D:\LTTSTUDIOSAPP-tcn-nextgen`) khép lại phần
+nợ mypy còn lại của app `taoclipngan`, tiếp nhận ratchet cho nợ mà `main` mới
+mang vào, rồi FF-merge vào `main` và push origin.
+
+**6 lỗi mypy (phạm vi app) — sửa thật, ⛔ không accept:**
+- `apps/taoclipngan/features.py:101` — union-attr trên `results`
+  (`dict[str, X | None]`): vòng `for` tường minh + guard `res is None`
+  trước khi đọc `.vetoed`.
+- `apps/taoclipngan/jobs.py:267–270` — union-attr/misc khi đếm `total_words`
+  trên union lỏng: narrowing `isinstance(_seg, dict)` +
+  `isinstance(_words, (list, tuple))`; anot `clips_out: list[dict]` để mypy
+  theo dõi kiểu. Bẫy EOL: `jobs.py` trên HEAD là blob "tròn" (EOL lẫn lộn) —
+  ghi lại bằng rewrite giữ nguyên từng dòng EOL theo blob HEAD (hook
+  `kieu-xuong-dong` so khớp loại EOL với HEAD, ⛔ không phải "CRLF hay LF
+  tuỳ ý").
+
+**3 ratchet tiếp nhận (nợ MAIN, có lý do trong mỗi commit):**
+- `tools/silent_except_baseline.json`: 51→53 — nợ commit của main trước gộp.
+- `tools/check_mypy.moc`: union-attr 88→90 (commit `85f2eb31`) — nợ
+  `27a6e921` "freeze the public surface" (`platform_core/public_api/status.py:
+  122–124` `.reason`/`.created_at` trên `None`; `server/routes/webhooks.py:27`
+  `.xac_thuc_webhook` trên `Gateway | None`). Đã đo: diff của nhánh với
+  `platform_core/` + `server/` **rỗng** — không phải nợ của app.
+- `tools/check_bo_qua.moc`: +2 skip môi trường (commit `4588ac46`) —
+  `test_4022` (merge driver i18n chưa cài trên máy này) và `test_4905::
+  pytestmark` (cần ffmpeg+ffprobe thật, app upscalevideo). Cả hai là điều
+  kiện MÔI TRƯỜNG đúng nghĩa (AGENTS.md §4b), không phải skip dữ liệu trong kho.
+
+**Gộp + đẩy:**
+- Merge `main` 3 lần trong buổi (main tiến liên tục vì các phiên ASV/VPS/
+  upscale đang bay): `39f46aef` → `b3ea4cd6` → `0b2ae6f6`. Lần nào cũng kiểm:
+  diff main-mới với `platform_core/` + `server/` + `apps/taoclipngan/`
+  **rỗng** ⇒ không phát sinh nợ mới cho app.
+- Cây chính `D:\LTTSTUDIOSAPP` dirty đúng 1 tệp: `apps/taoclipngan/jobs.py`
+  — đã đo `git diff --ignore-cr-at-eol` = **0 dòng** (chỉ nhiễu EOL của phiên
+  khác). Restore tệp đó rồi `git merge --ff-only 0b2ae6f6`.
+- `pre-commit run --all-files` trên HEAD sau gộp: **7/7 Passed**.
+- `git push origin main`: `7cd19266..0b2ae6f6`.
+
+**Test đã chạy (kết quả thật):**
+- 4 tệp test TCN (`test_4900`…`test_4903`) trên cây đã merge cuối:
+  **21 passed** (3.82s).
+- 3 ratchet kiểm lại trên cây đã merge cuối: mypy `đạt mốc: 558` (⊆ 569)
+  · silent-except `PASS` (53/53) · bo-qua `PASS` (76).
+
+**Đang chạy:** gate L1 `python tools/cay_gate.py chay --doi` trên cây gate
+(`D:\LTTSTUDIOSAPP-cay-gate`, ghim `0b2ae6f6`) — kết quả sẽ ghi thêm vào mục
+này khi xong.
+
+⚠️ **Deploy — CHƯA:** `NHAT_KY.md` mục 26/09 chiều chốt rằng làn ASV đang
+chặn deploy (`app.lttstudios.com` vẫn bán giá VPS cũ, bản chạy `dff24d4b`).
+Chặn gỡ khi làn ASV báo xong 13/13. Lần deploy tới sẽ mang luôn TCN này
+(`git archive` xuất HEAD). UI verify theo luật 7 đợi cửa sổ deploy chung.
+
+
 ## 2026-09-26 (chiều, sau) — Gói Nhỏ lên **2 vCPU / 4 GB**; và "cấu hình" ⛔ không phải "đang chạy"
 
 Chủ dự án dùng thật và báo lại: Windows Server 2016 trên 1 vCPU / 2 GB **nặng

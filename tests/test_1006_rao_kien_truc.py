@@ -118,9 +118,9 @@ MIEN_TRU_HTTP = {
     # → kuaishou.com (trang + GraphQL web) và CDN video Kuaishou: yt-dlp không có extractor Kuaishou. Allowlist CDN +
     #   chặn IP nội bộ kể cả sau redirect + trần dung lượng. Không phải nhà cung cấp AI. (video_crawler, 22/09)
     "apps/video_crawler/adapters/kuaishou_web.py",
-    # → TẢI MODEL GHIM, ⛔ không phải một lời gọi nhà cung cấp. Xem
-    #   `MIEN_TRU_TAI_MODEL_GHIM` ngay dưới — miễn trừ này CÓ ĐIỀU KIỆN.
-    "apps/asv_gpu/do_luong/ocr_khung.py",
+    # ⛔ `apps/asv_gpu/do_luong/ocr_khung.py` ĐÃ XÓA 26/09 (Task 21): đường OCR
+    #   hardsub bỏ, một đường duy nhất voice→voice. Cùng với nó biến cả mục
+    #   trong `MIEN_TRU_TAI_MODEL_GHIM` — tệp duy nhất tựng được miễn ở đó.
 }
 
 #: 🔴 Miễn trừ **CÓ ĐIỀU KIỆN**, ⛔ không phải một tấm vé theo tên tệp.
@@ -144,9 +144,12 @@ MIEN_TRU_HTTP = {
 #:    (`pywintypes` ở mức module, chỉ venv sạch của máy chủ mới thấy). Thêm nữa,
 #:    upstream RapidOCR v3.9.2 (`python/rapidocr/default_models.yaml`, tag
 #:    v3.9.2) ghim **chỉ** ModelScope, nên bản HF chưa chứng minh được trùng byte.
-MIEN_TRU_TAI_MODEL_GHIM = {
-    "apps/asv_gpu/do_luong/ocr_khung.py": ("MODEL", "bao_dam_model"),
-}
+#: ⚠️ **RỖNG từ 26/09**, và đó là một trạng thái ĐÚNG, ⛔ không phải một bảng
+#:    chưa ai điền. `ocr_khung.py` là mục duy nhất, và tệp đó đã xóa. Phép kiểm
+#:    `test_mien_tru_TAI_MODEL_that_su_KIEM_checksum` vì thế không có gì để kiểm —
+#:    một tập rỗng, và nó phải nói ra rằng nó rỗng (xem bài học
+#:    `khong-doi-chung-thi-so-khong-khong-phai-phat-hien`).
+MIEN_TRU_TAI_MODEL_GHIM: dict[str, tuple[str, str]] = {}
 
 
 # ══════════════════ bộ dò — dùng chung cho rào thật VÀ tự kiểm ══════════════

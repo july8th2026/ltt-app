@@ -75,8 +75,12 @@ MAC_DINH_BENCH = {
 #:    False va bench do **nhanh LUI** trong khi tuong minh do nhanh mac dinh.
 #:
 #: ⛔ Mot mac dinh se lam nguoi viet bench sau **khong khai**, va ta quay lai dung
-#:    hom nay. Bat khai la thu khien lan sau **khong im lang duoc** — cung ly do
-#:    `nguon_loi.chuan_che_do(..., mac_dinh=)` bat khai duong DOC hay duong NHAN.
+#:    hom nay. Bat khai la thu khien lan sau **khong im lang duoc**.
+#:
+#: ⚠️ Cau nay tung vien dan `nguon_loi.chuan_che_do(..., mac_dinh=)` lam mot ca
+#:    cung luat. Chu ky do **khong con** tu 26/09 (Task 21): mot duong duy nhat
+#:    voice->voice ⇒ khong con hai duong DOC/NHAN de phan biet. Giu vien dan la
+#:    tro tay vao mot thu khong ton tai.
 NHANH_THEO_GIAI_DOAN = {
     P.TRANSCRIBE: {
         "khoa_outputs": "canh_chinh",
@@ -312,6 +316,11 @@ def _dung_lan_chay(moi_truong, cai_dat: dict, duong_video=None):
        ho so tra ve**, nen khach ep `embedded`/`ocr`/`asr` van chay `auto`, im lang.
        Mot khuon tu dung `AsvRun` bang ORM se bo qua dung mat xich do — va Task 5
        phai chung minh chinh no.
+
+    ⚠️ `nguon_loi` da bi RUT 26/09 (Task 21), nen **vi du** o tren la lich su.
+       ⛔ Ly do thi con nguyen: khuon nay di qua `dich_vu_tao` chu khong qua ORM,
+       va do la cach duy nhat mot bench phat hien duoc "duyet roi khong ghi" cho
+       BAT KY o dieu khien nao — khong rieng gi `nguon_loi`.
     """
     import platform_core.db as dbmod
 

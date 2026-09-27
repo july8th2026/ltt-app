@@ -568,12 +568,25 @@ def _ma_trong(messages):
     return [str(d["ma"]) for d in goi.get("doan") or []]
 
 
-def test_KHONG_doan_nao_thuoc_canh_BI_CAT_duoc_gui_cho_model(
+def test_MOI_doan_deu_duoc_gui__va_cai_gia_bi_CHAN_boi_tran_cat(
         tmp_path, monkeypatch, db, kho_tam, asr_gia, giong_gia):
-    """🔴 Day la cho tien chay ra ngoai, va la ly do V4-R07 ton tai.
+    """🔴 **26/09/2026 — KY VONG DAO CHIEU, va cai gia duoc GHI LAI** (B1 §9a).
 
-    Mot doan thuoc canh da cat ma van duoc gui di la mot cau **duoc tra tien de
-    viet va doc thanh tieng** cho mot doan hinh khong con ton tai trong ban ra.
+    Ban cu chot `V4-R07`: *mot doan thuoc canh da cat ma van duoc gui di la mot
+    cau duoc TRA TIEN de viet va doc thanh tieng cho mot doan hinh khong con ton
+    tai.* Bat bien do dung khi `edit_plan` chay TRUOC `content_process`.
+
+    ⭐ Chu du an da chot kien truc **hai giai doan**: GD1 xong toan bo tieng va
+       ra MP4 **full do dai**; viec cat la cua GD2, tren ban ra. Nen o GD1 MOI
+       doan deu duoc gui — day khong phai mot lo hong, day la hop dong.
+
+    ⚠️ **Cai gia, noi thang:** ta tra tien tieng cho phan GD2 se bo. No bi CHAN
+       TREN boi tran cat cua BAN RA (`ke_cat.TRAN_CAT_TI_LE`), ⛔ khong boi tran
+       cua ban bien tap (`ban_bien_tap.TRAN_CAT`, muoi lan rong hon). Va cho chan
+       la mot **bat bien o bien**: `ke_cat.kiem` NEM khi vuot.
+
+    ⇒ Bai nay nay do HAI dieu: (1) ⛔ khong doan nao bi bo sot o GD1; (2) cho
+      chan cai gia van con va van la mot phep NEM.
     """
     from apps.auto_scan_video import ai, canh as canh_mod, features, pipeline
     from tests.test_402_asv_mach_doc_gia import _chay_het_hang_doi, _tao_run
@@ -638,9 +651,21 @@ def test_KHONG_doan_nao_thuoc_canh_BI_CAT_duoc_gui_cho_model(
         "mau thu khong co doan nao nam RIENG trong canh bi cat — "
         "phep kiem nay dang khong do gi")
 
-    lot = chi_trong_cat & set(da_gui)
-    assert not lot, "gui cho model %d doan thuoc canh DA CAT: %s" % (
-        len(lot), sorted(lot)[:5])
+    # (1) GD1 long tieng FULL do dai — ⛔ khong doan nao bi bo sot.
+    thieu = chi_trong_cat - set(da_gui)
+    assert not thieu, (
+        "GD1 phai long tieng FULL do dai; %d doan khong duoc gui: %s"
+        % (len(thieu), sorted(thieu)[:5]))
+
+    # (2) Cai gia bi CHAN TREN, va cho chan la `ke_cat` chu khong phai buoc nay.
+    import inspect
+
+    from apps.auto_scan_video import ban_bien_tap as bt, ke_cat as kc
+
+    assert 0 < kc.TRAN_CAT_TI_LE < bt.TRAN_CAT, (
+        "tran cua BAN RA phai chat hon tran cua BAN BIEN TAP")
+    assert "TRAN_CAT_TI_LE" in inspect.getsource(kc.kiem), (
+        "tran cat thoi la bat bien o bien — cai gia cua GD1 khong con cho chan")
 
 
 def test_thu_lai_KHONG_gui_lai_nhung_doan_DA_XONG(

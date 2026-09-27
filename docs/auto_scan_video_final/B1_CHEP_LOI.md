@@ -3,6 +3,26 @@
 > Làn `asvf-nghiem-thu-v2`, 24/09/2026. Mắt xích **đầu tiên** của thang cổng —
 > mọi bước sau đứng trên văn bản nguồn nó tạo ra.
 
+## ⛔ 26/09 (Task 21): chân lý nền nay là MỘT TỆP ĐÓNG BĂNG, không phải một lượt chạy
+
+Sản phẩm đã đóng trên **MỘT** đường voice → voice: `ocr`/`embedded`/`auto` bị bỏ
+(`B1_PLAN_DUONG_ONG_GD1.md` §11). Việc đó đổi **cách lấy chân lý nền**, ⛔ không đổi
+một con số nào ở dưới:
+
+| | trước 26/09 | từ 26/09 |
+|---|---|---|
+| chân lý nền hardsub | chạy `transcribe` lần thứ hai với `nguon_loi=ocr` | đọc tệp đã đóng băng `l_ocr_gt_v2*.json` |
+| cổng B1 (`chinh_xac_cho_ngat`) | đọc tệp đóng băng | **không đổi** — nó đã luôn đọc tệp |
+| bench CER trên một phim **MỚI** | `test_3009` chạy hai lượt | ⛔ **không còn** — xem dưới |
+
+⚠️ **Cái giá, nói ra chứ ⛔ không chôn:** `tests/test_3009_asv_bench_b1_chay_that.py`
+đã **xoá**. Nó sinh chân lý nền bằng chính đường `ocr`, nên một phim **bất kỳ** ⛔ không
+còn được đo CER tự động. Muốn đo một phim mới từ nay thì phải có một **bản
+chép tay** cho phim đó — và đó là một việc chưa ai làm, ⛔ không phải một việc đã
+có cóng cụ. `tools/bench_b1_chep_loi.py::do_mot_phim` vẫn trả một bản ghi RỖNG kèm
+`ly_do` — ⛔ nó chưa bao giờ chạy thật, nên việc xoá `test_3009` ⛔ không làm
+`do_mot_phim` mất gì.
+
 ## ⚠️ ĐỌC TRƯỚC KHI ĐỌC BẤT KỲ CON SỐ NÀO Ở ĐÂY
 
 **Bảng kết quả này BẤT ĐỐI XỨNG.** Chân lý nền là **hardsub**, và mọi sai lệch của
