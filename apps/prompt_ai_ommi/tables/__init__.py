@@ -10,7 +10,8 @@ from apps.prompt_ai_ommi.tables.tai_nguyen import (
     RESOURCE_KINDS, OmmiResource, OmmiResourceVariant, OmmiTag,
     OmmiResourceTag, OmmiCollection, OmmiCollectionItem, OmmiResourceUsage)
 from apps.prompt_ai_ommi.tables.thu_vien import (
-    OmmiMetaPrompt, OmmiPromptSnippet, OmmiPromptVersion, OmmiStyle)
+    OmmiMetaPrompt, OmmiPromptSnippet, OmmiPromptVersion, OmmiStyle,
+    OmmiImageTemplate, OmmiStoryboardFramework, OmmiSample, OmmiProfile)
 from apps.prompt_ai_ommi.tables.kich_ban import (
     OmmiStoryboard, OmmiScene, OmmiSceneVersion)
 from apps.prompt_ai_ommi.tables.binding import OmmiBinding
@@ -25,7 +26,10 @@ __all__ = [
     "RESOURCE_KINDS", "OmmiResource", "OmmiResourceVariant", "OmmiTag",
     "OmmiResourceTag", "OmmiCollection", "OmmiCollectionItem",
     "OmmiResourceUsage", "OmmiMetaPrompt", "OmmiPromptSnippet",
-    "OmmiPromptVersion", "OmmiStyle", "OmmiStoryboard", "OmmiScene",
+    "OmmiPromptVersion", "OmmiStyle",
+    "OmmiImageTemplate", "OmmiStoryboardFramework", "OmmiSample",
+    "OmmiProfile",
+    "OmmiStoryboard", "OmmiScene",
     "OmmiSceneVersion", "OmmiBinding", "OmmiHandoff",
     "OmmiBrief", "OmmiCanh", "OmmiIteration",
     "OmmiBackground", "OmmiCharacter", "OmmiFaceEmbedding", "OmmiOutfit",
