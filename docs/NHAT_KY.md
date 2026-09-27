@@ -12,6 +12,74 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-27 — PROMPT AI pha 2 DONG; va BON ca cung mot khuon "tu khoa chinh minh"
+
+**Pha 2 xong** (`docs/superpowers/plans/2026-09-26-prompt-ai-pha2-giao-bai.md`):
+8 Task, 8 commit `870f1dab`..`0182362f`. Da gop `main` (84 commit, `3eab3052`).
+Nghiem thu cuoi: **pre-commit toan cay exit 0 · 111 passed (pha 1+2) · 72 passed
+(luoi hanh vi cu) · 101 passed (cum taovideo, app `released`)**.
+
+Duong giao bai nay mang **du** anh tham chieu: prompt co `@IMG_k`, `refs` co anh
+that da promote, `camera`/`lighting`/`mood` nguyen van trong prompt. N-1 chet.
+
+⚠️ **Mot mon no CO TEN**: nghiem thu tren `https://app.lttstudios.com` **CHUA LAM**
+— dich vu chay `C:\LTTPlatform\app` (**ban da cai**), va `Test-Path` cho thay 4 tep
+cua pha 1/2 **khong co mat** o do. Do 27/09. Tra duoc **sau mot luot deploy**.
+Luong giao bai da nghiem thu bang trinh duyet **that** nhung tren **uvicorn cuc bo
+dung tu cay nay** — pham vi ghi ro trong commit `0182362f`.
+
+### 🔴 BON ca "tu khoa chinh minh" trong hai ngay — cung khuon, bon lop boc
+
+| Lop boc giu `cpu_nhieu` | Cai xin lai | Ai gap |
+|---|---|---|
+| `chay_nang.py` | `tests/conftest.py` (>= 20 tep) | phien nay, 26/09 |
+| `chay_nang.py` | `tools/do_phu_diff.py` (`--pham-vi` mac dinh `tests`) | phien khac vá 26/09 (`edb8892c`) |
+| `chay_nang.py` | `gate.py` (4 cho, va **0** phep hoi to tien) | phien Upscale, 27/09, dung **37 phut** |
+| `chay_nang.py` | `cay_gate.py chay` -> `gate.py` | cung ca tren |
+
+⭐ **Trieu chung giong MOI thu khac**, nen rat de duoi sai: treo vo han, **CPU bang
+0**, **tai hien duoc** voi giay CPU gan y het moi lan — vi luon dung o **CUNG MOT
+DIEM CHAN**, ⛔ khong phai vi cung mot con bo. Toi da loai hai gia thuyet sai
+(`pytest-randomly`; "import module lay lock" — loai bang `--collect-only` xanh 9 s)
+truoc khi thay.
+
+⭐ **PHEP CHAN TRONG MOT LENH**: luc "treo", chay `python tools/cua_so_yen.py
+trang-thai` tu **shell khac**. Nguoi giu khoa **chinh la luot cua minh** ⇒ tu khoa.
+Neu la **pid cua phien khac** ⇒ xep hang binh thuong, cho la dung.
+
+⛔ **Va dung chuyen huong / noi dau ra khi chan doan treo.** `cua_so_yen` IN ra
+`xep hang N phut - cpu_nhieu: <ai>` — dung nhung dong noi ra nguyen nhan. Toi mat
+chung **hai lan**: `| grep | tail` (tail giu toi khi tien trinh chet) va `> tep`
+(Python dem stdout). Dung `PYTHONUNBUFFERED=1` + `-u`.
+
+**Luat chot:**
+
+| Lenh | Boc `chay_nang.py`? |
+|---|---|
+| `pytest` | ⛔ KHONG — `conftest` tu lay khi >= 20 tep |
+| `gate.py` / `cay_gate.py` | ⛔ KHONG — tu lay, va **khong** hoi to tien |
+| `pre-commit run --all-files` | ✅ co |
+| `npm run build`, cargo, script do rieng | ✅ co |
+
+Da xac minh ban va (`edb8892c` tren `main`) chay dung: 26 tep qua `chay_nang.py`,
+conftest **bo qua** viec xin khoa, giu khoa 2,5 phut roi nha.
+
+### ⭐ Bai hoc dat nhat, va no KHONG phai ve khoa
+
+Phien Upscale chot: *"Mot luat thieu ve ngoai le thi **dung o mat chu ma sai o mat
+dung**."* Va ve ho them: loi trong **viec minh dang lam** thi tu no tren dau minh;
+loi trong **tep luat** thi **nam cho**, va cai gia **nhan theo so nguoi doc**.
+
+Toi viet *"moi lenh nang di qua `chay_nang.py`"* vao **brief mau cho agent**
+(`docs/PROMPT_AI/DIEU_HUONG_AGENT.md`) roi gui **bon lan**. Lo chi khong no vi chua
+lan nao cham nguong 20 tep. ⇒ Da soat **ca tep luat**, khong chi va cau gay loi, va
+tim them **hai** cho thieu ve:
+- `⛔ khong cd ra khoi worktree` — ma lan G **phai doc** `D:\BOT GEMINI`, va dieu
+  phoi phai doc `C:\LTTPlatform\app`. Nay: ⛔ khong ra ngoai de **GHI**, ✅ duoc
+  **DOC** khi viec doi.
+- **thieu han** luat "kenh nghiem thu phai do duoc ma cua minh" (muc 4.3 moi) —
+  chinh cho dieu phoi da dua mot lan kenh sai.
+
 ## 2026-09-26 (tối) — PROMPT AI pha 1 xong, va mot chieu THU NAM cua tranh chap index
 
 **Pha 1 cua `docs/superpowers/plans/2026-09-26-prompt-ai-pha1-cho-noi-dung.md`

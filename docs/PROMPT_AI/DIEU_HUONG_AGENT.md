@@ -138,7 +138,7 @@ Mọi brief thi hành **phải** có đủ 12 mục dưới đây, theo đúng t
 | # | Mục | Nội dung |
 |---|---|---|
 | 1 | **Vai + giới hạn** | *"Bạn thi hành **đúng Task N..M** của làn X. ⛔ Không chạm tệp ngoài danh sách §3."* |
-| 2 | **Cây làm việc** | Đường tuyệt đối. ⛔ Không `cd` ra khỏi worktree |
+| 2 | **Cây làm việc** | Đường tuyệt đối. ⛔ Không `cd` ra khỏi worktree để **GHI**. ✅ Được **ĐỌC** ngoài cây khi việc đòi: `D:\BOT GEMINI` (kho tham chiếu chỉ-đọc), `C:\LTTPlatform\app` (bản đã cài — xem §4.3), `C:\LTTPlatform\secrets\app.env` (⛔ chỉ **đếm**, ⛔ không in giá trị). Ghi ra ngoài cây ⇒ **dừng và báo** |
 | 3 | **Đọc trước** | Plan pha (từ Task nào tới Task nào) + spec §nào. ⭐ **Đọc HẸP** — chỉ mục cần |
 | 4 | **Tệp được sửa** | Liệt kê **tường minh**. Một tệp không có trong danh sách ⇒ ⛔ dừng và báo |
 | 5 | **Dải số test** | Số cụ thể. Kèm: `python tools/check_so_test.py --list` trước khi tạo tệp |
@@ -161,6 +161,40 @@ Mọi brief thi hành **phải** có đủ 12 mục dưới đây, theo đúng t
 | S-5 | Rào cứng của làn (§4.2) đã có đủ? | Bổ sung |
 | S-6 | Brief có nhắc **cái giá nếu sai** của Task này? | Thêm — agent cần biết chỗ nào không được đoán |
 | S-7 | Brief có mục 11 (ghi dần)? | Thêm. Bỏ mục này là ca treo 26/09 lặp lại |
+
+### 4.3 🔴 Kênh nghiệm thu phải ĐO ĐƯỢC mã của mình
+
+Bổ sung 27/09 sau khi điều phối đưa một làn **đúng một kênh không thể trả lời câu nó
+cần hỏi**. Đây là mục quan trọng nhất của §4, vì sai ở đây cho ra một báo cáo **xanh
+mà vô nghĩa**.
+
+**Sự thật đo được:** hai dịch vụ production chạy `AppDirectory = C:\LTTPlatform\app`
+— **bản ĐÃ CÀI**, ⛔ không phải cây làm việc. `Test-Path` trên bốn tệp của pha 1/2
+(`services/bat_bien.py`, `bindings.py`, `handoff_stage.py`, `tables/binding.py`) đều
+**KHÔNG CÓ**.
+
+⇒ Mở `https://app.lttstudios.com` là đo **đường ống cũ**:
+- "thành công" ⇒ vừa xác nhận mã **không phải của mình**;
+- "thất bại" ⇒ có thể **chẳng liên quan** mã của mình.
+
+Cả hai kết luận **vô giá trị**. Bài học `doc-thu-dai-dien-thay-vi-doc-thu-that`:
+⭐ *"thứ tôi đang hỏi có SẴN ở chỗ tôi đang đứng không?"*
+
+| Muốn kiểm | Kênh đúng |
+|---|---|
+| Logic, service, route của **mã mình vừa viết** | `TestClient` của FastAPI — dựng app từ **cây này** |
+| **Giao diện** của mã mình vừa viết | ⭐ uvicorn **cục bộ dựng từ cây này** (`sys.path[0]`=worktree, `chdir` worktree, `server.app.create_app()`), rồi lái bằng Playwright. Vừa đo đúng mã, vừa có render |
+| Cấu hình / biến môi trường / hành vi **đã deploy** | `https://app.lttstudios.com` — và ⭐ nói rõ phạm vi là **bản đã cài** |
+| Mã mình trên production | ⛔ **Không kiểm được cho tới khi deploy.** Ghi **món nợ có tên** |
+
+**Món nợ phải ghi đủ bốn phần** — ⛔ không ghi "chưa kiểm được" chung chung:
+> *"Nghiệm thu trình duyệt cho <việc>: **CHƯA LÀM**. Lý do: dịch vụ chạy
+> `C:\LTTPlatform\app`, mã pha N chưa deploy. **Đo bằng `Test-Path`, ngày 27/09.**
+> Trả được **sau một lượt deploy**."*
+
+⛔ Và khi báo cáo một phép đo trên uvicorn cục bộ, **ghi rõ đó là cục bộ** — kể cả
+trong commit message. Một ảnh chụp không nói phạm vi sẽ được đọc như bằng chứng
+production ở phiên sau.
 
 ### 4.2 Rào cứng riêng từng làn — ⛔ thiếu là mất dữ liệu hoặc gate đỏ
 
