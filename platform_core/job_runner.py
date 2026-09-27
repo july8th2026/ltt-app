@@ -624,6 +624,11 @@ def _giu_gpu(worker_id: str, job_id: str, job_type: str, need_mb: int):
             _canh_lease_con_sot(job_id)
 
 
+#: Trần giây cho `taskkill` ở đường hết-giờ. Ngắn có chủ ý: đây là đường thoát
+#: khẩn, và chờ lâu ở đây là đổi một tiến trình treo lấy hai.
+_GIAY_GIET_CAY_CON = 10.0
+
+
 def _canh_lease_con_sot(job_id: str) -> int:
     """Đo BẤT BIẾN Ở BIÊN: rời `_giu_gpu` rồi thì job này ⛔ không được còn lease.
 
@@ -782,6 +787,67 @@ def _tran_thoi_gian(app_slug: str, job_type: str) -> int:
     return RUNTIME_LIMIT_DEFAULT_S
 
 
+def _giet_cay_tien_trinh_con(job_id: str) -> None:
+    """Giết MỌI tiến trình con-cháu của worker này, ngay trước khi tự thoát.
+
+    🔴 VÌ SAO CẦN — lỗ hổng này VÔ HÌNH với cơ chế lease
+
+    `_het_gio` thoát bằng `os._exit`, và docstring của nó nói *"ở đây không còn
+    gì đáng dọn — trạng thái đã bền vững"*. Trạng thái **CSDL** thì bền vững
+    thật. Nhưng engine là `subprocess.Popen`, ⛔ **không** phải con
+    `multiprocessing`, nên nó ⛔ không chết theo worker — nó thành **mồ côi và
+    vẫn giữ card**.
+
+    Và điều đó ⛔ không chỉ là rò rỉ. `gpu_lease.reclaim_orphans` có luật
+    *"job đã kết thúc ⇒ rác, thu hồi NGAY, ⛔ không chờ nhịp đập"*, nên:
+
+        _het_gio đánh dấu job failed  ->  os._exit  ->  con VAN chay, VAN giu card
+            -> reclaim_orphans thay "job da ket thuc" -> xoa lease NGAY
+            -> he thong tin card TRONG -> nhan job moi -> tranh VRAM voi mo coi
+
+    ⭐ Đó đúng là cuộc đua mà `UniqueConstraint` của `GpuLease` sinh ra để chặn —
+    docstring của nó viết: *"Hai worker cùng thấy 'GPU 0 trống 16 GB', cùng nạp
+    model, cùng OOM — và lỗi hiện ra **ở giữa job của khách hàng**."* Tiến trình
+    mồ côi tái lập đúng ca ấy, và **vô hình** với lease vì nó ⛔ không phải job.
+
+    Quan sát thật 26/09/2026: một `realesrgan-ncnn-vulkan.exe` mồ côi (cha đã
+    chết) giữ GPU **100 %** trong khi hệ thống coi card là rảnh.
+
+    ## Vì sao `taskkill /T /F` chứ không phải enumerate rồi giết từng con
+
+    - **stdlib thuần**: `psutil` chỉ có trong `requirements-dev.txt`, ⛔ không có
+      trong phụ thuộc server — mã chạy production ⛔ không được dựa vào nó.
+    - `/T` giết **cả cây con** trong một lệnh: ⛔ không phải tự viết phép duyệt
+      cây, ⛔ không có cửa sổ đua giữa lúc liệt kê và lúc giết.
+    - Nó nhận **pid của chính ta** nên phạm vi là **đúng con cháu của ta** —
+      ⛔ không bao giờ chạm tiến trình của phiên/dịch vụ khác. Đây là luật
+      *"chỉ giết thứ mình khởi động"*, do OS thi hành chứ ⛔ không do ta nhớ.
+
+    ⚠️ `/T` giết cả **chính ta**. Chấp nhận được và không đổi gì: dòng ngay sau
+    lời gọi này vốn là `os._exit(3)`. Mã thoát chỉ được **ghi log**
+    (`job_worker.py:231`), ⛔ không ai rẽ nhánh theo nó.
+
+    ⛔ Hàm này ⛔ KHÔNG BAO GIỜ ném và ⛔ KHÔNG BAO GIỜ chờ vô hạn: nó chạy trên
+    đường hết-giờ, nơi một lần treo nữa là mất luôn cả cửa thoát.
+    """
+    import os as _os
+    import subprocess as _sp
+    import sys as _sys
+
+    if not _sys.platform.startswith("win"):
+        return                                  # kho nay chi chay tren Windows
+    pid = _os.getpid()
+    log.error("job %s het gio — giet cay tien trinh con cua worker pid %s "
+              "(engine/ffmpeg la `Popen`, khong chet theo worker)",
+              job_id[:8], pid)
+    try:
+        _sp.run(["taskkill", "/T", "/F", "/PID", str(pid)],
+                capture_output=True, timeout=_GIAY_GIET_CAY_CON)
+    except Exception:                           # noqa: BLE001
+        # Giết hụt thì vẫn phải thoát — `os._exit` ngay sau đây lo phần đó.
+        log.exception("khong giet duoc cay tien trinh con cua pid %s", pid)
+
+
 def _het_gio(job_id: str, job_type: str, giay: int) -> None:
     """Job vượt trần: trả lời khách, hoàn tiền, rồi kết thúc tiến trình.
 
@@ -811,8 +877,12 @@ def _het_gio(job_id: str, job_type: str, giay: int) -> None:
     except Exception:                       # noqa: BLE001
         log.exception("khong ghi duoc trang thai het gio cho %s", job_id[:8])
     finally:
-        # `_exit` chứ không phải `sys.exit`: handler có thể nuốt SystemExit, và
-        # ở đây không còn gì đáng dọn — trạng thái đã bền vững.
+        # ⭐ Dọn thứ KHÔNG nằm trong CSDL trước đã: engine là `Popen`, nó ⛔ không
+        #    chết theo worker và sẽ giữ card trong khi lease đã bị thu hồi.
+        #    Xem `_giet_cay_tien_trinh_con` — lỗ này vô hình với cơ chế lease.
+        _giet_cay_tien_trinh_con(job_id)
+        # `_exit` chứ không phải `sys.exit`: handler có thể nuốt SystemExit.
+        # Đây là lưới cuối nếu `taskkill` ở trên giết hụt.
         _os._exit(3)
 
 
