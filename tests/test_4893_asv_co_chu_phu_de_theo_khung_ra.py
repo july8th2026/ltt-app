@@ -201,3 +201,43 @@ def test_KHONG_co_dai_thi_lui_ve_san_title_safe_5_phan_tram(tmp_path):
         "khung 576: preset (30) da rong hon san (29) nen phai GIU preset")
     assert (pd.vi_tri_tu_dong(ho, cao=1920)["margin_v"]
             == round(1920 * pd.LE_AN_TOAN_PHAN))
+
+
+# ── B9-2: neo lớp phủ chữ ───────────────────────────────────────────────────
+
+def test_lop_phu_x_la_TAM_chu_chu_khong_phai_mep_trai():
+    """🔴 Ca T1a: *"LTT STUDIOS"* đặt `x = 0,5` hiện ra **"LTT STUD"**.
+
+    `drawtext` neo `x` ở **mép trái** hộp chữ, nên khách kéo tới giữa thì
+    nhận mép trái ở giữa và đuôi chữ tràn ra ngoài khung.
+
+    ⭐ `text_w` là biến của chính `drawtext` — ffmpeg đo font rồi mới thay vào,
+       nên đây là chỗ **duy nhất** bề rộng chữ được biết.
+    """
+    from apps.auto_scan_video import che_do_render as cdr
+
+    ve = cdr._loc_chu(
+        [{"chu": "LTT STUDIOS", "x": 0.5, "y": 0.06, "co_chu": 0.06,
+          "do_mo": 1.0, "vien": True, "mau": "trang"}],
+        ["/tmp/chu.txt"], "vao", "ra", cao_khung=576)
+    loc = "".join(ve)
+    assert "-text_w/2" in loc, (
+        "x van dang neo MEP TRAI — khach dat 0,5 se nhan chu lech sang phai")
+    assert "x=(W*0.500000)-text_w/2" in loc
+
+
+def test_lop_phu_van_KHONG_kep_ve_bien():
+    """⛔ Luật L3 giữ nguyên — phép neo lại ⛔ không được lặng lẽ đảo nó.
+
+    ⭐ Thiếu bài này thì một bản sửa *"cho chữ khỏi tràn"* rất dễ thêm một
+       `max(0, ...)`, và khi đó chữ khách cố tình đặt lệch sẽ bị kéo về biên —
+       đúng cái sai lầm mà chú thích tại chỗ đã ghi tên.
+    """
+    from apps.auto_scan_video import che_do_render as cdr
+
+    loc = "".join(cdr._loc_chu(
+        [{"chu": "x", "x": 0.0, "y": 0.5, "co_chu": 0.06, "do_mo": 1.0,
+          "vien": False, "mau": "trang"}],
+        ["/tmp/chu.txt"], "vao", "ra", cao_khung=576))
+    assert "max(" not in loc and "min(" not in loc
+    assert "x=(W*0.000000)-text_w/2" in loc
