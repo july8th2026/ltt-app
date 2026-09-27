@@ -85,8 +85,36 @@ def test_job_vuot_tran_hoan_tien_roi_ket_thuc_tien_trinh(tmp_path):
     ra = subprocess.run([sys.executable, str(script)], capture_output=True,
                         text=True, timeout=180)
 
-    assert ra.returncode == 3, (
-        f"`_het_gio` phải kết thúc tiến trình với mã 3, nhận {ra.returncode}. "
+    # 🔴 **`!= 0` chứ KHÔNG `== 3`, và đó là một bản sửa về ĐẠI LƯỢNG (28/09).**
+    #
+    #    Bài này từng chốt `== 3` và ĐỎ SẴN (đo được ở `3c90e775`, đúng bản đang
+    #    chạy production): nhận **1**. Truy nguyên: `_giet_cay_tien_trinh_con`
+    #    gọi `taskkill /T /F /PID <pid của CHÍNH ta>` rồi **chờ** nó. Cờ `/T`
+    #    coi PID mục tiêu là **gốc cây cần giết**, nên khi mục tiêu là chính ta,
+    #    `taskkill` giết ta bằng `TerminateProcess(..., 1)` — và nó **thắng cuộc
+    #    đua** vì ta đang `wait()` chính nó. ⇒ `os._exit(3)` không bao giờ tới.
+    #
+    # ⭐ **Và nhắm PID của chính ta là CÓ CHỦ Ý, không phải khiếm khuyết.**
+    #    `test_4908::test_giet_cay_con_nham_PID_CUA_CHINH_TA` chốt đúng điều đó:
+    #    phạm vi phải là con cháu CỦA TA, và cách duy nhất để **OS thi hành**
+    #    phạm vi ấy là nhắm PID của ta. Một bản vá liệt kê con rồi giết từng PID
+    #    đã được thử 27/09 và **ĐẢO LẠI**: giữa lúc liệt kê và lúc giết, một con
+    #    có thể thoát và PID bị **tái dụng** ⇒ ta giết tiến trình của người khác.
+    #    Kho này đã một lần làm PostgreSQL production sập 4 phút vì đúng chuyện đó.
+    #
+    # ⭐ Nên mã thoát ở đây là kết quả một CUỘC ĐUA, và chốt một giá trị của một
+    #    cuộc đua là đo CÁCH GÕ chứ không đo tính chất. Tính chất bài này thật sự
+    #    cần đã nằm ở ba khẳng định DƯỚI đây: tiến trình **không chạy tiếp**,
+    #    trạng thái **đã bền vững**, credit **đã hoàn**. Mã thoát chỉ còn phải
+    #    chứng minh một điều: tiến trình chết **bất thường**, chứ không thoát 0.
+    #
+    # ⚠️ Đo 27/09, 20/20 lượt: đường cũ **vẫn giết** được mồ côi. Và không ai rẽ
+    #    nhánh theo mã thoát — `job_worker.py:230` chỉ **ghi log** nó rồi thay
+    #    worker vô điều kiện. Nên 1 và 3 tương đương với sản phẩm.
+    assert ra.returncode != 0, (
+        f"`_het_gio` phải kết thúc tiến trình BẤT THƯỜNG (mã 3 nếu `os._exit` "
+        f"thắng, mã 1 nếu `taskkill` thắng), nhận {ra.returncode} — thoát 0 "
+        f"nghĩa là đường hết-giờ đã KHÔNG kết thúc tiến trình. "
         f"{ra.stdout[-300:]} {ra.stderr[-500:]}")
     assert "KHONG BAO GIO TOI DAY" not in ra.stdout, (
         "tiến trình vẫn chạy tiếp sau khi hết giờ — slot không được giải phóng")
