@@ -185,12 +185,23 @@ class NodeDefinition:
                 "tu `type` cho mot khong gian ten khong phai `app.`")
 
 
-def _tieu_de(mo_ta: str, ten: str) -> str:
-    """Câu đầu của mô tả app tự khai. Rỗng ⇒ suy từ tên tool.
+def _tieu_de(mo_ta: str, ten: str, ten_ngan: str = "") -> str:
+    """Tên hiển thị của node `app.*`.
 
-    ⛔ KHÔNG dựng một bảng `{tên tool: nhãn}` trong nền tảng — đó chính là thứ
-       `test_967` đang đếm hàng chết.
+    Thứ tự ưu tiên:
+    1. `ten_ngan` — tên NGẮN app tự khai trên chính `ToolSpec` của nó
+       (`ToolSpec.ten_ngan`). Đây KHÔNG phải một bảng tra `{tên tool: nhãn}`
+       tập trung trong nền tảng — mỗi app khai tên của CHÍNH NÓ, cạnh
+       `ToolSpec` của nó. `test_967` cấm bảng tra tập trung, không cấm một
+       app tự đặt tên cho tool của mình.
+    2. Câu đầu của `description`, cắt ở 60 ký tự (hành vi cũ, giữ nguyên cho
+       app chưa khai `ten_ngan` — vẫn có thể cắt giữa từ, đó là cái giá đã
+       biết của lối cũ, không phải một hồi quy mới).
+    3. Suy từ tên tool khi cả hai đều rỗng.
     """
+    ngan = str(ten_ngan or "").strip()
+    if ngan:
+        return ngan
     cau = str(mo_ta or "").split(". ")[0].strip().rstrip(".")
     return cau[:60] if cau else ten.replace(".", " ").replace("_", " ").title()
 
@@ -204,7 +215,8 @@ def tu_toolspec(cc: CongCu) -> NodeDefinition:
     return NodeDefinition(
         type=f"app.{cc.ten}", type_version=int(cc.type_version),
         kind="app", category="LTT_APPS",
-        title=_tieu_de(cc.mo_ta, cc.ten), description=str(cc.mo_ta or ""),
+        title=_tieu_de(cc.mo_ta, cc.ten, cc.ten_ngan),
+        description=str(cc.mo_ta or ""),
         icon=str(cc.icon or ""), app_name=str(cc.app_name or cc.app_slug),
         cong_vao=luoc_do.cong_vao(cc.params_schema,
                                   (cc.cong or {}).get("vao") or {}),

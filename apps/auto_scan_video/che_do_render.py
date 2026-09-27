@@ -667,6 +667,7 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
                 lop_phu=(), duong_chu=(), cao_khung: int = 0,
                 ds_logo=(), rong_khung: int = 0,
                 chi_so_logo_dau: int = 2, duong_ass: str = "",
+                nhan_ra: str = "ra",
                 bien_tap=None, rong_nguon: int = 0, cao_nguon: int = 0) -> str:
     """`filter_complex` cat cac khoang duoc giu roi noi lai — **khong co tieng**.
 
@@ -738,7 +739,21 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
     # ⭐ Khong bien tap thi chuoi giu NGUYEN tung ky tu nhu truoc.
     from . import bien_tap as _bt
 
-    toc = _bt.toc_do(bien_tap)
+    # 🔴 **`toc_do` ⛔ KHONG con nhan o day (B6, 27/09).** Toc do la mot phep
+    #    **DOI TRUC** thoi gian, va hop dong GD1/GD2 buoc moi phep doi truc xep
+    #    SAU moi buoc doc moc — tuc o cuoi GD2 (`loc_cat_hai_dong`).
+    #
+    # ⚠️ Ap no o day bat ke cat, khe thoai, phu de va QC tu doi truc bang tay o
+    #    BA cho, va ba cho ay da sinh ra T2 (QC chia `toc_do` HAI lan), T17 (moc
+    #    DTS trung) va mot ca cat vao GIUA cau thoai. Xem
+    #    `docs/auto_scan_video_final/B6_PLAN_MOT_TRUC_THOI_GIAN.md`.
+    #
+    # ⛔ NEM chu ⛔ khong bo qua im lang: mot `toc_do` toi day nghia la noi goi
+    #    dang tin rang GD1 con ap toc do, va mot ban giao ⛔ KHONG doi toc do la
+    #    thu khach phat hien ra truoc ta.
+    if _bt.toc_do(bien_tap) != 1.0:
+        raise CheDoError(
+            _t('Tốc độ áp ở giai đoạn 2 (hoàn thiện hình), không phải ở render.'))
     # ⚠️ CHI hinh hoc moi keo `_loc_khung` vao: no goi `hinh_hoc.khung_bien_tap`,
     #    mot ham NEM khi chua biet kich thuoc nguon. Mot lan chay chi bat lat
     #    guong khong can biet kich thuoc nao ca, nen `set(bien_tap) - {"toc_do"}`
@@ -746,7 +761,11 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
     buoc_khung = (_loc_khung(bien_tap, rong_nguon, cao_nguon)
                   if bien_tap and set(bien_tap) & set(_bt.TRUONG_HINH_HOC)
                   else None)
-    dich = "truoc_toc" if toc != 1.0 else "ra"
+    # ⭐ **Ten nhan ra la tham so, ⛔ khong hang so go cung (B6).** Ban tham
+    #    chieu VMAF (`qc.loc_tham_chieu`) can noi `setpts` VAO SAU chuoi nay de
+    #    khop ban giao — ma muon noi vao sau thi phai biet dat ten cho dau ra
+    #    trung gian. Go cung `"ra"` bat noi goi phai SUA CHUOI bang tay.
+    dich = nhan_ra
     sau_che = dich
     if ds_logo or lop_phu or duong_ass:
         sau_che = "sau_che"
@@ -814,8 +833,6 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
         from . import lop_phu as _lp
 
         phan.append(f"[{hien}]ass='{_lp.thoat_duong(duong_ass)}'[{dich}]")
-    if toc != 1.0:
-        phan.append(f"[truoc_toc]setpts=PTS/{toc:.4f}[ra]")
     return ";".join(phan)
 
 
@@ -877,9 +894,21 @@ def loc_cat_hai_dong(khoang: list[tuple[float, float]], *,
     ⛔ **`vung` (lam mo/dien nen) KHONG nhan o day, va do la co y.** `vung` van
        o GD1: no dat truoc `concat` tren toa do NGUON, tren TUNG khoang truoc
        khi noi — trong khi `khoang` o day la khoang CAT cua GD2, tren MP4 GD1
-       da xong (GD1 da ap vung xong roi). ⛔ `toc_do` cung KHONG nhan o day —
-       no doi MOC THOI GIAN cua ca hinh lan tieng (`setpts`/`atempo` chung he
-       so), va no van la viec cua GD1 (`ket_xuat.py`).
+       da xong (GD1 da ap vung xong roi).
+
+    ⭐ **`toc_do` NHAN o day, va no la buoc CUOI CUNG cua ca chuoi (B6, 27/09).**
+       Truoc 27/09 no o GD1 va ly le cu la *"chuyen xuong day se lam ke cat va
+       toc do tranh nhau tren HAI truc"*. Do thi thay NGUOC: HAI truc la tinh
+       trang cua chinh cach cu — GD1 doi truc TRUOC, nen ban do cua phep cat
+       (GD2) lam viec tren mot truc ⛔ khong mot ke quyet dinh nao noi, va kho
+       phai tu doi truc bang tay o BA cho. Ba cho ay sinh ra T2 · T17 · mot ca
+       cat vao giua cau thoai.
+
+    🔑 Dat o **duoi** thi moi buoc tren — cat, hinh hoc, diem anh, logo, chu,
+       phu de — da doc moc thoi gian XONG, nen ⛔ khong ai phai doi truc theo.
+       Viral lam dung hinh dang nay (`xu_ly_video.py:1140`: `setpts` ngay sau
+       zoom/hflip trong CUNG chuoi). Hop dong:
+       `docs/auto_scan_video_final/B6_PLAN_MOT_TRUC_THOI_GIAN.md`.
 
     `chi_so_logo_dau` mac dinh `1` (khac `2` cua `loc_cat_noi`): dau vao `0` o
     day la MOT tep MP4 da co san CA hinh lan tieng (khong co dau vao "ban phoi
@@ -906,6 +935,17 @@ def loc_cat_hai_dong(khoang: list[tuple[float, float]], *,
                   else None)
     loc_dp = _loc_diem_anh(bien_tap)
 
+    # ⭐ **Toc do: buoc CUOI CUNG, tren CA hai dong.** Hai `ve_*` duoi day doc he
+    #    so tu CUNG `bien_tap.toc_do`, nen `setpts` va `atempo` ⛔ khong the lech.
+    #    Khong doi toc do thi ca hai rong va chuoi giu NGUYEN tung ky tu nhu
+    #    truoc B6 — duong `toc_do = 1` ⛔ khong doi mot byte nao.
+    ve_hinh = loc_toc_do_hinh(bien_tap, nhan_vao="truoc_toc",
+                              nhan_ra=NHAN_HINH_RA)
+    ve_tieng = loc_toc_do_tieng(bien_tap, nhan_vao="truoc_toc_a",
+                                nhan_ra=NHAN_TIENG_RA)
+    hinh_cuoi = "truoc_toc" if ve_hinh else NHAN_HINH_RA
+    tieng_cuoi = "truoc_toc_a" if ve_tieng else NHAN_TIENG_RA
+
     giua: list[tuple[str, object]] = []
     if buoc_khung:
         giua.append(("khung", buoc_khung))
@@ -915,10 +955,10 @@ def loc_cat_hai_dong(khoang: list[tuple[float, float]], *,
 
     # ⭐ Khong buoc diem anh nao thi chuoi giu NGUYEN nhu truoc lan tai cau
     #    truc nay: concat ra thang `[vr][ar]`.
-    sau_gh = "sau_gh" if (ds_logo or lop_phu or duong_ass) else NHAN_HINH_RA
+    sau_gh = "sau_gh" if (ds_logo or lop_phu or duong_ass) else hinh_cuoi
     video_dau = f"truoc_{giua[0][0]}" if giua else sau_gh
     phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=1"
-                f"[{video_dau}][{NHAN_TIENG_RA}]")
+                f"[{video_dau}][{tieng_cuoi}]")
 
     for i, (ten, dung) in enumerate(giua):
         ke = f"truoc_{giua[i + 1][0]}" if i + 1 < len(giua) else sau_gh
@@ -926,13 +966,13 @@ def loc_cat_hai_dong(khoang: list[tuple[float, float]], *,
 
     hien = sau_gh
     if ds_logo:
-        ke = "sau_logo" if (lop_phu or duong_ass) else NHAN_HINH_RA
+        ke = "sau_logo" if (lop_phu or duong_ass) else hinh_cuoi
         phan.extend(_loc_logo(ds_logo, hien, ke, rong_khung=rong_khung,
                               chi_so_dau=chi_so_logo_dau,
                               cua_so=cua_so_ra_logo(khoang, ds_logo)))
         hien = ke
     if lop_phu:
-        ke = "sau_chu" if duong_ass else NHAN_HINH_RA
+        ke = "sau_chu" if duong_ass else hinh_cuoi
         phan.extend(_loc_chu(lop_phu, duong_chu, hien, ke,
                              cao_khung=cao_khung,
                              cua_so=cua_so_ra_lop_phu(khoang, lop_phu)))
@@ -941,8 +981,28 @@ def loc_cat_hai_dong(khoang: list[tuple[float, float]], *,
         from . import lop_phu as _lp
 
         phan.append(f"[{hien}]ass='{_lp.thoat_duong(duong_ass)}'"
-                    f"[{NHAN_HINH_RA}]")
+                    f"[{hinh_cuoi}]")
+    # ⭐ SAU CUNG TUYET DOI — sau ca phu de. Xem docstring.
+    if ve_hinh:
+        phan.append(ve_hinh)
+    if ve_tieng:
+        phan.append(ve_tieng)
     return ";".join(phan)
+
+
+def loc_toc_do_hinh(bien_tap, nhan_vao: str = "truoc_toc",
+                    nhan_ra: str = "ra") -> str:
+    """Ve HINH cua toc do: `setpts`. Rong khi ⛔ khong doi toc do.
+
+    ⭐ Sinh doi cua `loc_toc_do_tieng`, va hai ham doc he so tu CUNG mot
+       `bien_tap.toc_do` — nen `setpts` va `atempo` ⛔ khong the lech he so.
+    """
+    from . import bien_tap as _bt
+
+    toc = _bt.toc_do(bien_tap)
+    if toc == 1.0:
+        return ""
+    return f"[{nhan_vao}]setpts=PTS/{toc:.4f}[{nhan_ra}]"
 
 
 def loc_toc_do_tieng(bien_tap, nhan_vao: str = "1:a", nhan_ra: str = "a_ra") -> str:

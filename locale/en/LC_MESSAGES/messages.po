@@ -22168,3 +22168,89 @@ msgstr "[AUTO-FILLED - the AI did not produce enough scenes; edit or re-split be
 
 msgid "[GỘP {n} CẢNH VƯỢT {target} — AI đã sinh nhưng bị cắt do vượt số lượng yêu cầu]:\n{text}"
 msgstr "[MERGED {n} SCENES OVER {target} - produced by the AI but cut for exceeding the requested count]:\n{text}"
+msgid "Bản dựng giai đoạn 1 không nhận hồ sơ biên tập: mọi phép biên tập (kể cả đổi tốc độ) thực thi ở giai đoạn 2."
+msgstr "The stage-1 render manifest does not accept an edit profile: every edit (including speed changes) runs in stage 2."
+
+msgid "Không thể đổi tốc độ trên đường sao chép nguyên vẹn: đường này không có bộ lọc nào."
+msgstr "Speed cannot be changed on the passthrough copy path: that path has no filters."
+
+msgid "Tốc độ áp ở giai đoạn 2 (hoàn thiện hình), không phải ở render."
+msgstr "Speed is applied in stage 2 (picture finishing), not in render."
+
+msgid "Chèn khoảng lặng vào bản thu"
+msgstr "Insert silence into a recording"
+
+msgid "Nghiên cứu tài liệu"
+msgstr "Research documents"
+
+msgid "Trích văn bản từ tài liệu"
+msgstr "Extract text from a document"
+
+msgid "Sinh lô ảnh đồng nhất"
+msgstr "Generate a consistent image batch"
+
+msgid "Sinh ảnh từ mô tả"
+msgstr "Generate images from a prompt"
+
+msgid "Tạo ảnh bằng model nội bộ"
+msgstr "Generate images on the in-house model"
+
+msgid "Sinh ảnh nền Thumbnail"
+msgstr "Generate a thumbnail background"
+
+msgid "Sinh prompt cảnh từ một kịch bản"
+msgstr "Build scene prompts from a script"
+
+msgid "Chuyển văn bản thành giọng"
+msgstr "Turn text into speech"
+
+msgid "Dựng storyboard câu chuyện"
+msgstr "Build a story storyboard"
+
+msgid "Sinh văn bản từ hội thoại"
+msgstr "Generate text from a chat"
+
+msgid "Soạn gói prompt nhiều cảnh"
+msgstr "Compose a multi-scene prompt pack"
+
+msgid "Phiên âm có mốc thời gian"
+msgstr "Transcribe with timestamps"
+
+msgid "Sinh video từ mô tả"
+msgstr "Generate video from a prompt"
+
+msgid "Cắt clip ngắn từ video dài"
+msgstr "Cut short clips from a long video"
+
+msgid "Ghép clip và nhạc"
+msgstr "Assemble clips and music"
+
+msgid "Brief của khách: câu chuyện họ gõ, mục tiêu, đối tượng, số cảnh và thời lượng muốn có. Đây là đầu vào sáng tạo của họ, không phải kết quả một job."
+msgstr "The customer's brief: the story they typed, the goal, the audience, and how many scenes and how long they want. This is their creative input, not the output of a job."
+
+msgid "Từng cảnh kịch bản sinh từ một brief: prompt đi ra ngoài, lời thoại, máy quay, ánh sáng. Khách sửa từng cảnh, nên đây là bản thảo chứ không phải đầu ra dùng một lần."
+msgstr "Each script scene generated from a brief: the outgoing prompt, dialogue, camera and lighting. Customers edit scene by scene, so this is a draft rather than single-use output."
+
+msgid "Từng lượt sửa kịch bản: câu góp ý khách gõ, prompt đã gửi, kết quả nhận về, và lượt đó miễn phí hay đã tính tiền. Giữ lại để khách đọc được vì sao bản này khác bản trước."
+msgstr "Each script revision: the feedback the customer typed, the prompt that was sent, the result that came back, and whether that round was free or charged. Kept so the customer can see why this version differs from the last."
+
+msgid "Khách đã gán thẻ nào trong prompt (@IMG_1, @VID_2...) vào ảnh nào của họ. Mất nó thì prompt còn nhắc ảnh mà không ai biết là ảnh nào — một lựa chọn của khách, không phải thứ suy lại được."
+msgstr "Which tag in the prompt (@IMG_1, @VID_2...) the customer bound to which of their images. Lose it and the prompt still mentions an image that nobody can identify - a choice the customer made, not something that can be inferred back."
+
+msgid "Nhân vật khách dựng để dùng lại giữa các cảnh: tên, mô tả ngoại hình, khối chữ khoá giữ nhân vật nhất quán."
+msgstr "A character the customer builds to reuse across scenes: name, appearance description, and the locked text block that keeps the character consistent."
+
+msgid "Trang phục thuộc một nhân vật, kèm ảnh tham chiếu khách chọn."
+msgstr "An outfit belonging to a character, with the reference images the customer chose."
+
+msgid "Dáng/biểu cảm khách lưu để tái dùng cho một nhân vật."
+msgstr "A pose or expression the customer saves to reuse for a character."
+
+msgid "Bối cảnh khách dựng để dùng lại: mô tả nơi diễn ra, ánh sáng, và khối chữ khoá giữ bối cảnh nhất quán."
+msgstr "A background the customer builds to reuse: a description of the place, the lighting, and the locked text block that keeps the background consistent."
+
+msgid "Vé tạm để gửi một cảnh sang app khác (ví dụ Tạo video): giữ bản sao prompt và danh sách ảnh tham chiếu trong ít phút. Thiết kế là vé sống 30 phút, nhưng hiện chưa có lượt dọn tự động nào, nên hàng sống theo vòng đời tài khoản."
+msgstr "A short-lived ticket used to send one scene to another app (for example Video): it holds a copy of the prompt and the list of reference images for a few minutes. It is designed to live 30 minutes, but no automatic sweep removes it yet, so rows live for as long as the account does."
+
+msgid "Vector đặc trưng khuôn mặt, suy từ ảnh nhân vật do khách tải lên, dùng để giữ đúng một mặt qua nhiều cảnh. Là dữ liệu sinh trắc học nên ⛔ không ra API; đi cùng nhân vật khi nhân vật bị xoá."
+msgstr "A facial feature vector derived from a character image the customer uploaded, used to keep the same face across scenes. It is biometric data, so it never leaves through the API; it goes with the character when the character is deleted."

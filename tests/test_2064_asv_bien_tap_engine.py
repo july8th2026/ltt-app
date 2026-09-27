@@ -25,8 +25,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from apps.auto_scan_video import (ban_dung, bien_tap as bt, che_do_render as cdr,
-                                  hinh_hoc, ket_xuat, nhap_media, phu_de, qc,
-                                  vung_che)
+                                  giai_doan_hinh_anh as gdha, hinh_hoc,
+                                  ket_xuat, nhap_media, phu_de, qc, vung_che)
 
 W, H = 640, 360
 
@@ -167,9 +167,24 @@ def _moc_tieng(p, tan_so=8000):
     raise AssertionError("khong thay tieng bip")
 
 
-def test_toc_do_1_25_hinh_tieng_phu_de_cung_roi_vao_3_2s_va_QC_dat(tmp_path):
-    """Doan loi `s1` dat tai 4,0 s truc bien tap. Ban ra 1,25x: phai o 3,2 s — ca
-    chop sang cua hinh LAN tieng bip cua ban phoi (A/V lech <= 1 khung)."""
+def test_toc_do_1_25_QUA_CA_HAI_GIAI_DOAN__hinh_tieng_phu_de_cung_roi_vao_3_2s(
+        tmp_path):
+    """🔴 **Bai nay chay CA HAI giai doan, va do la yeu cau cua B6 (27/09).**
+
+    Truoc B6, `toc_do` ap o GD1 nen bai nay dung MOT lenh (`ket_xuat`) la du. Nay
+    toc do ap o CUOI GD2, nen mot bai chi chay GD1 se **⛔ khong do gi ca**: no se
+    xanh mai mai tren mot tep ⛔ chua doi toc do.
+
+    Chuoi do:
+      1. GD1 (`ket_xuat.dung_lenh`) — nguon 8 s / 25 fps ⇒ ban ra **8 s**, ⛔ khong
+         doi moc. Chop sang van o **4,0 s**.
+      2. GD2 (`giai_doan_hinh_anh.dung_lenh`, `toc_do = 1,25`) ⇒ ban giao **6,4 s**,
+         chop sang o **3,2 s**, tieng bip o **3,2 s**, A/V lech <= 1 khung.
+
+    ⭐ Buoc 1 la phep do QUAN TRONG NHAT o day: no chung minh GD1 **⛔ khong** doi
+       moc thoi gian. Thieu no thi mot phep chia sot lai o GD1 se lam ban giao dai
+       5,12 s (8 / 1,25 / 1,25) va ta chi biet "sai o dau do".
+    """
     video = tmp_path / "v.mp4"
     _chay(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-f", "lavfi",
            "-i", "color=c=black:s=640x360:r=25:d=8,drawbox=x=0:y=0:w=640:h=360:"
@@ -186,36 +201,131 @@ def test_toc_do_1_25_hinh_tieng_phu_de_cung_roi_vao_3_2s_va_QC_dat(tmp_path):
                 "line_count": 1, "scene_id": "s1", "index": 0}]
     pd = dict(phu_de.chuan_hoa({"che_do": "tu_dong", "kieu": "default"}),
               su_kien=su_kien)
-    # 🔴 **`phu_de` van luu trong ban dung GD1 (gd2-diem-anh), nhung GD1 KHONG
-    #    con DOT no vao hinh** — `ket_xuat.dung_lenh` khong con nhan `duong_ass`.
-    #    `ho_so.su_kien` van can cho phep kiem T15/`bt.moc_ban_ra` o duoi (chung
-    #    doc `ban["hinh"]["phu_de"]`, khong quan tam ai dot no).
+    # 🔴 **`bien_tap` ⛔ KHONG con truyen vao ban dung GD1 (B6).** `ban_dung.dung`
+    #    NEM neu bi truyen — GD1 ⛔ khong thuc thi phep bien tap nao, va GD2 doc
+    #    `cai_dat.doc(run)` thang. `ho_so.su_kien` van luu o day cho T15.
     ban = ban_dung.dung(
         khoa_video="v", khoa_nen="n", khoa_master="m", ke_hoach=ke_hoach,
         ban_ke_tieng={"doan": [{"ma": "s1", "khoa": "s1"}]}, phien_ban_ffmpeg="8",
         tong_giay=8.0, che_do=cdr.CAT_MA_HOA_LAI, bo_ma_hoa="libx264",
         khoang_giu=[(0.0, 8.0)], preset="smart_localize", rong_khung=640,
-        cao_khung=360, phu_de=pd, bien_tap={"toc_do": 1.25})
-    ra = tmp_path / "ra.mp4"
-    cmd = ket_xuat.dung_lenh(ban, ffmpeg_bin="ffmpeg", duong_video=str(video),
-                             duong_master=str(master), duong_lop=[str(master)],
-                             duong_ra=str(ra), bo_ma_hoa="libx264", tien_do=False)
-    _chay(cmd)
+        cao_khung=360, phu_de=pd)
+    assert ban["ra"]["thoi_luong_giay"] == pytest.approx(8.0), (
+        "ban dung GD1 hua mot do dai KHAC do dai nguon ⇒ con mot phep chia cho "
+        "`toc_do` sot lai o GD1")
 
-    tt = ket_xuat.kiem_tep_ra(str(ra), ban, soi=nhap_media.soi)
-    assert tt["thoi_luong"] == pytest.approx(6.4, abs=0.1)
+    # ── Giai doan 1: ⛔ KHONG doi moc thoi gian ──────────────────────────────
+    gd1 = tmp_path / "gd1.mp4"
+    _chay(ket_xuat.dung_lenh(
+        ban, ffmpeg_bin="ffmpeg", duong_video=str(video),
+        duong_master=str(master), duong_lop=[str(master)],
+        duong_ra=str(gd1), bo_ma_hoa="libx264", tien_do=False))
+    tt1 = nhap_media.soi(str(gd1))
+    assert float(tt1["thoi_luong"]) == pytest.approx(8.0, abs=0.1), tt1
+    assert _moc_sang(gd1) == pytest.approx(4.0, abs=0.05), (
+        "GD1 da doi moc thoi gian — chop sang phai VAN o 4,0 s")
+
+    # ── Giai doan 2: cat (⛔ khong cat gi o day) roi DOI TOC DO o duoi chuoi ──
+    ra = tmp_path / "ra.mp4"
+    _chay(gdha.dung_lenh(
+        str(gd1), str(ra), khoang=[(0.0, 8.0)], bo_ma_hoa="libx264",
+        ffmpeg_bin="ffmpeg", thoi_luong_ra=8.0, tien_do=False,
+        bien_tap={"toc_do": 1.25}, rong_nguon=640, cao_nguon=360,
+        # ⭐ GD2 tu soi tep vao cua chinh no; o day ta khai dung con so ma
+        #    `nhap_media.nhip_that(tt1)` se tra — 25 fps.
+        fps_vao=nhap_media.nhip_that(tt1)))
+
+    tt = nhap_media.soi(str(ra))
+    assert float(tt["thoi_luong"]) == pytest.approx(6.4, abs=0.1), tt
 
     t_hinh, t_tieng = _moc_sang(ra), _moc_tieng(ra)
     assert t_hinh == pytest.approx(3.2, abs=0.05), t_hinh
     assert t_tieng == pytest.approx(3.2, abs=0.05), t_tieng
     assert abs(t_hinh - t_tieng) <= 0.04, (t_hinh, t_tieng)
 
+    # ── T17: tep ra phai HOP CHUAN — ⛔ khong moc nao trung ──────────────────
+    #
+    # 🔴 **⛔ Khong phep kiem nao canh dieu nay truoc 27/09, va do la vi sao T17
+    #    do tren BA luot chay that ma bo test van xanh.**
+    #
+    #    `setpts=PTS/toc` nen moc cua tung khung. Neu ⛔ khong ai khai NHIP RA
+    #    (`-r` = nhip vao x toc) thi nhieu khung roi vao CUNG mot moc: do duoc
+    #    **40** moc trung tren fixture nay (25 fps) va **269** tren mot luot 30 fps.
+    #
+    # ⚠️ Va khang dinh TROI o tren ⛔ KHONG bat duoc no: `passthrough` cho troi
+    #    15,9 ms — **duoi** nguong 40 ms — nen bai nay van xanh voi 40 moc trung.
+    #    Do dung ho `pham vi phep do hep hon loi tuyen bo`.
+    #
+    # ⭐ Dem bang chinh cach T17 dem: giai ma ca tep va bat dong loi cua muxer.
+    _gm = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-v", "error", "-i", str(ra), "-f", "null", "-"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    _trung = [d for d in (_gm.stderr or "").splitlines() if "monotonic" in d]
+    assert not _trung, (
+        f"{len(_trung)} moc thoi gian TRUNG trong tep ra — `setpts` da nen moc ma "
+        f"⛔ khong ai khai nhip ra (`-r`). Vi du: {_trung[0][:120]}")
+
+    # ── QC: `toc_do` den tu CAI DAT, ⛔ khong tu artifact GD1 (B6) ───────────
+    #
+    # ⭐ `giai_doan_qc` ghep `bien_tap` tu `cai_dat.doc(run)` vao `ban_hinh` truoc
+    #    khi goi `qc.kiem`. O day ta lam dung dieu do bang tay, vi bai nay ⛔
+    #    khong co `run`.
+    hinh_qc = {**ban["hinh"], "bien_tap": {"toc_do": 1.25}}
     bc = qc.kiem(tt_ra=tt, tt_nguon=nhap_media.soi(str(video)),
                  am_luong={"lufs": -14.0, "dinh_that": -2.0}, ke_hoach=ke_hoach,
                  ban_ke_tieng={"doan": [{"ma": "s1", "khoa": "s1"}]},
                  ban_dung_lop=ban["tieng"]["lop"], che_do_render=cdr.CAT_MA_HOA_LAI,
-                 thoi_luong_mong_doi=bt.moc_ban_ra(8.0, ban["hinh"]["bien_tap"]),
-                 ban_hinh=ban["hinh"])
+                 thoi_luong_mong_doi=bt.moc_ban_ra(8.0, {"toc_do": 1.25}),
+                 ban_hinh=hinh_qc)
     trang = {m["ma"]: m["trang_thai"] for m in bc["muc"]}
     for ma in ("T1", "T2", "T7", "T11", "T15", "T16"):
         assert trang[ma] == qc.DAT, (ma, [m for m in bc["muc"] if m["ma"] == ma])
+
+def test_CAT_VA_DOI_TOC_cung_luc__ban_do_cat_roi_toc_do__moc_roi_DUNG(tmp_path):
+    """🔴 **Ca ma bai tren ⛔ KHONG phu: ban do cat KHAC dong nhat.**
+
+    `test_toc_do_1_25_QUA_CA_HAI_GIAI_DOAN` giu `[0, 8)` — tuc ban do cat la phep
+    DONG NHAT, nen no ⛔ khong the phat hien mot phep hop thanh sai giua *cat* va
+    *doi toc*. Day chinh la cho con bug truoc B6 se cat vao: hai phep doi truc
+    xep sai thu tu thi chi lo ra khi CA HAI deu khac dong nhat.
+
+    So do (nguon 12 s / 25 fps, chop sang o 9,0-9,4 s, giu `[0,4)` + `[8,12)`):
+
+        sau cat, truc NGUON : chop o 4,0 + (9,0 - 8,0) = **5,0 s**, dai 8,0 s
+        toc 1,25            : chop o 5,0 / 1,25 = **4,0 s**, dai 6,4 s
+
+    ⭐ Do 27/09: ca hai lech **+0,0 ms**, 0 loi DTS, dai dung 8,000 va 6,400.
+    """
+    gd1 = tmp_path / "gd1.mp4"
+    _chay(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-f", "lavfi",
+           "-i", "color=c=black:s=320x180:r=25:d=12,drawbox=x=0:y=0:w=320:h=180:"
+           "color=white:t=fill:enable='between(t,9,9.4)'",
+           "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo:d=12",
+           "-c:v", "libx264", "-g", "250", "-c:a", "aac", "-shortest", gd1])
+    tt1 = nhap_media.soi(str(gd1))
+    assert _moc_sang(gd1) == pytest.approx(9.0, abs=0.05)
+
+    khoang = [(0.0, 4.0), (8.0, 12.0)]
+    dai_sau_cat = sum(k - b for b, k in khoang)          # 8,0 s truc NGUON
+
+    # ⚠️ `ho_so` chu ⛔ khong `bt`: `bt` la ten module `bien_tap` da import o dau
+    #    tep, va mot bien vong lap cung ten se CHE no (ruff F402).
+    for ho_so, dai_mong, chop_mong in ((None, 8.0, 5.0),
+                                       ({"toc_do": 1.25}, 6.4, 4.0)):
+        ra = tmp_path / ("ra_%s.mp4" % (ho_so or {}).get("toc_do", 1))
+        _chay(gdha.dung_lenh(
+            str(gd1), str(ra), khoang=khoang, bo_ma_hoa="libx264",
+            ffmpeg_bin="ffmpeg", thoi_luong_ra=dai_sau_cat, tien_do=False,
+            bien_tap=ho_so, rong_nguon=320, cao_nguon=180,
+            fps_vao=nhap_media.nhip_that(tt1)))
+        tt = nhap_media.soi(str(ra))
+        assert float(tt["thoi_luong"]) == pytest.approx(dai_mong, abs=0.1), (ho_so, tt)
+        # ⭐ Khang dinh THAT SU dang do: noi dung roi dung CHO, ⛔ khong chi dung
+        #    DO DAI. Mot tep dai dung ma noi dung lech la thu khach nhin thay.
+        assert _moc_sang(ra) == pytest.approx(chop_mong, abs=0.05), (ho_so, ra)
+        _gm = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-v", "error", "-i", str(ra), "-f", "null",
+             "-"], capture_output=True, text=True, encoding="utf-8",
+            errors="replace")
+        _trung = [d for d in (_gm.stderr or "").splitlines() if "monotonic" in d]
+        assert not _trung, (ho_so, len(_trung), _trung[0][:120])

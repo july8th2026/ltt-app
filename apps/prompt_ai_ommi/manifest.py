@@ -61,6 +61,7 @@ MANIFEST = AppManifest(
             job_type="prompt_ai_ommi.generate",
             description=("Chuyển brief thành gói prompt nhiều cảnh có camera, ánh sáng, "
                          "continuity và negative prompt."),
+            ten_ngan=N_('Soạn gói prompt nhiều cảnh'),
             params_schema={
                 "operation": {"type": "enum", "values": ["director"],
                               "default": "director"},
@@ -162,6 +163,7 @@ MANIFEST = AppManifest(
             job_type="prompt_ai_ommi.generate",
             description=("Phân rã câu chuyện thành storyboard shot list có bố cục, "
                          "camera, continuity và prompt hình ảnh."),
+            ten_ngan=N_('Dựng storyboard câu chuyện'),
             params_schema={
                 "operation": {"type": "enum", "values": ["storyboard"],
                               "default": "storyboard"},

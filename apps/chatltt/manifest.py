@@ -75,6 +75,7 @@ MANIFEST = AppManifest(
         name="chatltt.trich_tep",
         job_type="chatltt.trich_tep",
         description=N_('Trích văn bản từ tài liệu đã đính vào hội thoại.'),
+        ten_ngan=N_('Trích văn bản từ tài liệu'),
         params_schema={
             # ⭐ KHOA PHAN LOAI (B6 buoc 3). `credit_cost` cua app la MOT ham cho
             #    ca app va chu ky khong mang `job_type`, nen viec phai duoc KHAI
@@ -112,6 +113,7 @@ MANIFEST = AppManifest(
         name="chatltt.nghien_cuu",
         job_type="chatltt.nghien_cuu",
         description=N_('Nghiên cứu một câu hỏi trên tài liệu bạn đã đính vào hội thoại này.'),
+        ten_ngan=N_('Nghiên cứu tài liệu'),
         params_schema={
             "viec": {"type": "enum", "values": ["nghien_cuu"],
                      "default": "nghien_cuu"},

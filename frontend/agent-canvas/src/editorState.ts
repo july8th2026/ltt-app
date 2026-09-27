@@ -10,7 +10,17 @@ export type EditorState = {
 }
 
 export type EditorAction =
-  | { type: 'replace'; document: CanvasDocument }
+  /** Thay CẢ tài liệu.
+   *
+   *  ⚠️ `giuLichSu` phân biệt hai lời gọi khác hẳn nhau, ⛔ đừng bỏ nó đi:
+   *
+   *    · **NẠP** workflow lúc mở trang (mặc định, `giuLichSu` vắng) — tài liệu
+   *      trước đó là `emptyDocument()`. Đẩy nó vào `past` là mở cho người dùng
+   *      Ctrl+Z **về canvas trắng**, một "hoàn tác" xoá hết đồ thị họ vừa mở.
+   *    · **GHI ĐÈ** tài liệu người dùng đang dựng (`giuLichSu: true`) — "Soạn
+   *      bằng AI". Ở đây lịch sử là đường sống duy nhất: cửa `/soan` thay cả
+   *      đồ thị, và không xoá được thì Ctrl+Z là thứ cứu công việc của họ. */
+  | { type: 'replace'; document: CanvasDocument; giuLichSu?: boolean }
   | { type: 'graph'; nodes: CanvasNode[]; edges: CanvasEdge[] }
   | { type: 'sync'; nodes: CanvasNode[]; edges: CanvasEdge[] }
   | { type: 'commit'; before: CanvasDocument }
@@ -93,7 +103,12 @@ function clearEdgeReferences(nodes:CanvasNode[],removed:CanvasEdge[]){
 
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
-    case 'replace': return { document: clone(action.document), past: [], future: [] }
+    // ⭐ GHI ĐÈ đi qua `changed` — cùng một đường bánh cóc lịch sử như mọi
+    //    thao tác sửa khác (cắt `past` ở 49, xoá `future`, và LƯU BẢN SAO chứ
+    //    không giữ tham chiếu). NẠP thì đặt lại lịch sử: xem `EditorAction`.
+    case 'replace': return action.giuLichSu
+      ? { ...changed(state, clone(action.document)), selectedId: undefined }
+      : { document: clone(action.document), past: [], future: [] }
     case 'select': return { ...state, selectedId: action.id }
     case 'graph': return changed(state, updateActive(state.document, page =>
       ({ ...page, nodes: action.nodes, edges: action.edges })))
@@ -187,7 +202,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
     case 'layout': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map((node, index) => ({ ...node,
-        position: { x: 90 + (index % 4) * 430, y: 90 + Math.floor(index / 4) * 430 } })) })))
+        position: { x: 90 + (index % 4) * BUOC_XEP_X,
+                    y: 90 + Math.floor(index / 4) * BUOC_XEP_Y } })) })))
     case 'undo': {
       const previous = state.past.at(-1)
       if (!previous) return state
@@ -259,6 +275,19 @@ export function cloneGraphSelection(nodes:CanvasNode[],edges:CanvasEdge[],suffix
   return {nodes:clonedNodes,edges:clonedEdges,nodeIds:clonedNodes.map(node=>node.id)}
 }
 
+/** Buoc xep node mac dinh, theo truc X.
+ *
+ *  🔴 PHAI LON HON node rong nhat. Do tren trinh duyet that 27/09/2026:
+ *     `app.video.generate` rong **456px**, con buoc xep cu la **430px** — nen
+ *     node thu HAI de len node thu nhat **26px** va che mat duoi tieu de cua
+ *     no. Khong phai "hoi chat", la SAI: hai node dau tien nguoi dung tha
+ *     xuong da chong nhau.
+ *
+ *  ⚠️ Khi UI-4 doi chieu rong node (3 muc mat do), phai doi CA hai hang so nay
+ *     cung luc — chung la mot cap. */
+export const BUOC_XEP_X = 520
+export const BUOC_XEP_Y = 260
+
 export function nextNode(nd: NodeDefinition, count: number): CanvasNode {
   const params = Object.fromEntries(Object.entries(nd.tham_so.properties ?? {})
     .filter(([, rule]) => rule.default !== undefined)
@@ -268,7 +297,8 @@ export function nextNode(nd: NodeDefinition, count: number): CanvasNode {
   //    nhap dang song tren production luu theo hinh dang nay. Doi no o day la
   //    mot cuoc di tru du lieu, khong phai mot thay doi trinh bay.
   return { id: `n${Date.now().toString(36)}-${count}`, type: 'tool',
-    position: { x: 90 + (count % 3) * 430, y: 90 + Math.floor(count / 3) * 430 },
+    position: { x: 90 + (count % 3) * BUOC_XEP_X,
+                y: 90 + Math.floor(count / 3) * BUOC_XEP_Y },
     data: { tool: slugCongCu(nd), params, fanout: 1, max_retry: 0,
       on_fail: 'retry_same', verify: null } }
 }

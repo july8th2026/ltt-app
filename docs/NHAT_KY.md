@@ -12,6 +12,499 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-28 (khuya) — Gate phát hành: 4 bước đỏ, và hai ĐÍNH CHÍNH của chính tôi
+
+Chủ dự án chốt: *"Triển khai theo quy trình gate rồi deploy"* → *"Nếu của ta xanh hết
+thì cứ gate - deploy, để phiên kia giải quyết các hạng mục đỏ còn lại"* → *"Fix lỗi
+đỏ đó xong là chạy gate riêng phép đỏ đó rồi ta deploy"*.
+
+### Chọn `--ho-so phat-hanh`, ⛔ không `--doi` — và lý do là một phép đo
+
+`--doi` **tự hạ cấp** khi diff chạm tệp dùng chung, và diff này chạm `locale/`,
+`tools/`, `platform_core/workflow/`, `frontend/` ⇒ nó sẽ in `PASS` mà ⛔ **không
+chạy bộ test**. ⭐ *Một lượt `PASS` rỗng tệ hơn ⛔ không gate, vì ⛔ không ai đi điều
+tra một lượt xanh.*
+
+### 🔴 Chờ HẾT 37 bước thay vì sửa ngay hai bước đầu — và nó trả công gấp bốn
+
+Tôi báo chủ dự án **2** bước đỏ, rồi đọc hết log: thực tế **4 bước / 8 phép**. Nếu mở
+băng sớm thì ta đi **hai** vòng gate, và vòng hai mới lộ bước 13.
+
+⭐ *Một danh sách lỗi **chưa đọc hết** là một danh sách **SAI**, ⛔ không phải một danh
+sách thiếu.*
+
+| phép đỏ | của ai | quy bằng gì |
+|---|---|---|
+| `mypy` +12 · `nuot_loi` +2 | `prompt_ai_ommi` | mypy ở **5 SHA**: 292 ở `849f45a5` → 304 ở `3b31ec36` |
+| `test_211` 10 bảng `ommi_*` | `prompt_ai_ommi` | cây tạm ở `3c90e775` — **đỏ sẵn** |
+| `ffmpeg trần` | **tôi** | bánh cóc nêu đúng tệp mới của tôi |
+| `test_424` ma trận | **tôi** | viện dẫn bài tôi đã xoá |
+| `test_2011` · `test_220` | — | cây tạm ở `3c90e775` — **đỏ sẵn** |
+
+⇒ B6/B7/B8 thêm **0** lỗi mypy — đo ở `118f265a` và HEAD, cả hai đều 304.
+
+### `ffmpeg trần` — bánh cóc bắt thứ phép thử của tôi ⛔ KHÔNG THỂ bắt
+
+Bộ sinh tài nguyên B7 gọi `ffmpeg` bằng **tên trần** — hỏng dưới `LocalSystem` và
+hỏng **im lặng**. 🔴 Tôi **đã chạy nó thành công** trước khi commit, nhưng trong
+**phiên người dùng**, nơi `ffmpeg` **có** trên PATH.
+
+⭐ *Một bánh cóc có ích nhất khi nó đo một điều mà **môi trường của người viết ⛔
+KHÔNG THỂ đo**.* Ghép với vế của phiên `prompt_ai_ommi` (*đo nhánh, tuyên bố cho
+`main`*) thành một luật đủ: **mỗi con số cổng phải đi kèm SHA và MÔI TRƯỜNG đo nó.**
+`PATH` là một **trạng thái**, ⛔ không phải một hằng số.
+
+### `test_424` — đổi một bất biến sản phẩm, để lại một tham chiếu chết
+
+Ma trận nghiệm thu viện dẫn `test_QC_hong_thi_RUN_KHONG_ve_done` — bài chứng minh
+hành vi **CŨ**, mà chính tôi đảo hành vi ấy (`52bc8c50`). Tôi sửa **cả lời khai** của
+hàng S13, ⛔ không chỉ tên bài: giữ *"QC từ chối bản ra hỏng"* sẽ để lại một ma trận
+**nói dối** — khai hệ thống **có** một cổng mà nó ⛔ không còn có.
+
+⭐ Ba ca cùng ngày (chú thích cũ trong `pipeline.py`; `axe.min.js` tôi tưởng nằm trong
+`$VAN_CHUYEN`; ma trận này): **một tham chiếu chết ⛔ không trung tính — nó TRỪ ĐI một
+phép kiểm thật**, vì người đọc tin chỗ ấy đã có ai canh.
+
+---
+
+## 🔴 ĐÍNH CHÍNH 1 — `test_220` ⛔ không phải rò GPU, và bản sửa phải ĐẢO
+
+Tôi báo chủ dự án rằng đường hết-giờ *"có thể để mồ côi giữ GPU"*. **Sai.**
+
+Agent đo **20/20 lượt**: đường cũ **vẫn giết** mồ côi. Khuyết điểm chỉ là **mã thoát
+1 thay vì 3** — và `job_worker.py:230` **chỉ ghi log** nó rồi thay worker vô điều kiện,
+⛔ không ai rẽ nhánh theo nó. Mức: **thẩm mỹ**.
+
+⭐ Và agent **tự bác lượt đo đầu của chính nó**: nó báo *"8/8 sống sót"* rồi phát hiện
+đó là **lỗi harness** — con được spawn từ harness chứ ⛔ không phải con **thật** của
+tiến trình tự-giết, nên ⛔ không nằm trong cây `/T`. *Phép đo ⛔ không tái hiện đúng
+**hình thái** thật thì nó trả lời câu khác.*
+
+### Và bản sửa ấy sai CHIỀU — `test_4908` bắt được
+
+Bản vá (liệt kê con rồi giết từng PID) làm **hai** tệp khác đỏ. Hai bài khai **hai bất
+biến trái nhau**, và ⛔ không thể có cả hai (`/T` trên pid của chính ta **LÀ** thứ giết
+ta):
+
+```
+test_220   doi ma thoat 3   => tien trinh phai SONG
+test_4908  doi taskkill NHAM PID CUA CHINH TA
+```
+
+`test_4908` **đúng**, vì nó canh một bất biến **AN TOÀN**: *"phạm vi phải là con cháu
+CỦA TA… luật 'chỉ giết thứ mình khởi động' được **OS thi hành**, ⛔ không phải do ta
+nhớ."* Liệt-kê-rồi-giết mở lại cửa sổ **PID tái dụng** ⇒ giết tiến trình người khác.
+Kho này đã một lần làm **PostgreSQL production sập 4 phút** vì đúng chuyện đó.
+
+⇒ **Đảo** bản vá, và sửa **kỳ vọng** của `test_220` thành `!= 0`: mã thoát ở đó là kết
+quả một **CUỘC ĐUA**, và **chốt một giá trị của cuộc đua là đo CÁCH GÕ**. Tính chất
+bài ấy thật cần đã có ở ba khẳng định dưới — ⛔ không chạy tiếp, trạng thái bền vững,
+credit đã hoàn.
+
+⭐ *Một phép kiểm chốt một giá trị mà **sản phẩm ⛔ không hề rẽ nhánh theo** là một
+phép kiểm chốt **cách gõ**.*
+
+---
+
+## 🔴 ĐÍNH CHÍNH 2 — `test_2011` ⛔ không phải `pending`
+
+Tôi báo nguyên nhân là `QC: pending`. Agent đo lại xác định ở **hai** SHA: **cả 13
+giai đoạn `succeeded`**, và lỗi tất định là `T18 = khong_ap_dung` — do **chính tôi**
+tắt T18 mặc định (`5d568ffe`), còn bài ra đời `23/09` nên ⛔ không tự bật cờ.
+
+⚠️ Cái `pending` tôi gặp là **nhạy TẢI**: tôi chạy nghiệm thu nặng + gate song song
+nên `qc` ⛔ không được nhặt kịp trong vòng `advance`. ⇒ Tôi **đuổi theo triệu chứng**
+và báo sai nguyên nhân. Bài vẫn còn tính nhạy-tải — **nợ có tên**, ⛔ chưa sửa.
+
+---
+
+## ⭐ Nợ công cụ: `[WinError 206]` chặn hẳn đường KHÉP
+
+`gate.py --doi` chết ở bước test **trong 0,0 giây**:
+
+```
+khong chay duoc: [WinError 206] The filename or extension is too long
+```
+
+Gate truyền **từng** đường dẫn test vào một dòng lệnh `pytest`; phạm vi 972–1001 tệp
+vượt trần **32 767 ký tự** của Windows. Bước test **⛔ không chạy** mà gate vẫn chạy 32
+bước còn lại.
+
+⚠️ Và dòng *"CHẠY LẠI ĐÚNG PHÉP ĐO"* mà chính gate in ra **cũng** liệt kê 1001 tệp ⇒
+**chỉ dẫn nó đưa cũng ⛔ không chạy nổi**. Phạm vi lớn dần theo tệp **dùng chung**: một
+commit chạm `platform_core/job_runner.py` làm nó nhảy 825 → 1001.
+
+⇒ Thuốc: truyền danh sách qua **tệp đối số** (`pytest @tep`), sửa cả `tools/gate.py`
+lẫn `tools/test_nhanh.py`. ⛔ Chưa làm — mục riêng.
+
+## 2026-09-27 (khuya, tiếp) — 🔴 B8: dải CHỮ GỐC ⛔ không đổi trục sang khung RA
+
+Chủ dự án hỏi: *"Tính năng xoá/làm mờ text trong video gốc nó vận hành như thế nào?
+Ta đang lắp nó ở bước nào GĐ1 hay GĐ2? Nó phải xử lý TRƯỚC khi thêm text phụ đề
+mới, nếu không sẽ xung đột vì làm sau thì sẽ xoá phụ đề mới."*
+
+### Câu trả lời: xung đột ấy ⛔ KHÔNG thể xảy ra — nhưng cạnh nó có bug THẬT
+
+| bước | ở đâu | làm gì |
+|---|---|---|
+| xoá/làm mờ chữ cũ | **GĐ1** (`loc_cat_noi(vung=…)`) | nung vào **pixel**, toạ độ **NGUỒN**, **trước** `concat` |
+| đốt phụ đề mới | **GĐ2**, cuối lớp nhìn | `cắt → khung → điểm ảnh → logo → chữ → **phụ đề** → tốc độ` |
+
+⇒ Thứ tự do **chính đường ống** bảo đảm, ⛔ không nhờ một quy ước trong cùng chuỗi.
+Và có cơ chế thứ hai: loại vùng `danh_dau_phu_de` mang **nghĩa ÂM** (*đừng vẽ phụ đề
+ở đây*); `phu_de.vi_tri_tu_dong` đọc nó rồi **dời** phụ đề mới.
+
+### 🔴 Bug: `dai_phu_de_goc` là phân số khung NGUỒN, `margin_v` tính bằng khung RA
+
+Khi hình học GĐ2 cắt theo **chiều dọc**, hai phân số ⛔ không bằng nhau. Đo (nguồn
+1920×1080, dải chữ gốc 0,85–0,95, `da_che=True`):
+
+```
+hình học GĐ2                    margin_v CŨ   đúng phải   lệch
+⛔ không hình học                      54          54        0
+khung 9:16 / 4:5 (cắt BỀ RỘNG)         54          54        0
+cat_khung nửa TRÊN                     27           0      +27 px
+cat_khung nửa DƯỚI                     27          54      −27 px
+khung 1:1 nen_mo (THÊM VIỀN)           54         268     −214 px
+```
+
+⭐ **Bằng chứng sắc nhất: HAI cửa sổ cắt NGƯỢC NHAU cho CÙNG `margin_v` = 27**, khi
+đáp án là 0 và 54. Tức phép tính ⛔ **không hề đọc** cửa sổ cắt — đúng họ `B6`
+(*một toạ độ tính ở khung này dùng ở khung khác*).
+
+Và `nen_mo` lệch **214 px** — ca nặng nhất, vì nó **thêm viền** chứ ⛔ không chỉ cắt.
+Đó là vế tôi đã đánh dấu "dễ quên nhất" **trước khi** đo, và nó đúng là vế tệ nhất.
+
+⚠️ **Mất mát khách THẤY, nhưng ⛔ không phải lỗi tiền**: chữ cũ **vẫn bị làm mờ**
+(làm mờ nung ở GĐ1 trên pixel nguồn) ⇒ ⛔ không chữ cũ nào đọc lại được. Cái sai là
+**vị trí phụ đề mới** — ở ca "nửa dưới" nó đặt **dưới** vệt mờ thay vì phủ lên, nên
+khách thấy một vệt mờ lơ lửng trên chữ.
+
+### Bản sửa: phép TÍNH ở `hinh_hoc`, phép ĐỔI TRỤC ở giai đoạn
+
+- `hinh_hoc.doi_phan_so_doc(buoc, cao_nguon, y)` — phân số dọc NGUỒN → RA, hoặc
+  `None` khi điểm đã bị cắt mất. ⭐ Nó chỉ đọc **đầu ra** của `khung_bien_tap`
+  (`cat`/`phong`/`khung`/`ra`), ⛔ không đọc `ho_so` — nên ⛔ không dựng chỗ thứ hai
+  khai cùng một điều. Hình học là chuỗi **ba** bước và mọi quyết định của nó đã nằm
+  trong `khung_bien_tap`.
+- `phu_de.dai_len_khung_ra` lấy **GIAO** của dải với khung ra, ⛔ không "kẹp cho
+  gần": dải bị cắt **một phần** thì phần còn lại **vẫn có** chữ gốc.
+- `phu_de.doi_truc_dai_phu_de` — vỏ bọc, trả bản **MỚI**. ⛔ Không sửa tại chỗ: cùng
+  `ho_so_pd` còn đi vào `van_tay` và vào báo cáo.
+- `giai_doan_hinh_anh` gọi nó **ngay trước** `viet_tep_ass` — đó là chỗ **duy nhất**
+  biết cả hai khung cùng lúc.
+- Dải mất **hẳn** ⇒ bỏ khoá ⇒ `vi_tri_tu_dong` giữ vị trí preset. ⛔ Không trả một
+  dải ở `0`: thế sẽ đẩy chữ lên **đỉnh** khung — một bản sửa sai theo hướng khác.
+
+### Đo
+
+`test_4891` — 6 phép. **5/5 phép tiêm làm nó ĐỎ**: bỏ hẳn phép đổi trục · `nen_mo`
+bị đọc như một phép cắt · bỏ qua cửa sổ `cat` · `_loc_vung` bỏ qua vùng đánh dấu
+(làm `da_che=True` thành lời nói dối) · GĐ2 nhận `vung` (mở lại đúng xung đột chủ dự
+án lo).
+
+⭐ Bài chốt bằng **tính chất** chứ ⛔ không bằng hằng số: *hai cửa sổ cắt ngược nhau
+phải cho hai số khác nhau*. Một bài chốt `0` và `54` sẽ xanh cả khi ai đó đổi **cả
+hai** theo cùng một hướng sai.
+
+### Và nó xác nhận thiết kế B7
+
+Bug này chỉ nổ khi **cùng lúc** có `danh_dau_phu_de` + hình học cắt dọc +
+`che_do=tu_dong`. ⇒ Đúng loại mà *"một job một tính năng"* ⛔ **không bao giờ** tìm
+thấy, và T1a (bật hết) thì thấy. Ba con bọ đắt nhất hôm nay — `T2`, `T17`, `B6` — và
+nay `B8`, **cả bốn đều là lỗi hợp thành**.
+
+### Một bài học về job đối chứng
+
+`asvr_7e55f87c` kết thúc `error`: *"Worker mất kết nối giữa chừng (job mồ côi)"*. Do
+chính phiên tôi chạy bộ nghiệm thu **nặng** song song với một job thật. ⇒ Cùng họ với
+*"deploy phá phép đo đang bay"*: **hoạt động của chính tôi đã phá phép đo của chính
+tôi**. Một job nghiệm thu cần một cửa sổ **không có lệnh nặng nào khác**.
+
+## 2026-09-27 (khuya, tiếp) — ⭐ B6: CHUẨN HOÁ GĐ1/GĐ2 — một trục thời gian
+
+Chủ dự án: *"Triển khai kỹ #6"* → *"Cần nghiên cứu logic các bước của GĐ2 cho
+chuẩn luôn lần này. Chuẩn hoá logic GĐ1 và GĐ2."*
+
+Hợp đồng đầy đủ: `docs/auto_scan_video_final/B6_PLAN_MOT_TRUC_THOI_GIAN.md`.
+
+### Chẩn đoán: bệnh ⛔ không phải "tốc độ sai chỗ" — mà là tốc độ chạy TRƯỚC cắt
+
+Cả đường ống chỉ có **hai** phép làm `t_ra ≠ t_vao`: **CẮT** (`concat`, ở GĐ2,
+mang bản đồ tường minh `KeCat.ban_do()`) và **TỐC ĐỘ** (`setpts`, ở GĐ1). GĐ1 đổi
+trục **trước**, nên bản đồ của phép cắt làm việc trên một trục mà ⛔ không một kẻ
+quyết định nào nói. Giá phải trả: **ba** chỗ tự đổi trục bằng tay —
+`_ban_ghi_truc_ban_giao`, `_khe_thoai_truc_ban_giao`, `_thoi_luong_mong_doi` +
+`loc_tham_chieu(toc_do=)`.
+
+⇒ **T2 · T17 · một ca cắt vào giữa câu thoại: bốn con bọ, MỘT bệnh.** Vá từng cái
+là vá triệu chứng — đúng điều chủ dự án đã chỉ ra.
+
+### Lý lẽ cũ ở `giai_doan_hinh_anh.py:51` khai NGƯỢC, và đo thì thấy
+
+Nó viết: *"chuyển `toc_do` xuống GĐ2 sẽ làm kế cắt và tốc độ tranh nhau trên HAI
+trục"*. Đo thì **HAI trục là tình trạng của chính cách cũ**. Dời `toc_do` xuống
+**cuối** GĐ2 thì `edit_plan` → `ke_cat` → khe thoại → phụ đề → QC **tất cả** ở
+trục NGUỒN, và ba phép đổi trục kia **biến mất** — ⛔ không phải chuyển chỗ.
+
+### Tinh tuý lấy từ Viral
+
+`xu_ly_video.py:1140` của `D:/Viral` — `setpts=PTS/{speed}` nối **ngay sau**
+zoom + hflip trong **cùng** chuỗi, `atempo` ở chuỗi tiếng (`:1179`), ⛔ không bước
+cắt riêng. ⭐ Trong kho ta cả họ `khung`/`zoom`/`lật gương`/logo/phụ đề **đã dời
+xuống GĐ2 hôm 25/09** — chỉ `toc_do` bị để lại. Nó là **kẻ lạc đàn**.
+
+### Hai dữ kiện làm phép dời thành phép XOÁ RÒNG
+
+1. GĐ2 đã có **cả hai dòng** trong một `filter_complex` (`NHAN_HINH_RA` +
+   `NHAN_TIENG_RA`) ⇒ áp tốc độ = **nối vào đuôi**, ⛔ không dựng gì mới.
+2. GĐ2 **đã tự soi tệp vào** (`nhap_media.soi`, `:306`), mà `soi` chính là chỗ ghi
+   `fps`/`fps_tb`/`vfr` ⇒ `-r` của T17 lấy nhịp **miễn phí từ chính đầu vào**,
+   ⛔ không phải luồn `fps_nguon` qua bản dựng như GĐ1 buộc phải làm.
+
+### Hai luật đã chốt, và mọi thứ suy ra từ chúng
+
+- **Luật TRỤC** — mọi bước QUYẾT ĐỊNH ở trục NGUỒN; đổi trục là việc CUỐI, và mỗi
+  phép đổi trục mang một **đối tượng bản đồ** tường minh.
+- **Luật CHỖ ĐỨNG** — một bước thuộc GĐ1 **khi và chỉ khi** nó cần *từng khoảng
+  nguồn, TRƯỚC `concat`* (chỉ `vung` thoả — ràng buộc **vật lý**). Mọi bước khác
+  thuộc GĐ2, và GĐ2 mã hoá lại **đúng MỘT lượt**.
+
+Thứ tự chuỗi GĐ2, mỗi mũi một lý do kiểm được:
+`cắt → khung → điểm ảnh → logo → chữ → phụ đề → TỐC ĐỘ`.
+
+⭐ Và phụ đề đốt **trước** `setpts` mang một món quà: mốc phụ đề được co giãn
+**cùng hình, tự động** — ⛔ không một phép đổi trục nào.
+
+### Ba hệ quả tôi ⛔ không lường trước, và cả ba đều là lỗ IM LẶNG
+
+1. **GĐ1 im lặng bỏ qua `bien_tap`.** Sau khi GĐ1 thôi áp tốc độ, `ban_dung.dung`
+   vẫn *nhận* tham số ấy mà ⛔ không làm gì ⇒ khách xin một phép mà ⛔ KHÔNG giai
+   đoạn nào thực thi. ⇒ `dung()` nay **NÉM**.
+2. **QC mất hệ số** — nó đọc `toc_do` từ *artifact bản dựng GĐ1*, mà GĐ1 thôi ghi.
+   T15 và T2 sẽ so mọi dòng phụ đề với một độ dài ngắn hơn đúng hệ số tốc độ.
+   ⇒ `giai_doan_qc` và `giai_doan_qc_ai` nay đọc từ **`cai_dat.doc(run)`**, qua
+   **cùng** `loc_bien_tap_gd2` mà GĐ2 dùng.
+3. **Remux nuốt tốc độ.** Đường `-c copy` của GĐ2 ⛔ không có bộ lọc nào ⇒ một lần
+   chạy lọt vào đấy với `toc_do != 1` giao tệp **CHƯA đổi tốc** — ⛔ không lỗi,
+   ⛔ không log. `co_diem_anh` đã chặn, nhưng đó là phép chặn ở **chỗ gọi**.
+   ⇒ `dung_lenh` **NÉM** khi cả hai sự thật cùng tới: bất biến thuộc về **BIÊN**.
+
+### Đo
+
+- `test_2064` (ffmpeg **thật**) nay chạy **CẢ HAI** giai đoạn — đây là phép đo
+  mạnh nhất cho B6, vì một bài chỉ chạy GĐ1 sẽ xanh mãi mãi trên một tệp **chưa
+  đổi tốc độ**:
+
+  ```
+  GĐ1: 8,000 s · chớp sáng 4,00 s      ⇐ GĐ1 ⛔ KHÔNG đổi mốc
+  GĐ2: 6,400 s · chớp 3,20 s · bíp 3,20 s · A/V 0,00 · 0 mốc trùng
+  QC : T1 T2 T7 T11 T15 T16 = DAT
+  ```
+
+- `test_2061` chốt hợp đồng mới: GĐ1 ⛔ **không bao giờ** phát `setpts`/`atempo`/
+  `-r`; `loc_cat_noi` **NÉM** nếu bị truyền `toc_do`.
+- `test_4871` đổi từ chốt *phép đổi trục* sang chốt **sự vắng mặt** của nó, bằng
+  `inspect.signature` — mạnh hơn: lệch trục ⛔ không còn **có thể xảy ra**.
+- `test_4880`: các khẳng định về nhịp dời sang `nhap_media.nhip_that` — nơi `soi`
+  ghi ba trường ấy. Một nguồn cho câu *"video này bao nhiêu fps"*.
+
+### Một bài ĐỎ SẴN trên `main`, ⛔ không phải của B6
+
+`test_2011::test_preset_CAT_do_that_VMAF_den_dong_va_giai_ma` đỏ (`QC: pending`).
+Đo bằng cây tạm: đỏ **ở cả `270a659f` và `cff52e84`** — cũ hơn cả T17. Ghi lại
+làm một mục riêng; ⛔ chưa truy nguyên.
+
+### Tái chứng nhận E2E — và hai cửa của runner đều bắt được một ca
+
+`PHIEN_BAN_BAN_DUNG` 2→3 làm `test_448` đỏ **có chủ đích** (*"nghiệm thu đã cũ, phải
+chạy lại"*). Chạy lại: **1 passed / 0 skipped**, 5 ph 22 s, cả hai preset 13/13 giai
+đoạn `succeeded`, `image_finish = hinh_anh/2/ke_cat/1/che_do/10`. `test_448` nay **25
+passed**.
+
+⭐ **Cửa 1 của runner bắt một ca thật:** lượt đầu bài bị **SKIP** (phép kiểm NẶNG,
+chặn mặc định vì máy phục vụ khách) mà `pytest` vẫn **thoát 0**. Nếu runner chỉ đọc
+mã thoát thì tôi đã tưởng đã chứng nhận. ⇒ *Một bài SKIP ⛔ không phải một bài xanh.*
+**Cửa 2** (*báo cáo phải ĐỔI byte*) là lưới thứ hai cho ca `LTT_ASV_E2E_RA` ⛔ không
+tới được bài.
+
+### 🔴 Bẫy khoá: ngưỡng 20 tệp ⛔ KHÔNG bảo vệ khi chính BÀI tự xin khoá
+
+Tôi bọc phép nghiệm thu (**một** tệp) trong `chay_nang.py`, tin rằng
+`_NGUONG_TEP_NANG = 20` của `conftest` bảo vệ — đúng, nhưng ⛔ **không đủ**: chính bài
+ấy có `with fx.KhoaTheoPha(PHIEN_KHOA)` (`test_448:697`) tự xin `cpu_nhieu` cho từng
+pha. `chay_nang` đã giữ khoá và ⛔ không được nhận là tổ tiên ⇒ **bế tắc 12,2 phút,
+giữ khoá cả máy**.
+
+⭐ Dấu hiệu **khác** lần trước (26/09 là `giu khoa 0.0 phut` — thoát giả): lần này là
+**CPU đóng băng** — `UserModeTime` 4,9 s ⛔ không tăng qua ba mẫu, working set 180 MB
+(chưa nạp model), 0 tiến trình con, 0 ffmpeg. Đúng câu *"giữ khoá lâu + CPU một chữ
+số = đang CHỜ"*.
+
+⇒ Giết **cả ba** pid của mình (`chay_nang`, runner, `pytest` — `TaskStop` chỉ giết lớp
+bọc), đo lại `cua_so_yen` về `RÀNH`, rồi chạy **⛔ không bọc**: bài tự giữ khoá **từng
+pha rồi nhả**, tốt hơn giữ suốt lượt. Nay `cpu=110s`, model nạp 2,3 GB, khoá đúng pha
+`asv_media.image_finish`.
+
+**How to apply:** trước khi bọc **bất kỳ** lệnh pytest nào, `grep KhoaTheoPha|
+cua_so_yen|CuaSoYen` chính các tệp test sẽ chạy — ⛔ không chỉ hỏi *"bao nhiêu tệp"*.
+
+### Bài học về công cụ của chính mình
+
+`thay()` trong script vá của tôi ⛔ không khẳng định *bản mới KHÁC bản cũ*, nên
+một phép thay **rỗng** lọt qua im lặng — `_ban_ghi_truc_ban_giao` tưởng đã xoá mà
+vẫn còn, và chỉ `pyflakes` bắt được (`undefined name`). Đã thêm
+`assert moi != cu`. ⭐ *Một phép biến đổi không đổi gì mà báo thành công là cùng
+họ với một phép kiểm không khẳng định gì.*
+
+## 2026-09-27 (khuya) — ✅ T17 XÁC MINH trên worker thật: `qc_muc_hong = []`
+
+Chủ dự án chốt *"cứ deploy"*. Deploy mang **62 commit**, **58 của phiên
+`prompt-ai-seedance-analysis`**, gồm **ba migration** trên CSDL production.
+
+### Kiểm an toàn migration TRƯỚC khi bấm — đọc AST, ⛔ không tin tên commit
+
+```
+alembic heads   : ec6f58abae71  (DUNG MOT head ✓)
+production hien : edb8b0fc0ac9
+```
+
+| tệp | `upgrade()` | phá huỷ trong `upgrade()` |
+|---|---|---|
+| `ommi_binding.py` | `create_table=1` | **⛔ không có** |
+| `ommi_handoff.py` | `create_table=1` | **⛔ không có** |
+| `ommi_pha3.py` | `create_table=8` | **⛔ không có** |
+
+⇒ **10 bảng mới + 1 cột, thuần THÊM.** Mọi `drop_table`/`drop_column`/`drop_index`
+chỉ nằm trong `downgrade()`. Deploy: `EXITCODE=0`, `[OK] Luoc do CSDL: da chay 3
+migration`, production `3c90e775dd4b`, nghiệm thu **ĐẠT** 0 lệch, CSDL
+`ec6f58abae71 (head)`.
+
+### ✅ T17 khỏi, đo trên bản giao của worker thật
+
+Lượt `asvr_a17a3a53eb964dd48a258984964d073` — cấu hình từng bị chặn **ba** lần:
+
+| | trước | sau |
+|---|---|---|
+| lỗi DTS | **269** | **0** |
+| `r_frame_rate` / `avg_frame_rate` | `60/1` ≠ `40530/1081` | **`75/2` = `75/2`** |
+| khung | 1351 nhồi lên 1081 mốc | **1352** trên đúng 1352 mốc |
+
+`75/2` = 30 × 1,25 — **đúng** nguồn × tốc. Hai nhịp nay **bằng nhau** ⇒ CFR sạch,
+giữ **hết** khung.
+
+⭐ Và QC ghi: **`qc_ky_thuat_dat = true`, `qc_so_muc_hong = 0`,
+`qc_so_muc_khong_do = 0`** — cả ba mục T2/T4/T17 sạch, **và** `qc_so_muc_khong_do`
+bằng 0 nghĩa là nó **đo đủ**, ⛔ không phải *"ĐẠT vì ⛔ không đo gì"* (chính cái Đ8
+được thêm để phân biệt). Tôi tự đo bản giao: **−14,7 LUFS**, **0 lỗi DTS**.
+
+### Rủi ro phiên khác nêu — đo xong, ⛔ KHÔNG sống
+
+Họ lo màn `StudioShell` (mới, ⛔ chưa chạy trong trình duyệt thật) sẽ **trắng** cho
+khách, và hỏi `LTT_ENV` có thật là `production`.
+
+- `LTT_ENV = 'production'` ✓ **nhưng** `LTT_PROMPT_AI_OMMI_ROLLOUT = 'public'` được
+  đặt **tường minh** ⇒ nhánh mặc định `"off" if production` ⛔ không chạy, khách
+  **tạo job được ngay**. Lo của họ là **thật**, ⛔ không phải giả định.
+- Màn **⛔ không** trắng, hai lớp chặn: `server/static/prompt-ai-ommi/.vite/manifest.json`
+  **có** cả ở cây nguồn lẫn máy chủ; `GET /static/prompt-ai-ommi/assets/main-DXgZGVDj.js`
+  ⇒ **HTTP 200 · 249.540 byte · text/javascript**; và template có
+  `{% if workspace_js %}` với đường lui *"Workspace chưa sẵn sàng"* thay vì vỏ trống.
+
+⚠️ **Nhưng phạm vi phải nói đúng**: tôi chứng minh được *"bundle có mặt và được phục
+vụ 200"*, ⛔ **chưa** chứng minh *"nó mount và vẽ ra"* — Cloudflare chặn cả trình
+duyệt của điều phối (`/login?next=` → *"Performing security verification"*). Hai câu
+khác nhau, ⛔ không gộp. Nợ nghiệm thu của họ vẫn là nợ, chỉ nhỏ hơn.
+
+### 🔴 Còn lại: #6 — dời `toc_do` xuống cuối GĐ2
+
+`-r` sửa **triệu chứng ở đúng chỗ**, nhưng nguyên nhân cấu trúc vẫn còn: `render`
+(GĐ1) đổi tốc độ **rồi** `image_finish` (GĐ2) cắt trên tệp **đã đổi** ⇒ **hai trục**.
+Mọi bug trục hôm nay sinh từ đấy (T2, bug `edit_plan` làn D sửa, chuỗi tham chiếu
+T18). Dời xuống cuối GĐ2 ⇒ **một trục** từ `edit_plan` → `ke_cat` → khe tiếng → QC.
+Cần **plan riêng** có phép đo từng bước, ⛔ không vá tiếp.
+
+## 2026-09-27 (đêm) — ⭐ T17 sửa TẬN GỐC: khai **nhịp ra** (`-r` = nguồn × tốc)
+
+Chủ dự án chỉ ra cái cơ bản mà điều phối bỏ sót:
+
+> *"Làm sao gắn tag time ảnh để tính được, vốn dĩ tính năng này là cơ bản của
+> ffmpeg? Fps đầu vào nên = đầu ra."*
+
+Đúng. `setpts` đổi **mốc**; **`-r` ở đầu ra** mới bảo bộ mã hoá **sắp lại thành
+nhịp đều**. Điều phối đã thử bỏ `passthrough`, thử `fps=` (đặt sai chỗ ⇒ no-op),
+thử `-video_track_timescale` — **⛔ chưa thử `-r`**, thứ cơ bản nhất.
+
+### Số đo, và nó BÁC một đề xuất
+
+Trên fixture `test_2064` (nguồn 25 fps, chớp sáng ở 4,0 s, tốc 1,25 ⇒ phải ra
+**3,200 s**), đo **CẢ BA** cột — vì hai cột thôi đã làm điều phối chọn sai **hai**
+lần:
+
+| nhịp khai `-r` | lệch chớp | trôi A/V | lỗi DTS | khung |
+|---|---|---|---|---|
+| `passthrough` (cũ) | 15,9 ms | 15,9 | **40** | 199 |
+| ⛔ không khai (`auto`) | 40,0 ms | 55,9 | 0 | 159 |
+| **25 = nguồn** | **80,0 ms** | 95,9 | 0 | 159 |
+| **31,25 = nguồn × tốc** | **0,0** | **15,9** | **0** | **199** |
+| 30 | 66,7 ms | 82,5 | 0 | 191 |
+
+⇒ `nguồn × tốc` là câu trả lời **duy nhất** xanh cả ba cột, **và** giữ hết khung.
+
+⚠️ Đề xuất *"fps đầu vào = đầu ra"* bị số đo **bác**: `-r 25` làm nội dung **trễ
+80 ms** — tệ hơn cả việc ⛔ không khai gì — vì CFR **buộc phải bỏ khung**. Lý do
+`nguồn × tốc` đúng: đó là nhịp mà nội dung **vốn đã có** sau khi `setpts` nén mốc.
+
+### 🔑 Ba trường cần thiết ĐÃ được ghi từ trước, và ⛔ không ai đọc
+
+`nhap_media.soi` ghi `fps`, `fps_tb`, `vfr` — kèm một chú thích nêu **đúng** nguy
+hiểm này: *"VFR: … mốc thời gian sẽ **TRÔI** nếu giai đoạn hạ nguồn giả định nhịp
+cố định"*. ⛔ Không ai đọc chúng. **Lần thứ năm** cùng họ lỗi trong một ngày.
+
+Nay `_khung_nguon` trả `NguonHinh` (NamedTuple) và đọc cả ba trong **cùng một lần
+đọc** — theo đúng lý lẽ docstring của nó đã nói cho `rong`/`cao`: *"hai lần đọc
+một tệp để lấy hai trường của cùng một hồ sơ là hai cơ hội để chúng lệch nhau"*.
+`nhip_nguon()` chọn `fps_tb` khi nguồn **VFR** (vì `r_frame_rate` là nhịp **danh
+định**, khai nó sẽ bắt bộ mã hoá **nhân bản** khung).
+
+### ⭐ Phép kiểm mới — và vì sao nó CẦN
+
+`test_2064` nay **đếm mốc trùng** bằng chính cách T17 đếm. Trước 27/09 **⛔ không
+phép kiểm nào** canh điều này — và đó là vì sao T17 đỏ trên **ba** lượt chạy thật
+mà bộ test vẫn xanh:
+
+> khẳng định **TRÔI** ở bài đó ⛔ **không** bắt được nó — `passthrough` cho trôi
+> 15,9 ms, **dưới** ngưỡng 40 ms, nên bài vẫn xanh với **40 mốc trùng**.
+
+Đúng họ *"phạm vi phép đo hẹp hơn lời tuyên bố"*: tên bài nói *"hình tiếng phụ đề
+cùng rơi vào 3,2 s và QC đạt"* nhưng nó ⛔ không hề đo tính **hợp chuẩn** của tệp.
+Tiêm lại `passthrough` ⇒ `40 moc thoi gian TRUNG trong tep ra`.
+
+### ⚠️ Tôi hạ một bánh cóc dùng chung mà ⛔ không báo — và nó làm phiên khác đỏ
+
+18h tôi chạy `check_mypy.py --accept` để **HẠ** mốc sau khi thu ba chỗ
+`union-attr`. Đúng lúc đó, nhưng nó **thắt bar chặt hơn** — rồi ~58 commit của
+phiên `prompt-ai-seedance-analysis` gộp vào `main` và bị bar mới bắt:
+
+```
+check_silent_except  53 -> 55   (apps/prompt_ai_ommi/routes/{briefs.py:96, nhan_vat.py:143})
+check_mypy           arg-type 108 -> 118 · attr-defined 184 -> 186
+                     (prompt_ai_ommi co 19 loi: project_schema, services/{library,bindings,handoff_stage})
+```
+
+⇒ **Hạ một bánh cóc dùng chung làm lượt hạ cánh kế tiếp đỏ**, và người hạ **phải
+báo**. Tôi ⛔ không báo. Đã nhắn phiên đó, và ⛔ **không** `--accept` hộ — cùng lý lẽ
+phiên Upscale đã dùng với tôi: *một mốc bị hạ hộ là một mốc ⛔ không ai chịu trách
+nhiệm.*
+
+### ⛔ Vì sao T17 CHƯA được xác minh trên worker thật
+
+`main` hơn production **62 commit — 58 của phiên khác**, gồm **hai migration**
+(`ommi_binding` pha 1, và 7 bảng mới của pha 3). Deploy sẽ đẩy cả làn đang làm dở
+của họ ra production. ⇒ Điều phối **⛔ không deploy**, và chờ phiên đó nói làn họ
+sẵn sàng. Bản sửa **đã** được đo qua **chính hàm dựng lệnh của sản phẩm**
+(`ket_xuat.dung_lenh`), chỉ thiếu vế worker.
+
 ## 2026-09-27 (tối) — ⭐ ĐƯỜNG ỐNG THÔNG: phim khách thật ra file, và QC thôi làm cổng cấm
 
 ### Bằng chứng: hai lượt chạy THẬT ra bản giao

@@ -119,6 +119,7 @@ MANIFEST = AppManifest(
         name="image.ltt",
         job_type="anhnoibo.generate",
         description=N_('Tạo ảnh bằng model nội bộ của LTT Studios.'),
+        ten_ngan=N_('Tạo ảnh bằng model nội bộ'),
         # Xem khối "Cư trú RTX 3090" ở đầu tệp.
         admission_theo_model=KHAI_CU_TRU_ANH,
         params_schema={

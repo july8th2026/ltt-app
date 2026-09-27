@@ -63,7 +63,7 @@ CHE_DO_HINH = "copy"
 #: ⬆️ 1 -> 2 (gd2-diem-anh): `dung()` thoi nhan `lop_phu`/`ds_logo`, va
 #:    `bien_tap` gio CHI con y nghia o truong `toc_do` (khung/lat guong/dich
 #:    mau da chuyen xuong GD2) — hai ly do doc lap, cung mot lan bump.
-PHIEN_BAN_BAN_DUNG = 2
+PHIEN_BAN_BAN_DUNG = 3
 
 
 class BanDungError(ValueError):
@@ -167,12 +167,29 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
     #    MP4 GD1 giao (ma GD1 khong con doi kich thuoc). Chi `toc_do` con anh
     #    huong toi `thoi_luong_ra` cua GD1: no doi MOC THOI GIAN, khong doi
     #    KICH THUOC khung.
+    # 🔑 **`thoi_luong_ra` = `tong_giay`, ⛔ KHONG chia cho `toc_do` (B6, 27/09).**
+    #    GD1 ⛔ khong con doi moc thoi gian, nen ban ra cua no dai DUNG bang nguon
+    #    (sau cat). Phep chia cho `toc_do` nay o CUOI GD2, dung mot lan, o
+    #    `giai_doan_hinh_anh` — xem
+    #    `docs/auto_scan_video_final/B6_PLAN_MOT_TRUC_THOI_GIAN.md`.
+    #
+    # ⛔ Va ban dung GD1 ⛔ khong con ghi `bien_tap`/`fps_nguon`: GD2 doc `toc_do`
+    #    thang tu `cai_dat.doc(run)` va tu SOI tep vao cua chinh no de biet nhip
+    #    (`nhap_media.nhip_that`). Ghi lai o day mot `toc_do` ma GD1 ⛔ khong ap
+    #    la dung hai cho khai MOT su that — dung hinh dang da sinh ra T2.
+    #
+    # 🔴 **NEM khi bi truyen `bien_tap`, ⛔ khong lang le bo qua.** GD1 ⛔ khong
+    #    con thuc thi MOT phep bien tap nao, nen mot `bien_tap` toi day nghia la
+    #    noi goi dang tin rang co ai se ve no len hinh. Bo qua im lang thi khach
+    #    xin mot phep ma ⛔ KHONG giai doan nao thuc thi — GD2 chi doc `cai_dat`,
+    #    ⛔ khong doc ban dung nay. Dung ly le ma `_kiem_bien_tap` da viet cho
+    #    `khung`, nay ap cho ca `toc_do`.
+    if bien_tap:
+        raise BanDungError(_t(
+            'Bản dựng giai đoạn 1 không nhận hồ sơ biên tập: mọi phép biên tập '
+            '(kể cả đổi tốc độ) thực thi ở giai đoạn 2.'))
     thoi_luong_ra = float(tong_giay)
     them_hinh: dict = {}
-    if bien_tap:
-        from . import bien_tap as _bt
-        them_hinh = {"bien_tap": dict(bien_tap)}
-        thoi_luong_ra = _bt.moc_ban_ra(float(tong_giay), bien_tap)
 
     ban = {
         "schema": SCHEMA_BAN_DUNG,

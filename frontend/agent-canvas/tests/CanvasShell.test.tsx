@@ -239,12 +239,38 @@ describe('CanvasShell', () => {
   })
 
   it('exposes responsive panel controls without hiding inspector semantics', async () => {
+    // ⚠️ SUA 27/09: bai nay bam TAB MOBILE ("Chi tiet") trong khi jsdom bao be
+    //    rong 1024. Ngoai doi do la mot trang thai KHONG XAY RA DUOC — thanh
+    //    tab mobile la `display:none` tren man rong (canvas.css @media 640px).
+    //    Truoc day no van xanh vi dieu kien render inspector la
+    //    `desktopPanel==='inspector' || mobilePanel==='inspector'` — chinh
+    //    cai OR do la CON BO: bam mot node (dat `desktopPanel`) roi doi tab
+    //    thi inspector DINH CUNG tren man hinh mobile, de len khung ve.
+    //    Do tren trinh duyet that 390x844: Chi tiet OK, Cong cu HONG, Canvas HONG.
+    //
+    // ⇒ Dat be rong MOBILE that de bai nay do dung thu no dang noi toi.
+    //    ⛔ Day la LAM CHAT, khong phai noi long: truoc no do mot trang thai
+    //    khong the xay ra, nay no do dung mot trang thai co that.
+    //    Luoi hoi quy tren trinh duyet: `tests/browser/agent_ui_v2_ui3_mobile.js`.
+    // ⚠️ `window.innerWidth` la thuoc tinh CHI DOC trong jsdom ban nay —
+    //    gan thang se nem TypeError. Phai qua `defineProperty`.
+    const datRong = (n: number) => {
+      Object.defineProperty(window, 'innerWidth',
+        {value: n, writable: true, configurable: true})
+      window.dispatchEvent(new Event('resize'))
+    }
+    const rongCu = window.innerWidth
+    datRong(390)
     render(<CanvasShell />)
     await screen.findByRole('button',{name:'Mở công cụ'})
     expect(screen.getByRole('navigation',{name:'Khu vực Canvas'})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Chi tiết'}))
     expect(screen.getByRole('button',{name:'Chi tiết'})).toHaveAttribute('aria-pressed','true')
     expect(screen.getByLabelText('Chi tiết node')).toHaveTextContent('Chọn một node')
+    // Doi sang mot tab KHAC phai TAT inspector — day la con bo da sua.
+    fireEvent.click(screen.getByRole('button',{name:'Canvas'}))
+    expect(screen.queryByLabelText('Chi tiết node')).not.toBeInTheDocument()
+    datRong(rongCu)
     // ⛔ Lich su run (`AgentRun` v1) da bo khoi bang chi tiet — trang thai
     //    luot chay v3 chi o ngan keo "Chay workflow".
     expect(screen.queryByLabelText('Run inspector')).not.toBeInTheDocument()
@@ -892,6 +918,42 @@ describe('Chạy workflow trên v3', () => {
     await waitFor(() => expect(soNode()).toBe(1))
     expect((screen.getByLabelText('Mục tiêu workflow') as HTMLTextAreaElement).value)
       .toBe('tạo video')
+  })
+
+  // 🔴 A3 + lỗi lịch sử hoàn tác. "Soạn bằng AI" GHI ĐÈ cả đồ thị người dùng
+  //    đang dựng. Trước bản sửa, `case 'replace'` trả `past: []` ⇒ Ctrl+Z
+  //    KHÔNG cứu được và người dùng mất việc, không cách nào lấy lại.
+  it('A3: "Soạn bằng AI" ghi đè NHƯNG Ctrl+Z trả lại đồ thị đang dựng', async () => {
+    mockRunV3(url => url.endsWith('/soan')
+      ? new Response(JSON.stringify({ workflow_id: 'w1', revision: 5,
+          document: { version: 3, goal: 'tạo video', budget_max_credit: 0,
+            active_page_id: 'page-1',
+            pages: [{ id: 'page-1', name: 'Page 1',
+              nodes: [{ id: 'n_soan', type: 'tool', position: { x: 0, y: 0 },
+                data: { tool: 'app.text.chat' } }], edges: [],
+              viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] },
+          hop_le: true, loi: [], bao_gia: { credit_max: 10, credit_estimate: 5 } }),
+        { status: 200 })
+      : undefined)
+    render(<CanvasShell />)
+    // Người dùng tự dựng HAI node — đây là "việc đang làm" mà AI sẽ ghi đè.
+    await themVanBan()
+    fireEvent.click(screen.getByRole('button', { name: 'Mở công cụ' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Sinh ảnh/ }))
+    await waitFor(() => expect(soNode()).toBe(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở mẫu và thiết lập' }))
+    fireEvent.change(screen.getByLabelText('Mục tiêu workflow'),
+      { target: { value: 'tạo video' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Soạn bằng AI' }))
+    // Bản AI soạn có đúng MỘT node ⇒ hai node kia đã bị ghi đè.
+    await waitFor(() => expect(soNode()).toBe(1))
+
+    // ⭐ Phép đo CHỐT: nút Hoàn tác phải SỐNG, và bấm nó trả lại hai node.
+    const hoanTac = screen.getByRole('button', { name: 'Hoàn tác' })
+    expect(hoanTac).toBeEnabled()
+    fireEvent.click(hoanTac)
+    await waitFor(() => expect(soNode()).toBe(2))
   })
 
   it('A3: thiếu mục tiêu thì KHÔNG gọi /soan, hiện lỗi tại chỗ', async () => {

@@ -622,6 +622,26 @@ def _node(n: dict, cc: dict[str, CongCu], *, nghiem: bool = True) -> dict:
         return _node_tu_dinh_nghia(n, nid, loai, nd)
     tool = cc.get(ten)
     if tool is None:
+        # ⭐ Node do PALETTE Canvas tao: `type` la hang so `'tool'`, con loai
+        #    THAT nam o `data.tool` (`editorState.nextNode()` dung MOI node nhu
+        #    vay), va `params`/`settings` nam duoi `data`. `_node_loi` DA co
+        #    dung chuoi tra ta can (`nut_loi.tat_ca()` roi `dinh_nghia_piece`),
+        #    nen chi can nang `data.*` len muc tren cho khop hop dong cua no.
+        #
+        # ⛔ KHONG cai dat lai phep tra o day: hai ban cai dat song song thi
+        #    lech, va lech im lang — cung bai hoc voi luat noi day.
+        #
+        # 🔴 Nhanh nay la thu DUY NHAT cho 55/67 loai buoc keo tu palette bien
+        #    dich duoc (do tren trinh duyet that 27/09/2026: bam MOT the
+        #    `core.set` roi Chay -> "node_khong_ton_tai: core.set"). Go no la
+        #    lam chet lai ca palette. `tests/test_5600_wf_node_palette_bien_dich.py`
+        #    giu cho nay.
+        #
+        # ⚠️ `_node_loi` van nem `node_khong_ton_tai` khi ca hai nguon deu
+        #    khong co `ten`, nen mot loai go sai VAN bao dung ma loi cu.
+        if loai == "tool" and ten:
+            return _node_loi({**n, "type": ten, "params": params,
+                              "settings": settings}, nid, ten)
         raise LoiBienDich("node_khong_ton_tai", ten, nid)
     return {"id": nid, "type": f"app.{ten}", "type_version": tool.type_version,
             "params": _doi(dict(params), nid, nghiem=nghiem),
@@ -696,6 +716,42 @@ class CauTruc(NamedTuple):
     cong_ra: dict[str, frozenset[str]]
 
 
+def _suy_kind_canh(loai_nguon: str, cong: str, so: dict) -> tuple[str, str]:
+    """`(kind, condition)` SUY RA cho mot canh tai lieu khong khai.
+
+    ⭐ Spec §5.4: *"Canh CONTROL mang `condition = <ten nhanh>`"*. Voi
+       `core.if`, ten nhanh CHINH LA ten cong ra (`true`/`false`), nen suy duoc
+       ma khong doi nguoi dung khai them gi va khong doi mot buoc di tru nao.
+
+    🔴 CHI suy khi node nguon co >= 2 cong ra kieu `control`. Do la phep thu
+       duy nhat phan biet *"ten cong LA ten nhanh"* voi *"ten cong chi la mot
+       cai ong"*. Do bang `nut_loi.tat_ca()` ngay 27/09/2026:
+
+           core.if      cong_ra = [('true','control'), ('false','control')]
+           core.switch  cong_ra = [('nhanh','control')]
+
+       Ten cac nhanh cua `core.switch` nam trong THAM SO `nhanh: array`, khong
+       phai ten cong. Suy `condition='nhanh'` cho no thi dong co se so
+       `_nhanh_da_chon(...) == "nhanh"` — ham do tra GIA TRI nhanh that
+       ('a','b') — nen khong bao gio khop, va MOI nhanh cua switch chet. Hom
+       nay switch chay ca cac nhanh (sai nhung chay); mot ban suy bua bien no
+       thanh KHONG CHAY GI, te hon hien trang.
+       `tests/test_5601_wf_canh_dieu_khien_suy_ra.py::test_core_switch_KHONG_bi_suy_bua`
+       giu dung cho nay.
+
+    ⛔ Khong suy theo TEN node (`loai_nguon == "core.if"`): mot node moi co hai
+       cong control se im lang khong duoc suy. Hoi CAU TRUC CONG — do la thu
+       `he_kieu` so huu, giong het luat noi day.
+    """
+    nd = so.get(loai_nguon)
+    if nd is None:
+        return ("DATA", "")
+    cong_control = [ten for ten, c in nd.cong_ra if c.type == "control"]
+    if len(cong_control) < 2 or cong not in cong_control:
+        return ("DATA", "")
+    return ("CONTROL", cong)
+
+
 def cau_truc(document: dict, *,
              cong_cu: Optional[dict[str, CongCu]] = None,
              nghiem: bool = True) -> CauTruc:
@@ -705,10 +761,17 @@ def cau_truc(document: dict, *,
     (xem `_doi`) — cấu trúc vẫn đúng, và một biểu thức đang gõ dở không làm
     mất gợi ý của chính người đang gõ.
     """
+    from platform_core.workflow import nut as _nut
+
     cc = _nguon.tat_ca() if cong_cu is None else cong_cu
     nodes: list[dict] = []
     edges: list[dict] = []
     trang_cua: dict[str, str] = {}
+    #: `type` THAT cua tung node — de hoi CAU TRUC CONG khi suy `kind` canh.
+    #: Dien dan trong chinh vong duyet node ngay duoi.
+    loai_theo_id: dict[str, str] = {}
+    #: So node hop ba nguon. Tra MOT lan cho ca tai lieu, ⛔ khong tra moi canh.
+    so_node = _nut.tat_ca(cong_cu=cc)
     for trang in document.get("pages") or []:
         pid = str(trang.get("id", ""))
         for n in trang.get("nodes") or []:
@@ -716,11 +779,23 @@ def cau_truc(document: dict, *,
             if nd["id"] in trang_cua:
                 raise LoiBienDich("id_trung", nd["id"], nd["id"])
             trang_cua[nd["id"]] = pid
+            loai_theo_id[nd["id"]] = nd["type"]
             nodes.append(nd)
         for c in trang.get("edges") or []:
             e = _canh_v3(c)
-            e["kind"] = str(c.get("kind") or "DATA")
-            e["condition"] = str(c.get("condition") or "")
+            # 🔴 Tai lieu KHAI TUONG MINH thi theo no; chi SUY khi no im lang.
+            #    `edgeToV3` hom nay dong cung `kind:'DATA'` va khong gui
+            #    `condition`, nen "im lang" o day nghia la *"khai DATA ma
+            #    khong khai condition"* — dung hinh dang moi ban nhap dang co.
+            khai_kind = str(c.get("kind") or "")
+            khai_dk = str(c.get("condition") or "")
+            if khai_dk or (khai_kind and khai_kind != "DATA"):
+                e["kind"] = khai_kind or "DATA"
+                e["condition"] = khai_dk
+            else:
+                e["kind"], e["condition"] = _suy_kind_canh(
+                    loai_theo_id.get(str(c.get("source_node") or ""), ""),
+                    e["source_port"], so_node)
             edges.append((pid, e))  # type: ignore[arg-type]
     if not nodes:
         raise LoiBienDich("do_thi_rong", "khong co node nao")

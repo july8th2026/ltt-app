@@ -56,6 +56,7 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="video.subtitle", job_type="autosubvideo.render",
         description=N_('Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg.'),
+        ten_ngan=N_('Khắc phụ đề vào video'),
         params_schema={
             "video_key": {"type": "video", "required": True},
             # `json[]` chu khong phai `json`: handler doc `params["transcript"]`

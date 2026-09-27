@@ -35,6 +35,9 @@ class CongCu:
     #    trong test của plan 01a phải tiếp tục dựng được không sửa một chữ.
     returns: dict = field(default_factory=dict)
     mo_ta: str = ""
+    # Tên ngắn tuỳ chọn app tự khai trên `ToolSpec.ten_ngan` (xem đó để biết vì
+    # sao). Rỗng = app chưa khai, `nut._tieu_de` tự lùi về hành vi cũ.
+    ten_ngan: str = ""
     icon: str = ""
     app_name: str = ""
     customer_visible: bool = True
@@ -74,6 +77,7 @@ def tat_ca() -> dict[str, CongCu]:
                 spec=t,
                 returns=dict(t.returns or {}),
                 mo_ta=str(t.description or ""),
+                ten_ngan=str(getattr(t, "ten_ngan", "") or ""),
                 # Biểu tượng + tên hiển thị đến từ AppManifest — nền tảng
                 # KHÔNG giữ bảng nhãn thứ hai (bài học `test_967`).
                 icon=str(item.manifest.icon or ""),

@@ -118,17 +118,50 @@ def test_khung_nguon_phan_biet_BA_ly_do_KHONG_DO_DUOC(monkeypatch):
             return ho_so
         monkeypatch.setattr(gd, "_doc", _doc)
 
-    _dat("")                                    # 1) ⛔ khong co ho so MEDIA_PREPARE
-    assert gd._khung_nguon(None, None, None) == (0, 0, gd.KHUNG_THIEU_HO_SO)
+    # ⚠️ Doc theo TEN, ⛔ khong so sanh ca tuple: mot phep so sanh theo VI TRI
+    #    se do moi lan ai do them mot truong — do la do CACH GO chu ⛔ khong do
+    #    dieu bai nay chot.
+    def _ba(ho_so=None, no=None, khoa="k.json"):
+        _dat(khoa, ho_so=ho_so, no=no)
+        r = gd._khung_nguon(None, None, None)
+        return (r.rong, r.cao, r.ly_do)
 
-    _dat("k.json", no=ValueError("json hong"))  # 2) ho so co ma ⛔ khong doc duoc
-    assert gd._khung_nguon(None, None, None) == (0, 0, gd.KHUNG_HO_SO_HONG)
+    assert _ba(khoa="") == (0, 0, gd.KHUNG_THIEU_HO_SO)          # 1) ⛔ khong ho so
+    assert _ba(no=ValueError("json hong")) == (0, 0, gd.KHUNG_HO_SO_HONG)  # 2) hong
+    assert _ba(ho_so={"rong": 0, "cao": 0}) == (0, 0, gd.KHUNG_KHONG_KHAI)  # 3) rong
+    assert _ba(ho_so={"rong": 1920, "cao": 1080, "xoay": 90}) == (1080, 1920, "")
 
-    _dat("k.json", ho_so={"rong": 0, "cao": 0})  # 3) ho so co ma ⛔ khong khai
-    assert gd._khung_nguon(None, None, None) == (0, 0, gd.KHUNG_KHONG_KHAI)
 
-    _dat("k.json", ho_so={"rong": 1920, "cao": 1080, "xoay": 90})
-    assert gd._khung_nguon(None, None, None) == (1080, 1920, "")
+def test_nhip_that_PHAN_BIET_khong_biet_voi_nhip_bang_khong():
+    """⭐ **`nhap_media.nhip_that` — MOT noi tra loi *"video nay bao nhieu fps"*.**
+
+    🔴 **Bai nay o day, ⛔ khong o `giai_doan_ban_dung` (B6, 27/09).** Truoc B6 ba
+       truong nhip di kem `NguonHinh` de GD1 khai `-r`; nay `toc_do` ap o cuoi GD2
+       va GD2 **tu soi tep vao cua chinh no**, nen cau hoi ve nhip thuoc ve
+       `nhap_media` — noi `soi` ghi ba truong ay.
+
+    ⚠️ Va do la dung hai trang thai ma bai nay ton tai de tach: `0.0` = *"⛔ khong
+       BIET nhip"* (ho so thieu/hong), KHAC han *"nhip bang 0"*. Noi goi phai
+       ⛔ KHONG khai `-r` khi ⛔ khong biet — ep video cua khach ve mot nhip ta bia
+       ra thi te hon la de bo ma hoa tu chon.
+
+    ⭐ Nguon VFR lay `fps_tb`, ⛔ khong `fps`: `r_frame_rate` la nhip DANH DINH va
+       voi VFR no thuong CAO hon nhip that, nen khai no se bat bo ma hoa NHAN BAN
+       khung. Chinh `soi` da canh bao dieu nay trong chu thich cua no.
+    """
+    from apps.auto_scan_video import nhap_media
+
+    assert nhap_media.nhip_that({}) == 0.0, "ho so rong phai la ⛔ khong biet"
+    assert nhap_media.nhip_that({"fps": 0.0, "fps_tb": 0.0}) == 0.0
+    assert nhap_media.nhip_that({"fps": "hong"}) == 0.0, "ma rac ⇒ ⛔ khong biet"
+    assert nhap_media.nhip_that({"fps": -5.0}) == 0.0, "nhip am ⇒ ⛔ khong biet"
+    # CFR: lay nhip danh dinh.
+    assert nhap_media.nhip_that(
+        {"fps": 30.0, "fps_tb": 30.0, "vfr": False}) == 30.0
+    # VFR: lay nhip THAT, ⛔ khong nhip danh dinh.
+    assert nhap_media.nhip_that(
+        {"fps": 60.0, "fps_tb": 24.5, "vfr": True}) == 24.5, (
+        "nguon VFR ma lay nhip DANH DINH thi bo ma hoa se NHAN BAN khung")
 
 
 def test_vung_dien_nen_ma_chua_do_duoc_khung_thi_noi_dung_LY_DO():

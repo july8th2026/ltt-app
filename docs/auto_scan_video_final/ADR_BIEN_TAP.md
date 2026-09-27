@@ -29,6 +29,17 @@ bảng hợp đồng và lý do đi cùng nhau.
 4. Tốc độ nhân **đều** ở cuối chuỗi (`setpts` hình + `atempo` bản phối), sau khi
    lời lồng, nền, phụ đề đã đặt trên trục biên tập. Ánh xạ nguồn → bản ra là
    `BanDoThoiGian.ra(t) / toc_do`. Không lập lại kế hoạch thời gian hay TTS.
+
+   🔴 **Mã đã TRÔI khỏi điều này, và ⛔ không ai sửa ADR (27/09).** Khi đường ống
+   tách hai giai đoạn (25/09), phép **cắt** xuống GĐ2 còn `toc_do` **ở lại** GĐ1
+   — nên *"ở cuối chuỗi"* thành sai: tốc độ chạy **trước** cắt. Giá phải trả là
+   ba chỗ tự đổi trục bằng tay, và bốn con bọ (`T2`, `T17`, một ca cắt vào giữa
+   câu thoại, một ca so bản chép lời trên hai trục).
+
+   ⭐ **B6 (27/09) đưa mã về đúng điều khoản này**, ⛔ không phải đổi điều khoản.
+   Bài học đáng ghi: *một ADR còn đúng mà mã đã trôi thì ADR ⛔ không cảnh báo
+   được ai — ⛔ không ai đối chiếu nó khi tái cấu trúc.* Hợp đồng thi hành:
+   `docs/auto_scan_video_final/B6_PLAN_MOT_TRUC_THOI_GIAN.md`.
 5. Vẫn **cấm**: `reorder`, `broll`, `upscale`, `music_replace`, `transition`.
    Và **không thuộc sản phẩm** (không phải "hoãn"): lật gương (mirror), đổi màu/
    dịch màu, nhiễu/"vân tay" để né nhận diện nội dung. Hồ sơ lạ (`mirror`, …) bị

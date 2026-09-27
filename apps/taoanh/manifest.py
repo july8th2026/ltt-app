@@ -93,6 +93,7 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="image.generate", job_type="taoanh.generate",
         description=N_('Sinh từ một đến bốn ảnh từ mô tả tự do, bằng model nội bộ.'),
+        ten_ngan=N_('Sinh ảnh từ mô tả'),
         admission_theo_model=KHAI_CU_TRU_ANH,      # cư trú 3090 — xem đầu tệp
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 4000},
@@ -171,6 +172,7 @@ MANIFEST = AppManifest(
     ), ToolSpec(
         name="image.batch_generate", job_type="taoanh.generate",
         description=N_('Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả.'),
+        ten_ngan=N_('Sinh lô ảnh đồng nhất'),
         # ⚠️ CẢ HAI tool của app này phải khai, không chỉ tool đầu: hai đường nộp
         #    job đọc `ToolSpec` **của tool được gọi** (`registry.admission_luc_nop`),
         #    nên bỏ sót một tool là bỏ sót một đường vào cùng một card.

@@ -8,8 +8,10 @@ export type CanvasNode = {
 
 export type CanvasEdge = { id: string; source: string; target: string;
   sourceHandle?: string | null; targetHandle?: string | null;
-  data?: { condition?: 'success'|'error'; modality?:string; running?:boolean;
-    onInsert?:(client:{x:number;y:number})=>void } }
+  // ⛔ `onInsert` DA GO cung nut "+" chen buoc (UI-0 Task 5): khoa do chua bao
+  //    gio duoc gan, nen kieu cua no la mot loi hua ma khong ai giu. UI-4 khai
+  //    lai khi CO day noi that.
+  data?: { condition?: 'success'|'error'; modality?:string; running?:boolean } }
 
 export type CanvasFrame = { id: string; name: string; node_ids: string[]; color?: string }
 export type CanvasAnnotation = { id: string; text: string; x?: number; y?: number }
@@ -139,7 +141,7 @@ export function normalizeCanvas(canvas: CanvasDocument | LegacyCanvasDocument): 
 //    o ben nao ca — no chi lam cong bien mat trong im lang, dung nhu duong cu.
 //    `tests/test_967` khong kiem duoc dieu do (no chi doc frontend), nen
 //    `tests/test_968` doc CA HAI bo va so.
-export type CanvasEdgeKind = 'DATA' | 'CONTROL'
+export type CanvasEdgeKind = 'DATA' | 'CONTROL' | 'ERROR'
 export type CanvasEdgeV3 = {
   id: string
   source_node: string
@@ -147,6 +149,9 @@ export type CanvasEdgeV3 = {
   source_port: string
   target_port: string
   kind: CanvasEdgeKind
+  /** Ten nhanh (spec §5.4). ⭐ MAY CHU suy ra khi vang — xem
+   *  `bien_dich._suy_kind_canh`. Client KHONG dat khoa nay. */
+  condition?: string
 }
 export type CanvasPageV3 = Omit<CanvasPage, 'edges'> & { edges: CanvasEdgeV3[] }
 export type CanvasDocumentV3 = Omit<CanvasDocument, 'version' | 'pages'> & {
@@ -159,13 +164,26 @@ export const DEFAULT_SOURCE_PORT = 'out'
 export const DEFAULT_TARGET_PORT = 'in'
 
 export function edgeToV3(edge: CanvasEdge): CanvasEdgeV3 {
+  // ⭐ CHI nhanh LOI duoc khai o day — no la Y DINH cua nguoi dung (nut
+  //    "Nhanh: Loi / Thanh cong"), khong suy ra duoc tu do thi.
+  //
+  // ⛔ Nhanh `true`/`false` cua `core.if` KHONG khai o day: MAY CHU suy ra tu
+  //    cau truc cong (`bien_dich._suy_kind_canh`). Client khong co bang kieu
+  //    cong, va hai ban cai dat song song thi lech — va lech im lang. Cung bai
+  //    hoc voi luat noi day (`he_kieu.xuat_luat_noi_day`).
+  //
+  // 🔴 Truoc ban va nay dong nay la `kind: 'DATA'` dong cung, nen nut "Nhanh:
+  //    Loi" doi mot NHAN tren man hinh va khong doi gi khac: dong co doc
+  //    `_KICH['DATA'] = {SUCCEEDED}`, tuc nhanh loi chay khi THANH CONG va
+  //    khong bao gio chay khi hong.
+  const laLoi = edge.data?.condition === 'error'
   return {
     id: edge.id,
     source_node: edge.source,
     target_node: edge.target,
     source_port: edge.sourceHandle || DEFAULT_SOURCE_PORT,
     target_port: edge.targetHandle || DEFAULT_TARGET_PORT,
-    kind: 'DATA',
+    kind: laLoi ? 'ERROR' : 'DATA',
   }
 }
 
@@ -176,6 +194,11 @@ export function edgeFromV3(edge: CanvasEdgeV3): CanvasEdge {
     target: edge.target_node,
     sourceHandle: edge.source_port,
     targetHandle: edge.target_port,
+    // ⛔ Chi dat `data` khi THAT SU co nhan: mot `data:{condition:undefined}`
+    //    lam `JSON.stringify` cua autosave khac di va bat mot luot luu thua.
+    ...(edge.kind === 'ERROR'
+      ? { data: { condition: 'error' as const } }
+      : {}),
   }
 }
 

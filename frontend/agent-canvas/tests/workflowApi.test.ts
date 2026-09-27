@@ -6,6 +6,7 @@ import { cancelRunV3, chayLaiTuNodeV3, createAutosave,
   fromV3, loadRunV3, loadWorkflowV3,
   publishWorkflowV3, RUN_V3_KET_THUC,
   saveWorkflowV3, soanWorkflowV3, soSanhRunV3, toV3,
+  edgeToV3, edgeFromV3,
   WorkflowCompileError, WorkflowConflictError,
   type RunV3 } from '../src/workflowApi'
 
@@ -474,5 +475,42 @@ describe('soanWorkflowV3', () => {
     const loi = await soanWorkflowV3('w1', 'g', undefined, 'tok').catch(e => e)
     expect(loi).not.toBeInstanceOf(WorkflowCompileError)
     expect(loi.message).toBe('Động cơ soạn đang bận.')
+  })
+})
+
+// ── UI-0 Task 3 — nhanh LOI phai di toi may chu ────────────────────────────
+//
+// `edgeToV3` dong cung `kind:'DATA'`, nen nut "Nhanh: Loi / Thanh cong" trong
+// ngan keo Chay doi `edge.data.condition` — mot khoa KHONG duoc gui di. Nut do
+// hom nay doi mot NHAN tren man hinh va khong doi gi khac.
+//
+// ⭐ Nhanh `true`/`false` cua core.if KHONG khai o day: may chu suy ra tu cau
+//    truc cong (`bien_dich._suy_kind_canh`). Client khong co bang kieu cong, va
+//    mot ban cai dat thu hai thi lech im lang.
+describe('edgeToV3 — nhanh loi', () => {
+  const canh = (condition?: 'success' | 'error') => ({
+    id: 'e', source: 'a', target: 'b',
+    sourceHandle: 'out', targetHandle: 'in',
+    ...(condition ? { data: { condition } } : {}),
+  })
+
+  it('canh danh dau LOI gui kind ERROR', () => {
+    expect(edgeToV3(canh('error')).kind).toBe('ERROR')
+  })
+
+  it('canh thuong van la DATA', () => {
+    expect(edgeToV3(canh()).kind).toBe('DATA')
+  })
+
+  it('canh danh dau THANH CONG cung la DATA', () => {
+    expect(edgeToV3(canh('success')).kind).toBe('DATA')
+  })
+
+  it('di ve khong mat nhan loi', () => {
+    expect(edgeFromV3(edgeToV3(canh('error'))).data?.condition).toBe('error')
+  })
+
+  it('di ve canh thuong khong bia ra mot nhan', () => {
+    expect(edgeFromV3(edgeToV3(canh())).data?.condition).toBeUndefined()
   })
 })

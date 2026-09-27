@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import json
 
-from apps.auto_scan_video import che_do_render as cdr, features, pipeline, qc
+from apps.auto_scan_video import (che_do_render as cdr, features,
+                                  giai_doan_qc, pipeline, qc)
 from platform_core.storage import get_storage
 from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 from tests.test_402_asv_mach_doc_gia import (_chay_het_hang_doi, _tao_run,  # noqa: F401
@@ -35,6 +36,13 @@ def _muc(bc, ma):
 
 def test_preset_CAT_do_that_VMAF_den_dong_va_giai_ma(
         tmp_path, monkeypatch, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    # 🔴 27/09: chu du an chot TAT T18 MAC DINH (`giai_doan_qc.BIEN_T18` —
+    #    5d568ffe) vi phep so sanh cu lech truc, cho VMAF mot con so khong
+    #    dang tin. Bai nay TON TAI DE CHUNG MINH T18 do duoc mot con so VMAF
+    #    THAT o preset cat (xem docstring dau tep) — nen no phai TU BAT, chu
+    #    ⛔ khong duoc thua ke mac dinh san xuat (mac dinh do la mot quyet dinh
+    #    ve CHI PHI/do tin cay production, khong phai ve kha nang do duoc).
+    monkeypatch.setenv(giai_doan_qc.BIEN_T18, "1")
     _nhieu_canh(monkeypatch)
     run = _run_cat(db, kho_tam, tmp_path)
     _chay_het_hang_doi(db)

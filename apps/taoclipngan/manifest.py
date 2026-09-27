@@ -43,6 +43,7 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="video.short_clips", job_type="taoclipngan.render",
         description=N_('Phân tích video dài và xuất nhiều clip ngắn có reframe, phụ đề.'),
+        ten_ngan=N_('Cắt clip ngắn từ video dài'),
         params_schema={
             "video_key": {"type": "video", "required": True},
             "tier": {"type": "enum", "values": ["fast", "balanced", "high_quality"], "default": "high_quality"},

@@ -186,6 +186,7 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="video.generate", job_type="taovideo.generate",
         description=N_('Sinh video Seedance từ mô tả và các tài sản tham chiếu tùy chọn.'),
+        ten_ngan=N_('Sinh video từ mô tả'),
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 10000},
             "model": {"type": "model_ref", "category": "video", "providers": ["byteplus"]},

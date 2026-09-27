@@ -65,6 +65,7 @@ MANIFEST = AppManifest(
         name="transcript.run",
         job_type="transcript.run",
         description=N_('Phiên âm một tệp âm thanh thành dòng thời gian có mốc.'),
+        ten_ngan=N_('Phiên âm có mốc thời gian'),
         params_schema={
             "audio": {"type": "audio", "required": True},
             "language": {"type": "string", "required": False, "max_length": 8},

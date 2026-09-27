@@ -292,6 +292,76 @@ def dai_phu_de_goc(vung) -> dict | None:
             "da_che": True}
 
 
+def dai_len_khung_ra(dai, *, buoc: dict, cao_nguon: int) -> dict | None:
+    """Dai chu goc: phan so khung NGUON -> phan so khung RA. `None` = mat han.
+
+    🔴 **Bug B8 (do 27/09).** `dai_phu_de_goc` la phan so khung NGUON (khach ve
+       tren nguon), nhung `vi_tri_tu_dong` tinh `margin_v` voi chieu cao khung
+       **RA**. Khi GD2 cat theo chieu DOC thi hai phan so ⛔ khong bang nhau:
+
+         cat_khung nua TREN   margin_v 27  ·  dung phai  0   ·  lech +27 px
+         cat_khung nua DUOI   margin_v 27  ·  dung phai 54   ·  lech -27 px
+
+       ⭐ HAI cua so cat nguoc nhau cho CUNG mot so — bang chung rang phep tinh
+          ⛔ khong he biet co cua so cat.
+
+    ⭐ Ham nay lay GIAO cua dai voi khung ra, ⛔ khong "kep cho gan": mot dai bi
+       cat MOT PHAN thi phan con lai VAN co chu goc, nen phu de moi van phai
+       tranh no. Chi khi mat HAN thi ⛔ khong con gi de tranh.
+
+    ⛔ Va khi mat han, tra `None` chu ⛔ khong tra mot dai o `0`: `vi_tri_tu_dong`
+       doc `None` la *"giu vi tri cua preset"*, con mot dai o `0` se day chu len
+       DINH khung — mot ban sua sai theo huong khac.
+    """
+    from . import hinh_hoc as _hh
+
+    if not dai:
+        return None
+    y0 = _hh.doi_phan_so_doc(buoc, cao_nguon, float(dai["y0"]))
+    y1 = _hh.doi_phan_so_doc(buoc, cao_nguon, float(dai["y1"]))
+    if y0 is None and y1 is None:
+        return None
+    # ⭐ Mot bien bi cat: dai van giao khung ra, nen KEP bien do vao khung.
+    #    `y0` mat ⇒ dai keo qua canh TREN; `y1` mat ⇒ keo qua canh DUOI.
+    a = 0.0 if y0 is None else max(0.0, min(1.0, y0))
+    b = 1.0 if y1 is None else max(0.0, min(1.0, y1))
+    if b <= a:
+        return None
+    return {"y0": round(a, 4), "y1": round(b, 4), "da_che": bool(dai.get("da_che"))}
+
+
+def doi_truc_dai_phu_de(ho_so: dict | None, *, bien_tap_gd2,
+                        rong_nguon: int, cao_nguon: int) -> dict | None:
+    """Ho so phu de voi `dai_phu_de_goc` DA doi sang truc khung RA. Tra ban MOI.
+
+    ⛔ **⛔ Khong sua tai cho.** Cung mot `ho_so_pd` con di vao `van_tay` va vao
+       bao cao; mot dai da doi truc lot vao do se lam hai lan chay giong nhau co
+       hai van tay, hay te hon: mot bao cao noi mot con so ma ⛔ khong ai biet no
+       o truc nao.
+
+    ⭐ ⛔ Khong hinh hoc GD2 ⇒ tra **chinh** doi tuong cu: mot phep bien doi vo
+       dieu kien la mot cho de lam tron va de sai them, tren duong ma phan lon
+       lan chay di qua.
+    """
+    from . import bien_tap as _bt, hinh_hoc as _hh
+
+    dai = (ho_so or {}).get("dai_phu_de_goc")
+    if not ho_so or not dai:
+        return ho_so
+    if not (bien_tap_gd2 and set(bien_tap_gd2) & set(_bt.TRUONG_HINH_HOC)):
+        return ho_so
+    buoc = _hh.khung_bien_tap(int(rong_nguon), int(cao_nguon), bien_tap_gd2)
+    moi = dai_len_khung_ra(dai, buoc=buoc, cao_nguon=int(cao_nguon))
+    ra = dict(ho_so)
+    if moi is None:
+        # ⭐ Dai bi cat MAT HAN ⇒ ⛔ khong con chu goc nao de tranh. Bo khoa di
+        #    thi `vi_tri_tu_dong` giu vi tri cua preset — dung hanh vi.
+        ra.pop("dai_phu_de_goc", None)
+    else:
+        ra["dai_phu_de_goc"] = moi
+    return ra
+
+
 def vi_tri_tu_dong(ho_so: dict | None, *, cao: int) -> dict:
     """Ghi de vi tri cua che do `tu_dong`. `{}` = giu vi tri cua preset.
 

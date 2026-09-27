@@ -26,6 +26,7 @@ from __future__ import annotations
 import io
 import json
 import logging
+from typing import NamedTuple
 
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
@@ -89,8 +90,20 @@ KHUNG_HO_SO_HONG = "ho_so_media_prepare_khong_doc_duoc"
 KHUNG_KHONG_KHAI = "ho_so_media_prepare_khong_khai_kich_thuoc"
 
 
-def _khung_nguon(db, kho: Storage, run) -> tuple[int, int, str]:
-    """`(rong, cao, ly_do)` khung NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
+class NguonHinh(NamedTuple):
+    """Ho so hinh NGUON doc tu `MEDIA_PREPARE` — MOT lan doc, moi truong.
+
+    ⭐ `NamedTuple` chu ⛔ khong tuple tran: nguoi doc lay theo TEN, nen them mot
+       truong ⛔ khong lam lech moi cho dang so sanh theo vi tri.
+    """
+
+    rong: int
+    cao: int
+    ly_do: str
+
+
+def _khung_nguon(db, kho: Storage, run) -> NguonHinh:
+    """Ho so hinh NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
 
     `ly_do` rong = da do duoc that. Khac rong = mot trong `KHUNG_*` o tren, va
     khi do `(rong, cao)` la `(0, 0)` — ⛔ nhung ⛔ khong con la mot `(0, 0)` **cam**.
@@ -104,7 +117,7 @@ def _khung_nguon(db, kho: Storage, run) -> tuple[int, int, str]:
     if not khoa:
         log.warning("asv compose: %s - giai doan media_prepare ⛔ khong de lai "
                     "ho so soi nao", KHUNG_THIEU_HO_SO)
-        return (0, 0, KHUNG_THIEU_HO_SO)
+        return NguonHinh(0, 0, KHUNG_THIEU_HO_SO)
     try:
         ho_so = _doc(kho, khoa) or {}
         rong, cao = int(ho_so.get("rong") or 0), int(ho_so.get("cao") or 0)
@@ -120,12 +133,12 @@ def _khung_nguon(db, kho: Storage, run) -> tuple[int, int, str]:
         #    duoc. Nhung ⛔ khong con IM: mot dong log + mot `ly_do` di theo.
         log.warning("asv compose: %s (%s) khoa=%s", KHUNG_HO_SO_HONG,
                     type(loi).__name__, khoa)
-        return (0, 0, KHUNG_HO_SO_HONG)
+        return NguonHinh(0, 0, KHUNG_HO_SO_HONG)
     if rong <= 0 or cao <= 0:
         log.warning("asv compose: %s - ho so %s doc duoc nhung rong=%r cao=%r",
                     KHUNG_KHONG_KHAI, khoa, rong, cao)
-        return (0, 0, KHUNG_KHONG_KHAI)
-    return (rong, cao, "")
+        return NguonHinh(0, 0, KHUNG_KHONG_KHAI)
+    return NguonHinh(rong, cao, "")
 
 
 def _doi_khung_cho_vung(vung, rong: int, cao: int, ly_do: str) -> None:
@@ -320,22 +333,25 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                  if cach == cdr.CAT_MA_HOA_LAI else "")
 
     # ⭐ MOT lan doc, hai truong + LY DO. Xem docstring cua `_khung_nguon`.
-    _rong_khung, _cao_khung, _ly_do_khung = _khung_nguon(db, kho, run)
+    _nguon_hinh = _khung_nguon(db, kho, run)
+    _rong_khung = _nguon_hinh.rong
+    _cao_khung = _nguon_hinh.cao
+    _ly_do_khung = _nguon_hinh.ly_do
     # 🔴 Noi DUNG cho ngay o day: ha nguon chi con biet noi "ban dung khong khai
     #    no" — mot hau qua — nen mot ho so `media_prepare` thieu/hong se bi doc
     #    thanh mot ban dung sai. Chi duong CAT truyen `vung`, nen chi chan o do.
     if cach == cdr.CAT_MA_HOA_LAI:
         _doi_khung_cho_vung(cai.vung, _rong_khung, _cao_khung, _ly_do_khung)
-    # 🔴 **`bien_tap` GD1 CHI con `toc_do` (gd2-diem-anh, 25/09).**
+    # 🔴 **GD1 ⛔ KHONG con mang MOT truong bien tap nao (B6, 27/09).**
     #
-    #    `cai.bien_tap` co the mang CA `toc_do` LAN `cat_khung`/`zoom`/`khung`/
-    #    `lat_guong`/`dich_mau` — nhung bon truong sau gio thuc thi o GD2
-    #    (`giai_doan_hinh_anh.py`, doc thang `cai_dat.doc(run)`, KHONG qua ban
-    #    dung nay). Loc CHI `toc_do` o day, ⛔ khong truyen ca dict: `ban_dung.
-    #    _kiem_bien_tap` NEM neu mot truong la lot vao — mot ban dung GD1 vua co
-    #    `khung` trong ho so vua khong ai ve no len hinh la mot hop dong noi doi.
-    _bt_gd1 = ({"toc_do": cai.bien_tap["toc_do"]}
-               if (cai.bien_tap or {}).get("toc_do") is not None else None)
+    #    `cat_khung`/`zoom`/`khung`/`lat_guong`/`dich_mau` sang GD2 tu 25/09;
+    #    `toc_do` — ke lac dan cuoi cung — sang GD2 tu B6, vi no la mot phep DOI
+    #    TRUC thoi gian va hop dong buoc moi phep doi truc xep SAU moi buoc doc
+    #    moc. GD2 doc ca nam truong thang tu `cai_dat.doc(run)`.
+    #
+    # ⛔ Va GD1 ⛔ khong con khai `fps_nguon`: GD2 tu SOI tep vao cua chinh no
+    #    (`nhap_media.nhip_that`), nen ⛔ khong ai phai mang ho mot con so di
+    #    ngang qua mot artifact chi de giai doan sau doc lai.
     ban = ban_dung.dung(
         khoa_video=run.source_key,
         khoa_nen=khoa_nen,
@@ -366,7 +382,6 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    diem anh); phu de co HAI, va truc `.srt` chay duoc o CA HAI preset.
         #    Xem `_ho_so_phu_de`.
         phu_de=_ho_so_phu_de(db, kho, run, ke_hoach, cai, cach),
-        bien_tap=(_bt_gd1 if cach == cdr.CAT_MA_HOA_LAI else None),
         rong_khung=_rong_khung, cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.
