@@ -21014,6 +21014,18 @@ msgstr "Could not merge status: an execution path inside a deeply nested loop wa
 msgid "Không tìm thấy lượt chạy."
 msgstr "Run not found."
 
+#: apps/agent/routes/phe_duyet_v3.py
+msgid "Bước này không có điểm chờ người duyệt."
+msgstr "This step has no pending human-approval waitpoint."
+
+#: apps/agent/routes/phe_duyet_v3.py
+msgid "Quyết định phải là \"approve\" hoặc \"reject\"."
+msgstr "The decision must be \"approve\" or \"reject\"."
+
+#: apps/agent/routes/phe_duyet_v3.py
+msgid "Đã quá hạn chờ — hệ thống sẽ tự kết luận bước này trong giây lát."
+msgstr "The wait has expired — the system will conclude this step automatically in a moment."
+
 #: apps/agent/routes/runs_v3.py
 msgid "Lượt chạy đã kết thúc."
 msgstr "This run has already finished."
