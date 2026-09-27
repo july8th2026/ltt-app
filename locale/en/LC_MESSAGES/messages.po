@@ -22011,3 +22011,27 @@ msgstr "Segment {ma}: the translation still contains {ty} percent Han characters
 #, python-brace-format
 msgid "Đoạn {ma}: {loi} Chữ gửi sang dài {n} ký tự ⇒ lỗi ở THƯỢNG NGUỒN của máy sinh tiếng, không ở chính nó. Chữ: {chu}"
 msgstr "Segment {ma}: {loi} The text sent over was {n} characters long ⇒ the fault is UPSTREAM of the speech engine, not in the engine itself. Text: {chu}"
+
+#: apps/auto_scan_video/ (soat lan C, 27/09/2026)
+msgid "Đoạn {ma} chưa có tệp tiếng: bản kê không có khoá nào cho nó ({ly_do})."
+msgstr "Segment {ma} has no audio file: the voice manifest holds no key for it ({ly_do})."
+
+#: apps/auto_scan_video/ (soat lan C, 27/09/2026)
+msgid "Bản kê tiếng thiếu hẳn dòng cho đoạn {ma} ({ly_do}): bản kê và bản dịch lệch nhau — đoạn này chưa từng được giao cho máy sinh tiếng."
+msgstr "The voice manifest has no row at all for segment {ma} ({ly_do}): manifest and translation disagree — this segment was never handed to the speech engine."
+
+#: apps/auto_scan_video/ (soat lan C, 27/09/2026)
+msgid "Đoạn {ma} được khai CỐ Ý im lặng nhưng bản kê ghi thời lượng {tho} ({ly_do}): khoảng lặng dài bằng khe chưa được sinh ở voice_synthesis."
+msgstr "Segment {ma} is declared INTENTIONALLY silent but the manifest records duration {tho} ({ly_do}): the slot-length silence was never generated at voice_synthesis."
+
+#: apps/auto_scan_video/ (soat lan C, 27/09/2026)
+msgid "Đoạn {ma} CÓ tệp tiếng {khoa} nhưng bản kê ghi thời lượng {tho} ({ly_do}): phép ĐO thời lượng ở voice_synthesis hỏng, đoạn tiếng không hề thiếu."
+msgstr "Segment {ma} DOES have audio file {khoa} but the manifest records duration {tho} ({ly_do}): the duration MEASUREMENT at voice_synthesis is broken — the audio segment is not missing at all."
+
+#: apps/auto_scan_video/ (soat lan C, 27/09/2026)
+msgid "Vùng điền nền cần kích thước khung hình nguồn, nhưng chưa đo được: {ly_do}. Hãy chạy lại giai đoạn media_prepare."
+msgstr "Filling the background band needs the source frame size, which could not be measured: {ly_do}. Re-run the media_prepare stage."
+
+#: apps/auto_scan_video/ (soat lan C, 27/09/2026)
+msgid "Kế hoạch thời gian khai tổng thời lượng {ms} ms: hai cổng kiểm độ dài (bản lồng tiếng dài hơn nguồn, và tệp kết xuất dài sai) đều tắt khi con số này bằng 0."
+msgstr "The timing plan declares total duration {ms} ms: both length gates (dub longer than source, and rendered file of wrong length) switch OFF when this number is zero."
