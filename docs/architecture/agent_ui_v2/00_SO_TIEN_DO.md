@@ -14,12 +14,12 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | Pha | Làn | Trạng thái | Nhánh | Tệp SỞ HỮU | Gộp main | Ghi chú |
 |---|---|---|---|---|---|---|
 | UI-0 Lỗi P0 cơ khí | `ui0` | ✅ **ĐÃ GỘP** (`72ee199b`) | `claude/ltt-agent-automation-ux-audit-9e3764` | *(đã trả phiếu)* | ✅ | dải **5600-5699** · nghiệm thu trình duyệt PASS · ⏸ chưa deploy (chủ dự án: deploy CUỐI) |
-| UI-3 Tách CanvasShell | `ui3` | **CHỜ DUYỆT** | `phien/agent-ui-v2-ui3` | `src/**/*.tsx` · `editorState.ts` · `features/editor/**` | — | dải **5700-5799** · **ĐÃ MỞ KHOÁ song song hoá** — 31 tệp, lớn nhất 179 dòng · 165 test xanh · trình duyệt PASS |
-| UI-2 Design system | `ui2` | **CHỜ DUYỆT** | `worktree-agent-a710623353e7caab2` | **chỉ** `canvas.css` | — | dải **5800-5899** · hex 482→**63** · lớp chết 79→**0** · `@media 640px` 6→**1** · theme sáng 20/20 ô tối→**0/20** · ⚠️ 2 tiêu chí KHÔNG đạt, xem nhật ký |
+| UI-3 Tách CanvasShell | `ui3` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui3` | `src/**/*.tsx` · `editorState.ts` · `features/editor/**` | — | dải **5700-5799** · **ĐÃ MỞ KHOÁ song song hoá** — 31 tệp, lớn nhất 179 dòng · 165 test xanh · trình duyệt PASS |
+| UI-2 Design system | `ui2` | ✅ **ĐÃ GỘP** | `worktree-agent-a710623353e7caab2` | **chỉ** `canvas.css` | — | dải **5800-5899** · hex 482→**63** · lớp chết 79→**0** · `@media 640px` 6→**1** · theme sáng 20/20 ô tối→**0/20** · ⚠️ 2 tiêu chí KHÔNG đạt, xem nhật ký |
 | UI-N Nhãn ngắn node LTT | `uiN` | ✅ **ĐÃ GỘP** (`868f9db2`) | — | *(đã trả phiếu)* | ✅ | dải **5900-5999** · LTT_APPS 16/17 → **0/17** nhãn > 40 ký tự |
-| UI-1 Automation Studio | — | CHƯA MỞ | — | — | — | **chặn bởi Q1** · chủ S5 (bảng định tuyến) |
-| UI-4 Node UX V2 | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
-| UI-7 Execution + Runs | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 · chủ S4 (đợt 2) |
+| UI-1 Automation Studio | `ui1` | **ĐANG LÀM** (agent) | worktree riêng | `apps/agent/routes/**` · `templates/**` | — | dải **6200-6299** · Q1 đã chốt = **B** · chủ **S5** |
+| UI-4 Node UX V2 | `ui4` | **ĐANG LÀM** (agent) | worktree riêng | `src/nodes/**` · `WorkflowCanvas.tsx` · `useDisplayGraph.ts` | — | dải **6000-6099** |
+| UI-7 Execution + Runs | `ui7` | **ĐANG LÀM** (agent) | worktree riêng | `ExecutionPanel/**` · `RunV3Panel/Inspector/Diff` · `workflowApi.ts` | — | dải **6100-6199** · chủ **S4** |
 | UI-5 Inspector + Connections | — | CHƯA MỞ | — | — | — | **chặn bởi Q4** |
 | UI-8a Human approval ⭐ | — | CHƯA MỞ | — | — | — | chặn bởi UI-7 · nâng ưu tiên sau phân tích CrewAI |
 | UI-6 Data picker | — | CHƯA MỞ | — | — | — | chặn bởi UI-5 |
@@ -88,6 +88,30 @@ Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng đ�
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-28` `điều phối` — **ĐỢT 2: mở ba làn song song.** UI-3 đã tách
+  `CanvasShell` nên mỗi mặt có chủ riêng; đây là lần đầu ba làn **thật sự** không
+  giẫm nhau.
+
+  | Làn | Sở hữu | Dải test |
+  |---|---|---|
+  | **UI-4** Node UX V2 | `src/nodes/**` · `WorkflowCanvas.tsx` · `useDisplayGraph.ts` | 6000-6099 |
+  | **UI-7** Execution UX | `ExecutionPanel/**` · `RunV3Panel/Inspector/Diff` · `workflowApi.ts` | 6100-6199 |
+  | **UI-1** Automation Studio | `apps/agent/routes/**` · `templates/**` | 6200-6299 |
+
+  ⭐ **Hai điều đưa vào brief lần này mà lần trước thiếu** (cả hai học từ đợt 1):
+  1. **"Commit từng bước, và nền là `main` HIỆN TẠI"** — đợt 1 một làn ⛔ không
+     commit và nhánh lùi **15 commit**; đó là lỗi brief của tôi.
+  2. **"Đặt khung nhìn TƯỜNG MINH trong kịch bản trình duyệt"** — profile dùng
+     chung giữa các kịch bản, và một kịch bản mobile để lại 390px làm nút "Chạy"
+     bị `disabled` ⇒ kịch bản sau treo 30 giây rồi chết với một thông điệp ⛔
+     không hề nhắc tới khung nhìn.
+
+  🔴 **UI-7 nhận một ràng buộc riêng về CÁCH nghiệm thu**, vì hai trần cứng cộng
+  dồn (§3b.3b): worker nạp **mã đã deploy** *và* chạy dưới **`LocalSystem`**.
+  ⇒ Brief chỉ định **đo lớp trình bày bằng dữ liệu run GIẢ**, và bắt trả lời
+  trước một câu: *cửa nào cho tôi đặt được trạng thái tôi cần đo?* Nếu ⛔ không có
+  cửa thì dựng cửa là **việc đầu tiên**, ⛔ không phải việc cuối.
 
 - `2026-09-28` `điều phối` — **CHỐT Q1 = B (Automation Studio).** ⛔ Không hỏi lại:
   bằng chứng đã quyết và độ tin CAO (`08_DECISION_QUESTIONS.md` Q1).
