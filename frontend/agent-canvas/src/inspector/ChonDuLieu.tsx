@@ -96,13 +96,24 @@ export function ChonDuLieu({ buocId, nodes, edges, goiY: goiYTho, luocDo, giaTri
                             readOnly, onChen }: Props) {
   const [timKiem, setTimKiem] = useState('')
 
-  // 🔴 `useExpressionSuggest` (hook dung chung, ⛔ khong phai tep UI-6 duoc
-  //    sua) KHONG xoa `goiY` ve `undefined` khi doi node chon — no chi GHI DE
-  //    khi ban MOI ve. Chon buoc B (co to tien) roi bam sang buoc A (khong co
-  //    to tien) trong luc ban goi-y cua A con dang bay: mot nhip ngan cay VAN
-  //    con hien ket qua CUA B — dung do duoc tren trinh duyet that (28/09,
-  //    xem bao cao lan UI-6). `GoiYBieuThuc.node_id` DA co san de tu kiem;
-  //    coi goi y KHONG khop buoc dang chon la CHUA VE, giong het luc dang tai. */
+  // ⭐ DA SUA TAN GOC 28/09 — chu thich cu o day da **loi thoi**, va mot tham
+  //    chieu chet thi ⛔ khong trung tinh: no lam nguoi doc tin rang cho nay la
+  //    lop bao ve DUY NHAT.
+  //
+  //    Lan UI-6 do duoc tren trinh duyet that: `useExpressionSuggest` ⛔ khong
+  //    xoa `goiY` khi doi node chon, nen chon buoc B roi bam sang buoc A se
+  //    thoang hien goi y CUA B. Ho tu ve o day (dong duoi) va bao dieu phoi.
+  //
+  //    Dieu phoi da sua o **BIEN**: hook nay `setGoiY(undefined)` ngay khi doi
+  //    node, VA loc `ket.node_id === selectedNodeId` truoc khi ghi. Ly do phai
+  //    sua o hook chu ⛔ khong chi o day: hook co it nhat HAI nguoi dung
+  //    (`ChonDuLieu`, va `OBieuThuc` cua UI-5), va nguoi thu ba se ⛔ khong biet
+  //    la phai tu ve. Bat bien nay o `tests/GoiYKhongLacNode.test.tsx`.
+  //
+  // ⚠️ Dong duoi GIU LAI co y, nhu lop thu hai: `buocId` (buoc dang xem trong
+  //    Inspector) va `selectedNodeId` (thu hook loc theo) di qua hai duong prop
+  //    khac nhau, nen chung CO THE lech. Day la mot phep kiem re va dung, ⛔
+  //    khong phai ma phong thu cho mot ca khong the xay ra.
   const goiY = goiYTho?.node_id === buocId ? goiYTho : undefined
 
   const dichTruong = useMemo(() =>
