@@ -491,6 +491,68 @@ STORES: tuple = (
     Store("ommi_scene_version", CONTENT, None, N_("chủ tài khoản"),
           N_("Phiên bản một cảnh, kèm góp ý của người dùng.")),
 
+    # ── PROMPT AI OMMI, pha 1-3: brief, cảnh kịch bản, nhân vật ─────────────
+    #
+    # ⭐ Cùng lý lẽ `retention_days=None` với `voice_project` ở trên: đây là thứ
+    #    khách SOẠN và mở lại trong nhiều tuần. Hết hạn theo lịch là xoá bản
+    #    thảo của người ta. Chúng đi khi khách xoá, hoặc khi tài khoản đi.
+    Store("ommi_brief", CONTENT, None, N_("chủ tài khoản"),
+          N_("Brief của khách: câu chuyện họ gõ, mục tiêu, đối tượng, số cảnh "
+             "và thời lượng muốn có. Đây là đầu vào sáng tạo của họ, không phải "
+             "kết quả một job.")),
+    Store("ommi_canh", CONTENT, None, N_("chủ tài khoản"),
+          N_("Từng cảnh kịch bản sinh từ một brief: prompt đi ra ngoài, lời "
+             "thoại, máy quay, ánh sáng. Khách sửa từng cảnh, nên đây là bản "
+             "thảo chứ không phải đầu ra dùng một lần.")),
+    Store("ommi_iteration", CONTENT, None, N_("chủ tài khoản"),
+          N_("Từng lượt sửa kịch bản: câu góp ý khách gõ, prompt đã gửi, kết "
+             "quả nhận về, và lượt đó miễn phí hay đã tính tiền. Giữ lại để "
+             "khách đọc được vì sao bản này khác bản trước.")),
+    Store("ommi_binding", CONTENT, None, N_("chủ tài khoản"),
+          N_("Khách đã gán thẻ nào trong prompt (@IMG_1, @VID_2...) vào ảnh "
+             "nào của họ. Mất nó thì prompt còn nhắc ảnh mà không ai biết là "
+             "ảnh nào — một lựa chọn của khách, không phải thứ suy lại được.")),
+    Store("ommi_character", CONTENT, None, N_("chủ tài khoản"),
+          N_("Nhân vật khách dựng để dùng lại giữa các cảnh: tên, mô tả ngoại "
+             "hình, khối chữ khoá giữ nhân vật nhất quán.")),
+    Store("ommi_outfit", CONTENT, None, N_("chủ tài khoản"),
+          N_("Trang phục thuộc một nhân vật, kèm ảnh tham chiếu khách chọn.")),
+    Store("ommi_pose", CONTENT, None, N_("chủ tài khoản"),
+          N_("Dáng/biểu cảm khách lưu để tái dùng cho một nhân vật.")),
+    Store("ommi_background", CONTENT, None, N_("chủ tài khoản"),
+          N_("Bối cảnh khách dựng để dùng lại: mô tả nơi diễn ra, ánh sáng, "
+             "và khối chữ khoá giữ bối cảnh nhất quán.")),
+
+    # 🔴 GHI THẲNG chứ không giấu trong một dòng TODO, vì đây là chỗ người ta
+    #    đọc khi hỏi "dữ liệu này sống bao lâu".
+    #
+    #    `ommi_handoff` được THIẾT KẾ là vé tạm 30 phút (`expires_at`), nhưng đo
+    #    27/09: KHÔNG có `bao_tri` trong manifest của app và KHÔNG chỗ nào xoá
+    #    `OmmiHandoff` ⇒ hàng tích tụ vô hạn. Nên nó ⛔ KHÔNG được khai
+    #    `OPERATIONAL` (lớp ấy buộc phải có `purged_by` trỏ vào một hàm worker
+    #    THẬT gọi, và `test_211` kiểm đúng điều đó chứ không tin lời khai).
+    #    Khai `None` ở đây là ghi SỰ THẬT hiện tại, ⛔ không phải một lựa chọn
+    #    thiết kế — và nó là một món nợ có tên, không phải một chính sách.
+    Store("ommi_handoff", CONTENT, None, N_("chủ tài khoản"),
+          N_("Vé tạm để gửi một cảnh sang app khác (ví dụ Tạo video): giữ bản "
+             "sao prompt và danh sách ảnh tham chiếu trong ít phút. Thiết kế là "
+             "vé sống 30 phút, nhưng hiện chưa có lượt dọn tự động nào, nên hàng "
+             "sống theo vòng đời tài khoản.")),
+
+    # 🔴 SINH TRẮC HỌC. Vector suy từ ẢNH MẶT khách tải lên. Đo 27/09: hiện
+    #    KHÔNG chỗ nào ghi vào bảng này (0 chỗ ghi trong `services/` và
+    #    `routes/`) — nó được dựng ở pha 3 theo quyết định Q-14 (xây trước, dùng
+    #    sau).
+    #
+    # ⭐ Vẫn khai NGAY, và đó là điểm chính: với loại dữ liệu này, khai nghĩa vụ
+    #    TRƯỚC khi có dòng dữ liệu đầu tiên là chiều an toàn. Chiều còn lại —
+    #    xếp nó vào `NOT_CUSTOMER_DATA` vì "hiện chưa có gì" — tạo một nghĩa vụ
+    #    BỊ XOÁ DẤU, và ⛔ không cổng nào bắt lại được khi ai đó bắt đầu ghi.
+    Store("ommi_face_embedding", CONTENT, None, N_("vận hành"),
+          N_("Vector đặc trưng khuôn mặt, suy từ ảnh nhân vật do khách tải lên, "
+             "dùng để giữ đúng một mặt qua nhiều cảnh. Là dữ liệu sinh trắc học "
+             "nên ⛔ không ra API; đi cùng nhân vật khi nhân vật bị xoá.")),
+
     # ── Auto Scan Video ──────────────────────────────────────────────────────
     #
     # Cả ba đều là CONTENT, không phải EVIDENCE, và ranh giới đó đã có sẵn lời
