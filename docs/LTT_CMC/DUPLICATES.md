@@ -29,6 +29,10 @@ Python authorities.
 > * **no** ⇒ ⛔ editing the hash **hides a real regression** — the copies have
 >   drifted and one of them is wrong. Fix the drift, not the number.
 >
+> ⚠️ **It went stale again, 27/09** — and this time the change came from **our own** app: `5d68da91` and `9d6d8d31` (asv-gui) edited `server/static/ltt.css`, and `19e25c55` re-synced `tools/gui/ltt.css` to it. Verified before touching the number: both copies re-hash to the **same** value (`0f0a5902…c17971`), so the duplicate property still holds and updating the declaration is the correct branch of the procedure above. `snapshot_id` is left alone, exactly as `7af34e4e` did.
+>
+> ⭐ Twice in three days means the procedure works but the **cadence** does not: a hand-typed hash guarding a file two apps edit will keep going stale. The durable fix is a generator for this group, not a faster human.
+>
 > `test_975` re-hashes every path itself, so it also asserts the copies match each
 > other — that is the part that must never be „fixed“ by editing this declaration.
 
