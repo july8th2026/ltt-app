@@ -1,0 +1,20 @@
+NHIEM VU: dung mot KHOI CHU CO DINH mo ta nhan vat, de chen nguyen van vao moi
+canh nham giu nhan vat khong doi giua cac canh.
+
+TEN: {NAME}
+GIOI: {GENDER}
+TUOI: {AGE_RANGE}
+MAT: {FACE}
+THAN HINH: {BODY}
+TOC: {HAIR}
+TRANG PHUC: {OUTFIT}
+TINH CACH: {PERSONALITY}
+BIEU CAM: {EXPRESSION}
+CHUYEN DONG: {MOVEMENT}
+TRANH: {NEGATIVE_NOTES}
+
+Tra ve dung JSON sau, khong them chu nao ngoai JSON:
+{{
+  "fixed_prompt_block": "khoi chu mo ta nhan vat, tieng Anh, 60-120 tu",
+  "negative_notes": "nhung thu phai tranh khi ve nhan vat nay"
+}}
