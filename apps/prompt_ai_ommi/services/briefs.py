@@ -10,10 +10,15 @@ import uuid
 
 from sqlalchemy import delete, select
 
+from apps.prompt_ai_ommi.project_schema import MAX_SCENES
 from apps.prompt_ai_ommi.tables import OmmiBrief, OmmiCanh
 
-MAX_CANH = 20
-_SO_CANH = (1, 20)
+#: Tran so canh kich ban -- DUNG LAI hang so `MAX_SCENES` cua
+#: `project_schema.py`, khong go rieng so `20` o day. `storyboard.py` co mot
+#: hang so KHAC ten `MAX_KHUNG_HINH` (60) -- do la tran KHUNG HINH storyboard
+#: (ommi_scene), khac voi tran CANH KICH BAN (ommi_canh) o day (spec Sec 4.3).
+MAX_CANH = MAX_SCENES
+_SO_CANH = (1, MAX_SCENES)
 _THOI_LUONG = (3, 600)
 
 
@@ -146,6 +151,26 @@ def dat_canh(db, brief: OmmiBrief, canh: list[dict]) -> list[OmmiCanh]:
         db.add(row)
         ra.append(row)
     return ra
+
+
+def prompt_day_du(canh) -> str:
+    """Prompt cua canh + chi tiet camera/lighting/mood GHEP NGUYEN VAN.
+
+    `taovideo` khai `camera`/`motion`/`visual_style` la enum DONG
+    (`apps/taovideo/manifest.py:196-198`), ma Director sinh chu tu do giau
+    chi tiet. Cho thong tin THAT song la `prompt` (chu tu do, 10 000 ky tu);
+    enum chi la goi y tho, va viec suy ra enum la cua pha 2 (spec Sec 6.2b).
+
+    Chi khop enum roi BO chu goc = vut truong im lang lan thu hai.
+    Tat dinh: thu tu nhan co dinh, khong duyet `dict`.
+    """
+    phan = [str(getattr(canh, "prompt", "") or "").strip()]
+    for nhan, ten in (("Camera", "camera"), ("Lighting", "lighting"),
+                      ("Mood", "mood")):
+        gia_tri = str(getattr(canh, ten, "") or "").strip()
+        if gia_tri:
+            phan.append(f"{nhan}: {gia_tri}.")
+    return " ".join(p for p in phan if p)
 
 
 def preflight(brief: OmmiBrief) -> dict:
