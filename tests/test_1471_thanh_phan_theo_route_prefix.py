@@ -3,7 +3,11 @@
 🔴 **VÌ SAO CHỐT (đo 27/09/2026).** Đồ thị import ⛔ không thấy
 `client.post("/taovideo/prefill")` — đó là một **chuỗi**, không một cạnh import.
 Đo hai tầng (đếm, rồi đối chiếu với chính `--test app:<X>`): **50 tệp test** gọi
-một app mà ⛔ không nằm trong thành phần của app đó. Nặng nhất: `app:agent` liệt kê
+một app **qua chuỗi route** mà ⛔ không nằm trong thành phần của app đó.
+
+⚠️ Con số ấy là **SÀN**, ⛔ không phải trần — nó chỉ đếm chiều *chuỗi route*. Đo
+theo tên trên `auto_scan_video` cho **33 tệp vẫn ngoài** SAU bản vá này (phiên
+ASV đo độc lập và hai con số khớp nhau). Xem `PHẠM VI` ở bài cuối tệp. Nặng nhất: `app:agent` liệt kê
 **11** tệp trong khi **21** tệp khác gọi `/agent` — gần ba lần tập đã biết là vô hình.
 
 ⚠️ Vì trong phiên **chỉ** chạy test nhắm (hợp đồng §4; gate một lần ở cuối plan),
@@ -109,8 +113,26 @@ def test_prefix_dai_thang_prefix_ngan(tmp_path):
 
 # ── 3. Trên KHO THẬT: bất biến không còn tệp nào bị bỏ ──────────────────────
 
-def test_kho_that_khong_con_tep_test_nao_bi_bo():
+def test_kho_that_khong_bo_tep_nao_QUA_CHUOI_ROUTE():
     """Mọi tệp test gọi `"/<prefix đã khai>/..."` đều nằm trong thành phần app đó.
+
+    ⚠️ **PHẠM VI: đúng MỘT chiều.** Bài này ⛔ KHÔNG nói "không còn tệp nào bị
+    bỏ" — nó chỉ nói *không còn tệp nào bị bỏ **qua chuỗi route***. Một tệp test
+    có **ít nhất sáu** cách nói nó thuộc về một app; `import` là cách thứ nhất,
+    chuỗi route là cách thứ hai. Đo 27/09 trên `auto_scan_video`: **184** tệp
+    nhắc tới app, **151** nằm trong thành phần ⇒ **33 tệp vẫn ngoài**, trong đó
+    **15** mang chữ `asv` trong tên — ví dụ `test_400_asv_bat_bien_thi_hanh` và
+    `test_401_asv_ranh_gioi_va_artifact`, hai bài chốt bất biến thi hành và ranh
+    giới artifact của chính app đó. Chúng nhắc app qua tên thành phần,
+    `pipeline.CHUOI`, tên khoá artifact — ⛔ không qua route.
+
+    ⛔ **ĐỪNG vá tiếp bằng cách khớp TÊN TỆP.** `route_prefix` đọc một **bản
+    khai** nên nó kiểm được; khớp theo tên là **đoán**, và chính docstring
+    `thanh_phan.py` cấm điều đó kèm số đo: `agent` khớp **21** tên tệp mà chỉ
+    **4** tệp thật sự import app. Đường đúng cho bốn chiều còn lại là **thêm một
+    bản khai nữa** — ví dụ mỗi tệp test tự khai thành phần, cùng hình dạng với
+    dải số test của `check_so_test.py`, và khai thiếu thì bị **BẮT** chứ ⛔ không
+    im lặng rơi ra ngoài.
 
     ⭐ Ba ĐỐI CHỨNG, thiếu cái nào thì "0 tệp bị bỏ" có thể chỉ là **tập rỗng**:
       a) tập prefix đã khai ⛔ không rỗng (đọc manifest hỏng ⇒ 0 oan);
