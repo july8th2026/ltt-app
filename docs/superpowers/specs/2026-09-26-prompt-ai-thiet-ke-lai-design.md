@@ -647,6 +647,23 @@ Ném `ValueError` khi:
 | B-3 | Một `handle` xuất hiện hai lần trong `refs` | Đánh số vỡ |
 | B-4 | `ref["kind"]=="image"` mà `role` không thuộc `apps.taovideo.refs.VALID_IMAGE_ROLES` | Bên nhận sẽ âm thầm remap về `reference_image` |
 | B-5 | `refs` rỗng **và** `skipped` rỗng **và** cảnh có `ommi_binding` | Bindings có mà không sinh được ref nào ⇒ chắc chắn lỗi đường đọc |
+| B-6 | Một trần kiểm ở **worker** (sau khi credit đã giữ) thấp hơn trần kiểm ở **cửa** (trước khi tính tiền) | Khách nộp đúng trần cửa, **bị trừ tiền**, rồi job chết ở worker — xấu hơn là chặn ngay từ cửa |
+
+⭐ **B-6 là bài học trả giá bằng tiền của khách, phát hiện 27/09.** Trần tài sản
+tham chiếu của app `taovideo` được khai ở **sáu** chỗ, và chỗ thứ sáu
+(`apps/taovideo/jobs.py`) nằm trên đường **worker** — chạy SAU khi `/queue` đã
+giữ credit. Nâng trần ở `routes.py` một mình thì khách nộp 9 ảnh, bị thu tiền,
+rồi job chết.
+
+⛔ **Thuốc không phải "sửa cả sáu số cho khớp"** — hai chỗ khai cùng một điều thì
+sớm muộn lệch nhau (`hai-cho-khai-cung-mot-dieu`). Thuốc là **một hằng số duy
+nhất**, mọi chỗ import. Khi đó B-6 không cần ai canh: nó đúng do kiến trúc.
+
+⚠️ **Trần khác cửa thì được khác số — nhưng phải ghi rõ cửa nào chịu số nào.**
+`TRAN_MEDIA_MOT_THAM_SO = 8` áp cho tham số kiểu `image[]` trên Public API vì
+mỗi phần tử là **một lượt tra CSDL trước khi có bất kỳ khoản tiền nào** — đó là
+trần cho một chi phí KHÁC, không phải trần engine. Hai số cùng tồn tại là đúng;
+không ghi lý do mới là sai, vì người sau sẽ "sửa cho khớp".
 
 ⚠️ B-1 **phải** xét `skipped`: ảnh khách xoá là ca hợp lệ, không phải lỗi. Nếu không xét,
 phép kiểm sẽ đỏ oan và người ta sẽ tắt nó đi — đúng bài học

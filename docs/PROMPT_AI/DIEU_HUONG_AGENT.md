@@ -213,6 +213,39 @@ production ở phiên sau.
 
 ---
 
+### 4.4 🔴 Đổi một TRẦN ⇒ đếm hết chỗ khai, và chỗ ở **worker** là chỗ hay thiếu
+
+Giao một làn đổi một giới hạn (trần số lượng, trần dung lượng, trần lượt) thì
+⛔ **đừng liệt kê chỗ khai cho nó** — hãy bắt nó **tự đếm và báo lại số chỗ tìm
+được**, rồi đối chiếu với con số mình nghĩ. Tôi liệt kê 5 chỗ; làn T đếm ra **6**.
+
+⭐ Chỗ thứ sáu là chỗ đắt nhất: **trần kiểm ở worker**, chạy SAU khi credit đã giữ
+(`apps/taovideo/jobs.py:111`, gọi từ dòng 165). Nâng trần ở cửa mà quên worker ⇒
+khách nộp đúng trần cửa, **bị trừ tiền**, rồi job chết. **Xấu hơn hiện trạng.**
+Đây là bất biến **B-6** trong spec.
+
+| Cửa | Hỏi gì |
+|---|---|
+| Cửa vào HTTP (`routes.py`) | trần này chặn TRƯỚC khi tính tiền chứ? |
+| Worker (`jobs.py`) | trần này có ≥ trần ở cửa không? |
+| `manifest.py` (`params_schema`) | kiểu `x[]` còn bị `TRAN_MEDIA_MOT_THAM_SO` kẹp |
+| Template / JS | con số hiển thị cho khách có khớp không? |
+| Test | phép kiểm đo **hành vi** hay chỉ đo *chuỗi có trong HTML*? |
+
+⛔ **Không sửa sáu chỗ cho khớp số** — bắt làn gom về **một hằng số**, mọi chỗ
+import. Sáu chỗ khai cùng một điều thì sớm muộn lệch nhau.
+
+⚠️ **Trần khác cửa thì ĐƯỢC khác số.** `TRAN_MEDIA_MOT_THAM_SO = 8` tồn tại vì
+một chi phí KHÁC (mỗi phần tử `image[]` là một lượt tra CSDL trước khi có tiền),
+không phải vì engine. Bắt làn **ghi rõ cửa nào chịu số nào**; không ghi thì người
+sau thấy 8 cạnh 9 và "sửa cho khớp".
+
+🔴 **Và phép kiểm của trần phải đo HÀNH VI.** `assert "total>4" in page` xanh với
+bất kỳ con số nào và ⛔ không chứng minh trần có hiệu lực — nộp quá trần phải bị
+**từ chối** mới là phép kiểm.
+
+---
+
 ## 5. Nắn agent — đo bằng gì, can thiệp lúc nào
 
 ⛔ **"Agent chưa báo xong" không phải phép đo.** Agent im lặng trông giống agent
