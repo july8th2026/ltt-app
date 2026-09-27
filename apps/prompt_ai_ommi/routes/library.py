@@ -6,7 +6,8 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from apps.prompt_ai_ommi.routes._shared import (
-    _as_int, _csrf, _resource_error, _user, get_db, require_login, router)
+    MANIFEST, _as_int, _csrf, _resource_error, _user, get_db, require_login,
+    router)
 
 
 # ── Thư viện: meta prompt / đoạn prompt / phong cách (R2) ───────────────────
@@ -209,3 +210,46 @@ def library_deprecated_sources(request: Request, kind: str,
         return {"items": lsvc.deprecated_sources(db, kind, user.id)}
     except Exception as exc:
         raise _library_error(exc) from exc
+
+
+@router.post("/api/image-templates/{template_id}/generate")
+async def generate_from_image_template(request: Request, template_id: str,
+                                       _identity: str = Depends(require_login),
+                                       db: Session = Depends(get_db)):
+    """Báo giá, rồi sinh ảnh composite khi `confirmed`.
+
+    Nối Task 9 (`services/composite.py`) vào HTTP — logic định giá và sinh
+    ảnh nằm hết ở service, ở đây chỉ giải mã body + dịch lỗi.
+    """
+    from apps.prompt_ai_ommi.services import composite
+    from apps.prompt_ai_ommi.tables import OmmiImageTemplate
+    body = await request.json(); _csrf(request, body); user = _user(request)
+
+    template = db.get(OmmiImageTemplate, template_id)
+    if template is None:
+        # Ban co dau that de dieu phoi dich sau: "Không tìm thấy mẫu." — de
+        # khong dau + khong boc _t() de khong do ban-dich-thieu (msgid moi
+        # chua co trong catalog, xem bao cao lam I / composite.py dau tep).
+        raise HTTPException(status_code=404, detail='Khong tim thay mau.')
+
+    try:
+        result = composite.generate(
+            db, template=template, resource_id=str(body.get("resource_id") or ""),
+            owner_id=user.id,
+            reference_variant_ids=body.get("reference_variant_ids") or [],
+            extra=str(body.get("extra") or ""),
+            equipment=str(body.get("equipment") or ""),
+            style_body=str(body.get("style_body") or ""),
+            confirmed=bool(body.get("confirmed")), app_slug=MANIFEST.slug)
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        db.rollback()
+        from platform_core import credit
+        from platform_core.registry import RegistryError
+        if isinstance(exc, (credit.ThieuCreditError, RegistryError)):
+            raise HTTPException(status_code=402, detail=str(exc)) from exc
+        raise _resource_error(exc) from exc
+    return result
