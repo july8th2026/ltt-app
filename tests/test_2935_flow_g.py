@@ -98,6 +98,42 @@ def test_FLOW_G_bao_gia_ra_mot_tran_CO_SO(cc):
 
 # ── 2. Năm trong sáu thành phần ĐÃ CÓ — đo bản khai, không đọc plan ────────
 
+def _lich_khai_trong_do_thi(so: dict) -> list[str]:
+    """`[loai]` cua nhung node LICH co khai tham so — luat cua tripwire duoi.
+
+    ⭐ Tach ra thanh HAM de mot phep TIEM NGHICH goi duoc no. Toi vua **noi**
+       tripwire nay (tu *"khong node nao ten cron"* sang *"node duoc ton tai,
+       tham so phai RONG"*), va *"noi"* voi *"thay the bang mot cau luon dung"*
+       ⛔ khong phan biet duoc tu ben ngoai. Chi mot doi chung phan biet duoc.
+    """
+    ra = []
+    for loai, dn in so.items():
+        if "cron" not in loai.lower() and "schedule" not in loai.lower():
+            continue
+        ts = getattr(dn, "tham_so", None) or {}
+        if sorted(ts.get("properties") or {}):
+            ra.append(loai)
+    return ra
+
+
+def test_luat_tripwire_lich_THUC_SU_bat_duoc_mot_node_vi_pham():
+    """🔴 TIEM NGHICH: dung mot node lich GIA CO tham so, luat phai BAT.
+
+    ⛔ Khong co bai nay thi mot lan "nang" tripwire khong phan biet duoc voi mot
+       lan **rut nanh** no: ca hai deu lam bo test xanh.
+
+    ⭐ Va ve KHANG DINH o duoi: node lich THAT (`trigger.schedule`) co tham so
+       RONG nen luat tra `[]`. Hai ve cung mot ham => luat co RANG, va rang ay
+       ⛔ khong cham vao node that.
+    """
+    class _Gia:
+        tham_so = {"type": "object", "properties": {"cron": {"type": "string"}}}
+
+    assert _lich_khai_trong_do_thi({"trigger.schedule": _Gia()}) ==         ["trigger.schedule"], "luat KHONG bat duoc node lich co tham so"
+    # Ten khong phai lich thi luat KHONG cham toi — no hep dung cho can hep.
+    assert _lich_khai_trong_do_thi({"core.http": _Gia()}) == []
+
+
 def test_nam_thanh_phan_FLOW_G_da_co_va_cron_van_la_HANG(cc):
     """⭐ TRIPWIRE ĐÃ NỔ ĐÚNG HẸN (24/09) — và đây là lượt NÂNG nó.
 
@@ -124,11 +160,24 @@ def test_nam_thanh_phan_FLOW_G_da_co_va_cron_van_la_HANG(cc):
     #    một phép kiểm chỉ hỏi "có chứa chuỗi" sẽ xanh cho một tên bịa.
     assert "piece.google_sheets.find_rows" in sheets, sheets
 
-    # ⚠️ `cron` VẪN không phải node, và đó KHÔNG phải thiếu sót — xem bài dưới.
-    cron = [t for t in so if "cron" in t.lower() or "schedule" in t.lower()]
-    assert cron == [], (
-        "Co node cron: lich van nam o HANG `workflow_trigger`, nen mot NODE "
-        f"cron la hai cho khai cung mot dieu. {cron}")
+    # 🔴 NÂNG 28/09 — tripwire này đã nổ, và nó nổ ĐÚNG. Nâng theo đúng cách
+    #    docstring trên tự dặn: *"đổi mệnh đề"*, ⛔ không xoá khẳng định.
+    #
+    #    Mệnh đề cũ: *"⛔ không node nào tên cron/schedule"*. Nó đã đúng khi
+    #    viết, nhưng nó chốt **sự VẮNG MẶT** — và chủ dự án đã duyệt mở lịch hẹn
+    #    giờ (28/09) nên sự vắng mặt ấy hết là sự thật.
+    #
+    #    ⭐ Thứ tripwire này THỰC SỰ bảo vệ ⛔ không phải cái tên: nó là
+    #    *"lịch ⛔ KHÔNG được khai trong ĐỒ THỊ"* — vì `WorkflowTrigger` không có
+    #    `node_id` (bài ngay dưới đo điều đó), và `params` thì bị **nhân bản khi
+    #    khách Save as**, nên hai bản lịch sẽ lệch và không ai biết bản nào bắn.
+    #    ⇒ Mệnh đề mới: node CỬA VÀO được tồn tại (như `trigger.manual`), nhưng
+    #      `tham_so` của nó phải RỖNG.
+    vi_pham = _lich_khai_trong_do_thi(so)
+    assert vi_pham == [], (
+        f"node khai tham so lich: {vi_pham}. Lich nam o HANG `workflow_trigger` "
+        "(khong co cot `node_id`), va `params` bi nhan ban khi khach Save as "
+        "=> hai cho khai cung mot dieu")
 
 
 def test_cron_la_MOT_HANG_chu_khong_phai_mot_NODE():

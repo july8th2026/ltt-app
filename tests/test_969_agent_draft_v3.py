@@ -552,8 +552,8 @@ def test_bao_ve_3_DOI_CHUNG_doi_ban_publish_thi_gia_DI_THEO(web):
         db.close()
 
 
-def test_HAI_MUOI_BON_route_v3_deu_duoc_dang_ky():
-    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **hai mươi bốn**
+def test_HAI_MUOI_TAM_route_v3_deu_duoc_dang_ky():
+    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **hai mươi tám**
     route.
 
     Lịch sử con số: năm → **tám** (ba route `runs` ra đời cùng kiến trúc V2)
@@ -574,6 +574,10 @@ def test_HAI_MUOI_BON_route_v3_deu_duoc_dang_ky():
     → **hai mươi ba** (28/09, làn UI-5: bốn cửa `/ket-noi` — kho kết nối
        của khách, §6 ô kết nối. Bí mật đi qua `platform_core/credential.py`;
        ⛔ không cửa nào trả lại giá trị bí mật, chỉ `ref` + nhãn).
+    → **hai mươi tám** (28/09, làn UI-12: bốn cửa `/triggers` — đặt lịch CRON +
+       cấp URL webhook. ⭐ Bốn cửa này là **lý do** `trigger.schedule` ⛔ không
+       khai `cron` trong `tham_so`: lịch có một chỗ ĐẶT riêng, nên khai lại nó
+       trong đồ thị là hai chỗ khai cùng một điều — xem `test_2935_flow_g`.)
 
     ## ⭐ Vì sao hai route 28/09 là một quyết định, không phải một chi tiết
 
@@ -636,8 +640,15 @@ def test_HAI_MUOI_BON_route_v3_deu_duoc_dang_ky():
         ("GET", "/api/v3/ket-noi/nha-cung-cap"),
         # UI-8a (28/09): duyet/tu choi mot waitpoint `core.human`.
         ("POST", "/api/v3/runs/{run_id}/nodes/{node_id}/duyet"),
+        # UI-12 (28/09): bat/tat lich CRON + webhook. Lich song o HANG
+        # `workflow_trigger`, va DAY la cua dat no — nen node `trigger.schedule`
+        # co tham so RONG (`test_2935_flow_g` ghim dieu do).
+        ("GET", "/api/v3/workflows/{workflow_id}/triggers"),
+        ("POST", "/api/v3/workflows/{workflow_id}/triggers"),
+        ("PATCH", "/api/v3/workflows/{workflow_id}/triggers/{trigger_id}"),
+        ("DELETE", "/api/v3/workflows/{workflow_id}/triggers/{trigger_id}"),
     }
-    assert len(co) == 24
+    assert len(co) == 28
 
 
 def test_tai_lieu_rong_dung_HINH_DANG_ma_M1_sinh_ra():

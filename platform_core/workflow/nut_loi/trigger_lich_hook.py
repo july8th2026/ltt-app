@@ -24,12 +24,27 @@
    cron. Mỗi lần: **đã xây, có test, ⛔ không ai nối**. ⇒ *"Có hàm + có test"* ⛔
    không trả lời *"tính năng có chạy không"* — câu trả lời nằm ở **ai gọi nó**.
 
-## ⭐ Tên tham số PHẢI khớp `config` của trigger, ⛔ không phải một từ vựng mới
+## 🔴 SỬA 28/09: `trigger.schedule` cũng KHÔNG có tham số — lịch là một HÀNG
 
-`cron` · `tz` · `bo_lo` — đọc thẳng từ `trigger._TheoCron._tz` (khoá `tz`) và
-`ban_trigger` dòng ~104 (khoá `bo_lo`), ⛔ không tự đặt `mui_gio`/`khi_lo` cho
-"dễ đọc". Một từ vựng thứ hai ở đây buộc phải có một lớp dịch, và lớp dịch ấy là
-đúng nơi một trường bị **vứt im lặng** (ba lần cùng một chỗ nối, 24/09).
+Bản đầu của tôi khai `cron` · `tz` · `bo_lo` trong `tham_so`, với lý lẽ *"tên
+khoá phải khớp `WorkflowTrigger.config`"*. Lý lẽ ấy đúng về **chính tả** và sai
+về **chỗ đứng**: khớp tên hai bên vẫn là **hai chỗ khai cùng một điều**.
+
+`test_2935_flow_g::test_cron_la_MOT_HANG_chu_khong_phai_mot_NODE` đo được cái
+quyết định: `WorkflowTrigger` ⛔ **không có cột `node_id`**. Lịch gắn vào
+`workflow_id` của một HÀNG, nên ⛔ không đồ thị nào *chứa* được nó — và `params`
+thì đi vào `workflow_version`, thứ **được nhân bản khi khách "Save as"**. Hai bản
+sao của một lịch sẽ lệch nhau, và ⛔ không ai biết bản nào đang bắn.
+
+⭐ **Cái đắt là tôi ĐÃ CÓ lập luận này rồi mà không áp.** Mục ngay dưới bỏ tham số
+   token của `webhook` bằng **đúng câu** *"`params` đi vào `workflow_version`, và
+   bản ghi ấy được nhân bản khi khách Save as"*. Tôi áp nó cho bí mật rồi dừng lại,
+   vì token *trông như* một thứ cần bảo vệ còn `cron` thì không. Nhưng lý lẽ ⛔
+   chưa bao giờ nói về bí mật — nó nói về **một sự thật ở hai chỗ**.
+
+⇒ Node giữ nguyên (nó là **cửa vào** của đồ thị, như `trigger.manual`), nhưng
+  `tham_so` RỖNG. Lịch đặt qua bề mặt trigger (`apps/agent/routes/trigger_v3.py`),
+  và node chỉ phát `event` khi hàng ấy bắn.
 
 ## ⛔ `trigger.webhook` KHÔNG có tham số token
 
@@ -54,14 +69,6 @@ from platform_core.i18n import N_
 from platform_core.workflow import he_kieu
 from platform_core.workflow.nut import Gia, NodeDefinition
 from platform_core.workflow.nut_loi import dang_ky
-
-#: Chính sách lỡ lịch — CÙNG tập với `ban_trigger.BO_LO`. Đọc tên hằng, ⛔ đừng
-#: gõ lại hai chuỗi: lần `TRAN_N_GO_TAY` đổi 6→7 sửa một bên, bỏ bên kia, và
-#: gate đỏ ở đúng phép kiểm đáng lẽ bảo vệ nó.
-def _bo_lo() -> list:
-    from platform_core.workflow.ban_trigger import BO_LO
-    return list(BO_LO)
-
 
 def _chay_trigger_lich(db, run, node: dict, **_):
     """`trigger.schedule` — thành công ngay, phát `event` mang mốc lịch.
@@ -110,22 +117,11 @@ TRIGGER_LICH = dang_ky(NodeDefinition(
     icon="🕒",
     cong_vao=(),
     cong_ra=(("event", he_kieu.Cong(type="event", required=True, nhan="event")),),
-    tham_so={
-        "type": "object",
-        "properties": {
-            # ⭐ Tên khoá KHỚP `WorkflowTrigger.config` — xem docstring module.
-            "cron": {"type": "string", "minLength": 1,
-                     "description": N_("Biểu thức lịch, ví dụ `0 8 * * *` là "
-                                      "8 giờ sáng mỗi ngày.")},
-            "tz": {"type": "string", "default": "Asia/Ho_Chi_Minh",
-                   "description": N_("Múi giờ tính lịch.")},
-            "bo_lo": {"type": "string", "enum": _bo_lo(),
-                      "default": "chay_mot_lan",
-                      "description": N_("Nếu máy chủ ngừng và lịch bị lỡ: chạy "
-                                       "một lần bù, hay bỏ qua.")},
-        },
-        "required": ["cron"], "additionalProperties": False,
-    },
+    # 🔴 RỖNG, và đây KHÔNG phải một node chưa làm xong: lịch nằm ở
+    #    `WorkflowTrigger.config` của một HÀNG (⛔ không cột `node_id`), nên
+    #    khai lại nó ở đây là hai chỗ khai cùng một điều — xem docstring.
+    tham_so={"type": "object", "properties": {}, "required": [],
+             "additionalProperties": False},
     thi_hanh="inline", gia=Gia.mien_phi(), quyen=frozenset(),
     cho=(), ma_loi=(), publish_duoc=True), _chay_trigger_lich)
 

@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 #  dong. Truoc `trap` nay, MOI loi trong khoang do de production xuong VO HAN
 #  DINH: script thoat, va ba dich vu o lai `Stopped` cho toi khi co nguoi de y.
 #
-#  Ca that: `Move-Item C:\LTTPlatformpp` nem 'Access denied' luc 17:39:14.
+#  Ca that: `Move-Item C:\LTTPlatform\app` nem 'Access denied' luc 17:39:14.
 #  Deploy thoat voi EXITCODE=1. `/health/ready` tra 502. Production chi song
 #  lai khi mot nguoi goi `Start-Service` bang tay.
 #

@@ -77,30 +77,45 @@ def test_kind_KHOP_mot_loai_trigger_DA_DANG_KY(loai):
 #  2. 🔑 Ten tham so phai KHOP `WorkflowTrigger.config`
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_tham_so_lich_dung_DUNG_ten_khoa_cua_config():
-    """🔴 `cron` · `tz` · `bo_lo` — doc thang tu `trigger._TheoCron._tz` (khoa
-    `tz`) va `ban_trigger` (khoa `bo_lo`).
+def test_lich_KHONG_khai_tham_so_nao():
+    """🔴 SUA 28/09 — ban dau toi chot `{cron, tz, bo_lo}` o day, va no SAI.
 
-    ⚠️ Mot tu vung thu hai (`mui_gio`/`khi_lo` cho "de doc") buoc phai co mot lop
-       dich, va lop dich la dung noi mot truong bi **vut im lang**: ba lan cung
-       mot cho noi trong mot ngay 24/09, moi lan doc sai TEN KHOA roi `continue`.
+    Ly le cu cua toi: *"ten tham so phai khop `WorkflowTrigger.config`"*. Dung
+    ve CHINH TA, sai ve CHO DUNG: khop ten hai ben van la **hai cho khai cung
+    mot dieu**. `test_2935_flow_g::test_cron_la_MOT_HANG_chu_khong_phai_mot_NODE`
+    do duoc cai quyet dinh — `WorkflowTrigger` ⛔ KHONG co cot `node_id`.
+
+    ⭐ Va cai dat nhat: phep kiem `test_webhook_KHONG_co_tham_so_token` ngay duoi
+       DA mang dung ly le nay tu truoc (*"`params` di vao `workflow_version`, va
+       ban ghi ay duoc nhan ban khi khach Save as"*). Toi ap no cho **token** roi
+       dung lai, vi token TRONG NHU mot thu can bao ve con `cron` thi khong.
+       Nhung ly le ay ⛔ chua bao gio noi ve bi mat — no noi ve **mot su that o
+       hai cho**. Mot `cron` bi nhan ban cung hong y het: hai ban se lech, va ⛔
+       khong ai biet ban nao dang ban.
     """
-    ts = nut_loi.tat_ca()["trigger.schedule"].tham_so["properties"]
-    assert set(ts) == {"cron", "tz", "bo_lo"}, (
-        f"ten tham so lech voi `WorkflowTrigger.config`: {sorted(ts)}")
-
-
-def test_enum_bo_lo_DOC_hang_so_chu_khong_go_lai():
-    """⭐ Cung ly le `TRAN_N_GO_TAY`: lan doi 6→7 sua mot ben, bo ben kia, va gate
-    do o dung phep kiem dang le bao ve no. Enum o node phai LA `BO_LO`."""
-    ts = nut_loi.tat_ca()["trigger.schedule"].tham_so["properties"]
-    assert ts["bo_lo"]["enum"] == list(BO_LO), (
-        f"enum {ts['bo_lo']['enum']} khac `ban_trigger.BO_LO` {list(BO_LO)}")
-
-
-def test_cron_la_BAT_BUOC():
     ts = nut_loi.tat_ca()["trigger.schedule"].tham_so
-    assert ts["required"] == ["cron"], ts["required"]
+    assert ts["properties"] == {}, (
+        "`trigger.schedule` khai tham so: lich nam o `WorkflowTrigger.config` "
+        f"cua mot HANG, khai lai o day la hai cho khai mot dieu. Thay: "
+        f"{sorted(ts['properties'])}")
+    assert ts["required"] == []
+    assert ts.get("additionalProperties") is False
+
+
+def test_KHOA_LICH_that_su_song_o_WorkflowTrigger_config():
+    """⛔ Doi chung cho bai tren: bo tham so chi DUNG neu lich CO mot cho khac.
+
+    Mot bai chi doi `properties == {}` se xanh ca khi lich ⛔ khong con cho nao
+    de dat — tuc mot tinh nang bi go im lang. Bai nay ghim VE THU HAI:
+    `WorkflowTrigger` co `config` + `workflow_id` + `next_fire_at`, va ⛔ KHONG
+    co `node_id` (nen do thi khong the chua lich).
+    """
+    from platform_core.models import WorkflowTrigger
+    cot = {c.name for c in WorkflowTrigger.__table__.columns}
+    assert {"kind", "config", "next_fire_at", "workflow_id"} <= cot, sorted(cot)
+    assert "node_id" not in cot, (
+        "`WorkflowTrigger` co `node_id` => lich CO THE gan vao node, va ca lap "
+        "luan 'lich la mot HANG' phai do lai")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

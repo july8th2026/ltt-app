@@ -108,7 +108,7 @@ $p = Start-Process powershell `
 #             Bai hoc ghi HAI ve; chi ve MOT (`Invoke-Ngoai`) duoc viet vao ma.
 #      06/09  `PSModulePath` cua PS7 ro sang tien trinh 5.1 -> `Get-Acl` chet
 #             SAU KHI da dung bon dich vu -> 502 khoang bon phut (ghi o tren).
-#      28/09  `Move-Item C:\LTTPlatformpp` 'Access denied' -> EXITCODE=1, ba
+#      28/09  `Move-Item C:\LTTPlatform\app` 'Access denied' -> EXITCODE=1, ba
 #             dich vu o lai Stopped -> 502 cho toi khi mot nguoi goi Start-Service.
 #
 #    Moi lan deu va dung NGUYEN NHAN cu the. Khong lan nao them mot luoi cho
