@@ -199,7 +199,36 @@ def test_build_meta_records_the_node_that_actually_ran():
 #: ⇒ Neu tach vendor (no CO loi that cho lan ghe lai: chunk vendor bat bien nen
 #:   cache qua cac ban deploy), thi phai do **TONG** moi tep JS, ⛔ khong do
 #:   rieng tep vao. Bai duoi day do tong san, nen no khong bi tach lam mu.
-TRAN_JS_THO = 520_000
+#:
+#: ## 🔴 UI-10a (28/09, hieu nang bundle) — doi CACH TINH, ⛔ khong doi luat tren
+#:
+#: Cong thuc CU cong ca `dynamicImports` vao tong — dung de bit duong lach
+#: vendor-split (tach TINH, van nam trong `imports`, trinh duyet vAn tu dong
+#: tai vi no la mot cau lenh `import` tinh trong tep entry). Nhung `import()`
+#: **DONG** (React.lazy) la mot chuyen KHAC ve chat: trinh duyet chi tai chunk
+#: do khi MA THAT SU goi no luc chay — khong phai luc trang mo. Cong no vao
+#: tong "lan ghe dau" la do sai dai luong, dung ho voi loi ma bai nay tung mac
+#: (dung gzip lam can tren an toan cho zstd — KHONG).
+#:
+#: ⇒ Tong bay gio la **entry + `imports` TINH** (de quy), ⛔ khong con
+#:   `dynamicImports`. Ba chunk nap tre moi (`CommandPalette`, `LayersDrawer`,
+#:   `StepInspector`) o duoi `entry["dynamicImports"]` nen tu dong ra khoi tong
+#:   — ⛔ khong phai vi chung nho, ma vi chung THAT SU khong tai o lan ghe dau.
+#:   Kiem lai bang tay 28/09: server chi inject **entry.file + entry.css** vao
+#:   trang (`platform_core/frontend_bundle.py::bundle_assets`, khong doc
+#:   `imports`/`dynamicImports`) — modulepreload cho `dynamicImports` KHONG ton
+#:   tai, nen gia thuyet "trinh duyet chi tai dynamicImports khi goi" dung that,
+#:   khong phai suy doan.
+#:
+#: Do 28/09/2026 SAU khi nap tre (build that, `frontend/agent-canvas`):
+#:
+#:     entry + imports tinh (an gi khach)   497.851   <- TRAN nay do cai nay
+#:     3 chunk dynamicImports (nap khi mo)   22.058   <- KHONG con trong tong
+#:     TONG CU (truoc UI-10a, mot tep)      517.837
+#:
+#: Ha tran `520_000 -> 510_000`: tren so do 497.851, bien ~2,4 % — ⛔ khong sat
+#: 0 vi cac lan UI con lai (UI-6/8a/9) chua gop het vao nhanh nay luc do.
+TRAN_JS_THO = 510_000
 
 #: Tran byte TREN DAY — con so khach that su tai.
 #:
@@ -244,29 +273,67 @@ TRAN_JS_THO = 520_000
 #:    goi) la **nap tre** nhung phan khong can cho lan ve dau: `CommandPalette`,
 #:    `LayersDrawer`, bon tab dat cho cua Inspector V2. Do la cong viec cua
 #:    UI-10 (hieu nang + a11y), ⛔ khong phai cua lan gop nay.
-TRAN_JS_NEN = 170_000
+#:
+#: ## 🔴 UI-10a (28/09) — DA LAM viec con lai o tren, va DOI CACH TINH
+#:
+#: Nap tre ba mang (`CommandPalette`/`LayersDrawer`/`StepInspector`, tab §6 con
+#: lai da vao StepInspector) bang `React.lazy` + `import()` o `EditorShell.tsx`.
+#: Va giong `TRAN_JS_THO` o tren: tong nay tu nay la **entry + `imports` TINH**,
+#: ⛔ khong con `dynamicImports` — xem chu thich day du o do, ⛔ khong lap lai.
+#:
+#: Do 28/09/2026, OFFLINE (zstd -3 tinh o nha, GIONG cach `test_95` da lam
+#: truoc gio — ⛔ CHUA doi chung lai tren production sau khi deploy, xem
+#: `tests/browser/agent_ui_v2_byte_tren_day.js::MO_HINH`, hang so do van neo
+#: vao ten tep JS CU va se can do lai sau khi deploy dot nay):
+#:
+#:     entry + imports tinh, zstd-3 (an gi khach)   158.736   <- TRAN nay do cai nay
+#:     3 chunk dynamicImports, zstd-3 (nap khi mo)    8.331   <- KHONG con trong tong
+#:     TONG CU (truoc UI-10a)                       164.335
+#:
+#: Ha tran `170_000 -> 165_000`: tren so do 158.736, bien ~4 % — cung do offline
+#: nhu tran cu tung dung truoc khi co so do tren day that (164.335 du doan / 164.252
+#: do duoc tren production, lech 0,05 % — xem chu thich tren), nen ⛔ khong coi
+#: 165.000 la con so cuoi cung: dieu phoi deploy roi chay lai bai trinh duyet do
+#: MOT LAN NUA de xac nhan, dung ho voi cach `164.335 -> 164.252` da tung xac nhan.
+TRAN_JS_NEN = 165_000
 
 #: Muc nen zstd mo hinh hoa Cloudflare — xem chu thich `TRAN_JS_NEN`.
 MUC_ZSTD = 3
+
+
+def _tep_nap_o_lan_ghe_dau(manifest: dict, goc: Path) -> list[Path]:
+    """Tep JS trinh duyet TAI THAT o lan mo trang dau tien: entry + moi `imports`
+    TINH, de quy. ⛔ KHONG gom `dynamicImports` — do la `import()` DONG
+    (`React.lazy`), trinh duyet chi tai khi ma goi no luc chay, khong phai luc
+    trang mo. Gom no vao day la do sai dai luong — xem chu thich `TRAN_JS_THO`
+    va `TRAN_JS_NEN` o tren (UI-10a, 28/09).
+    """
+    da_tham: set[str] = set()
+
+    def tham(khoa: str) -> None:
+        if khoa in da_tham:
+            return
+        da_tham.add(khoa)
+        for con in manifest.get(khoa, {}).get("imports", []):
+            tham(con)
+
+    tham("src/main.tsx")
+    tep = []
+    for khoa in da_tham:
+        duong = manifest.get(khoa, {}).get("file", khoa)
+        if str(duong).endswith(".js"):
+            tep.append(goc / duong)
+    return tep
 
 
 def test_canvas_bundle_stays_within_p11_size_budget():
     manifest = json.loads((ROOT / "server/static/agent-canvas/.vite/manifest.json")
                           .read_text(encoding="utf-8"))
     goc = ROOT / "server/static/agent-canvas"
-    # TONG moi tep JS cua diem vao, ke ca chunk phu — xem chu thich tren.
-    entry = manifest["src/main.tsx"]
-    ten_js = [entry["file"], *entry.get("imports", []),
-              *entry.get("dynamicImports", [])]
-    tep = []
-    for ten in ten_js:
-        # `imports` tro bang KHOA manifest, khong bang duong dan tep.
-        duong = manifest.get(ten, {}).get("file", ten)
-        if str(duong).endswith(".js"):
-            tep.append(goc / duong)
+    tep = _tep_nap_o_lan_ghe_dau(manifest, goc)
     tong = sum(p.stat().st_size for p in tep)
     assert tong <= TRAN_JS_THO, (
-        f"JS canvas {tong:,} byte > tran {TRAN_JS_THO:,} "
+        f"JS canvas (lan ghe dau) {tong:,} byte > tran {TRAN_JS_THO:,} "
         f"({len(tep)} tep: {[p.name for p in tep]})")
     # 🔴 Nen bang **zstd**, ⛔ KHONG gzip — xem chu thich `TRAN_JS_NEN`. Mot tran
     #    do gzip se XANH trong khi thu khach tai vuot no.
@@ -275,6 +342,6 @@ def test_canvas_bundle_stays_within_p11_size_budget():
     bo_nen = zstandard.ZstdCompressor(level=MUC_ZSTD)
     nen = sum(len(bo_nen.compress(p.read_bytes())) for p in tep)
     assert nen <= TRAN_JS_NEN, (
-        f"JS canvas tren day ~{nen:,} byte (zstd-{MUC_ZSTD}) > tran "
+        f"JS canvas tren day (lan ghe dau) ~{nen:,} byte (zstd-{MUC_ZSTD}) > tran "
         f"{TRAN_JS_NEN:,}. ⛔ Dung nang tran de cho xanh: cach giam byte THAT la "
-        "nap tre `CommandPalette`/`LayersDrawer`/bon tab dat cho cua Inspector V2.")
+        "nap tre them phan chi can khi nguoi dung mo (xem `EditorShell.tsx`).")
