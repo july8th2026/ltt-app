@@ -1141,3 +1141,51 @@ sẽ khiến lần sau có người đi kiểm thứ vô hại và bỏ qua th�
 **Gate:** một lượt gate XANH trên đúng SHA sẽ deploy (SHA đó chứa cả UI-0) **chính là**
 bằng chứng cho UI-0. ⛔ Tôi không chạy lượt thứ hai: `l3_lai_bi_chan` khoá theo
 (nhánh, cây), và "cuối plan" của tôi là sau **UI-11** — còn xa, trên mã mới hơn nhiều.
+
+---
+
+- `2026-09-28` `điều phối` — **MỤC ② ĐÓNG: `doi_dau_ra` CÓ chạy trên production.**
+  Toàn văn phép đo + bốn cửa gõ sai: `docs/KET_QUA_RUN_KHONG_CO_CUA_RA.md`.
+
+  ### Bằng chứng ba lớp, mỗi lớp loại trừ một cách giải thích
+
+  Run `45fe0012` · `trigger.manual → ai.llm → core.output` · 14 giây · 1 credit.
+
+  | Quan sát | Loại trừ điều gì |
+  |---|---|
+  | `y_tuong.output_ref` có cổng **`text`** | job thô trả `content` ⇒ phép dịch ĐÃ chạy |
+  | `credit_cost: 1` **còn nguyên** | `ap_ket_qua` đọc `credit_cost` **sau** phép dịch; một phép dịch "sạch sẽ" sẽ âm thầm làm nền tảng **chạy không công** |
+  | `ra.gia_tri` không rỗng | `nodes.y_tuong.output.text` giải được |
+
+  🔴 **`ra:SUCCEEDED` một mình ⛔ KHÔNG BAO GIỜ là bằng chứng.** `chay_output`
+  (`nut_loi/du_lieu.py:125`) chỉ `FAILED` khi biểu thức **lỗi**; một đường dẫn
+  không tồn tại trả `None` và node vẫn `SUCCEEDED` với `gia_tri: null`. Phải đọc
+  **giá trị**, ⛔ không đọc trạng thái — lần thứ tư trong ngày cùng họ lỗi này.
+
+  ### 🔴 PHÁT HIỆN LỚN HƠN CÂU ĐANG HỎI: kết quả run ⛔ không có cửa ra
+
+  `ket_qua_run.doc` là đường **duy nhất** ra kết quả một lượt chạy, và nó chỉ
+  được `run_con.py:194` gọi — ⛔ không route nào. `_run_json_v3` có 11 trường,
+  không trường kết quả. `output_ref` chỉ tới trình duyệt qua `/so-sanh`, mà cửa
+  ấy đòi `voi: str = Query(..., min_length=1)`: **một id run thứ hai**.
+
+  ⇒ **Khách chạy MỘT lượt thì không có đường nào xem kết quả.** Giá để xem một
+  câu trả lời là **hai** lượt chạy.
+
+  ⚠️ ⛔ Không chữa bằng cột `output_data`: `ket_qua_run.py` mở đầu bằng đúng lập
+  luận ấy và bác nó (*"một cột thứ hai là một chỗ để hai câu trả lời lệch
+  nhau"*). Chỗ thiếu là **cửa đọc**, ⛔ không phải chỗ lưu — phần tính đã có.
+  Và ⛔ không nhúng vào `_run_json_v3`: nó chạy **mỗi giây trong luồng SSE**,
+  `doc()` tốn một truy vấn ảnh chụp **mỗi node `core.output`**; đúng lý do
+  `_nodes_so_sanh` bị giữ ngoài `_nodes_json`.
+
+  ⛔ **Chưa triển khai — quyết định SẢN PHẨM** (khách thấy gì sau khi chạy),
+  thuộc loại phải hỏi chủ dự án (`CLAUDE.md` luật 2).
+
+  ### ⚠️ Vì sao chỗ này chưa từng bị phát hiện
+
+  Nó không phải một lỗi ở một tệp. Ba mảnh **đều đúng một mình**: `ket_qua_run`
+  tính đúng · `_run_json_v3` cố ý gọn · `/so-sanh` cố ý đòi hai run. Chỗ hỏng
+  nằm ở **chỗ không ai đứng** — cùng hình dạng với
+  `memory/cho-noi-hai-module-vut-truong-im-lang.md`, và nó rơi ra từ một phép đo
+  hỏi **câu khác**, ⛔ không từ một lượt rà soát.
