@@ -545,6 +545,13 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
         # ⭐ Nấc (c) của chủ dự án: chấp nhận lệch, nhưng ⛔ KHÔNG im. Hai con số
         #    này đi vào hồ sơ giai đoạn, nên "chấp nhận" là một quyết định NHÌN
         #    THẤY ĐƯỢC chứ không phải một sự vắng mặt.
+        # ⭐ B15 (28/09): VÌ SAO khách mất câu — NỢ hay ĐUÔI (T2)? Đo 28/09 cho
+        #    thấy hai cỗ máy cắt độc lập bị gộp vào MỘT số `so_doan_bi_cat`:
+        #    tắt trần nợ mà số ấy VẪN là 1 ở `k = 1,15`, vì popper đuôi
+        #    (`thoi_gian.py` cuối `lap_ke_hoach`) mới là thứ cưỡng chế T2.
+        do_duoc["so_doan_cat_vi_no"] = int(ke_hoach.get("so_doan_cat_vi_no") or 0)
+        do_duoc["so_doan_cat_vi_duoi"] = int(
+            ke_hoach.get("so_doan_cat_vi_duoi") or 0)
         do_duoc["so_doan_lech_cuoi"] = int(so_doan_lech_cuoi)
         do_duoc["giay_lech_cuoi"] = round(float(giay_lech_cuoi), 3)
         # ══ B13-B4 (28/09): HAI đại lượng ⛔ KHÔNG còn đứng cạnh nhau dưới hai

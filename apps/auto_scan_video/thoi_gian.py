@@ -117,7 +117,11 @@ TRAN_CHONG_LAN_MS = 200
 #:    mới cho cùng đầu vào là HAI tệp khác nhau ⇒ một cache cũ dùng lại được là
 #:    một cache **nói dối**. Hằng số `TRAN_KY_THUAT_ATEMPO` cũng mới, và điều
 #:    kiện *"đổi bất kỳ hằng số nào ở trên"* cũng đòi đúng lần nâng này.
-PHIEN_BAN_THOI_GIAN = 3
+#: 🔴 **3 → 4 (28/09, B15): `so_doan_bi_cat` tách thành HAI khoá.** Hình dạng
+#:    `ke_hoach` đổi (hai khoá mới), nên một kế hoạch cũ đọc bằng mã mới sẽ báo
+#:    `0`/`0` cho hai khoá ấy — tức một lời khai SAI về nguyên nhân, ⛔ không
+#:    phải một trường thiếu. `kiem()` đọc `schema`, còn vân tay đọc số này.
+PHIEN_BAN_THOI_GIAN = 4
 
 #: ⬆️ 1 → 2: bỏ trường `ban_do` (b4 hai giai đoạn). `kiem()` đọc số này, nên một
 #:    kế hoạch của lượt chạy cũ bị TỪ CHỐI thay vì được đọc thiếu một trường.
@@ -332,7 +336,23 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
     tong_ms = _ms(tong_giay)
     ke: list[dict] = []
     troi = 0                    # 🔑 nợ trôi, mang theo suốt bài
-    so_cat = 0
+    # ══ HAI cỗ máy cắt, HAI bộ đếm (đo 28/09, B15) ════════════════════════
+    #
+    # 🔴 **`so_doan_bi_cat` từng GỘP hai cỗ máy khác hẳn nhau vào một số**, và
+    #    điều đó làm một bản đối soát ⛔ không trả lời được *"khách mất câu vì
+    #    NỢ hay vì ĐUÔI?"*:
+    #
+    #      `so_doan_cat_vi_no`   nợ vượt `TRAN_TROI_SO_DOAN` ⇒ bỏ hẳn tiếng
+    #                            đoạn này để mua lại ngân sách của nó.
+    #      `so_doan_cat_vi_duoi` vòng `while` ở đuôi hàm `pop()` đoạn tràn quá
+    #                            `tong_ms` ⇒ **đây** là thứ cưỡng chế T2 /
+    #                            `D-ASV-03`, ⛔ không phải trần nợ.
+    #
+    # ⭐ Đo được 28/09: nâng `TRAN_TROI_SO_DOAN` lên vô cực (tắt cỗ máy thứ
+    #    nhất) mà `so_doan_bi_cat` **vẫn** là 1 ở `k = 1,15` — chính cỗ máy thứ
+    #    hai. Một số gộp đã che mất điều đó suốt.
+    so_cat_no = 0
+    so_cat_duoi = 0
     con_tro = 0                 # mốc kết thúc của đoạn trước, sau khi đặt
     theo_cua = {str(k): str(v) for k, v in (nhom_gop or {}).items() if v}
     he_so_nhom: dict[str, float] = {}   # ma đứng đầu -> hệ số của CẢ tệp
@@ -419,7 +439,7 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
             #    một phần của một tệp — xem docstring.
             cat = dai_sau
             dai_sau = 0
-            so_cat += 1
+            so_cat_no += 1
             dat_tai = max(bat_goc, con_tro)
             ket_thuc = dat_tai
         elif not dung_dau and troi > tran:
@@ -442,7 +462,7 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
             #    khuyết chất lượng, không phải một chi tiết kỹ thuật.
             cat = dai_sau
             dai_sau = 0
-            so_cat += 1
+            so_cat_no += 1
             dat_tai = max(bat_goc, con_tro)
             troi = max(0, troi - ngan_sach)
             ket_thuc = dat_tai
@@ -487,7 +507,7 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
     while ke and ke[-1]["dat_tai_ms"] + ke[-1]["dai_ms"] > tong_ms:
         bo = ke.pop()
         if bo["dai_ms"] > 0:
-            so_cat += 1
+            so_cat_duoi += 1
     if not ke:
         raise ThoiGianError(
             _t('Bản lồng tiếng dài hơn video và không còn đoạn nào vừa.'))
@@ -505,7 +525,13 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
         "thoi_luong_nguon_ms": _ms(tong_giay),
         "ket_cuoi_ms": ket_cuoi,
         "so_doan": len(ke),
-        "so_doan_bi_cat": so_cat,
+        # ⚠️ `so_doan_bi_cat` GIỮ NGUYÊN nghĩa "tổng số đoạn khách mất" — bốn
+        #    chỗ hạ nguồn đọc nó (`ban_dung`, `qc`, `tom_tat`, `test_411`) và
+        #    đổi nghĩa một khoá đang có là cách chắc chắn nhất để một trong bốn
+        #    chỗ ấy lệch. Hai khoá MỚI **thêm vào** để nói *vì sao*.
+        "so_doan_bi_cat": so_cat_no + so_cat_duoi,
+        "so_doan_cat_vi_no": so_cat_no,
+        "so_doan_cat_vi_duoi": so_cat_duoi,
         "troi_toi_da_ms": max((d["troi_sau_ms"] for d in ke), default=0),
         "doan": ke,
     }
@@ -636,6 +662,13 @@ def tom_tat(ke_hoach: dict) -> dict:
     return {
         "so_doan": len(doan),
         "so_doan_bi_cat": int(ke_hoach.get("so_doan_bi_cat") or 0),
+        # ⛔ **`so_doan_cat_vi_{no,duoi}` CỐ Ý ⛔ KHÔNG ở đây.** Chúng nằm trong
+        #    `ke_hoach` (artifact) và được `giai_doan_thoi_gian` xuất xuống
+        #    `outputs["master"]`. Lý do cơ học, ⛔ không phải thẩm mỹ: mỗi khoá
+        #    PHẲNG mới của hàm này phải được khai ở
+        #    `asv_doi_soat.KHOA_{CAN,BO_QUA_CO_Y}` — `test_408` chốt hai chiều —
+        #    và `tools/` thuộc L3. `master` là MỘT khoá trong `KHOA_CAN` nên
+        #    khoá con của nó thêm được tự do. Cùng đường đã dùng cho B13-B4.
         # ⚠️ Dem theo `ma` (ke ca dong DI THEO), ⛔ khong theo TEP — xem docstring.
         "so_doan_tang_toc": len(nhanh),
         "he_so_toc_lon_nhat": round(
