@@ -12,6 +12,52 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-28 (khuya) — Gỡ trần ảnh đẩy phép đặt chỗ **qua điểm giao**: A thiếu chỗ từ ảnh thứ 17
+
+Phiên bên cạnh deploy `f26e80fb` xong, trả lại tôi **một phép còn nợ**: họ ⛔ không
+nhập khoá API nên không kiểm được đường ảnh. Tôi chạy được vì `tools/moi_truong_may_b.py`
+đọc token qua SSH vào bộ nhớ tiến trình (⛔ không in, ⛔ không ghi đĩa) — nên phép ấy
+⛔ không cần ai gõ bí mật, chỉ cần đi đúng cửa đã có trong kho.
+
+**Phép đo.** PNG / JPEG / WebP 640×480 đều OK; 4 / 12 / 30 ảnh một request đều OK —
+trần đếm đã thật sự biến mất trên production. Nhưng `prompt_tokens` máy B trả về
+khớp **tuyệt đối** một đường thẳng mà tôi ⛔ không dự đoán được:
+
+```
+B thu that = 531 x N + 13      (lech +0.0 o ca N = 4, 12, 30)
+A dat cho  = 514 x N + khuon   (anh_token.py, khuon = 256 + 16 x so_TIN)
+```
+
+🔴 **`514` là công thức của tôi, `531` là thứ máy B thật sự thu.** Chênh **17
+token mỗi ảnh** là khuôn chat bọc quanh **mỗi phần nội dung** — mà `uoc_token.khuon()`
+chỉ nhân theo **số TIN NHẮN** (`KHUON_MOI_TIN = 16`), ⛔ không theo số ảnh. 200 ảnh
+trong MỘT tin nhắn ⇒ `khuon` vẫn tính đúng một tin.
+
+| N ảnh | A đặt chỗ | B thu thật | chênh | |
+|---|---|---|---|---|
+| 4 | 2.344 | 2.137 | +207 | an toàn |
+| 16 | 8.512 | 8.509 | **+3** | an toàn, sát mép |
+| 17 | 9.026 | 9.040 | −14 | **thiếu** |
+| 200 | 103.088 | 106.213 | −3.125 | thiếu (1,68 % pool 186.368) |
+
+⭐ **Điểm giao là N ≈ 16,2 — và hôm nay TÔI đẩy trần từ 4 lên không giới hạn.**
+Trước lượt của tôi, `max_images = 4` giữ mọi request nằm sâu trong vùng A thừa chỗ,
+nên lỗi này **có sẵn mà ⛔ không với tới được**. Gỡ trần đếm ⛔ không tạo ra lỗi —
+nó **mở đường tới** lỗi. Đây đúng là hình dạng *"tính năng mới làm lộ lỗi cũ"*.
+
+⛔ **Chưa sửa.** Ghi ở đây để ⛔ không mất, vì sửa thì đụng `anh_token.py` (hai bản
+phải giữ **cùng blob**) + hợp đồng A ⊆ B + thứ tự deploy (bên đặt chỗ NHIỀU hơn đi
+trước). Đó là một lượt riêng, ⛔ không phải phần đuôi một phiên đã khép.
+
+⚠️ Và `17` là số **đo được** (khớp 3 điểm, lệch 0), ⛔ không phải số suy ra — nhưng
+nó đo ở **một tin nhắn, ảnh chạm sàn 512**. Trước khi ghim nó vào mã phải đo thêm
+**nhiều tin nhắn** và **ảnh trên sàn**, vì nếu 17 hoá ra phụ thuộc kích thước thì
+một hằng gõ tay lại sinh đúng thứ tôi vừa gỡ bỏ hôm nay.
+
+**Bài học.** Nới một trần ⇒ phải hỏi *"trần ấy đang CHE cái gì"*. Tôi đã kiểm
+`DatChoVuotPool`, KV, VRAM, độ trễ — ⛔ không kiểm cái rẻ nhất: **phép đặt chỗ của
+chính mình còn đúng ở đầu kia của dải mới không.** Phép đo hôm nay tốn 4 phút.
+
 ## 2026-09-28 (đêm) — Ảnh: gỡ trần "4 ảnh", và **ba lần một phép đo đo chính bộ đo**
 
 Chủ dự án: *"tối ưu triệt để khả năng đọc ảnh"*, và sau đó hai câu chỉnh hướng đắt
