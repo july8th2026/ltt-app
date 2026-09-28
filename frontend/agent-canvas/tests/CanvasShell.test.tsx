@@ -154,7 +154,16 @@ describe('CanvasShell', () => {
     await themVanBan()
     fireEvent.click(screen.getByRole('button', { name: 'Chi tiết' }))
     const inspector = screen.getByRole('complementary', { name: 'Chi tiết node' })
-    const prompt = within(inspector).getByLabelText('prompt *')
+    // 🔴 `find*` chu KHONG phai `get*`: lan UI-10a doi `StepInspector` sang
+    //    `React.lazy` + `import()`, va cho goi boc no trong
+    //    `<Suspense fallback={null}>`. Nen the `<aside>` (complementary) co mat
+    //    NGAY, con RUOT thi den sau mot nhip — `getByRole('complementary')` dau
+    //    ma `getByLabelText` truot.
+    //
+    // ⚠️ Do la ly do bai nay do o gate ma xanh o may toi: `npm test --
+    //    --maxWorkers=2` doi nhip so voi `npx vitest run`. Mot tien de ngam ve
+    //    THOI GIAN thi chi lo ra khi nhip doi — va no lo ra o cho dat nhat.
+    const prompt = await within(inspector).findByLabelText('prompt *')
     fireEvent.change(prompt, { target: { value: 'viết một đoạn' } })
     expect(prompt).toHaveValue('viết một đoạn')
     // O SO co cong tac bieu thuc (task 15, viec them 2).
