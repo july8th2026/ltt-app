@@ -139,6 +139,39 @@ cho hai vị trí chữ khác nhau ⛔ không?"*
 
 ---
 
+### 5.3 ✅ ĐÃ ĐO — 28/09 · nghi ngờ được GỠ
+
+`ffmpeg 8.0.1-full_build-www.gyan.dev` (build tĩnh có `--enable-libass`).
+Sinh `.ass` qua **đúng đường sản phẩm** (`phu_de.viet_tep_ass`, ép `margin_v`
+qua `tinh_chinh`, `safe_area_percent = 0`), đọc lại số **thật** trong dòng
+`Style:`, burn một khung nền đen chữ trắng, xuất `rawvideo gray`, quét byte
+tìm **đáy** khối chữ.
+
+| cao khung | `MarginV` | đáy khối chữ | khoảng cách tới đáy khung |
+|---|---|---|---|
+| 576 | 20 · 40 · 72 · 100 · 144 · 200 | 547 · 527 · 495 · 467 · 423 · 367 | 28 · 48 · 80 · 108 · 152 · 208 |
+| 1080 | 20 · 40 · 72 · 100 · 144 · 200 | 1051 · 1031 · 999 · 971 · 927 · 871 | 28 · 48 · 80 · 108 · 152 · 208 |
+
+⭐ **`khoảng_cách = MarginV + 8`**, và **y hệt nhau ở cả hai chiều cao khung**.
+Offset `+8` là viền/bóng chữ tràn xuống, ⛔ không phải lỗi.
+
+⇒ **⛔ Không có `72 ≡ 144`. ⛔ Không kẹp. ⛔ Không làm tròn lệch. ⛔ Không chia
+tỉ lệ theo PlayRes.** Cảnh báo của kho tham chiếu **⛔ không tái hiện** trên
+ffmpeg/libass của máy này.
+
+⇒ **B8 + B9-2b + B10-1 đứng vững. ⛔ KHÔNG đổi sang cách đặt chữ bằng toạ độ tuyệt đối của kho tham chiếu.**
+
+🔑 **Và một kết quả ÂM cũng là một kết quả.** Nếu ⛔ không đo, món nợ này sẽ
+nằm mãi trong danh sách và mỗi lần ai đó đọc `phu_de.py` lại phải tự hỏi *"cái
+`margin_v` này có thật sự ăn ⛔ không?"*. Nay câu hỏi ấy **đóng**, kèm bảng số
+và tên bản ffmpeg.
+
+⚠️ Nhưng bảng trên nói thêm một điều **ngoài câu hỏi ban đầu**: `MarginV` là
+**pixel tuyệt đối của PlayRes**, nên cùng một con số cho **5,2 %** chiều cao ở
+khung 576 và chỉ **2,8 %** ở khung 1080. Đó đúng là chỗ `LE_AN_TOAN_PHAN` của
+B9-2b đã vá (sàn *title safe* 5 %) — phép đo này **xác nhận** bản vá ấy cần
+thiết, ⛔ không phải phòng xa.
+
 ## 6. Làn D — B10-2 + B10-3 (điều phối tự làm)
 
 - **B10-2** hộp ngang: đã có từ B10-4 (`x 0,09..0,90`); kiểm nó đi hết đường
