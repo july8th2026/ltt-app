@@ -1,4 +1,9 @@
-"""Dò dải chữ gốc bằng **RapidOCR det-only** + gom cụm — tầng CHÍNH của `do_vung`.
+"""Dò dải chữ gốc bằng **RapidOCR det+rec** + gom cụm — tầng CHÍNH của `do_vung`.
+
+⚠️ Tên tệp/mô-đun vẫn nói "det" vì phần **hộp** (vùng che) vẫn do det đảm
+nhiệm — **rec** (bật lại B13 D1, 28/09) chỉ phụ, cho tín hiệu *"chữ đổi"* để
+tách đoạn đúng hơn (xem khối "use_rec=True" bên dưới); văn bản ⛔ không bao
+giờ là một phần của kết quả trả về.
 
 ## 🔴 Vì sao tệp này tồn tại (B10-4, 28/09/2026)
 
@@ -53,14 +58,34 @@ thành *"video ⛔ không có sub cứng"* ⇒ **⛔ không che ⇒ lộ chữ H
 **âm thầm** và khách nhận video lộ chữ; gộp về *"chưa quét được"* thì chỉ tốn
 thêm một tầng dò. **Cùng một phép gộp, hai cái giá lệch hàng bậc.**
 
-## ⛔ `use_rec=False` — chỉ cần HỘP
+## ⭐ `use_rec=True` (B13 D1, 28/09) — chữ CHỈ để phát hiện ĐỔI ĐOẠN
 
-Chủ dự án chốt 28/09: ⛔ **không** dùng văn bản OCR để đối chiếu với bản chép
-lời. Ta chỉ hỏi *"chữ ở đâu"*, ⛔ không hỏi *"chữ là gì"*.
+Chủ dự án chốt 27/09: ⛔ không dùng văn bản OCR để đối chiếu với bản chép lời
+— rồi **đảo lại** 28/09: *"nên bật lại chế độ OCR cho đọc text tham chiếu,
+như cách mà render `D:\\Viral` làm."* Lệnh sau THẮNG.
 
-⚠️ Đo được: RapidOCR **vẫn trả** văn bản kể cả khi đặt `use_rec=False`, nên
-đừng đọc cờ ấy như một lời hứa về nội dung trả về — ta **bỏ qua** trường văn
-bản, đó là lựa chọn của ta chứ ⛔ không phải bảo đảm của thư viện.
+🔑 **Lý do bật lại, đo được trên chính B10-3**: `det-only` chỉ có hình học
+(khoảng cách thời gian, tâm Y nhảy) để tách đoạn — thiếu đúng tín hiệu
+*"chữ đã đổi"*, nên nó chia đoạn THÔ hơn bản tham chiếu (B10-2 đo 4 đoạn trên
+phim nghiệm thu; xem `_theo_doan` bên dưới cho tín hiệu thứ ba).
+
+⛔ **Chữ CHỈ dùng để so *"đổi hay không đổi"*, KHÔNG BAO GIỜ đi xa hơn**: ⛔
+không đưa vào nội dung trả về (`KetQua`/`_bao()` ⛔ không có trường văn bản),
+⛔ không dịch từ nó, ⛔ không để nó rò vào bản chép lời hay lời nhắc LLM. Nó
+sống trong `Hop.van_ban` (nội bộ tệp này) và biến mất ngay sau `_theo_doan`.
+
+⭐ **Phép so — DÙNG LẠI, ⛔ tự nghĩ ra**: `_chuan_hoa_van_ban`/`_van_ban_giong`
+dưới đây chép nguyên tắc từ `D:\\Viral\\resources\\app-src\\dai_sub_rapid.py`
+(CHỈ ĐỌC) `_norm_txt`/`_txt_giong` (dòng 190-211), nơi được gọi để tách đoạn
+tại dòng 1524-1527. Ba bước: (1) chuẩn hoá — chỉ giữ ký tự Hán (`一-鿿`) +
+số, bỏ hết dấu câu/khoảng trắng (nguồn của app này là tiếng Trung, xem
+`giai_doan_chep_loi.py`); (2) rỗng-rỗng = giống, một rỗng một có = khác;
+(3) khớp tuyệt đối, hoặc một là tiền/hậu tố của bên kia (OCR đọc dần), hoặc
+tỉ lệ ký tự chung (`difflib.SequenceMatcher`) ≥ 0,6 = CÙNG câu.
+
+⚠️ Đo được (B10-4): RapidOCR **luôn** trả văn bản dù `use_rec` là gì — cờ đó
+⛔ không phải lời hứa về NỘI DUNG trả về của `do_vung_ocr`; nội dung trả về
+do TA quyết, và quyết định đó nằm ở `_bao()`/`KetQua`, ⛔ không nằm ở cờ này.
 """
 from __future__ import annotations
 
@@ -75,11 +100,33 @@ _log = logging.getLogger(__name__)
 #: Số khung lấy mẫu. Kho tham chiếu dùng ~2 fps cho che động; ở đây ta còn ở
 #: chặng ĐỀ XUẤT (một dải cho khách xác nhận) nên lấy thưa hơn nhiều.
 #:
-#: ⭐ `24` chứ ⛔ không `18` của `do_dai_chu`: bộ dò cũ cần khung **dày** để `std`
-#:    theo thời gian có nghĩa; bộ dò này đọc **từng khung độc lập**, nên số
-#:    khung chỉ quyết định độ phủ thời gian, ⛔ không quyết định chất lượng một
-#:    phép đo.
-SO_KHUNG_OCR = 24
+#: ⭐ `18` gốc → `24` (B10-4): bộ dò cũ cần khung **dày** để `std` theo thời
+#:    gian có nghĩa; bộ dò này đọc **từng khung độc lập**, nên số khung chỉ
+#:    quyết định độ phủ thời gian, ⛔ không quyết định chất lượng MỘT phép đo.
+#:
+#: 🔴 **`24` → `48` (B13 D2/D3, 28/09).** `24` được chọn cho bài toán CŨ (det-
+#:    only chỉ cần tìm DẢI — một hằng số đủ dày để thấy VỊ TRÍ chữ). D1 giao
+#:    cho khung một việc KHÁC: bắt tín hiệu *"chữ vừa ĐỔI"* — và `24` trên
+#:    275 s = **11,5 giây/mẫu** có thể **bỏ sót cả một dòng phụ đề** ngắn hơn
+#:    khoảng đó. ⛔ Đừng để mặc một hằng số đặt cho bài toán khác — đo rồi mới
+#:    chỉnh (`tools/`-scratch, không commit, xem B13 D3):
+#:
+#:        N=24  6,1 lõi ·  28,1 s (tương) · **8** đoạn  (det-only đo 4)
+#:        N=48  6,1 lõi ·  66,4 s (tương) · **20** đoạn   <- CHỌN
+#:        N=72  6,1 lõi ·  92,5 s (tương) · **31** đoạn
+#:
+#:    CPU **không đổi** theo N (`chan_loi()` giữ nguyên 6,1 lõi ở cả ba mức —
+#:    trần không phải thứ mặc cả ở đây). Cái giá DUY NHẤT là **giây tường**,
+#:    và việc này đi qua hàng đợi job (luật chết người #8) nên giây tường
+#:    KHÔNG chặn một yêu cầu HTTP nào. Chọn `48` (gấp đôi độ phân giải thời
+#:    gian — 5,7 giây/mẫu) chứ ⛔ không `72`: lợi ích cận biên giảm dần (N=48→72
+#:    thêm 11 đoạn tốn thêm 26 s so với N=24→48 thêm 12 đoạn tốn 38 s) VÀ số
+#:    khung càng nhiều thì OCR-recognition càng có nhiều dịp đọc sai → sinh
+#:    tín hiệu "đổi" GIẢ (nhiễu) — rủi ro CHƯA đo được ở B13 D3 (thiếu văn bản
+#:    tham chiếu có mốc thời gian cho video hardsub này để đối chiếu RANH
+#:    GIỚI thật, ⛔ chỉ đếm SỐ đoạn). `48` là bước tăng THẬN TRỌNG cho lần đầu
+#:    bật tín hiệu này, ⛔ không phải mức đã chứng minh tối ưu.
+SO_KHUNG_OCR = 48
 
 #: Chỉ xét hộp có tâm y từ đây trở xuống. Phụ đề gốc nằm ở nửa dưới.
 #:
@@ -126,6 +173,11 @@ HE_SO_HO = 1.5
 #: không"* — chỉ khác trục: `GOM_CUM_Y` hỏi trong một khung, cái này hỏi qua
 #: thời gian.
 NHAY_Y = 0.03
+
+#: Tỉ lệ ký tự chung (`difflib.SequenceMatcher.ratio`) tối thiểu để hai chuỗi
+#: đã chuẩn hoá coi là CÙNG câu (D1 — tín hiệu thứ ba, cùng ngưỡng kho tham
+#: chiếu `dai_sub_rapid.py:211`, ⛔ tự nghĩ ra).
+CHU_GIONG_TI_LE = 0.6
 
 
 #: Trần LÕI cho một lượt dò OCR. 🔴 **Đây là một bản vá SỰ CỐ, ⛔ không phải
@@ -179,13 +231,21 @@ class OcrLoiKyThuat(RuntimeError):
 
 
 class Hop(NamedTuple):
-    """Một hộp chữ trên một khung, toạ độ PHÂN SỐ khung."""
+    """Một hộp chữ trên một khung, toạ độ PHÂN SỐ khung.
+
+    `van_ban` — CHỈ dùng nội bộ để `_theo_doan` hỏi *"đoạn này với đoạn kề có
+    cùng câu không"* (tín hiệu thứ ba, D1). ⛔ Không bao giờ đi ra khỏi tệp
+    này: `_bao()` — hàm DUY NHẤT dựng dict trả về — ⛔ không đọc trường này.
+    Đã CHUẨN HOÁ (`_chuan_hoa_van_ban`) tại nơi tạo ra `Hop`
+    (`_hop_cua_khung`), ⛔ không phải văn bản thô của RapidOCR.
+    """
 
     giay: float
     y0: float
     y1: float
     x0: float
     x1: float
+    van_ban: str = ""
 
 
 @contextlib.contextmanager
@@ -263,6 +323,47 @@ def _may():
     return _MAY
 
 
+def _chuan_hoa_van_ban(tho: str) -> str:
+    """Chuẩn hoá văn bản OCR để SO câu — CHÉP TỪ kho tham chiếu (CHỈ ĐỌC)
+    `D:\\Viral\\resources\\app-src\\dai_sub_rapid.py:190 _norm_txt`, nhánh mặc
+    định (giữ chữ Hán — nguồn app này là tiếng Trung).
+
+    Chỉ giữ ký tự trong dải Hán (`一`-`鿿`) và chữ số; bỏ hết dấu câu, khoảng
+    trắng, ký tự Latin lẫn vào do OCR đọc nhầm. Đây KHÔNG phải một phép làm
+    sạch nội dung — kết quả CHỈ dùng để so sánh *"đổi hay không"*, không bao
+    giờ hiển thị hay lưu lại làm văn bản.
+    """
+    return "".join(c for c in (tho or "") if ("一" <= c <= "鿿") or c.isdigit())
+
+
+def _van_ban_giong(a: str, b: str) -> bool:
+    """Hai văn bản ĐÃ CHUẨN HOÁ có phải CÙNG một câu không — CHÉP TỪ kho tham
+    chiếu (CHỈ ĐỌC) `D:\\Viral\\resources\\app-src\\dai_sub_rapid.py:202
+    _txt_giong`.
+
+    `True` nếu: cả hai rỗng (không đọc được chữ ở cả hai phía — không kết
+    luận được "đổi"); khớp tuyệt đối; một là tiền/hậu tố của bên kia (OCR đọc
+    dần một câu qua nhiều khung); hoặc tỉ lệ ký tự chung
+    (`difflib.SequenceMatcher`) đạt `CHU_GIONG_TI_LE`.
+
+    ⚠️ Một bên rỗng, bên kia có chữ ⇒ **KHÁC** — dùng CÓ Ý ở `_theo_doan`:
+       nơi gọi hàm này CÒN đòi cả hai bên đều CÓ chữ trước khi tin tín hiệu
+       "đổi", đúng cách kho tham chiếu làm ở dòng 1527
+       (`txt and seg[6] and not _txt_giong(...)`) — một khung OCR-miss (chữ
+       vẫn còn nhưng đọc hụt) ⛔ không được cắt oan một câu làm đôi.
+    """
+    if not a or not b:
+        return not a and not b
+    if a == b:
+        return True
+    ngan, dai = (a, b) if len(a) <= len(b) else (b, a)
+    if len(ngan) >= 2 and (dai.startswith(ngan) or dai.endswith(ngan)):
+        return True
+    import difflib
+
+    return difflib.SequenceMatcher(None, a, b).ratio() >= CHU_GIONG_TI_LE
+
+
 def _hop_cua_khung(may, anh, rong: int, cao: int, giay: float
                    ) -> list[Hop] | None:
     """Các hộp chữ trên MỘT khung (mảng BGR của OpenCV).
@@ -291,7 +392,13 @@ def _hop_cua_khung(may, anh, rong: int, cao: int, giay: float
        và **⛔ không bao giờ hỏi** *"nếu MỌI khung hỏng thì sao"*.
     """
     try:
-        kq, _ = may(anh, use_det=True, use_cls=False, use_rec=False)
+        # ⭐ B13 D1 (28/09): `use_rec=True` — chủ dự án đảo lệnh 27/09, xem
+        #    khối "use_rec=True" ở đầu tệp. C1 đã ĐO: rec KHÔNG thêm chi phí
+        #    lõi/giây đo được so với det-only trên đường sản phẩm
+        #    (`_dai_chu_nhieu_tang`, cả hai 609 % = 6,1 lõi), và `chan_loi()`
+        #    ở `do_dai_chu_ocr` bọc trọn cả nhánh này — ⛔ không cần trần
+        #    riêng.
+        kq, _ = may(anh, use_det=True, use_cls=False, use_rec=True)
     except Exception as exc:  # noqa: BLE001
         # ⛔ `debug` chứ ⛔ không `warning`: một khung hỏng là chuyện thường và
         #    24 dòng cảnh báo cho một lượt dò là nhiễu. Ca **đáng báo** — mọi
@@ -301,10 +408,13 @@ def _hop_cua_khung(may, anh, rong: int, cao: int, giay: float
         return None
     ra: list[Hop] = []
     for muc in (kq or ()):
-        # ⚠️ Đọc THẬT: `use_rec=False` VẪN trả `[hộp4điểm, văn_bản, điểm]`.
-        #    Bản đầu lặp thẳng trên `kq` và nó ném *"float() argument must be
-        #    ... not 'list'"*. ⭐ Cờ ấy ⛔ không phải một lời hứa về hình dạng.
+        # ⚠️ Đọc THẬT: mục là `[hộp4điểm, văn_bản, điểm]`. Bản đầu lặp thẳng
+        #    trên `kq` và nó ném *"float() argument must be ... not 'list'"*.
         box = muc[0] if isinstance(muc, (list, tuple)) and muc else muc
+        # ⭐ Văn bản — CHUẨN HOÁ NGAY tại đây (`_chuan_hoa_van_ban`), ⛔ không
+        #    giữ bản thô: xem "use_rec=True" ở đầu tệp vì sao chữ ⛔ không
+        #    được đi xa hơn `Hop.van_ban`.
+        van_ban_tho = muc[1] if isinstance(muc, (list, tuple)) and len(muc) > 1 else ""
         try:
             xs = [float(q[0]) for q in box]
             ys = [float(q[1]) for q in box]
@@ -313,7 +423,8 @@ def _hop_cua_khung(may, anh, rong: int, cao: int, giay: float
         if not xs or not ys or rong <= 0 or cao <= 0:
             continue
         ra.append(Hop(giay, min(ys) / cao, max(ys) / cao,
-                      min(xs) / rong, max(xs) / rong))
+                      min(xs) / rong, max(xs) / rong,
+                      _chuan_hoa_van_ban(str(van_ban_tho or ""))))
     return ra
 
 
@@ -478,13 +589,20 @@ def _theo_doan(hop: list[Hop], *, dai: float, nhip: float) -> list[dict]:
 
     ## Cách gom — lấy từ kho tham chiếu, và vì sao từng vế
 
-    Duyệt các khung theo thời gian. Mở đoạn mới khi **một trong ba**:
+    Duyệt các khung theo thời gian. Mở đoạn mới khi **một trong ba** (B13 D1,
+    28/09 — trước đó chỉ có hai vế đầu, và đó chính là lý do B10-2 chia đoạn
+    thô hơn bản tham chiếu):
 
     - **hở thời gian** > `nhip × HE_SO_HO` — hai lần xuất hiện cách nhau quá
       xa là hai câu khác nhau, ⛔ không phải một câu kéo dài;
     - **nhảy dọc** > `NHAY_Y` — chữ đổi chỗ thì đó là một đoạn khác;
-    - ⛔ (⛔ không tách theo `x`: câu căn giữa có `x` gần như nhau, nên tách
-      theo `x` chỉ sinh nhiễu — kho tham chiếu đã bỏ vế này.)
+    - **chữ ĐỔI** (`_van_ban_giong` trả `False`, VÀ cả hai bên đều CÓ chữ —
+      một bên rỗng là OCR đọc hụt, ⛔ không phải câu mới) — tín hiệu `det-only`
+      ⛔ có thể có, chép từ `dai_sub_rapid.py:1527`.
+
+    ⛔ Không tách theo `x`: câu căn giữa có `x` gần như nhau, nên tách theo
+    `x` chỉ sinh nhiễu — kho tham chiếu đã bỏ vế này, ta giữ nguyên quyết
+    định đó.
 
     Trong một đoạn thì **hợp** hộp: đoạn hẹp được phủ như đoạn rộng nhất.
 
@@ -503,8 +621,14 @@ def _theo_doan(hop: list[Hop], *, dai: float, nhip: float) -> list[dict]:
         truoc = tho[-1][-1]
         tam_truoc = (truoc.y0 + truoc.y1) / 2
         tam = (h.y0 + h.y1) / 2
+        # ⭐ B13 D1: tín hiệu thứ ba — chữ ĐỔI. Đòi CẢ HAI bên có chữ (đúng
+        #    `_van_ban_giong` + cách gọi của dai_sub_rapid.py:1527): một
+        #    khung OCR đọc hụt (van_ban rỗng) ⛔ không được cắt oan.
+        chu_doi = (h.van_ban and truoc.van_ban
+                  and not _van_ban_giong(h.van_ban, truoc.van_ban))
         if (h.giay - truoc.giay > nhip * HE_SO_HO
-                or abs(tam - tam_truoc) > NHAY_Y):
+                or abs(tam - tam_truoc) > NHAY_Y
+                or chu_doi):
             tho.append([h])
         else:
             tho[-1].append(h)
