@@ -474,6 +474,18 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         #    `thi_hanh.chay_giai_doan` bat no TRUOC nhanh `except Exception`,
         #    ghi con tro va tra ve binh thuong — khong bao gio len toi bien.
         "TiepNoi",
+        # 🔑 `DiemDongLoi` (B13 viec E2, 28/09): `diem_dong.doc_diem_dong` nem
+        #    khi `ffmpeg` giai ma diem dong that bai KY THUAT (hong/qua han).
+        #    `giai_doan_hinh_anh._ung_vien_duoi_xau` — NGUOI GOI DUY NHAT — bat
+        #    NGAY bang `except diem_dong.DiemDongLoi`, ghi `log.warning`, roi
+        #    tra ve `[]` (danh sach ung vien rong): tin hieu "duoi canh xau" la
+        #    BO SUNG cho `ke_cat`, ⛔ khong phai buoc bat buoc — mat no thi GD2
+        #    van chay tiep voi ung vien tu ban bien tap. Cung ly le voi
+        #    `OcrLoiKyThuat`/`DoVungLoi` o tren: bat tai cho de mot ho CPU/
+        #    ffmpeg hong KHONG lam hong ca lan cat, ⛔ khong bao gio len toi
+        #    `job_runner`/`retry` — roi xuong retry se lam ba lan chay deu ton
+        #    mot luot giai ma ffmpeg ma khong doi ket qua.
+        "DiemDongLoi",
     }
 
     # ⚠️ Gom lop cha theo CA HAI dang: `class X(MediaError)` (`ast.Name`) va
