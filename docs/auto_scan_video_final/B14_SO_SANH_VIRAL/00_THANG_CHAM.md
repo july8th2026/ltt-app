@@ -40,20 +40,41 @@ render_worker.py  346    worker SONG, doc JSON-line stdin, giu NONG model qua nh
 `chan_doan_loi.py` · `tts_chuan_hoa` · `vietnormalizer` · `thong_tin_may` ·
 `thumb_tool` · `diarize_pitch.py` · `bam_watermark.py` · `cat_giong_clone.py`
 
-### ⛔ NGOÀI module Render — đo được, ⛔ không phải ý kiến
+### 🔴 Biên SỬA LẦN HAI — `grep "import"` là SAI DỤNG CỤ
 
+**Bản trước của mục này loại 9 tệp bằng:**
 ```
 grep "import <m>" render_worker.py xu_ly_chon.py localize.py xu_ly_video.py phu_de.py
 ```
-⇒ ⛔ **KHÔNG ai trong module Render gọi:** `long_tieng/` · `_demucs_worker.py` ·
-`_whisper_worker.py` · `_phan_tich_srt.py` · `cai_gpu.py` · `cai_omnivoice.py` ·
-`kiem_thu_vien.py` · `bench_toc_do.py` · `chan_doan_gpu.py`
+🔴 **Phép ấy trả lời *"module NÀO được NHẬP"*, ⛔ không trả lời *"tệp nào được
+CHẠY"*.** Một tiến trình con sinh bằng `subprocess` là một lời gọi mà **đồ thị
+import ⛔ không thể thấy**. Hai làn (V1, V4) bắt độc lập cùng một lỗi.
 
-⚠️ ⭐ **Hai cái đầu là bất ngờ đáng ghi:** `long_tieng/` và `_demucs_worker.py`
-nghe **đúng như** việc lồng tiếng và tách nhạc của ta, mà **module Render ⛔ không
-gọi chúng**. ⇒ Một tệp mang đúng tên việc ta làm vẫn có thể **⛔ không nằm trong
-đường họ chạy** — đúng họ lỗi *"đọc thứ đại diện thay vì đọc thứ thật"*. ⛔ Đừng
-xếp hàng theo **tên tệp**; xếp theo **đường gọi**.
+**Ba tệp bị loại OAN — chúng ở trên đường chạy, qua `subprocess`:**
+| tệp | neo | và lý do họ tách tiến trình — ⭐ đáng đọc |
+|---|---|---|
+| `_whisper_worker.py` | `localize.py:2369-2378` | *"chạy Whisper ASR trong SUBPROCESS để **KILL được khi cuDNN TREO GIỮA CHỪNG** (đo thật)"*; `:2393` gọi nó là *"WORKER BỀN nạp model 1 lần phục vụ NHIỀU video"* |
+| `_demucs_worker.py` | `localize.py:13776-13780` | *"MỘT lượt demucs qua subprocess riêng — PyTorch + **model unload ngay khi xong**"* |
+| `cai_gpu.py` | `ocr_text.py:125` | — |
+
+🔑 **Hai lý do ấy nói trực tiếp về sự cố của TA:** máy treo **hai lần** 28/09 vì
+một thư viện trong tiến trình **của chính ta** lấy hết lõi. Một tiến trình con
+**giết được** và **nhả model ngay** là một cơ chế khác hẳn trần lõi —
+⭐ đối ứng của `gpu_lease`/`chan_loi()`, và ⛔ ta chưa có vế "giết được".
+
+**⛔ NGOÀI module Render (đã kiểm lại):** `long_tieng/` · `_phan_tich_srt.py` ·
+`cai_omnivoice.py` · `kiem_thu_vien.py` · `bench_toc_do.py` · `chan_doan_gpu.py` ·
+`cat_nho.py` · `_do_ffsplit.py`
+
+⚠️ `long_tieng/` bị loại **đúng**, nhưng ⛔ **không vì lý do tôi nghĩ**: chuỗi
+`long_tieng` trong `xu_ly_chon.py` là một **cờ dòng lệnh** (`--long-tieng`), ⛔
+không phải gói cùng tên. ⇒ Một kết luận đúng rút ra từ một phép đo sai vẫn là một
+phép đo sai.
+
+⭐ **Bài học cho mọi làn:** trước khi khai một tệp *"ngoài đường chạy"*, tìm **cả
+ba** hình dạng gọi — `import X` · `subprocess`/`Popen` với **tên tệp** · và một
+**chuỗi** trùng tên nhưng là cờ/đường dẫn. Xếp hàng theo **đường CHẠY**, ⛔ không
+theo tên tệp lẫn theo đồ thị import.
 
 Và loại từ trước, vì lý do khác (⛔ không phải cùng sản phẩm):
 | bị loại | lý do |
