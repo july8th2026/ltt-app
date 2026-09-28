@@ -72,6 +72,26 @@ if hasattr(sys.stdout, "reconfigure"):
 RANH, DANG_DUNG, KHONG_BIET = 0, 3, 4
 
 
+def _nap_env(duong: str) -> None:
+    """Chi DAT khoa chua co — bien da dat trong phien thang tep. ⛔ Khong in gia tri.
+
+    ⭐ Cung khuon `tools/tai_khoan_thu.py::nap_env`. `utf-8-sig` la co y: tep env
+       tren may chu tung duoc ghi KEM BOM, va mot BOM o dau lam khoa dau tien
+       mang mot ky tu vo hinh ⇒ `setdefault` dat mot ten khac va bien that van
+       vang. `CLAUDE.md` luat 6: ghi cau hinh KHONG BOM — nhung doc thi phai
+       chiu duoc.
+    """
+    import os
+    if not duong or not os.path.isfile(duong):
+        return
+    with open(duong, encoding="utf-8-sig") as fh:
+        for dong in fh:
+            t = dong.strip()
+            if t and not t.startswith("#") and "=" in t:
+                k, v = t.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
 def _ket_qua(ma: int, dong: str) -> int:
     print(dong)
     print(f"RESULT: {'RANH' if ma == RANH else 'DANG DUNG' if ma == DANG_DUNG else 'KHONG BIET'}")
@@ -82,7 +102,27 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__ and __doc__.splitlines()[0])
     ap.add_argument("--chi-tiet", action="store_true",
                     help="in tung job thay vi chi dem")
+    ap.add_argument("--app-env", default="",
+                    help=r"nap bien LTT_* tu tep env "
+                         r"(vd C:\LTTPlatform\secretspp.env)")
     args = ap.parse_args(argv)
+
+    # 🔴 VI SAO CAN CO NAY, va vi sao thieu no lam cong cu VO DUNG.
+    #
+    #    Bien `LTT_DATABASE_URL` cua may chu ⛔ KHONG nam trong venv — nssm nem no
+    #    vao tien trinh dich vu luc khoi dong. Nen goi cong cu nay tu mot shell
+    #    thuong (hay ca tu `venv` production) deu tra `KHONG BIET`, du may dang
+    #    hoan toan ranh.
+    #
+    # ⚠️ Va do la hong kieu TE NHAT cho mot cong cu canh: no ⛔ khong bao sai, no
+    #    bao *"khong biet"* **moi lan**. Mot canh bao luon bat thi nguoi ta hoc
+    #    cach bo qua no — dung ho voi *"bao dong gia lam nguoi ta TAT cong"*.
+    #    Mot guard ⛔ khong dung duoc con te hon khong co guard, vi no mua su yen
+    #    tam bang tin dung gia.
+    #
+    # ⭐ Khuon lay tu `tools/tai_khoan_thu.py::nap_env` — ⛔ khong tu viet lai, va
+    #    ⛔ khong in gia tri nao ra.
+    _nap_env(args.app_env)
 
     # ⚠️ Import TRONG hàm: tệp này được chạy trên máy chủ, nơi `sys.path` do
     #    `2-cai-dat.ps1` dựng. Import ở mức module làm `--help` cũng đòi CSDL.
