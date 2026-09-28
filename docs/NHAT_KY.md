@@ -23534,3 +23534,38 @@ Ghi ở `memory/nho-phien-khac-chay-thao-tac-minh-bi-tu-choi.md`.
 2. Hạ bánh cóc ToolSpec `19 → 18`, hoặc trả app về — việc của người xoá app.
 3. Mở **cửa đọc kết quả run** (`docs/KET_QUA_RUN_KHONG_CO_CUA_RA.md`): khách chạy
    một lượt hiện ⛔ không có đường nào xem kết quả.
+
+### ✅ CẬP NHẬT cuối phiên: bánh cóc ToolSpec đã hạ — và tôi đã ĐẾM THIẾU
+
+Phiên *"Auto Scan Video final closure"* hạ xong (chủ dự án cho phép giúp);
+`main = cdc1490e`, 11/11 xanh. Tôi **kiểm độc lập cả ba lời khai** thay vì nhận:
+bốn phép đếm giờ là `>= 18` ×3 + `== 16` (mỗi cái tụt **đúng 1**), và tool mất đi
+là `prompt_canh.run` — đọc từ `git show 0c2aabab^:apps/prompt_canh/manifest.py`.
+
+🔴 **Tôi báo THIẾU một phép đếm.** Tôi nói *"bánh cóc `19` vs `18`"*, bỏ mất
+`assert len(app) == 17` ở cùng tệp — mà docstring `test_1756:67` ghi rõ hai con số
+ấy **cùng canh một lỗ**, nên hạ một mà bỏ một thì lỗ vẫn hở.
+
+⭐ **Và tệ hơn "quên": tôi ĐÃ CÓ dữ liệu trên màn hình.** Đầu ra pytest in
+`AssertionError: ['app.audio_pause.run', 'app.chatltt.nghien_cuu', ...]` — đó
+**chính là** phép `len(app) == 17` đang đỏ. Tôi đọc nó, ⛔ không nhận ra nó là một
+phép đếm thứ tư, rồi tóm tắt nhóm ấy bằng **thông điệp lỗi dễ đọc nhất** (`assert
+18 >= 19`) và coi như đã mô tả xong cả nhóm.
+
+⇒ **Luật rút ra: tóm tắt một nhóm lỗi thì phải ĐẾM KHẲNG ĐỊNH trong tệp, ⛔ không
+gom theo thông điệp.** Một `AssertionError` in ra một *danh sách* trông như dữ
+liệu chẩn đoán, còn một `assert a >= b` in ra hai *con số* trông như một phép
+đếm — nên cái thứ nhất tự ẩn khỏi một bản tóm tắt viết theo hình thức đầu ra.
+Cùng họ `memory/liet-ke-tu-tri-nho-thay-vi-dem.md`, nhưng đây là biến thể nặng
+hơn: ⛔ không phải thiếu dữ liệu, mà là **phân loại sai dữ liệu đã có**.
+
+⭐ Ba điều phiên kia chốt **trước** khi hạ — đáng chép lại vì đây là hình dạng
+đúng của một lượt hạ bánh cóc: (1) cả bốn phép tụt **đúng 1**, ⛔ không phải 2+;
+(2) `test_khong_app_nao_hong_luc_nap` **XANH** ⇒ ⛔ không app nào rụng khỏi
+registry vì sai kiểu, tức số tụt ⛔ không phải do chính cái lỗ hai phép đếm này
+canh; (3) tool mất đi **đúng là** của app bị xoá. Thiếu ba điều đó thì hạ bánh
+cóc là **giấu một hồi quy thật**.
+
+⇒ **Còn đúng MỘT hạng mục chờ người: xoá `apps/prompt_canh/`** (6 tệp `.pyc`).
+Cả hai phiên đều bị từ chối quyền `rm -rf` và ⛔ cả hai đều không đi đường khác.
+`test_448` là nợ cũ, ⛔ không thuộc lượt nào.
