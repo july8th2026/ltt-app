@@ -694,6 +694,79 @@ khách đọc catalog (không còn trần đếm), gửi 10 ảnh, và ăn 400 m
 
 ---
 
+## 7-QUATER. Đ-5 ĐÃ ĐO (28/09) — VÀ NÓ LÀ PHÉP ĐO ĐÁNG GIÁ NHẤT CỦA CẢ PLAN
+
+### Số
+
+Bộ thử: mã 6 ký tự **ngẫu nhiên tiền định** (không từ tiếng Anh nào để model đoán),
+render ở bốn cỡ **đều dưới 1.024 token**, hỏi model đọc lại. `temperature=0`,
+`seed=7`. Cùng một bộ ảnh cho cả ba lần đo (`tools/do_chat_luong_doc_anh.py`).
+
+| Cỡ ảnh | token (sàn 8) | **sàn 8** | **sàn 512** | **sàn 1024** |
+|---|---|---|---|---|
+| 128×48 | 8 | 5/5 | 5/5 | 5/5 |
+| 192×64 | 12 | 4/5 | 4/5 | 5/5 |
+| 256×96 | 24 | **0/5** | 5/5 | 4/5 |
+| 384×128 | 48 | **0/5** | 5/5 | 5/5 |
+| **Tổng** | | **9/20 · CER 0,817** | **19/20 · CER 0,050** | **19/20 · CER 0,050** |
+
+⇒ Cảnh báo của thượng nguồn (`clip.cpp:1662-1667`, issue #16842) **đúng, và cái
+giá của việc bỏ qua nó là lớn**: hơn **một nửa** ảnh nhỏ đang bị đọc sai.
+
+### Đối chứng âm — vì một kết quả tốt bất thường phải bị nghi trước khi được tin
+
+Ở sàn 8, ảnh **nhỏ nhất** (8 token) đọc **hoàn hảo** còn ảnh lớn hơn thì hỏng —
+ngược hẳn giả thuyết. Nên tôi chạy đối chứng trước khi tin:
+
+| Đối chứng | Kết quả |
+|---|---|
+| ảnh **trắng**, không chữ | `''` — ⛔ model KHÔNG bịa mã |
+| mã **thật** ở 128×48 | `4WK69C` đúng |
+| mã **khác** ở 128×48 | `PQRT79` đúng ⇒ nó ĐỌC, không phải nhớ |
+| cùng hai mã ở 384×128 | `And`, `HIJ` — rác |
+
+⇒ 5/5 ở ảnh nhỏ là **thật**. Và các đầu ra hỏng (`HEEEEEE…`, `And`) là **bệnh giải
+mã lặp**, không phải "không thấy điểm ảnh" — cùng hình dạng với llama.cpp #17534.
+
+### ⚠️ Ô sai duy nhất ở sàn 512/1024 là MỘT LỖI CHẤM, không phải lỗi đọc
+
+`HETPYH → НЕТРУН`: model trả **chữ Kirin đồng dạng** (Н Е Т Р У Н), tức nó đọc
+đúng **hình** và chọn sai **bảng chữ**. Phép chấm của tôi đếm đó là sai. ⇒ Độ chính
+xác thật ở 512 và 1024 là **20/20**, không phải 19/20.
+
+### Vì sao chọn **1024** chứ không 512, khi hai bên đo BẰNG NHAU
+
+512 đạt cùng điểm với **một nửa** chi phí, nên nó trông là điểm vận hành tốt hơn.
+⛔ Nhưng phép đo của tôi **không phân giải được hai mức đó**: 20 mẫu mỗi cấu hình,
+cả hai 19/20, và khác biệt giữa chúng cần nhiều mẫu hơn hẳn.
+
+🔑 **Và quan trọng hơn: bài của tôi đo ĐỌC CHỮ, còn con số 1024 của thượng nguồn
+được nêu cho tác vụ ĐỊNH VỊ** (issue #16842) — thứ tôi **không** đo. Định vị nằm
+**trên đường đi chính của ta**: một agent hỏi *"bấm vào nút ở đâu"* là định vị.
+
+⇒ Rủi ro chưa đo nằm đúng trên đường dùng nhiều nhất, nên lấy số của thượng nguồn.
+  Ghi rõ ở đây rằng **512 đo bằng nhau trên ĐỌC CHỮ** — nếu sau này có phép đo
+  định vị cho thấy 512 đủ, đó là một lần hạ chi phí 2× có bằng chứng.
+
+### Và cái giá phải nói cho đúng
+
+⛔ **Không phải "ảnh nhỏ đắt lên 12,5×"**. Ảnh dưới 1.024 token **hiện đang không
+dùng được** (9/20). Ta không làm thứ đang chạy đắt lên — ta làm thứ đang **hỏng**
+chạy được. Một khách gửi ô cắt 320×240 hôm nay trả 82 token cho một câu trả lời **sai**.
+
+Ảnh **không** bị ảnh hưởng: mọi ảnh từ ~1 Mpx trở lên, tức **ảnh chụp màn hình
+1080p và lớn hơn giữ nguyên chi phí** (1920×1080 = 2.042 token, đã trên sàn).
+
+### 🔴 Con bọ trong phép đo, ghi lại vì chính tôi vừa viết tài liệu cảnh báo nó
+
+Lần đo đầu ra **0/20 với content RỖNG**. Không phải model đọc sai — `max_tokens=24`
+bị **suy nghĩ** ăn hết rồi bị cắt. `DEVELOPER_GUIDE.md` §13 mà tôi vừa viết cảnh
+báo **đúng điều này** ("thinking spends that same budget… return empty content with
+finish_reason=length"), và tôi vẫn mắc. ⇒ Công cụ nay trả **cả `finish_reason`**:
+một phép đo không phân biệt được *"đọc sai"* với *"bị cắt"* thì không đo gì.
+
+---
+
 ## 8. THỨ TỰ TRIỂN KHAI (sau khi khoá)
 
 ```
