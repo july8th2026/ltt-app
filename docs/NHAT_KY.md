@@ -129,6 +129,92 @@ Pha 6 (máy chủ tự hạ độ phân giải + header `X-LTT-Anh-Thu-Nho`) ch�
 phép đo hôm nay làm nó ít cấp thiết hơn. Muốn hạ chi phí ảnh lớn 2× thì cần đúng
 hai thứ **chưa đo**: một bộ **ảnh chụp màn hình thật** và một bài **định vị**.
 
+## 2026-09-28 (đêm) — Pha 0 của B17: bốn làn, và BA lần luật "va vào mã" bắt lỗi của plan
+
+Chủ dự án chốt: *"Tiếp tục theo quy trình. ⛔ Không dừng lại giữa các pha. Lưu quy tắc vào plan."*
+⇒ Quy tắc vận hành ghi thành `B17 §0b`.
+
+### Chuỗi `toc_doc_giong` — nối xong, và hành vi hôm nay ⛔ không đổi một đơn vị
+
+`P0-a` tạo giá trị dẫn xuất (hàm thuần của `giong_id` + đích, tra bảng đo, **siết một
+chiều** theo Viral `localize.py:15112-17`), `P0-a2` nối vào `ngon_ngu.ngan_sach_do_dai`,
+`P0-a3` nối `dich_thuat.py:374`, `P0-a4` nối chặng cuối `giai_doan_noi_dung.py:435`.
+
+⭐ **Bảng `cai_dat.TOC_DOC_GIONG_DA_DO` RỖNG hôm nay** ⇒ rơi về `ngon_ngu.NHIP[dich]` ⇒
+hành vi **y hệt** trước. Đó là mệnh đề gánh an toàn cho lượt deploy miễn-trừ-gate bên
+dưới, và tôi kiểm nó **trên đúng SHA đã deploy** (`git show f26e80fb:...`), ⛔ không trên
+cây làm việc. Mốc dùng lại: `_tran(giay=20, nguồn=400 ký tự CJK, vi)` = **62**.
+
+🔴 **Lỗi của điều phối**: chuỗi này mất **BỐN** làn cho **MỘT** việc, vì tôi áp *"một tệp
+một chủ"* cho một việc bản chất là **một ĐƯỜNG qua bốn tệp**. Ba lượt đầu, giá trị **tồn
+tại mà ⛔ không ai đọc** — đúng cái ta đang chống. Luật đã ghi vào `§0b`: việc-đường ⇒
+**một làn sở hữu cả đường**; dấu hiệu nhận ra là lời giao có chữ *"nối/truyền/chuyển tiếp"*.
+
+### 🔴 BA lần luật §0b *"va vào MÃ, ⛔ không chỉ vào plan trước"* bắt lỗi bảng việc
+
+| Dòng việc của tôi | Mã nói gì |
+|---|---|
+| *"bỏ khai `edit_plan` khỏi `CHUOI`"* | `giai_doan_ban_bien_tap.py:11-18` (28/09, B14) **cấm** rip khỏi `CHUOI`, nêu 4 chỗ nối |
+| *"hợp nhất 3 QC"* | `test_402:247-251` **cấm**: QC tất định vs QC **chủ quan TRẢ TIỀN**, gộp là *"làm một lần chạy hỏng vì một phán quyết chủ quan trước khi ai kịp xem phép đo tất định"* |
+| *"khai `vung_che_tinh/bam`"* | `vung_che.py` **đã tồn tại** — hợp đồng hình học hộp **khách tự vẽ**, dùng 3 nơi ⇒ đổi sang họ `do_vung_*` |
+
+⇒ Ba lần liên tiếp ⛔ không phải may: nó là dấu hiệu bảng việc dựng từ một plan **cũ hơn mã**.
+
+### 🔴 Cái bẫy sắc nhất của việc học theo Viral, và nó nằm ĐÚNG chỗ ta định copy
+
+`asv_gpu/jobs.py:5-20` cấm cứng **tự chọn card**: card đến qua `ctx.gpu_env()`, nền tảng
+giữ chỗ bằng `gpu_lease`. `test_401:160` quét bằng **AST**, docstring kể **năm** chỗ tự
+chọn card trong cây di sản *"sẽ theo sang trong một lượt di trú copy-paste"*.
+
+Mà Viral chọn thiết bị demucs bằng `_whisper_device_nhe()` — *"hỏi nvidia-smi"*. ⇒ Ta copy
+**hình dạng một-job-hai-luồng**, ⛔ **không** copy cách họ **chọn card**. Hai thứ nằm liền
+nhau trong mã họ; chỉ một được mang sang.
+
+### `P0-c` — dời cửa sổ cắt đầu/đuôi: ĐO RỒI, và câu trả lời là ⛔ KHÔNG
+
+`cat_dau_cuoi.py:10-13` luật **L1**: toạ độ là **PHÂN SỐ**, đổi sang giây đúng **MỘT chỗ**.
+Áp lần hai ⇒ `0,90` thành **0,81**, khách mất thêm **24,751 s** đã yêu cầu giữ.
+
+🔴 **Lý do thật để dừng**: hai người áp (`giai_doan_hinh_anh.py:369` cắt thật ·
+`giai_doan_qc.py:272` dựng lại kỳ vọng) **vẫn ĐỒNG Ý với nhau trên một bản giao SAI** ⇒
+**T2 lệch 0 giây** ⇒ **QC XANH trên bản sai**. Cái được chỉ là **10 %** vật liệu ASR.
+28 phép đo đã gộp `main` và **ở lại làm bẫy**. Điều kiện tiên quyết đổi câu trả lời đã ghi
+ở `B17`.
+
+⇒ Luật rút ra: **cổng tính lại kỳ vọng từ CÙNG đầu vào với bản giao thì đo NHẤT QUÁN,
+⛔ không đo ĐÚNG**. Dấu hiệu rẻ nhất: **lệch đúng 0** trên dữ liệu thật.
+
+### Giúp phiên khác: bánh cóc ToolSpec, và hai lần tôi bị chặn
+
+- ⛔ **Từ chối chạy `rm -rf` hộ** phiên khác sau khi họ nói rõ *"quyền ấy bị từ chối trong
+  phiên tôi"* — đi đường vòng quanh một quyết định của người dùng. Chuyển chủ dự án. Sau
+  đó `rm -rf` **cũng bị chặn ở phiên tôi**, nên tôi ⛔ không dùng công cụ khác để lách.
+- **Hạ bánh cóc ToolSpec 19→18 ×4 và 17→16**, sau **ba** điểm chốt: cả bốn phép đếm tụt
+  **đúng 1** · `test_khong_app_nao_hong_luc_nap` XANH (⇒ số tụt ⛔ không do chính lỗ ấy
+  canh) · tool mất đi đúng là `prompt_canh.run` (`git show 0c2aabab^:...:61-64`).
+- ⭐ Phiên kia đếm bằng **thông điệp lỗi của một tập con**; tôi tìm thêm phép thứ tư; rồi
+  phép grep-theo-đại-lượng của họ **vẫn bỏ lọt** `assert n >= 19` (đếm gán vào biến trước).
+  ⇒ **Một phép grep là một GIẢ THUYẾT VỀ HÌNH DẠNG** — viết xong phải hỏi *"hình dạng nào
+  của cùng đại lượng sẽ thoát?"*. Ba dạng ở ca này: đếm-gán-biến · `sum()` thay `len()` ·
+  hằng số tệp khác. Họ tool đóng bằng **hai** phép quét rời nhau.
+
+### Deploy: miễn trừ gate CÓ GHI, và vì sao phần của tôi an toàn trong đó
+
+Phiên khác deploy `f26e80fb` (chủ dự án cấp quyền), mang mọi commit `main` gồm phần ASV.
+`/health/version f26e80fb4396` · `nghiem_thu_deploy lệch 0 · thiếu 0 · thừa 0` (1327 tệp) ·
+đường lui `90c534df`. Production khoẻ lúc 22:26.
+
+⛔ SHA ấy **chưa có gate xanh** (`test_448` đỏ). Hai điều tôi kiểm để phần của mình an toàn:
+1. Bảng đo giọng **rỗng trên chính SHA đã deploy** ⇒ chuỗi chưa nối xong ⛔ không đổi hành vi.
+2. `git archive f26e80fb | tar -t | grep -c prompt_canh` = **0** ⇒ thư mục `.pyc` lỗi là
+   chuyện **cục bộ/gate**, ⛔ không tới production.
+
+`test_448`: mã ở `chep_loi/5`, bằng chứng ghi `chep_loi/3` ⇒ **cũ hai bậc**. ⛔ **Không sửa
+`3` thành `5`** — con số ấy là **vân tay của một lượt chạy thật**; gõ tay vào nó biến bằng
+chứng thành lời khai. Và ⛔ **không** chạy nghiệm thu GPU trước `P1-0` (lượt ấy có thể bump
+`PHIEN_BAN_MA` lần nữa) ⇒ đi **cùng** `T1a-ter` cuối plan.
+
+
 ## 2026-09-28 (tối) — B17: trích NGUYÊN VĂN mã Viral, và một CHẶN KIẾN TRÚC lộ ra
 
 Chủ dự án chốt: *"Thứ tự quy trình các bước ta nên điều chỉnh như viral triển khai,
