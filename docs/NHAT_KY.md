@@ -23686,3 +23686,67 @@ cóc là **giấu một hồi quy thật**.
 ⇒ **Còn đúng MỘT hạng mục chờ người: xoá `apps/prompt_canh/`** (6 tệp `.pyc`).
 Cả hai phiên đều bị từ chối quyền `rm -rf` và ⛔ cả hai đều không đi đường khác.
 `test_448` là nợ cũ, ⛔ không thuộc lượt nào.
+
+### ✅ CHỐT: 19 phép đỏ của gate → **còn 1**, và cái còn lại ⛔ không của lượt nào
+
+Đo ở **cây chính** sau khi chủ dự án xoá `apps/prompt_canh/`:
+`1 failed, 288 passed` trên đúng tập 13 tệp gate đã in ra.
+
+| Nhóm | Ai khép | Cách |
+|---|---|---|
+| 4 lỗi của tôi | tôi | BEL trong 2 `.ps1` · `trigger.schedule` khai lịch · route 24→28 |
+| `test_60` `test_85` `test_5102` | chủ dự án | `Remove-Item -Recurse -Force` hai cây ⇒ `lint_app_contract` `ERROR: 1` → `0`, app 28 → 27 |
+| `test_212`×2 | tôi | ⛔ **không** phải thư mục — tài liệu độ phủ **vẫn kê** app đã mất |
+| `test_1756`×3 `test_1758` | phiên ASV | bánh cóc ToolSpec 19→18 / 17→16 |
+| `test_1753` `test_1754` | tôi | **hai mốc CẢ BA chúng tôi đều vá thiếu** |
+| `test_600`×3 | phiên máy B | `token_giu_moi_anh` → `token_anh_toi_thieu`, sót đúng tệp này |
+| `test_448` | ⛔ **chưa ai** | nợ cũ: báo cáo nghiệm thu ghi `chep_loi/3`, mã đã `chep_loi/5` |
+
+**`test_448` — nguyên nhân chính xác, và cách chữa đã viết sẵn:** docstring của
+chính nó nói *"nâng một engine là làm đỏ phép kiểm này, và câu trả lời đúng là
+**chạy lại nghiệm thu**, ⛔ không phải sửa con số"*. Cần một lượt chạy GPU thật ⇒
+việc của làn ASV. ⛔ Đừng sửa `3` thành `5`.
+
+### 🔴 BA LƯỢT LIÊN TIẾP CÙNG MỘT LỖI ĐẾM — và nó đắt dần
+
+1. Tôi tóm nhóm bằng `assert 18 >= 19`, bỏ `len(app) == 17`.
+2. Phiên ASV tìm ra cái thứ tư ấy — **nhưng vẫn bỏ** `test_1753`/`test_1754`.
+3. Cả ba đều bỏ, vì hai tệp ấy in **cùng một thông điệp** ở **tệp khác**.
+
+⭐ **Gốc chung: cả ba lượt đếm từ THÔNG ĐIỆP LỖI của một tập con** — và thông điệp
+chỉ kể những phép **đã chạy và đã đỏ trong lượt ấy**. Nó ⛔ không thể kể phép nằm
+ngoài tập, và ⛔ không thể kể phép cùng mốc mà đang xanh.
+
+⇒ **Cách đếm đúng là grep CẢ KHO theo ĐẠI LƯỢNG:**
+
+```
+grep -rnE "len\([^)]*\)\s*(>=|==|>)\s*(17|19|20)\b" --include=*.py tests/ tools/
+```
+
+20 dòng → lọc còn 3 dòng thật. ⭐ Và dòng thứ ba là **vế loại trừ miễn phí**:
+`test_1751:121` `len(items) >= 19` **đếm APP chứ không đếm tool** (27 app, vẫn
+xanh) — thứ mà đọc danh sách lỗi ⛔ không bao giờ cho.
+
+### ⭐ Hai lỗ bịt được nhân dịp này
+
+**`test_212` gán sai chiều.** Tôi xếp nó vào nhóm *"thư mục còn `.pyc`"*; thực ra
+`docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` vẫn kê `prompt_canh` (`stale:`). Đã
+bỏ hai hàng theo tiền lệ §7 của chính tài liệu (`chataistudio đã xoá 09/09`) —
+**giữ lại QUYẾT ĐỊNH** (DEFER vì hình dạng giá) chứ ⛔ không chỉ xoá hàng.
+
+🔴 **Và một lỗ lớn hơn lộ ra khi đo:** tiêu đề ghi `## 1. 20/20 app` trong khi
+mục ấy có **27** hàng, `## 2. 28/28 ToolSpec` trong khi có **18**. ⛔ Không phép
+kiểm nào thấy, vì hai bài đọc hàng bằng `_rows("## 1.")` — khớp **tiền tố**, nên
+mọi thứ sau dấu chấm là văn xuôi ⛔ không ai đọc. Trong một tài liệu mang danh
+**chứng nhận độ phủ**.
+⇒ Thêm `test_section_headings_count_their_own_rows`, chốt **QUAN HỆ** (tiêu đề ==
+số hàng) chứ ⛔ không chốt một con số — nên nó ⛔ không phải bánh cóc phải nâng
+mỗi lần thêm app. **Đã tiêm nghịch** ngoài cây: bắt cả ba dạng sai (lệch số hàng
+`99/99` · hai số khác nhau `27/28` · mất hẳn con số), vế khẳng định vẫn qua.
+
+### ⚠️ Vẫn ⛔ KHÔNG có gate xanh trên `main`
+
+15/19 đã khép nhưng ⛔ tôi không chạy lượt gate thứ hai (một gate mỗi nhánh), và
+`test_448` vẫn đỏ. ⇒ **`main` chưa có phán quyết gate xanh.** Production đang ở
+`90c534df3b1f` (kiểm qua `/health/version`), tức **sau** `main` — nên bản vá BEL
+và `trigger.schedule` rỗng tham số ⛔ chưa sống.
