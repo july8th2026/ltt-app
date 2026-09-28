@@ -16,7 +16,7 @@ mỗi pha có đúng một migration, và `git log main -- <tệp migration>` tr
 | 3 · Lõi Studio | ✅ | ✅ `b4f24329` | ✅ (kiểm trên trình duyệt thật) | — |
 | 4 · Kho chung | ✅ | ⛔ | ⛔ | gộp `main` · nghiệm thu GUI |
 | 5 · Kho tài nguyên | ✅ | ⛔ | ⛔ | gộp `main` · nghiệm thu GUI |
-| 6 · Chia lô (Q-16) | ⛔ | — | — | **chưa có plan** ⇒ chặn E5 |
+| 6 · Chia lô (Q-16, Q-18) | ⛔ | — | — | **plan đã viết 28/09** ⇒ thi hành rồi mở E5 |
 
 ⚠️ **Và đây là một lỗi sổ sách, ghi lại để người sau không tin ô tick.** 397 ô
 `- [ ]` trong năm tệp pha ⛔ **chưa bao giờ được tick**, nên một phép đếm máy móc
@@ -49,7 +49,8 @@ thành máy dựng prompt có ba thứ bản gốc chứng minh là dùng thật
 | 3 · Lõi Studio | [pha3-loi-studio](2026-09-26-prompt-ai-pha3-loi-studio.md) | 3 593 | 21 | 111 |
 | 4 · Kho chung | [pha4-kho-chung](2026-09-26-prompt-ai-pha4-kho-chung.md) | 2 833 | 15 | 81 |
 | 5 · Kho tài nguyên sâu | [pha5-kho-tai-nguyen](2026-09-26-prompt-ai-pha5-kho-tai-nguyen.md) | 3 035 | 12 | 83 |
-| | **Tổng** | **14 286** | **65** | **397** |
+| 6 · Chia lô | [pha6-chia-lo](2026-09-28-prompt-ai-pha6-chia-lo.md) | 985 | 6 | 28 |
+| | **Tổng** | **15271** | **71** | **425** |
 
 ---
 
