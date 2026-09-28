@@ -305,10 +305,61 @@ def dem_doan_thieu_moc_tu(ban: dict) -> int:
 NGUONG_KY_TU_MOI_GIAY = 30.0
 
 
-def nghi_ao_giac(doan: dict, *, canh_chinh: str) -> dict | None:
+#: B13 B1 (28/09, asvr_47327a869a8f4597960048f09064740) — tin hieu AO GIAC THU
+#: BA, doc lap voi (a)/(b) o `nghi_ao_giac`: doan la khuc con cua chinh
+#: `initial_prompt` ta truyen cho whisperx (`whisperx_runner.MAU_CO_DAU_CAU`,
+#: ghim vao `ban["tham_so_engine"]["initial_prompt"]` boi `chuan_hoa()`). Day
+#: la phep DOI CHIEU dau vao — ta biet NGUYEN VAN chuoi da truyen, khong phai
+#: doan noi dung nhu (a)/(b).
+#:
+#: ⭐ Ca that N-39/B1 duoc dung de hieu chinh: doan ao giac `v1/seg_0024`
+#:    (64,27–65,17 s) mang van ban `中文字幕志愿者`... khong, mang
+#:    `中文普通话句子` — **khop 7 ky tu** voi khuc giua prompt
+#:    `以下是中文普通话句子。`. Doan nay CO moc tu (7/0,90 s = 7,8 kt/s) nen
+#:    (a)/(b) khong tin hieu nao cham toi — day chinh la ly do can mot tin
+#:    hieu THU BA doc lap.
+#:
+#: ⚠️ **Rui ro duong tinh gia**: prompt chua cac khuc con NGAN co the la loi
+#:    thoai that (vd `中文`, `句子`). `4` la nguong DUOI muc that (7) va TREN
+#:    muc an toan (mot khop 2 ky tu nhu `中文` trong mot cau thoai that KHONG
+#:    duoc gan co) — khong phai so nghi ra, xem test doi chung am.
+NGUONG_KY_TU_VONG_LAI_PROMPT = 4
+
+
+def _vong_lai_prompt(chu_tho: str, prompt: str) -> dict | None:
+    """Van ban doan co la khuc con (>= `NGUONG_KY_TU_VONG_LAI_PROMPT` ky tu, sau
+    khi bo khoang trang) cua `prompt` khong?
+
+    ⛔ So khop CHINH XAC (substring), khong phai tuong tu mo ho: ta biet dung
+    chuoi da truyen vao engine, nen day la doi chieu dau vao chu khong phai
+    doan tu noi dung.
+    """
+    chu_gon = "".join(str(chu_tho or "").split())
+    prompt_gon = "".join(str(prompt or "").split())
+    if len(chu_gon) < NGUONG_KY_TU_VONG_LAI_PROMPT or not prompt_gon:
+        return None
+    if chu_gon not in prompt_gon:
+        return None
+    return {
+        "ly_do": "vong_lai_initial_prompt",
+        "khop_ky_tu": len(chu_gon),
+        "nguong": NGUONG_KY_TU_VONG_LAI_PROMPT,
+    }
+
+
+def nghi_ao_giac(doan: dict, *, canh_chinh: str,
+                 initial_prompt: str = "") -> dict | None:
     """Doan nay co phai AO GIAC ASR khong? `None` = khong nghi.
 
-    ⭐ **DOI HAI tin hieu CUNG dong y** — ⛔ mot minh thi khong du:
+    HAI DUONG doc lap, mot trong hai du la nghi:
+
+    **Duong 1 — VONG LAI PROMPT** (B13 B1, 28/09, xem `_vong_lai_prompt`): van
+    ban doan la khuc con cua `initial_prompt` ta tu truyen vao whisperx. Doc
+    lap voi `canh_chinh`/moc tu/toc do — day la doi chieu dau vao, khong phai
+    suy doan tu cau truc ket qua.
+
+    **Duong 2 — HAI tin hieu CAU TRUC cung dong y** (N-39) — ⛔ mot minh thi
+    khong du:
 
         (a) ZERO moc tu, trong mot ban ghi khai `aligned`
         (b) toc do nguon BAT KHA: > `NGUONG_KY_TU_MOI_GIAY`
@@ -323,12 +374,20 @@ def nghi_ao_giac(doan: dict, *, canh_chinh: str) -> dict | None:
        ⛔ chua ton tai. Cung mot hien tuong, phat hien SOM hon mot giai doan —
        va do la truoc khi khach **tra tien dich**.
     """
+    chu_tho = str(doan.get("chu") or "")
+    dai = float(doan.get("ket", 0)) - float(doan.get("bat", 0))
+
+    if initial_prompt:
+        vong = _vong_lai_prompt(chu_tho, initial_prompt)
+        if vong:
+            return {**vong, "khe_s": round(dai, 3) if dai > 0 else 0.0,
+                    "so_ky_tu": len("".join(chu_tho.split()))}
+
     if str(canh_chinh or "") != "aligned":
         return None
     if doan.get("tu"):
         return None                       # (a) khong thoa
-    chu = "".join(str(doan.get("chu") or "").split())
-    dai = float(doan.get("ket", 0)) - float(doan.get("bat", 0))
+    chu = "".join(chu_tho.split())
     if not chu or dai <= 0:
         return None
     cps = len(chu) / dai
@@ -347,22 +406,96 @@ def danh_dau_nghi_ao_giac(ban: dict) -> int:
     """Gan co `nghi_ao_giac` vao doan bi nghi. Tra ve SO doan da gan.
 
     ⛔ **DANH DAU, ⛔ KHONG XOA.** Doan o lai trong ban ghi cung **ly do** va
-       **hai con so** da kich hoat no. ⭐ Danh dau thi **dao nguoc duoc**; xoa
+       **cac con so** da kich hoat no. ⭐ Danh dau thi **dao nguoc duoc**; xoa
        thi khong — va ta ⛔ khong xoa du lieu cua khach vi mot **suy doan**.
 
     ⇒ Buoc DICH va buoc DOC TIENG doc co nay de **BO QUA** doan ay: khach ⛔ khong
       tra tien cho mot cau vo nghia va ⛔ khong nghe thay no.
       ⚠️ Viec NOI co vao hai buoc do nam o `giai_doan_noi_dung.py` / `long_tieng.py`
          — **lan khac so huu**. Ham nay chi SINH ra co.
+
+    🔑 B13 B1: `initial_prompt` doc tu `ban["tham_so_engine"]` — day la cho
+       DUY NHAT ban ghi mang lai chuoi da truyen cho engine (xem
+       `whisperx_runner.py` va `chuan_hoa()`).
     """
     canh = str(ban.get("canh_chinh") or "")
+    prompt = str((ban.get("tham_so_engine") or {}).get("initial_prompt") or "")
     dem = 0
     for d in ban.get("doan") or []:
-        co = nghi_ao_giac(d, canh_chinh=canh)
+        co = nghi_ao_giac(d, canh_chinh=canh, initial_prompt=prompt)
         if co:
             d["nghi_ao_giac"] = co
             dem += 1
     return dem
+
+
+#: B13 B2 (28/09) — CUA A: ty le PHU SONG/THOI LUONG NGUON duoi nguong nay ⇒
+#: canh bao van hanh (⛔ khong chan luot).
+#:
+#: ⭐ Can cu: luot that `asvr_47327a869a8f4597960048f09064740` — 78 doan,
+#:    phu_song 211,56 / thoi_luong 275,04 = **76,9 %**, va do THAT SU la mot
+#:    loi ASR (8 lo hong, lo lon nhat 32,5 s). `0,80` nam TREN muc that hong
+#:    (76,9 %) mot bien do vua du (~3 diem) de khong sat nut ma cung khong qua
+#:    rong — day la canh bao, khong phai cong chan, nen thien ve BAT som hon
+#:    la bo sot.
+NGUONG_TY_LE_PHU_SONG = 0.80
+
+#: CUA B: MOT lo hong DON LE (khong tieng, giua hai doan hoac o hai dau ban
+#: ghi) dai hon nguong nay (giay) ⇒ canh bao.
+#:
+#: ⭐ Can cu: cung luot do — 8 lo hong **2,1–7,4 s** la BINH THUONG cua mot
+#:    phim co doi thoai (⛔ khong duoc keu — bai hoc bao dong gia da ghi trong
+#:    kho), lo hong THAT su la loi = **32,5 s**. `15,0` la TRUNG BINH NHAN cua
+#:    hai muc (`sqrt(7,4 * 32,5) ≈ 15,5`, lam tron xuong) — bien do ~2,1x ve
+#:    CA HAI phia tren thang log, cung logic hieu chinh doi xung nhu
+#:    `NGUONG_KY_TU_MOI_GIAY` o tren.
+NGUONG_LO_HONG_S = 15.0
+
+
+def do_phu_song(ban: dict, *, thoi_luong: float) -> dict:
+    """Hai CUA doc lap tren `phu_song` — con so DA CO SAN trong `tom_tat()`
+    nhung chua ai doc (B13 B2).
+
+    CUA A (tong): ty le `phu_song / thoi_luong` duoi `NGUONG_TY_LE_PHU_SONG`.
+    CUA B (cuc bo): MOT lo hong (khong tieng — giua hai doan lien tiep, truoc
+    doan dau, hoac sau doan cuoi) dai hon `NGUONG_LO_HONG_S`.
+
+    ⛔ **Vi sao PHAI ca hai, khong phai mot**: mot tong 90 % van co the giau
+       mot ho 30 giay (nhieu doan ngan phu day cho, mot ho lon lot giua);
+       nguoc lai mot phim THAT SU it loi co tong thap ma ⛔ khong ho nao —
+       CUA A mot minh se keu oan cho ca hai truong hop nhu nhau. Ham nay tra
+       ve con so cho CA HAI cua, ⛔ khong rut gon thanh mot co bool.
+
+    ⚠️ Day la **canh bao van hanh** (`log.warning` + con so vao `outputs`),
+       ⛔ KHONG chan luot chay: mot phim it loi la hop le.
+    """
+    doan = sorted(ban.get("doan") or [],
+                  key=lambda d: (float(d.get("bat", 0)), float(d.get("ket", 0))))
+    thoi_luong = float(thoi_luong or 0.0)
+    phu_song = sum(float(d["ket"]) - float(d["bat"]) for d in doan)
+
+    lo_hong: list[float] = []
+    truoc = 0.0
+    for d in doan:
+        bat = float(d["bat"])
+        if bat > truoc:
+            lo_hong.append(bat - truoc)
+        truoc = max(truoc, float(d["ket"]))
+    if thoi_luong > truoc:
+        lo_hong.append(thoi_luong - truoc)
+
+    ty_le = (phu_song / thoi_luong) if thoi_luong > 0 else 1.0
+    lo_lon_nhat = max(lo_hong) if lo_hong else 0.0
+
+    return {
+        "ty_le_phu_song": round(ty_le, 4),
+        "nguong_ty_le": NGUONG_TY_LE_PHU_SONG,
+        "canh_bao_ty_le": bool(thoi_luong > 0 and ty_le < NGUONG_TY_LE_PHU_SONG),
+        "lo_hong_lon_nhat_s": round(lo_lon_nhat, 2),
+        "so_lo_hong_qua_nguong": sum(1 for g in lo_hong if g > NGUONG_LO_HONG_S),
+        "nguong_lo_hong_s": NGUONG_LO_HONG_S,
+        "canh_bao_lo_hong": bool(lo_lon_nhat > NGUONG_LO_HONG_S),
+    }
 
 
 def van_tay_ban_ghi(*, checksum_tieng: str, model: str, ngon_ngu: str,
