@@ -30,6 +30,46 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# ==========================================================================
+#  KHOI PHUC DICH VU KHI SCRIPT BO DO. Su co 2026-09-28 17:38.
+# ==========================================================================
+#
+#  Giua "dung dich vu" (~dong 665) va "khoi dong lai" (~dong 1290) co ~620
+#  dong. Truoc `trap` nay, MOI loi trong khoang do de production xuong VO HAN
+#  DINH: script thoat, va ba dich vu o lai `Stopped` cho toi khi co nguoi de y.
+#
+#  Ca that: `Move-Item C:\LTTPlatformpp` nem 'Access denied' luc 17:39:14.
+#  Deploy thoat voi EXITCODE=1. `/health/ready` tra 502. Production chi song
+#  lai khi mot nguoi goi `Start-Service` bang tay.
+#
+#  `trap` nay KHONG che loi - no `Write-Error` roi de loi di tiep (`break`
+#  giu ma thoat khac 0). Viec duy nhat no lam la: neu ta DA dung dich vu ma
+#  chua kip khoi dong lai, dua chung tro lai TRUOC khi thoat.
+#
+#  Mot deploy that bai la mot lan chay lai. Mot production nam duoi la mot
+#  su co. Hai thu do khong cung hang, nen script phai nghieng ve giu dich vu
+#  song ke ca khi ban than no da that bai.
+$global:DaDungDichVu = $false
+$global:DaKhoiDongLai = $false
+trap {
+    if ($global:DaDungDichVu -and -not $global:DaKhoiDongLai) {
+        Write-Host ""
+        Write-Host "  [!] DEPLOY BO DO sau khi da dung dich vu - dang dua chung tro lai"
+        foreach ($svc in @('LTTStudioWeb', 'LTTStudioWorker', 'LTTStudioVoice',
+                           'LTTStudioCodex')) {
+            try {
+                Start-Service $svc -ErrorAction Stop
+                Write-Host "      $svc -> Running"
+            } catch {
+                Write-Host "      $svc -> KHONG khoi dong lai duoc: $($_.Exception.Message)"
+            }
+        }
+        Write-Host "  [!] Kiem `/health/ready` truoc khi lam gi khac."
+        Write-Host ""
+    }
+    break
+}
+
 # --------------------------------------------------------------- Invoke-Ngoai
 # Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
 # `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
@@ -666,13 +706,78 @@ $DichVuGiuAppDir = @($WorkerServiceName, $ServiceName, 'LTTStudioCodex',
 foreach ($svc in $DichVuGiuAppDir) {
     Stop-Service $svc -Force -ErrorAction SilentlyContinue
 }
-Start-Sleep -Seconds 2
+
+# ==========================================================================
+#  SU CO 2026-09-28 17:38: `Move-Item` NEM 'Access denied', DEPLOY THOAT, VA
+#  BA DICH VU O LAI TRANG THAI Stopped -> production 502 cho toi khi CO NGUOI
+#  DE Y.
+# ==========================================================================
+#
+#  Ban cu: `Stop-Service` roi `Start-Sleep -Seconds 2` roi `Move-Item`.
+#
+#  Hai khiem khuyet, va cai thu hai moi la cai dat:
+#
+#    1. `Stop-Service` tra ve khi trang thai LA Stopped, nhung Windows co the
+#       chua nha handle cua tien trinh vua chet. Hai giay la mot con so doan,
+#       va no dung phan lon cac lan - lan 15:12 cung ngay THANH CONG. Mot cuoc
+#       dua theo thoi diem thi khong hong deu, no hong khi may dang ban.
+#
+#    2. Giua "dung dich vu" va "khoi dong lai" co ~550 dong. MOI loi trong
+#       khoang do de production xuong VO HAN DINH - script thoat, khong ai
+#       dua dich vu tro lai. Do la thu bien mot loi thanh mot su co.
+#
+#  Chu thich ngay tren doan nay da ghi mot ca Y HET ngay 31/08: *"production
+#  502 khoang ba phut. Trieu chung nhin nhu mot loi quyen han, khong nhu mot
+#  dich vu bi bo sot."* Lan nay trieu chung LAI la 'Access denied'. Cung ho:
+#  mot loi ve THOI DIEM deo mat na mot loi ve QUYEN.
+#
+#  Nen o day lam ba viec:
+#    a. cho tung dich vu toi khi THAT SU Stopped (do, khong doan);
+#    b. thu lai `Move-Item` co backoff, va khi that bai thi NOI AI DANG GIU;
+#    c. dat co `$global:DaDungDichVu` de khoi `catch` o duoi dua dich vu tro
+#       lai. Ke ca khi deploy that bai, production phai song.
+
+foreach ($svc in $DichVuGiuAppDir) {
+    $han = (Get-Date).AddSeconds(30)
+    while ((Get-Date) -lt $han) {
+        $s = Get-Service $svc -ErrorAction SilentlyContinue
+        if (-not $s -or $s.Status -eq 'Stopped') { break }
+        Start-Sleep -Milliseconds 500
+    }
+    $s = Get-Service $svc -ErrorAction SilentlyContinue
+    if ($s -and $s.Status -ne 'Stopped') {
+        Write-Host "  [!] $svc van o trang thai $($s.Status) sau 30s"
+    }
+}
+$global:DaDungDichVu = $true
+
 # Giu ban truoc de rollback duoc.
 if (Test-Path $appDir) {
     $prev = Join-Path $Root 'app.previous'
     if (Test-Path $prev) { Remove-Item $prev -Recurse -Force }
-    Move-Item $appDir $prev
-    Ok "Ban cu chuyen sang app.previous (dung de rollback)"
+    # Thu lai: mot handle chua nha thuong nha trong vai giay. KHONG thu vo han
+    # - mot vong khong tran la cach production xuong 20 phut ngay 2026-08-05.
+    $daChuyen = $false
+    foreach ($lan in 1..6) {
+        try {
+            Move-Item $appDir $prev -ErrorAction Stop
+            $daChuyen = $true
+            break
+        } catch {
+            if ($lan -eq 6) {
+                # NOI AI DANG GIU. Mot 'Access denied' tran khong the chan doan,
+                # va lan 28/09 toi mat mot luot deploy de tim ra dieu nay.
+                Write-Host "  [!] Move-Item that bai $lan lan: $($_.Exception.Message)"
+                Write-Host "  [!] Tien trinh dang mo tep duoi app\ (neu co):"
+                Get-CimInstance Win32_Process |
+                    Where-Object { $_.CommandLine -and $_.CommandLine -match 'LTTPlatform\app' } |
+                    ForEach-Object { Write-Host ("      pid " + $_.ProcessId + " " + $_.Name) }
+                throw
+            }
+            Start-Sleep -Seconds ($lan * 2)
+        }
+    }
+    if ($daChuyen) { Ok "Ban cu chuyen sang app.previous (dung de rollback)" }
 }
 New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 # /XD: khong copy du lieu van hanh, bi mat, cache. Chung song o ngoai app\
@@ -1215,6 +1320,7 @@ if ($voicePy -and (Test-Path $voicePy)) {
 
 Head 'Khoi dong'
 Start-Service $ServiceName
+$global:DaKhoiDongLai = $true
 Start-Service $CodexServiceName -ErrorAction SilentlyContinue
 
 # Sau cung: nap ~320 MB trong so len GPU, mat khoang 20 giay moi san sang.
