@@ -590,6 +590,21 @@ P1-a (nơi ta đang sắp xếp lại ai giữ lease).
 | Đại lượng onset trong `_ghep_track_khop` là gì? | đọc `localize.py:9600-9790` nguyên văn | P3 |
 | Bỏ một phần tử khỏi `CHUOI` làm gãy gì (`ha_nguon_cua` · vân tay · lineage · `giai_doan_lech_van_tay`)? | làn W4 — **đếm**, ⛔ không suy | mọi việc đổi `CHUOI` |
 
+### 🔴 `test_448` — nợ CHỈ lượt đo cuối trả được, ⛔ đừng sửa con số
+
+Đo 28/09: `giai_doan_chep_loi.PHIEN_BAN_MA = 5`, nhưng bằng chứng nghiệm thu ghi
+`chep_loi/3` ⇒ **cũ hai bậc** (3→4 của một phiên trước, 4→5 là lượt `chunk_size=10`).
+Thông điệp của chính bài: *"nghiệm thu đã cũ, **phải chạy lại**"*.
+
+⛔ **KHÔNG sửa `3` thành `5`.** Con số ấy là **vân tay của một lượt chạy thật**; gõ tay
+vào nó biến một bằng chứng thành một lời khai, và bài kiểm mất đúng khả năng nó sinh ra để
+có. ⇒ Cùng họ [[con-so-cong-phai-kem-sha-va-moi-truong]].
+
+⭐ **Và ⛔ đừng chạy nghiệm thu GPU NGAY BÂY GIỜ.** `P1-0` đang gộp `audio_prepare` +
+`transcribe` thành `gpu_asr` — lượt ấy rất có thể bump `PHIEN_BAN_MA` lần nữa. Một lượt
+nghiệm thu trước `P1-0` sẽ **cũ trong vòng một giờ**. ⇒ Nó đi **cùng** `T1a-ter` dưới đây,
+⛔ không phải một lượt riêng.
+
 ⭐ **Phép đo cuối cùng, MỘT lượt** (theo đúng chốt của chủ dự án: *"những gì viral đã
 đo rồi thì ta dùng, ⛔ không đo lại; về cuối đo một lượt luôn"*): `T1a-ter` trên worker
 thật + kiểm frame. Mọi con số Viral đã đo (bảng wps, `MAXSLOW`, 1.25/1.40, chunk ≤60,
