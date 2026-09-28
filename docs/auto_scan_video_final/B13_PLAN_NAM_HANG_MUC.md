@@ -665,7 +665,23 @@ tới cuối plan.
 
 ---
 
-## 10. Trạng thái — `main` = `f5c58466`, production = `1e34780f`
+## 10. Trạng thái — `main` = `bb62ca93`, production = `1e34780f`
+
+```
+TOAN PLAN        12 / 31 hang muc  =  39 %
+ ├ phan MA       12 / 16           =  75 %   (khong can chay gi de lam)
+ └ phan PHAI CHAY 0 / 15           =   0 %   (do · OCR · gate · deploy · nghiem thu)
+```
+
+⚠️ **Hai mẫu số, ⛔ đừng gộp.** `39 %` đếm **hạng mục**, mà hạng mục ⛔ không đồng
+hạng: `G5` (một lượt `T1a-ter` trên worker thật) một mình quyết sản phẩm có đạt
+hay không, còn `C5` là sửa một câu chú thích. ⭐ Con số đọc được duy nhất là
+**`75 %` phần MÃ** — vì phần còn lại ⛔ không chặn bởi công sức, nó chặn bởi
+**một điều kiện**: chủ dự án đang phân tích video và đã dặn ⛔ không chạy thử
+(máy đã treo 2 lần ngày 28/09).
+
+⇒ Nói *"plan xong 39 %"* mà ⛔ không nói *"0 % phần phải chạy, vì bị chặn có chủ
+ý"* là báo tiến độ kiểu dễ nghe. Hai con số, hai câu hỏi khác nhau.
 
 | id | việc | trạng thái |
 |---|---|---|
@@ -683,7 +699,7 @@ tới cuối plan.
 | — | hai bánh cóc hình dạng cả cây | ✅ `2c031c63` — xem §9.6 |
 | **A4** | bỏ `he_so_toc`, thôi chừa chỗ hẹp | 🔵 **đang chạy** (L1) — xem §9.1 |
 | **A5** | hai khoá `tom_tat`: đổi tên **hay BỎ HẲN** | 🔵 đang chạy (L1 quyết) · bản tham khảo `wip/c7-doi-ten` `81f3bfb9` |
-| **C6** | bánh cóc `test_2018` đo CÁCH GÕ | 🔵 đang chạy (L3) — xem §9.3 |
+| C6 | bánh cóc `test_2018` đo CÁCH GÕ | ✅ `31bdb6f4` · bất biến theo HÀNH VI + phép tiêm |
 | C7 | sổ khai `asv_doi_soat.py` | ⏸️ **hoãn tới sau A4/A5** |
 | A1 | `cat = None` cho lượt test | ⏳ chờ chủ dự án xong phân tích video |
 | A3 · B5 | tách (A)/(B) hố VAD rồi mới vặn | ⏳ cần 1 lượt GPU |
@@ -702,17 +718,63 @@ Mã sản phẩm lệch: `ban_ghi.py` · `giai_doan_chep_loi.py` · `giai_doan_h
 giữa plan phải HỎI chủ dự án*. ⛔ Không gì bị chặn vì chờ — mọi việc còn lại là mã
 + đo cục bộ; chỉ `G5` (`T1a-ter` trên worker thật) mới cần deploy.
 
-### 10.2 ⚠️ NỢ MỚI cho phiên sở hữu `gate.py`/`tai_may.py`
+### 10.2 🔴 Tôi CHẨN ĐOÁN SAI một lượt giữ khoá — vì đo SAI KÊNH
 
-`cpu_nhieu` là **mutex nhị phân** cho một tài nguyên **chia được**. Đo 28/09: một
-lượt `gate --pham-vi` (35 phạm vi, `-j 2`) giữ khoá **23,4 phút** trong khi
-`tai_may` báo `RANH` với **8,0/10 lõi vật lý rảnh** — hai lượt pytest vài giây
-phải xếp hàng sau một tiến trình để trống 8 lõi.
+**Bản đầu của mục này SAI, và nó sai theo cách đáng ghi hơn cả kết luận đúng.**
 
-⭐ Đây là dạng **khó thấy nhất** của *"giữ khoá trong lúc không tính"*: nó ⛔ không
-đang **CHỜ** (giây CPU vẫn tăng, nên phép phát hiện *"tường dài + CPU thấp"* ⛔
-không bắt được) — nó đang **tính CHẬM có chủ ý**. Cái giá của `-j 2` đổ lên
-**khoá**, ⛔ không đổ lên máy.
+Tôi thấy `gate --pham-vi` (35 phạm vi, `-j 2`) giữ `cpu_nhieu` **23,4 phút**, đọc
+`tai_may` ra `CPU 20 % / 20 lõi · RANH · rảnh 8,0/10 lõi vật lý`, rồi kết luận:
+*"nó đang **tính CHẬM có chủ ý**, `-j 2` là tự hạn chế, phép phát hiện cũ (tường
+dài + CPU thấp = đang chờ) ⛔ không bắt được ca này."*
 
-⇒ Câu hỏi thiết kế: khoá nên biết *"tôi xin bao nhiêu lõi"* thay vì *"tôi xin cả
-máy"*. ⛔ Không phải việc của plan này; đã báo phiên sở hữu.
+**Cả ba vế đều sai.** Phiên khác đo **giây CPU của chính cây tiến trình** — đại
+lượng đúng cho câu hỏi này:
+
+```
+pid 23096  gate.py --pham-vi <35> -j 2       giay CPU  15,6   / 25 phut tuong
+ └ 21924   test_nhanh.py -n 5                giay CPU   0,2
+    └ 23440                                  giay CPU  12,2
+                        ca cay ~28 giay CPU / ~1.520 giay tuong = 0,02 LOI
+```
+
+⇒ Nó ⛔ **không** tính chậm. Nó **ĐANG CHỜ** — đúng ca mà luật toàn cục cấm thẳng
+(*"⛔ không giữ khoá trong lúc CHỜ"*), và phép phát hiện cũ **CÓ** bắt được.
+
+🔑 **Chỗ lệch nằm ở KÊNH ĐO, ⛔ không ở luật.** `tai_may` trả lời *"MÁY có bận
+không"* — một con số **toàn máy**, gồm cả tôi, cả phiên khác, cả Defender. Câu tôi
+hỏi là *"TIẾN TRÌNH NÀY đốt bao nhiêu"*, và câu ấy ⛔ **không có sẵn** ở `tai_may`;
+nó chỉ có ở giây CPU của cây tiến trình (`Get-Process.CPU`).
+
+⇒ Đúng họ đã ghi sổ — *"đọc thứ ĐẠI DIỆN thay vì đọc thứ THẬT"*, vế
+**"thứ tôi hỏi có SẴN ở chỗ tôi đứng không?"**. Và nó tệ hơn một số sai: nó làm
+tôi **kết tội sai một luật đang hoạt động tốt**, rồi đề nghị đổi mô hình khoá —
+một đề nghị dựa trên một phép đo ⛔ không trả lời câu tôi hỏi.
+
+⚠️ **Thủ phạm thật:** một worktree thứ ba (`restore-incomplete-sessions-d63d42`)
+mà phiên chủ hình như đã đóng, nhưng `bash.exe` cha còn sống nên nó ⛔ không phải
+tiến trình mồ côi theo nghĩa thường. ⛔ **Không ai giết nó** — luật *"chỉ kill
+tiến trình mình khởi động"*.
+
+⚠️ Và một dấu vết lặp lại được ở mọi phiên, trong chính lệnh của họ:
+
+```
+nohup python tools/gate.py --pham-vi ... &  echo "khong dung nohup" ;  python tools/gate.py --pham-vi ...
+```
+
+Gọi gate **HAI lần** — một nền, một tiền cảnh. Nếu cả hai sống, lượt thứ hai
+**xếp hàng sau chính lượt thứ nhất**: tự khoá chính mình, triệu chứng **y hệt**
+cái tôi vừa chẩn đoán sai.
+
+### 10.3 ⚠️ Điểm mô hình vẫn còn, nhưng nó ⛔ KHÔNG phải việc của plan này
+
+`cpu_nhieu` là mutex **nhị phân** cho một tài nguyên **chia được** — đó vẫn là một
+chỗ lệch. Nhưng ⛔ **không ai được tự đổi nó**: `CLAUDE.md` toàn cục chốt 23/09
+*"một khoá cho cả máy, một lượt nặng một lúc"* **sau một sự cố đo được** (gate +
+agent cộng dồn 14/20 lõi rồi bị CPU quá tải ngắt). Đổi thành semaphore có trọng số
+là **đảo một quyết định chủ dự án đã trả giá để có**, và `cua_so_yen.py` phục vụ
+mọi phiên của **cả hai kho**. ⇒ Chỉ chủ dự án quyết.
+
+⭐ Đường **không** đảo luật: khi một lượt **đã** giữ `cpu_nhieu` thì nó đã độc
+quyền máy, nên `-j 2` là **tự hạn chế vô cớ** — cho `gate.py` **in cảnh báo** khi
+`-j` nhỏ hơn hẳn ngân sách lõi trong lúc đang giữ khoá toàn máy. Cảnh báo, ⛔ không
+ghi đè ý định người gọi. (Phiên sở hữu `gate.py` nhận việc này.)
