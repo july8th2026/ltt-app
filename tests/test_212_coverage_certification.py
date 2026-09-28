@@ -114,6 +114,37 @@ def test_the_document_classifies_every_app():
         f"stale: {sorted(documented - slugs)}")
 
 
+def test_section_headings_count_their_own_rows():
+    """🔴 Con so o TIEU DE phai bang so HANG — do 28/09: no KHONG bang.
+
+    Tai lieu ghi `## 1. 20/20 app` trong khi muc ay co **27** hang, va
+    `## 2. 28/28 ToolSpec` trong khi co **18**. Sai bao lau khong ro, va ⛔
+    KHONG phep kiem nao thay: hai bai duoi doc hang bang `_rows("## 1.")`, tuc
+    khop TIEN TO — nen moi thu viet sau dau cham la van xuoi ⛔ khong ai doc.
+
+    ⭐ Day la `hai cho khai cung mot dieu` o dang re nhat: so hang la SU THAT,
+       con so o tieu de la mot BAN SAO go tay cua no. Mot ban sao khong ai doi
+       chieu se lech, va cai lech ay di ra ngoai duoi danh nghia mot **chung
+       nhan do phu** — tuc chinh cho khong duoc phep co con so sai.
+
+    ⛔ Bai nay chot QUAN HE (tieu de == so hang), ⛔ khong chot MOT CON SO — nen
+       no ⛔ khong phai mot banh coc phai nang moi lan them app.
+    """
+    import re
+    tho = DOC.read_text(encoding="utf-8")
+    thay = 0
+    for muc in ("## 1.", "## 2."):
+        dong = next(d for d in tho.splitlines() if d.startswith(muc))
+        khop = re.search("([0-9]+) */ *([0-9]+)", dong)
+        assert khop, f"tieu de `{dong}` khong mang con so dang n/n"
+        a, b = int(khop.group(1)), int(khop.group(2))
+        assert a == b, f"tieu de `{dong}`: {a} != {b}"
+        assert a == len(_rows(muc)), (
+            f"tieu de `{dong}` khai {a} nhung muc co {len(_rows(muc))} hang")
+        thay += 1
+    assert thay == 2
+
+
 def test_the_document_classifies_every_tool_not_only_the_published_ones():
     names = {t.name for _slug, t in _all_tools()}
     documented = {row[0] for row in _rows("## 2.")}

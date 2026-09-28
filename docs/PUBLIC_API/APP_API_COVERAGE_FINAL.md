@@ -25,7 +25,7 @@ xuống một tầng: **từng tool, từng alias model, từng chế độ ch�
 
 ---
 
-## 1. 20/20 app
+## 1. 27/27 app
 
 Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực bị chặn mà không nói
 được nó sẽ về đâu thì chưa phải một kế hoạch, chỉ là một mục backlog đội lốt.
@@ -58,12 +58,11 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 
 | `transcript` | EXPOSE_V1 | — | ASYNC_JOB | **MỞ 2026-09-22 (chủ dự án chốt).** Quy tắc đã đối soát với `bot_transcript` (sửa chữ V5 + từ điển, 1.5 s, kiểm legacy — `tests/test_1114_*`; khớp tuyệt đối 98/98 đoạn EN trên audio thật của chủ dự án). Giá **2 credit/phút audio** (`apps/transcript/gia.py`), `duration_s` do máy chủ đo (`measured_from=audio`, `hidden`), worker quyết toán `min(giá thật, đã giữ)` — không vượt quote (Q84). Trước đó: **Phiên âm có dòng thời gian** (Phase 08). DEFER vì chưa nghiệm thu E2E qua worker và chưa kiểm trên URL công khai. Đã đối chiếu parity trên **1.932 lượt job thật** của bot legacy (`docs/migration/workflow_apps/30_...`): bản chuyển 95,50 % so với 95,76 % của **chính engine gốc** đo trên đầu ra của nó — engine gọi `random.uniform` có chủ ý nên trùng khớp từng byte là bất khả. |
 | `audio_pause` | **DEFER** | — | ASYNC_JOB | **Chèn khoảng lặng theo lời** (Phase 09). DEFER cùng lý do với `transcript`, cộng một điều nặng hơn: bot gốc **không để lại hiện vật nào** trên máy (workdir rỗng, kết quả nằm trên Drive), nên mệnh đề *"kết quả như bot đã giao"* hiện **không kiểm được** — chỉ đối chứng vi sai với hàm gốc là khả dĩ. |
-| `prompt_canh` | **DEFER** | — | ASYNC_JOB | **Kịch bản → prompt cảnh** (Phase 10). DEFER vì **hình dạng giá**: nó thu tiền theo **từng lượt gọi model** qua `runtime_noi_bo`, nên `credit_cost` ở tầng job là **0 có chủ đích**. Hợp đồng quote/settle một-vào-một-ra không mô tả được giá của nó — mở ra `/api/v1` là công bố một hợp đồng giá mà đường thật không đi theo. |
 | `video_assembly` | **DEFER** | — | ASYNC_JOB | **Dựng video từ clip** (Phase 11). DEFER vì nó là một **chuỗi nhiều giai đoạn** trên GPU (STT, khớp clip, tách nhạc, trộn tiếng, cháy phụ đề), giống `auto_scan_video` ở trên: ép vào một `ToolSpec` một-vào-một-ra thì mất khả năng chạy lại một giai đoạn. Và `vram_min_mb` **chưa đo thật**, nên scheduler chưa xếp chỗ đúng được. |
 | `lttcode` | INTERNAL_ONLY | — | không có hợp đồng job | Kênh phát hành + đăng nhập + tìm web của **ứng dụng desktop LTTCODE** (kho `D:\LTTCODEAPP`). Không sinh Job, không khai `ToolSpec`: LTTCODE gọi `/api/v1` bằng khoá `ltt_sk_` của chính người dùng như mọi client khác, nên mở app này ra API là công bố lại một hợp đồng đã có. Trang `/lttcode` (giới thiệu + hướng dẫn + tải) là **web công khai**: `surface="customer"`, `public=True` — công khai trang web, không công khai API. |
 | `video_crawler` | DEFER | — | ASYNC_JOB | Cào video nguồn từ nhiều nền (yt-dlp + client riêng). Chưa mở: phụ thuộc cookie/phiên nền tảng, rủi ro điều khoản dịch vụ nền (N9/N10) và cam kết quyền của khách chỉ có ở web (`docs/PUBLIC_API/APP_DISPOSITION_V1.md`). |
 
-## 2. 28/28 ToolSpec
+## 2. 18/18 ToolSpec
 
 `customer_visible=True` **không** làm một tool public — đó là cờ palette của
 Agent. `kichban` (gỡ 2026-08-25, Q109) từng là bằng chứng sống của điều đó.
@@ -88,7 +87,6 @@ Agent. `kichban` (gỡ 2026-08-25, Q109) từng là bằng chứng sống của 
 
 | `transcript.run` | transcript | **EXPOSE_V1 — MỞ 22/09** | Một tệp âm thanh vào, một dòng thời gian ra (6 khoá `start/end/text/type/scene_id/index`). 2 credit/phút audio đo từ tệp; `duration_s` ẩn. |
 | `audio_pause.run` | audio_pause | **DEFER — chưa bán** | Bản thu + danh sách mốc vào, bản thu đã chèn lặng ra. `api_exposed=False`, disposition DEFER. |
-| `prompt_canh.run` | prompt_canh | **DEFER — chưa bán** | Kịch bản vào, prompt JSON từng cảnh ra. `credit_cost=0` **có chủ đích** — tiền thu ở tầng `runtime_noi_bo` theo từng lượt gọi model, nên thu ở tầng job nữa là thu **hai lần**. `api_exposed=False`, disposition DEFER. |
 | `video_assembly.run` | video_assembly | **DEFER — chưa bán** | Clip thô + nhạc vào, một video hoàn chỉnh ra. `api_exposed=False`, disposition DEFER. |
 
 ## 3. 6/6 alias model
@@ -247,6 +245,7 @@ thể, nó kiểm:
 | Đo thời lượng phía server lúc báo giá | 3 tool video (`video.subtitle`, `video.short_clips`, `video.upscale`) | Một chỗ: đọc metadata từ file đã upload rồi khoá giá. Sửa một chỗ mở được cả ba. |
 | Hợp đồng tuỳ chọn theo model | `video.generate` | Cho `models` khai luôn tập giá trị hợp lệ riêng, thay vì publish hợp nhất. |
 | Hợp đồng streaming | *(không còn app nào)* | `chataistudio` đã xoá 09/09; rào vẫn đứng đó cho đường streaming tiếp theo. |
+| Hai hàng `prompt_canh` đã bỏ | *(không còn app nào)* | App xoá ở `0c2aabab` (E5 — pha 6 mang cơ chế chia lô sang chỗ khác). Hai hàng `prompt_canh` + `prompt_canh.run` nằm lại làm `test_212` đỏ 5 ngày với `stale:`. ⭐ Quyết định **DEFER vì hình dạng giá** (thu tiền ở tầng `runtime_noi_bo` theo từng lượt gọi model, nên `credit_cost=0` ở tầng job là **có chủ đích**) vẫn đúng cho **đường** ấy, và nó sẽ quay lại nếu ai mở lại một app thu tiền kiểu đó — ⛔ đừng đưa một app như vậy ra `/api/v1` chỉ vì bảng này không còn hàng nào cảnh báo. |
 | Ranh giới chi phí cho runtime điều phối | `agent` | Cần sandbox và trần chi phí riêng trước khi bàn tới hợp đồng. |
 
 Ba dòng đầu **cùng một hình dạng**: hợp đồng job hiện tại giả định giá chốt được
