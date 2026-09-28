@@ -370,6 +370,17 @@ bảng việc là một **mệnh lệnh** cho agent, nên nó phải được đ
 | **P3** | `phu_de_canh_giong.srt` khoá riêng + `outputs["phu_de_da_dung"]` | `apps/auto_scan_video/giai_doan_thoi_gian.py` | sonnet | P0-a |
 | **P4** | Chế độ chạy lẻ `chi_asr`/`chi_dich`/`chi_dub` (cổng, ⛔ không chuỗi riêng) | `tools/asv_chay_tai_cho.py` | sonnet | P1-a |
 
+✅ **P2 đi CÙNG chiều một quyết định đã chốt, ⛔ không ngược** — soát 28/09:
+`apps/auto_scan_video/phu_de.py:8-20` gọi việc này bằng tên nội bộ **"Pha 26 —
+Renderer fusion"**, nguyên văn *"tồn tại để gộp mọi biến đổi điểm ảnh vào MỘT lần
+encode"*, và nó đã **từ chối** gọi `burn.burn()` vì *"nó chạy một lượt ffmpeg ĐẦY ĐỦ của
+riêng nó, tức video bị mã hoá lại hai lần"*. ⇒ Agent làm P2 **tra "Pha 26" / "Renderer
+fusion"** trước khi thiết kế — phần việc này đã có tiền lệ và có người đã nghĩ về nó.
+
+⚠️ Cùng tệp, `:22` mở một khối tiêu đề **`🔴 TRỤC THỜI GIAN — chỗ dễ sai nhất, và nó đã
+có một tiền lệ`** (`che_do_render.loc_cat_noi` CẮT rồi NỐI ⇒ mốc dịch). **Đọc khối đó
+nguyên văn**, nó nói đúng về trục mà §5 của tệp này nói.
+
 🔴 **Đã đo (28/09)**: mọi chỗ của ta truyền filtergraph bằng `-filter_complex` **trên
 DÒNG LỆNH** (`am_master.py:537,752,1033,1081`), ⛔ không qua `-filter_complex_script`.
 ⇒ Gộp 10 node vào một lượt **làm dài chuỗi ấy**, và trần 32.767 ký tự của Windows là
