@@ -131,8 +131,27 @@ def dung(db, run, ban_ghi: dict, *, ctx=None) -> dict:
        ném `AsvError` (một `ValueError`) **trước khi** gọi model, và nuốt nó thành
        "hồ sơ rỗng" biến một thất bại chính sách sạch sẽ thành một lượt chạy im
        lặng nghèo hơn mà ⛔ không ai giải thích được vì sao.
+
+    🔑 **B17 §4.1, làn P0-a — tính + ghi `toc_doc_giong` TRƯỚC bất cứ điều gì
+       khác ở đây.** Đây là settings DẪN XUẤT (hàm THUẦN của `giong_id` +
+       `ngon_ngu_dich`, xem `cai_dat.toc_doc_giong`) mà `content_process` cần
+       để neo độ dài câu dịch — và nó phải sẵn sàng ở đây, KHÔNG đợi
+       `voice_synthesis` (chạy SAU) đo giọng rồi báo lại, nếu không DAG có một
+       CHU TRÌNH. Ghi VÔ ĐIỀU KIỆN vào `run.settings` (không cần model, không
+       tốn tiền) nên chạy trước cả cửa ngân sách bên dưới — `run.settings["toc_
+       doc_giong"]` có giá trị dù lời gọi hồ sơ dịch bị chặn (`AsvError`) hay
+       model trả rác. ⚠️ Dict TRẢ VỀ của hàm này thì khác: nhánh "model trả
+       rác" ⛔ KHÔNG mang khoá này trong dict trả về (giữ nguyên đúng hợp đồng
+       `KHOA` mà `test_408::test_ho_so_dich_model_tra_RAC_van_tra_ho_so_RONG`
+       đã chốt) — `run.settings` mới là nơi đọc được ở MỌI nhánh.
     """
-    from . import ai, features, pipeline
+    from . import ai, cai_dat as cd, features, pipeline
+
+    # ⚠️ `getattr(..., None)` chứ KHÔNG `run.settings` trực tiếp: một số stub
+    #    test (`test_408`/`test_418`/`test_4953`) dựng `run` KHÔNG có thuộc
+    #    tính `settings` — cùng cách phòng thủ `cai_dat.doc()` đã dùng.
+    run.settings = cd.voi_toc_doc_giong(getattr(run, "settings", None))
+    toc_doc_giong = float(run.settings.get("toc_doc_giong") or 0.0)
 
     dong = [f'{d["ma"]}: {d["chu"]}' for d in (ban_ghi.get("doan") or [])]
     tin = [
@@ -162,7 +181,7 @@ def dung(db, run, ban_ghi: dict, *, ctx=None) -> dict:
                               stage=pipeline.CONTENT_PROCESS,
                               item_key=ITEM_KEY,
                               ctx=ctx, temperature=0.2)
-        return _doc(kq["noi_dung"])
+        return {**_doc(kq["noi_dung"]), "toc_doc_giong": toc_doc_giong}
     except features.AsvError:
         # 🔴 **CUA CHAN vi het ngan sach — ⛔ KHONG nuot.** Xem docstring: day la
         #    mot trang thai KHACH phai biet, va no xay ra **truoc khi** model duoc
@@ -173,4 +192,10 @@ def dung(db, run, ban_ghi: dict, *, ctx=None) -> dict:
         # ⭐ Hồ sơ là thứ làm bản dịch TỐT HƠN, ⛔ không phải thứ nó cần để CHẠY.
         #    Hỏng thì đi tiếp với hồ sơ rỗng và NÓI RA, ⛔ không làm chết lượt chạy.
         log.warning("khong dung duoc ho so dich (%s: %s)", type(exc).__name__, exc)
+        # ⛔ KHONG them `toc_doc_giong` o day: `test_408::test_ho_so_dich_model_
+        #    tra_RAC_van_tra_ho_so_RONG` chot `set(ra) == set(KHOA)` DUNG tren
+        #    duong nay — mot khoa moi se pha vo hop dong ho so RONG da nghiem
+        #    thu. Gia tri da nam AN TOAN o `run.settings["toc_doc_giong"]`
+        #    (ghi phia tren, VO DIEU KIEN, truoc ca nhanh nay) — do moi la duong
+        #    tho that su dung, ⛔ khong phai dict tra ve nay (xem docstring `dung`).
         return {k: ({} if k.startswith("bang_") else "") for k in KHOA}
