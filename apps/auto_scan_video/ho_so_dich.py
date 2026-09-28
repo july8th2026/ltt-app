@@ -16,7 +16,30 @@ from platform_core.i18n import _ as _t
 
 log = logging.getLogger(__name__)
 
-KHOA = ("the_loai", "so_nguoi_noi", "bang_dai_tu", "bang_ten_rieng", "giong_van")
+KHOA = ("the_loai", "so_nguoi_noi", "bang_dai_tu", "bang_ten_rieng", "giong_van",
+        "bang_sua_dong_am")
+
+#: N3 (B14/V3, `docs/auto_scan_video_final/B14_SO_SANH_VIRAL/V3_DICH.md` hang 1)
+#: — muon glossary sua loi DONG AM cua ASR truoc khi dich, tu
+#: `D:\Viral\resources\app-src\ai_dich.py:1290-1336 _tom_tat_glossary` (chi doc).
+#: Viral do that 01/09 tren chinh duong dich dang song (gemini-3.1-flash-lite,
+#: 300 cue dau): model TU BAT **8/8** loi dong am da liet ke khi duoc dan cau
+#: nay (vd `武林根→五灵根`, `根国清政→根骨清正`) — khong co cau dan thi mot ten
+#: rieng dung `五灵根` dich SAI **0/3**.
+#:
+#: ⭐ **KHONG them luot goi model moi** — ghep THANG vao lien nguoi goi da tra
+#:    tien san (`ho_so_dich.dung`, MOT lan/video, Task 11). Day la mot CUA PHAT
+#:    HIEN: model tu ghi lai nghi van dong am no thay trong ban chep loi vao
+#:    `bang_sua_dong_am`, KHONG tu sua ban dich cua ham nay hay bat ky doan nao
+#:    khac — long_tieng.py (L1 so huu) chua doc truong nay, nen o pha nay no chi
+#:    la mot khoa DUOC GHI RA (hien trong `tom_tat["ho_so_dich"]`), chua duoc
+#:    NOI vao loi nhac dich thuc te. Noi tiep (doc + dan vao `long_tieng.loi_nhac`)
+#:    la viec cua L1 — bao dieu phoi, khong tu cham vao `long_tieng.py`.
+#:
+#: ⛔ **KHONG kem vi du dich san trong loi nhac** — "mot vi du trong loi nhac la
+#:    mot menh lenh ngam" (24/09, bon vi du khong dau tung lam tut mot ten von
+#:    dung). Loi nhac duoi day chi mo ta HINH DANG JSON can, khong dua cap
+#:    "chu sai -> nghia dung" tieng Viet cu the nao ca.
 
 #: 🔑 **Khoa so cai cua lan goi nay — MOT dong cho CA video, va do la CO Y.**
 #:
@@ -79,6 +102,9 @@ def _doc(noi_dung: str) -> dict:
         "bang_dai_tu": dict(goc.get("bang_dai_tu") or {}),
         "bang_ten_rieng": dict(goc.get("bang_ten_rieng") or {}),
         "giong_van": str(goc.get("giong_van") or ""),
+        # N3 — xem chu thich o KHOA dau tep. Rong = model khong nghi ngo dong am
+        # nao, MOT cau tra loi hop le (⛔ khong phai loi doc).
+        "bang_sua_dong_am": dict(goc.get("bang_sua_dong_am") or {}),
     }
 
 
@@ -113,10 +139,17 @@ def dung(db, run, ban_ghi: dict, *, ctx=None) -> dict:
         {"role": "system", "content": (
             "Doc toan bo loi thoai cua mot video roi tra ve DUY NHAT mot doi "
             "tuong JSON voi dung cac khoa: the_loai, so_nguoi_noi, bang_dai_tu, "
-            "bang_ten_rieng, giong_van.\n"
+            "bang_ten_rieng, giong_van, bang_sua_dong_am.\n"
             "bang_dai_tu: voi MOI cap vai, ghi tu tu xung (`toi`) va tu goi "
             "(`goi`) bang tieng Viet se dung suot ca video.\n"
             "bang_ten_rieng: ten goc -> dang viet tieng Viet, chot MOT lan.\n"
+            "bang_sua_dong_am: ban chep loi nay co the do MAY NGHE NHAM mot cum "
+            "tu DONG AM (dung ngu phap nhung SAI NGHIA so voi boi canh chung cua "
+            "ca video — vi du mot ten rieng hay thuat ngu bi nghe thanh mot cum "
+            "khac phat am giong het). Neu CO CAN CU ro rang tu boi canh, ghi "
+            "moi cap {cum_nghe_nham: nghia_dung_theo_boi_canh}. KHONG doan mo "
+            "ho, KHONG suy dien tu mot lan xuat hien duy nhat neu boi canh "
+            "khong ro. De {} (rong) neu khong phat hien cum nao.\n"
             "Khong giai thich gi them.")},
         {"role": "user", "content": "\n".join(dong)},
     ]
