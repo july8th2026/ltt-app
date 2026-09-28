@@ -25,6 +25,67 @@ phải đọc nguyên văn vùng đó **trước** khi sửa, ⛔ không dựa v
 
 ---
 
+## 0b. QUY TẮC VẬN HÀNH PLAN NÀY — chủ dự án chốt 28/09/2026
+
+> *"Tiếp tục theo quy trình. ⛔ Không dừng lại giữa các pha."*
+
+### Điều phối: ⛔ KHÔNG dừng giữa các pha
+
+Làn xong ⇒ **gộp → chạy lưới → mở làn kế**, ⛔ không xin duyệt, ⛔ không tóm tắt tiến
+độ rồi chờ. Hết **mọi** pha thì MỘT gate → gộp `main` → deploy (nếu cần) → **báo**.
+
+⛔ **Dừng CHỈ khi**: gate đỏ · thao tác ⛔ không đảo được · thay đổi chưa commit ⛔ không
+rõ của ai · rủi ro bảo mật. (Hợp đồng §10.)
+
+⭐ **HỎI chỉ khi câu trả lời ⛔ không nằm trong mã, trong số đo, hay trong nguồn**: đánh
+đổi **sản phẩm** · hai đường **đều đúng** mà dữ liệu ⛔ không chọn hộ · việc **chỉ chủ dự
+án làm được** (bí mật, quyền, dashboard ngoài).
+
+### Lưới sau mỗi lượt gộp — theo LOẠI lượt gộp, ⛔ không một cỡ cho tất cả
+
+| Lượt gộp | Phải chạy |
+|---|---|
+| thuần `docs/` | `pre-commit run --all-files` (**9 giây**, nhóm *vừa*, ⛔ không cần khoá) |
+| có **mã** | `scan_source_secrets` · `check_mypy` · `check_silent_except` (**< 45 giây**) **+** test nhắm **+** `pre-commit` |
+
+🔑 Ba bộ kiểm hình dạng bắt loại lỗi **test nhắm ⛔ KHÔNG THỂ bắt**: mã **đúng hành vi,
+sai bất biến toàn kho**.
+
+⛔ **KHÔNG chạy `gate.py` trong phiên** — không L1, không L2, không L3. Gate **MỘT lần**
+ở **cuối plan**, **MỘT cấp**. Hết một pha / một làn / một lượt gộp `main` ⛔ **không phải**
+cuối plan.
+
+### Một tệp một chủ — và `pipeline.py` là sổ đăng ký dùng chung
+
+Mỗi làn MỘT worktree + MỘT nhánh. ⛔ Không hai làn sửa cùng tệp.
+🔴 `apps/auto_scan_video/pipeline.py` có **chủ duy nhất** là làn `P1-0`. Làn khác cần
+đổi `CHUOI`/`sau=` thì **báo điều phối**, ⛔ không tự sửa — mỗi lượt đổi `sau=` trả một
+lần giá vân tay (§6).
+
+### 🔴 Trước khi giao một dòng việc: va vào MÃ, ⛔ không chỉ vào plan trước
+
+Một dòng trong bảng việc là một **MỆNH LỆNH** — agent ⛔ không cân nhắc, nó thi hành.
+28/09 luật này sinh ra sau **hai** ca thật trong một buổi (`edit_plan`, gộp 3 QC): plan
+ra lệnh đúng điều mà **mã cùng ngày đã cấm, kèm lý do**.
+
+```bash
+sed -n '1,30p' <tep chinh cua dong viec>      # docstring dau tep = noi cac phien
+                                              # truoc ghi phan quyet
+grep -rn "⛔ KHONG\|⛔ KHÔNG" --include=*.py <thu muc> | grep -i "<viec>"
+```
+
+⭐ Lượt quét ấy trả **cả hai chiều**: nó tìm ra lệnh **cấm** (bỏ `edit_plan`, gộp QC) và
+cả **tiền lệ đồng thuận** (*"Pha 26 — Renderer fusion"* ở `phu_de.py:8-20`) để agent tra
+thay vì thiết kế lại.
+
+### 🔴 Làn tự khai NỢ ⇒ mở làn trả nợ NGAY
+
+Một làn báo *"giá trị đã có nhưng chưa ai đọc"* / *"ngoài phạm vi sở hữu"* là một
+**cần gạt chết**. Điều phối mở làn trả nợ trong **cùng pha**, ⛔ không đẩy vào *"sau
+này"*. Tiền lệ: `P0-a` → `P0-a2`.
+
+---
+
 ## 1. TRẬT TỰ VĨ MÔ THẬT của `localize.chay()` — 14 khối, đúng thứ tự thực thi
 
 Rút từ 150 câu lệnh cấp 1. Cột **ta có?** so với `pipeline.CHUOI` hiện hành.
