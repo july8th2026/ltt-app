@@ -57,7 +57,17 @@ from dataclasses import dataclass, field
 #:    so nay (do duoc 25/09 bang `grep`, do lai 26/09 van vay). ⇒ Lan tang nay
 #:    **vo hieu cache cua KHONG giai doan nao** — do la cai gia CUA CHINH mon no
 #:    ay (mot loi nhac doi ma cache khong biet), khong phai cai gia cua Task 22.
-PHIEN_BAN_NAN = 5
+#:
+#: 6 (28/09/2026, B13-A2): `co_gian_du_khong`/`ket_luan` nhan `ngan_sach` va
+#: tinh `he_so_co_gian` theo NO thay vi theo `khe`. Doi CHINH SACH (mot doan vua
+#: ngan sach ⛔ khong con bi `atempo` nua) nen tang theo dung hop dong tren.
+#:
+#: ⚠️ Van dung: con so nay ⛔ khong vao van tay nao. Cai VO HIEU cache cua ban
+#:    sua nay la `ban_ke.json` — `he_so_co_gian` nam trong do, nen `checksum` cua
+#:    no doi ⇒ `thoi_gian.van_tay_ke_hoach` doi ⇒ `timing_align` tron lai. Cac
+#:    tep `.wav` thi ⛔ KHONG doi mot byte (cung chu, cung giong) nen chung DUNG
+#:    duoc dung lai — xem `giai_doan_giong._van_tay`.
+PHIEN_BAN_NAN = 6
 
 #: Vuot bao nhieu phan khe thi phai nan. Xem ghi chu dau tep ve tinh khong doi xung.
 #:
@@ -204,6 +214,14 @@ class KetQuaNan:
     so_vong: int = 0
     he_so_co_gian: float = 1.0
     ghi_chu: dict = field(default_factory=dict)
+    #: Ngan sach THI HANH cua doan (`thoi_gian.ngan_sach_nan_s`) — `khe` cong
+    #: phan khoang lang muon duoc. `None` = nguoi goi ⛔ KHONG truyen, tuc ban
+    #: ghi nay ⛔ khong biet ngan sach, ⛔ KHONG phai "ngan sach bang khe".
+    #:
+    #: ⭐ `khe` O LAI nguyen nghia cua no (`ket - bat`, dung cho BAO CAO). Day la
+    #:    mot truong THEM, ⛔ khong phai mot truong bi doi nghia — xem
+    #:    `co_gian_du_khong`.
+    ngan_sach: float | None = None
 
     @property
     def dat(self) -> bool:
@@ -272,19 +290,56 @@ def nen_viet_lai(giay: float, khe: float) -> bool:
     return can_nan(giay, khe) and float(giay) > float(khe)
 
 
-def co_gian_du_khong(giay: float, khe: float) -> tuple[bool, float]:
-    """Nac 3: co gian nhe co keo duoc doan nay ve khe khong, va he so bao nhieu.
+def mau_so_co_gian(khe: float, ngan_sach: float | None) -> float:
+    """MAU SO cua `he_so_co_gian` — mot cho khai, va do la ca ban sua B13-A2.
 
-    ⛔ Chi tang toc (cau DAI hon khe) moi bi tran chan. Mot cau NGAN hon khe
-       khong can co gian gi ca — `thoi_gian.py` chen khoang lang, va do la cach
-       dung: keo dai mot cau bang xu ly tin hieu nghe ra ngay, con mot khoang
-       lang thi khong ai de y.
+    🔴 **`khe` la mau so SAI cho phep co gian, va no da bi THI HANH.** `khe_cua`
+       tra loi dung cau cua no (*"khe cua doan nay rong bao nhieu"*), nhung cai
+       ma `giai_doan_thoi_gian._dung_ban_phoi` thuc su ap lam `atempo` la
+       `he_so_co_gian`, va `lap_ke_hoach` thi dat doan tren mot ngan sach ROI
+       HON (`khe` + `TY_LE_MUON_KHOANG_LANG` cua khoang lang). Do tren luot that
+       `asvr_47327a869a8f4597960048f09064740`: `seg_0024` bi ep **1,3333** cho vua
+       mot khe 0,90 s trong khi 32,49 s sau no trong khong.
+
+    ⭐ Nen mau so dung la ngan sach THI HANH (`thoi_gian.ngan_sach_nan_s`) — cung
+       con so ma `nen_viet_lai` da doc tu 26/09 o cua TIEU TIEN. Tu day HAI cua
+       (tieu tien / thi hanh) doc CUNG mot mau so.
+
+    ⛔ `None` ⛔ KHONG phai `khe`: no nghia la *"nguoi goi khong noi"*, va khi do
+       ta lui ve `khe` de moi loi goi cu giu **y nguyen** nghia cu. Giu hai
+       trang thai tach nhau la de mot cho goi quen truyen `ngan_sach` ⛔ khong
+       lan vao mot phep do noi rang ngan sach BANG khe.
+
+    ⚠️ `max(khe, ...)`: mot ngan sach NHO hon khe la du lieu hong cua thuong
+       nguon, va kep no o day re hon de no lam `he_so` PHONG TO — dung khuon
+       `thoi_gian.ngan_sach_nan_s` da dung.
     """
-    if khe <= 0 or giay <= 0:
+    khe = max(0.0, float(khe))
+    if ngan_sach is None:
+        return khe
+    return max(khe, float(ngan_sach))
+
+
+def co_gian_du_khong(giay: float, khe: float,
+                     ngan_sach: float | None = None) -> tuple[bool, float]:
+    """Nac 3: co gian nhe co keo duoc doan nay ve NGAN SACH khong, he so bao nhieu.
+
+    ⛔ Chi tang toc (cau DAI hon ngan sach) moi bi tran chan. Mot cau NGAN hon
+       thi khong can co gian gi ca — `thoi_gian.py` chen khoang lang, va do la
+       cach dung: keo dai mot cau bang xu ly tin hieu nghe ra ngay, con mot
+       khoang lang thi khong ai de y.
+
+    🔑 **`ngan_sach` mac dinh `None` ⇒ mau so van la `khe`.** Chu ky giu duoc moi
+       loi goi cu **dung nghia cu**, va cai gia neu chon sai la: mot cho goi
+       quen truyen `ngan_sach` se lang le giu luat CU (nen BA cho goi cua
+       `giai_doan_giong` phai truyen DU — `test_4920` chot bang AST).
+    """
+    ms = mau_so_co_gian(khe, ngan_sach)
+    if ms <= 0 or giay <= 0:
         return True, 1.0
-    if giay <= khe:
+    if giay <= ms:
         return True, 1.0
-    he_so = float(giay) / float(khe)
+    he_so = float(giay) / ms
     return he_so <= tran_co_gian(), he_so
 
 
@@ -401,10 +456,38 @@ def doc_nan_lo(goi: dict, *, can: set[str]) -> dict[str, str]:
 
 
 def ket_luan(ma: str, *, chu: str, giay: float, khe: float,
-             so_vong: int) -> KetQuaNan:
-    """Xep mot doan vao mot trong ba trang thai, sau khi da het bac thang."""
+             so_vong: int, ngan_sach: float | None = None) -> KetQuaNan:
+    """Xep mot doan vao mot trang thai, sau khi da het bac thang.
+
+    🔴 **HAI mau so, HAI cau hoi — va ban sua B13-A2 la cho khai ranh gioi ay.**
+
+        `khe`       (`ket - bat`)  -> PHAN LOAI va BAO CAO: *"doan nay co vua
+                                     khe cua chinh no khong"*. `can_nan`,
+                                     `lech`, `tung_doan` deu doc con so nay, va
+                                     no ⛔ KHONG doi nghia.
+        `ngan_sach`                -> `he_so_co_gian`, tuc con so `atempo` ma
+                                     `giai_doan_thoi_gian._dung_ban_phoi`
+                                     **THI HANH**. Xem `mau_so_co_gian`.
+
+    🔑 **`he_so == 1.0` ⇒ ⛔ KHONG duoc goi la `CO_GIAN`.** Doan `khe < giay <=
+       ngan_sach` vua ngan sach ma `timing_align` that su dung, va ⛔ khong mot
+       phep `atempo` nao chay cho no ⇒ no la `VUA`. Dat no vao `CO_GIAN` voi
+       `he_so = 1.0` la ke ve mot phep co gian CHUA TUNG chay — dung con bo ma
+       `NGAN` da ghi lai 25/09, chi la o chieu con lai.
+
+       ⚠️ **Cai gia neu quyet dinh nay sai:** `so_vua` phong len va `so_co_gian`
+          teo lai so voi cac luot chay truoc ban sua, nen `asv_doi_soat` so hai
+          luot hai ben ban sua se thay mot buoc nhay ⛔ khong do dau ra. Doi lai,
+          `so_co_gian` tu day co dung mot nghia: *"mot `atempo` that su da
+          chay"*. Doan nay VAN dem duoc rieng: `giai_doan_giong._dem_nan_oan`
+          dem chinh xac lop `giay > khe and giay <= ngan_sach`
+          (`so_doan_nan_oan`), nen thong tin ⛔ khong mat di dau ca.
+    """
+    ns = mau_so_co_gian(khe, ngan_sach)
+    ghi_ns = None if ngan_sach is None else ns
     if not can_nan(giay, khe):
-        return KetQuaNan(ma, VUA, chu, float(giay), float(khe), so_vong)
+        return KetQuaNan(ma, VUA, chu, float(giay), float(khe), so_vong,
+                         ngan_sach=ghi_ns)
     # 🔴 Chieu NGAN truoc chieu DAI, va do la ca ban sua: `co_gian_du_khong` tra
     #    `(True, 1.0)` cho moi cau ngan hon khe, nen de no roi vao `CO_GIAN` la
     #    khai mot phep co gian ⛔ CHUA TUNG chay. Xem `NGAN`.
@@ -413,16 +496,30 @@ def ket_luan(ma: str, *, chu: str, giay: float, khe: float,
                          he_so_co_gian=1.0,
                          ghi_chu={"ly_do": "ngan hon khe — khoang lang duoc "
                                            "nuot, khong co gian gi",
-                                  "dung_sai_ngan": DUNG_SAI_NGAN})
-    duoc, he_so = co_gian_du_khong(giay, khe)
+                                  "dung_sai_ngan": DUNG_SAI_NGAN},
+                         ngan_sach=ghi_ns)
+    duoc, he_so = co_gian_du_khong(giay, khe, ngan_sach)
+    if he_so <= 1.0:
+        # ⭐ Tran khe cua CHINH no, nhung vua NGAN SACH thi hanh ⇒ ⛔ khong mot
+        #    `atempo` nao chay. Xem docstring, muc `he_so == 1.0`.
+        return KetQuaNan(ma, VUA, chu, float(giay), float(khe), so_vong,
+                         he_so_co_gian=1.0,
+                         ghi_chu={"ly_do": "tran khe cua chinh no nhung VUA "
+                                           "ngan sach thi hanh — khong co gian",
+                                  "ngan_sach": round(ns, 3)},
+                         ngan_sach=ghi_ns)
     if duoc:
         return KetQuaNan(ma, CO_GIAN, chu, float(giay), float(khe), so_vong,
                          he_so_co_gian=round(he_so, 4),
-                         ghi_chu={"ly_do": "khong vua nhung co gian nhe la du"})
+                         ghi_chu={"ly_do": "khong vua nhung co gian nhe la du",
+                                  "mau_so": round(ns, 3)},
+                         ngan_sach=ghi_ns)
     return KetQuaNan(ma, CAN_SUA, chu, float(giay), float(khe), so_vong,
                      he_so_co_gian=round(he_so, 4),
                      ghi_chu={"ly_do": "vuot ca tran co gian",
-                              "tran": tran_co_gian()})
+                              "tran": tran_co_gian(),
+                              "mau_so": round(ns, 3)},
+                     ngan_sach=ghi_ns)
 
 
 def ban_ghi_luot_doc(ma: str, *, vong: int, giay: float, khe: float,
@@ -500,11 +597,20 @@ def tom_tat(cac: list[KetQuaNan], *,
         #
         # ⚠️ Khong nang `PHIEN_BAN_NAN`: day la hinh dang BAO CAO, khong phai
         #    chinh sach nan — khong mot doan nao doi trang thai hay doi am thanh.
+        #
+        # ⭐ B13-A2: `ngan_sach` di KEM tung dong, va chi khi nguoi goi da
+        #    truyen no (`None` ⇒ khoa VANG, ⛔ khong mang mot `0.0` gia — khuon
+        #    `giay_doan` cua `ban_ghi_luot_doc`). Thieu no thi mot dong `VUA` co
+        #    `giay > khe` doc nhu mot loi tu mau thuan; co no thi doc duoc ngay
+        #    *"tran khe cua no, nhung vua ngan sach"*.
         "tung_doan": [{"ma": k.ma, "trang_thai": k.trang_thai,
                        "giay": round(k.giay, 3), "khe": round(k.khe, 3),
                        "lech": round(lech(k.giay, k.khe), 4),
                        "so_vong": k.so_vong,
-                       "he_so_co_gian": k.he_so_co_gian} for k in cac],
+                       "he_so_co_gian": k.he_so_co_gian,
+                       **({} if k.ngan_sach is None
+                          else {"ngan_sach": round(float(k.ngan_sach), 3)})}
+                      for k in cac],
         # ⭐ Buoc 0.5 (25/09). Xem `ban_ghi_luot_doc` ve vi sao.
         #
         # ⚠️ `so_luot_do` KHAC `so_luot_doc` cua `giai_doan_giong.tom_tat`: cai
