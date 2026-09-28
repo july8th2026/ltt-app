@@ -520,13 +520,27 @@ mỗi vòng nó tiết kiệm một lượt deploy.
 |---|---|---|
 | **G1** | Gộp bốn làn về `main` bằng **test nhắm xanh** | ⛔ KHÔNG gate để gộp. Gộp xong → `pre-commit run --all-files` |
 | **G2** | Ba bộ kiểm **hình dạng cả cây** (< 45 giây) | `scan_source_secrets` · `check_mypy` · `check_silent_except` — test nhắm ⛔ không bắt được lớp này |
-| **G3** | **MỘT** gate, **MỘT** cấp: `gate.py --doi` (L1) | ⛔ Một gate mỗi nhánh. Còn pha chưa làm ⇒ **chưa bấm** |
+| **G3** | **MỘT** gate, **MỘT** cấp: `gate.py --doi --tu <sha THẬT>` | ⛔ Một gate mỗi nhánh. Còn pha chưa làm ⇒ **chưa bấm** |
 | **G4** | Dựng lại **bundle** rồi deploy | Bundle là **ĐẦU RA** — `manifest.json` còn dấu xung đột ⇒ `/agent/canvas` 503 ⇒ mọi test có đăng nhập đỏ (28/09) |
 | **G5** | `T1a-ter` trên **worker thật** (`asv_chay_worker_that`), `cat=None` | lượt CHỐT — môi trường `LocalSystem` |
 | **G6** | Soát bản ra: cắt frame, **đối chiếu với gốc theo mốc** | A1 đã trả lại khả năng này |
 
 ⛔ **G3 ⛔ không chạy trước khi PHA A–F xong hết.** Còn việc chưa làm ⇒ chưa bấm
 gate. Và ⛔ không chạy gate **trong** phiên cho từng pha.
+
+🔴 **G3 PHẢI có mốc THẬT (`--tu <sha>`), và PHẢI đọc dòng `RESULT`.** Đo 28/09
+(phiên khác, cùng ngày): lượt `--doi` **đầu tiên** của họ bị **TỪ CHỐI** với
+`CHUA DO DUOC GI` — trên một **cây sạch**, `--doi` lấy phạm vi bằng diff với
+`HEAD`, nên phạm vi luôn **RỖNG**.
+
+⇒ ⭐ `PASS` sau vài giây, `0.0s`, hay `CHUA DO DUOC GI` đều là **KHÔNG CÓ ĐỘ
+PHỦ**, ⛔ **không phải xanh**. Đây đúng hai cửa đã ghi sổ: `--doi` hạ cấp thì in
+`PASS`, còn `--pham-vi` vượt trần 32 767 ký tự thì in `FAIL 0.0s` đọc **y hệt**
+một bộ test đỏ. Tín hiệu phân biệt là `0.0s` và dòng `[BOQUA] N buoc` cạnh
+`RESULT`.
+
+⇒ Mốc đúng cho G3 là **SHA đang chạy trên production** (`/health/version` hoặc
+`dau_van_tay.json`), ⛔ không phải `HEAD~1`.
 
 ---
 
