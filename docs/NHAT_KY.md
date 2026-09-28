@@ -12,6 +12,123 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-28 (đêm) — Ảnh: gỡ trần "4 ảnh", và **ba lần một phép đo đo chính bộ đo**
+
+Chủ dự án: *"tối ưu triệt để khả năng đọc ảnh"*, và sau đó hai câu chỉnh hướng đắt
+giá: *"ưu tiên bỏ hard-limit kiểu 4 ảnh nếu evidence cho thấy có thể thay bằng
+budget-based"* và *"kiểm tra tài liệu từ model hoặc từ cộng đồng github, ⛔ không tự suy"*.
+
+### Khách nhận được gì
+
+| | Trước | Sau |
+|---|---|---|
+| Trần số ảnh | **4** (ảnh thứ 5 → 400) | **không còn** — đã chạy 30 ảnh/request |
+| Đọc ảnh nhỏ | **9/20** đúng (CER 0,82) | **19/20** (CER 0,05) |
+| Trần thân request | 4 MiB · tài liệu ghi **256 KiB** | **32 MiB**, tài liệu khớp hằng |
+| WebP | 400 từ thượng nguồn | chạy |
+| Client | tự kẹp 4 ảnh | LTTCODE **0.2.17** nhả theo ngân sách token |
+
+### Chẩn đoán: bốn con số cai quản đường ảnh, không con nào buộc vào con nào
+
+`max_images = 4` (không phép đo nào đứng sau) · `max_image_bytes = 12 MiB`
+(**bất khả thi** — lớn gấp 4 lần trần thân) · `TOKEN_GIU_MOI_ANH = 2.048` phẳng ·
+và chi phí **thật** `f(rộng, cao)` mà **không ai tính**.
+
+⇒ Không phải "nâng 4 lên 10". Gỡ ba con số đầu, **suy mọi thứ từ con số thứ tư**.
+Công thức chốt từ **siêu dữ liệu GGUF của chính hai tệp mmproj**
+(`qwen3vl_merger`, patch 16, merge 2 ⇒ 1 token = 32×32 px), rồi đo **14/14 ô khớp**.
+
+### 🔴 BA LẦN MỘT PHÉP ĐO ĐO CHÍNH BỘ ĐO — cùng một ngày
+
+1. **`test_4200`** — phép tiêm nghịch lấy "cửa sổ rộng nhất **× 2**", một hệ số gõ
+   tay. Trần lên 32 MiB thì model "gấp đôi" **vừa**, phép thử **rỗng**. Nay hệ số
+   **suy từ chính trần**.
+2. **`test_250`** — vế "3 ảnh 1080p vượt ngưỡng" xanh trên **cả** mã đúng lẫn hằng
+   phẳng (6.126 vs 6.144, cả hai đều vượt 5.000). Thêm vế **30 ảnh 320×240** mới
+   phân biệt được (2.460 đo thật vs 61.440 phẳng).
+3. **Đ-7** — bảng cho *"2048×2048 → 0/9"* và tôi suýt hạ trần client theo nó. Đối
+   chứng: cùng 2048×2048 nhưng **thu nhỏ từ 3072** → **9/9**. Biến thật là **khử
+   răng cưa**: bộ sinh của tôi đặt `goc = (2048,2048)` nên riêng ô lớn nhất không
+   bị thu nhỏ.
+
+> 🔑 **Một phép tiêm nghịch chỉ đo được khi hai nhánh cho hai KẾT QUẢ KHÁC NHAU ở
+> đúng ô đang dùng.** Viết xong phải chạy **đột biến**. Ba lần này đều lọt qua
+> mắt người viết (là tôi) và chỉ lộ ra khi cố tình làm hỏng mã.
+
+### 🔴 "Thượng nguồn khuyên thế" KHÔNG phải một nguồn
+
+Tôi chọn sàn token ảnh **1024** vì `clip.cpp` in cảnh báo khuyên thế. Chủ dự án bảo
+tra nguồn. Tra xong:
+
+* con số 1024 đến từ **một câu** trong comment issue #16842, **không kèm số nào**;
+  PR #16921 thêm cảnh báo có body gồm **đúng một link Ref**, **0 review comment**;
+* chính **ggerganov** trong cùng issue kết luận nguyên nhân thật là **prompt**;
+* ⚠️ mọi bằng chứng dẫn tới 1024 thu thập **10–11/2025** trên bản llama.cpp **đang
+  có lỗi toạ độ grounding** (#16880), vá 07/2026 — build của ta **đã có bản vá**,
+  và ⛔ chưa ai đo lại sau đó;
+* **tài liệu chính thức Qwen**: dải **256–1280** *"to balance performance and cost"*,
+  và `cookbooks/ocr.ipynb` đặt **512**.
+
+⇒ Đổi sang **512**: có nguồn chính thức, đo bằng 1024 (19/20), rẻ **một nửa**.
+
+> 🔑 Một cảnh báo trong mã là **con trỏ tới nguồn**, ⛔ không phải nguồn.
+
+### 🔴 `grep | head -15` cắt mất một nơi gọi
+
+Đổi tên `token_giu_moi_anh` → hai trường mới, tôi tìm bằng `grep … | head -15`.
+`tests/test_600` nằm **ngoài 15 dòng đầu** ⇒ ba phép đỏ trên `main` mà một phiên
+khác phải báo lại cho tôi. Bánh cóc `check_ten_da_go` **không đỡ**: phạm vi nó
+không gồm `tests/`.
+
+> 🔑 Một phép tìm mà **tính ĐẦY ĐỦ** mới là điều quan trọng thì ⛔ không được cắt.
+> Thuốc không phải thêm một luật, mà là **quét rộng sau mỗi lần đổi tên** (37 tệp
+> chạm các ký hiệu đã đổi → 641 xanh).
+
+### 🔴 Thứ tự kiểm tra của tôi che một phép chặn BẢO MẬT
+
+Bản đầu đặt phép kiểm cấu hình engine **trước** phép chặn SSRF, nên một `image_url`
+trỏ vào `127.0.0.1:8188` trả *"thiếu cờ engine"* thay vì `image_url_not_allowed`.
+⇒ Luật đã ghi vào mã: **khách nghe lỗi CỦA KHÁCH trước; lỗi CỦA TA chỉ nói khi yêu
+cầu đã hợp lệ mọi mặt khách kiểm soát được.**
+
+⚠️ Và lá chắn SSRF **đi mượn đã mất**: `test_373` ghi *"đo 22/08: llama-server cũng
+từ chối URL http"* — ở commit đang chạy, `handle_media` **TẢI** mọi URL `http*`.
+Phép chặn của ta nay là **lớp duy nhất**.
+
+### Lỗ hổng có sẵn, tìm thấy trong lúc làm
+
+* `server/api/chat.py` — cửa sync **chưa từng** đặt chỗ cho ảnh (`so_anh` không bao
+  giờ được truyền). Đã sửa.
+* `docs/PUBLIC_API/DEVELOPER_GUIDE.md` ghi trần thân **256 KiB** suốt **bốn** lần
+  nâng — sai **128×**. Nay có `test_4206` ghim số trong tài liệu vào hằng đang chạy.
+* Lớp lỗi *"model trả rỗng"* (suy nghĩ ăn hết `max_tokens`) có **hai** nạn nhân nội
+  bộ; sàn cơ học `san_token_ra` **đã tồn tại** nhưng chỉ cưỡng chế ở cửa công khai.
+  Đã chuyển thành chip việc riêng.
+
+### Cây chính gánh hai vai — hai lần, hai chiều
+
+Tôi `git switch -c` trên **cây dùng chung** ⇒ 10 commit của phiên khác rơi sang nhánh
+tôi. Và `deploy_nang_quyen` **từng xuất `HEAD` của cây** thay vì `refs/heads/main`
+(vá `f8b70a35`) ⇒ production **cách một phút** khỏi việc bị ship nguyên nhánh chưa ai
+phán quyết. Chiều ngược: một phiên khác `git add -A` quét hai tệp chưa commit của tôi
+vào commit của họ.
+
+⇒ Tôi chuyển sang worktree riêng. Luật đã có trong `CLAUDE.md` (rule 4 + 5); cả ba
+lần đều là **người không theo luật**, ⛔ không phải luật sai.
+
+### Đã deploy, và nói thẳng cái giá
+
+Máy B rồi máy A (thứ tự **không đối xứng**: bên nào **đặt chỗ nhiều hơn** đi trước).
+⚠️ Lượt deploy máy A chạy trên SHA có **12 phép đỏ đã biết** trên `main` — tất cả
+ngoài đường ảnh/LLM, và tôi đã đo end-to-end trên chính production. Đó là một
+**quyết định**, ⛔ không phải một lượt nghiệm thu đầy đủ.
+
+### Việc còn để lại, có tên rõ
+
+Pha 6 (máy chủ tự hạ độ phân giải + header `X-LTT-Anh-Thu-Nho`) chưa làm — và các
+phép đo hôm nay làm nó ít cấp thiết hơn. Muốn hạ chi phí ảnh lớn 2× thì cần đúng
+hai thứ **chưa đo**: một bộ **ảnh chụp màn hình thật** và một bài **định vị**.
+
 ## 2026-09-28 (tối) — B17: trích NGUYÊN VĂN mã Viral, và một CHẶN KIẾN TRÚC lộ ra
 
 Chủ dự án chốt: *"Thứ tự quy trình các bước ta nên điều chỉnh như viral triển khai,

@@ -78,6 +78,30 @@ grep -rn "⛔ KHONG\|⛔ KHÔNG" --include=*.py <thu muc> | grep -i "<viec>"
 cả **tiền lệ đồng thuận** (*"Pha 26 — Renderer fusion"* ở `phu_de.py:8-20`) để agent tra
 thay vì thiết kế lại.
 
+### 🔴 Việc là một ĐƯỜNG thì một làn phải sở hữu CẢ ĐƯỜNG — lỗi của điều phối 28/09
+
+Chuỗi `toc_doc_giong` mất **BỐN** làn (`P0-a → a2 → a3 → a4`) cho **một** việc: đưa một
+giá trị từ nơi tính tới nơi dùng. Mỗi làn làm đúng, mỗi làn tự khai nợ, mỗi làn ghim nợ
+bằng một bài AST — nhưng ⭐ **sự phân mảnh là do TÔI**, ⛔ không do chúng.
+
+Tôi áp *"một tệp một chủ"* cho một việc mà bản chất là **một đường đi qua bốn tệp**.
+Cái giá: bốn lượt giao việc, bốn lượt gộp, bốn lượt lưới — và trong ba lượt đầu, giá trị
+ấy **tồn tại mà ⛔ không ai đọc**, tức đúng cái ta đang chống.
+
+| Hình dạng việc | Chia làn thế nào |
+|---|---|
+| **sửa độc lập** nhiều tệp (mỗi tệp một quyết định riêng) | một tệp một chủ ✅ |
+| **một ĐƯỜNG** (giá trị/lời gọi đi từ A qua B tới C) | **MỘT làn sở hữu cả đường** ✅ |
+| **sổ đăng ký dùng chung** (`CHUOI`, dải test, migration) | một chủ duy nhất ✅ |
+
+🔑 **Cách nhận ra trước khi giao**: nếu lời giao của bạn có chữ *"nối"*, *"truyền"*,
+*"chuyển tiếp"*, *"đi vào"* — đó là một **đường**. Hãy `grep` chỗ gọi **trước**, đếm
+xem đường đi qua mấy tệp, rồi giao **cả** danh sách ấy cho **một** làn.
+
+⚠️ Và bất kể chia thế nào: một việc-đường chỉ được gọi là XONG khi có **một bài ĐẦU-CUỐI**
+đi hết đường bằng dữ liệu thật, **cộng** một **bánh cóc AST** bắt chỗ gọi mới quên tham số.
+⛔ Bốn lời khai nối nhau ⛔ **không** thay được một phép đo đi hết đường.
+
 ### 🔴 Làn tự khai NỢ ⇒ mở làn trả nợ NGAY
 
 Một làn báo *"giá trị đã có nhưng chưa ai đọc"* / *"ngoài phạm vi sở hữu"* là một
@@ -460,7 +484,8 @@ Và `qc_do_luong` (`:258-260`) thiếu venv đo thì **vẫn `succeeded`** với
 | ~~P0-a~~ | ✅ **XONG** `toc_doc_giong` — hàm thuần, siết một chiều, đường lui tường minh | `cai_dat.py`, `ho_so_dich.py` | sonnet | — |
 | ~~P0-b~~ | ✅ **XONG** — đã ĐO, ⛔ không sửa mã → `W4_...md` | — | sonnet | — |
 | ~~P0-a2~~ | ✅ **XONG** — `ngan_sach_do_dai(..., toc_doc_giong=)` siết một chiều; `long_tieng.py:300` gọi **trong vòng `for` từng đoạn** | `long_tieng.py`, `ngon_ngu.py` | opus | — |
-| **P0-a3** | **Nợ của P0-a2**: nối chỗ gọi còn lại `dich_thuat.py:374` (`min` của `min` — chỉ được SIẾT) | `dich_thuat.py` | sonnet | P0-a2 ✅ |
+| ~~P0-a3~~ | ✅ **XONG** — `dich_thuat.py:374` nối; `min` của `min`, chỉ SIẾT | `dich_thuat.py` | sonnet | — |
+| **P0-a4** | **Chặng CUỐI**: `giai_doan_noi_dung.py:435` + **bánh cóc AST cả app** + **bài ĐẦU-CUỐI** | `giai_doan_noi_dung.py` | sonnet | P0-a3 ✅ |
 | ~~P0-c~~ | 🔴 **⛔ KHÔNG LÀM** — đo ra một bản giao SAI mà QC **đồng thuận**; 28 phép đo giữ lại làm bẫy | `tests/test_4973..4977` | opus | — |
 | 🔑 **P1-0** | **MỘT lượt đổi `CHUOI`**: gộp `audio_prepare`+`transcribe` · khai `vung_che_*` · bỏ `edit_plan` · nối lại **mọi** `sau=` | `pipeline.py` (**chủ DUY NHẤT**) + `tests/test_402*` | **opus** | W4 ✅ |
 | **P1-a** | **THÂN** job `gpu_asr` (một lease, hai luồng) | `apps/asv_gpu/jobs.py`, `manifest.py` — ⛔ không chạm `pipeline.py` | **opus** | P1-0 |
