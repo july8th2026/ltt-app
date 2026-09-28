@@ -274,12 +274,35 @@ def _la_khai_tran_setdefault(call: ast.Call) -> bool:
     return isinstance(a0, ast.Constant) and a0.value == "OMP_NUM_THREADS"
 
 
+def _la_khai_tran_goi(call: ast.Call) -> bool:
+    """Mot LOI GOI DAT tran that — ⛔ khong phai mot lan DOC lai gia tri cu.
+
+    🔴 **Sua 28/09 — soat lai theo yeu cau nguoi dieu phoi** ("ba ca cung
+       ngay: banh coc do HINH DANG thay vi TINH CHAT"). `psutil.Process.
+       cpu_affinity` la mot ham HAI VAI: goi KHONG doi so la GETTER (doc tran
+       hien tai, dung nguyen chan_loi()'s `cu = me.cpu_affinity()`), goi VOI
+       mot doi so la SETTER (DAT tran that). Ban dau `DECLARE_GOI` chi kiem
+       TEN loi goi ("cpu_affinity" co mat khong) — dung ca cho GETTER — nen
+       mot tep chi DOC `cpu_affinity()` (⛔ khong bao gio dat gi) van duoc
+       tinh la "da khai tran". Do la CHINH lop loi cua C6/A4 hom nay, o
+       chinh cong cu nay: dem CO MAT TEN thay vi dem HANH DONG THAT.
+
+    ⇒ `cpu_affinity` chi tinh la khai tran khi co IT NHAT mot doi so (setter).
+       `set_num_threads`/`setNumThreads` khong co dang getter (API chi nhan
+       mot so) nen khong can dieu kien nay.
+    """
+    ten = _ten_goi(call)
+    if ten == "cpu_affinity":
+        return bool(call.args) or bool(call.keywords)
+    return ten in DECLARE_GOI
+
+
 def _la_khai_tran_node(node: ast.AST) -> bool:
-    """Mot HANH DONG khai tran CPU THAT — mot LOI GOI hoac PHEP GAN thuc su
-    trong cay, ⛔ khong phai mot chuoi xuat hien o dau do (docstring, ten hang
-    so, comment)."""
+    """Mot HANH DONG khai tran CPU THAT — mot LOI GOI DAT tran hoac PHEP GAN
+    thuc su trong cay, ⛔ khong phai mot chuoi xuat hien o dau do (docstring,
+    ten hang so, comment) VA ⛔ khong phai mot lan DOC lai gia tri cu."""
     if isinstance(node, ast.Call):
-        return _ten_goi(node) in DECLARE_GOI or _la_khai_tran_setdefault(node)
+        return _la_khai_tran_goi(node) or _la_khai_tran_setdefault(node)
     return _la_khai_tran_gan(node)
 
 

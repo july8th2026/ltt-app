@@ -136,6 +136,62 @@ def test_do_vung_ocr_that_XANH():
     assert k._vi_pham_mot_tep(nguon, duong) is None
 
 
+def test_wrapper_CHI_DOC_cpu_affinity_KHONG_tinh_la_khai_tran():
+    """🔴 Soát lại 28/09 (yêu cầu người điều phối, "ba ca cùng ngày: bánh cóc
+    đo HÌNH DẠNG thay vì TÍNH CHẤT") — và tìm ra đúng lớp lỗi đó ở CHÍNH công
+    cụ này.
+
+    `psutil.Process.cpu_affinity` là một hàm HAI VAI: gọi KHÔNG đối số là
+    GETTER (đọc trần hiện tại — đúng dòng `cu = me.cpu_affinity()` đầu tiên
+    trong `chan_loi()` thật), gọi VỚI một đối số là SETTER (ĐẶT trần thật —
+    dòng `me.cpu_affinity(cu[:tran])`). Bản đầu của `_la_khai_tran_node` chỉ
+    kiểm TÊN lời gọi ("cpu_affinity" có mặt không) — khớp CẢ getter — nên một
+    wrapper GIẢ chỉ ĐỌC (không bao giờ ĐẶT gì) vẫn được tính là "đã khai
+    trần". Đây CHÍNH là kiểu lỗi bánh cóc này được sinh ra để bắt, chỉ là nó
+    nằm ngay trong chính công cụ.
+    """
+    xau = (
+        "import contextlib\n\n"
+        "@contextlib.contextmanager\n"
+        "def chan_loi_gia():\n"
+        "    import psutil\n"
+        "    cu = psutil.Process().cpu_affinity()  # CHI DOC, khong DAT\n"
+        "    yield\n\n"
+        "def dung(duong):\n"
+        "    with chan_loi_gia():\n"
+        "        return goi_engine(duong)\n\n"
+        "def goi_engine(duong):\n"
+        "    from rapidocr_onnxruntime import RapidOCR\n"
+        "    return RapidOCR()\n"
+    )
+    assert k._vi_pham_mot_tep(xau, "t.py") == ["rapidocr"], (
+        "wrapper chi GOI cpu_affinity() KHONG doi so (getter, khong dat gi) "
+        "van duoc tinh la da khai tran — dung loai loi 'do hinh dang'")
+
+
+def test_wrapper_DAT_cpu_affinity_CO_doi_so_thi_tinh_la_khai_tran():
+    """Vế đối chứng cho bài trên: cùng hình dạng nhưng gọi CÓ đối số (setter
+    thật, đúng dòng `me.cpu_affinity(cu[:tran])` của `chan_loi()` thật) thì
+    PHẢI được công nhận."""
+    xau = (
+        "import contextlib\n\n"
+        "@contextlib.contextmanager\n"
+        "def chan_loi_that():\n"
+        "    import psutil\n"
+        "    me = psutil.Process()\n"
+        "    cu = me.cpu_affinity()\n"
+        "    me.cpu_affinity(cu[:6])  # CO doi so - DAT tran that\n"
+        "    yield\n\n"
+        "def dung(duong):\n"
+        "    with chan_loi_that():\n"
+        "        return goi_engine(duong)\n\n"
+        "def goi_engine(duong):\n"
+        "    from rapidocr_onnxruntime import RapidOCR\n"
+        "    return RapidOCR()\n"
+    )
+    assert k._vi_pham_mot_tep(xau, "t.py") is None
+
+
 def test_TIEM_NGHICH_bo_with_chan_loi_GIU_NGUYEN_moi_thu_khac_thi_DO():
     """🔴 Bài quan trọng nhất của cả bánh cóc.
 
