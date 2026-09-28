@@ -98,6 +98,9 @@ TEN_DA_GO: tuple[tuple[str, str, bool, str], ...] = (
 
 #: Mau TOT: dong phai KHONG bi bat (ten hien hanh giong ten da go).
 MAU_TOT = (
+    # 28/09: `token_giu_moi_anh` NAY LA TEN DA GO (xem TEN_DA_GO duoi). Dong nay
+    # giu lai LAM MAU TOT vi no la mot cau TAI LIEU ve lich su, khong phai mot
+    # noi goi - va phep kiem phai phan biet duoc hai thu do.
     "`HO_SO[m].token_giu_moi_anh` = 2048",
     "`LTT_ADMISSION_POOL__ltt_35_5060` chi HA duoi ban khai",
     "`LTT_LLM_SO_LAN_XEP_LAI` (3)",

@@ -264,7 +264,7 @@ def test_lease_may_A_truyen_dung_reservation_sang_may_B(app_luong, monkeypatch):
     # (env `LTT_LLM_NGUONG_WHALE` đã gỡ) — ngưỡng 1 ⇒ mọi lượt là whale.
     monkeypatch.setattr(luong, "_suc_chua", lambda _tool, _model: AdmissionModel(
         "thu_gpu", 1, 100_000, nguong_whale=1, dem_uoc=2_048,
-        token_giu_moi_anh=2_048))
+        token_anh_toi_thieu=512, token_anh_toi_da=4_096))
     da_goi = _dat_luong(monkeypatch)
     u = _user(1000)
     _chay(u, _params(), monkeypatch)
@@ -397,7 +397,7 @@ def _co_phong_cho(monkeypatch):
     monkeypatch.setenv("LTT_LLM_CHO_XEP_LAI_S", "0")
     monkeypatch.setattr(luong, "_suc_chua", lambda _tool, _model: AdmissionModel(
         "thu_gpu", 1, 100_000, nguong_whale=90_000, dem_uoc=2_048,
-        token_giu_moi_anh=2_048))
+        token_anh_toi_thieu=512, token_anh_toi_da=4_096))
 
 
 def test_may_B_429_MOT_LAN_thi_XEP_LAI_va_van_ra_NOI_DUNG(app_luong, monkeypatch):
