@@ -792,6 +792,74 @@ một phép đo không phân biệt được *"đọc sai"* với *"bị cắt"*
 
 ---
 
+## 7-QUINQUIES. Đ-7 — CHẤT LƯỢNG Ở ẢNH LỚN (28/09). KẾT LUẬN: **KHÔNG hạ trần**
+
+### Câu hỏi
+
+Client cắt mọi ảnh về 2048×2048 = **4.098 token**, trong khi tài liệu Qwen khuyến
+nghị dải **256–1280** và `cookbooks/ocr.ipynb` đặt `max = 2048`. Hạ trần sẽ giảm
+một nửa chi phí ảnh lớn — **nếu** chất lượng không giảm.
+
+### 🔴 Phép đo ĐẦU TIÊN của tôi KHÔNG HỢP LỆ, và nó suýt làm tôi hạ trần sai
+
+Bảng đầu cho `2048×2048 → 0/9` trong khi mọi cỡ nhỏ hơn cho `9/9`, tức *"độ phân
+giải cao hơn đọc TỆ hơn"*. Đối chứng tách bạch:
+
+```
+2048×2048 render THẲNG (không thu nhỏ)  ->  '4K6C HEPYH ENVCTA ...'   hỏng
+2048×2048 THU NHỎ từ 3072               ->  9/9 HOÀN HẢO
+```
+
+**Cùng độ phân giải cuối, khác kết quả.** ⇒ Biến thật là **khử răng cưa**, không
+phải số token. Bộ sinh của tôi đặt `goc = (2048, 2048)` nên riêng ô lớn nhất
+không bị thu nhỏ — nó là ô duy nhất có cạnh cứng.
+
+> 🔑 Một phép đo mà **bộ sinh dữ liệu đổi tính chất theo từng ô** thì nó đo chính
+> bộ sinh, ⛔ không đo thứ nó nói là đang đo. Đây là ca thứ ba cùng họ trong một
+> ngày (sau `test_4200` hệ số gõ tay và `test_250` vế 3-ảnh-1080p).
+
+### Số thật, sau khi mọi ô đều thu nhỏ từ 3072
+
+Lưới **10×10 = 100 mã** (600 ký tự), `temperature=0`:
+
+| Ảnh | Token | Đọc đúng |
+|---|---|---|
+| 640×360 | 514 | **99/100** |
+| 960×540 | 510 | 100/100 |
+| 1280×720 | 922 | 100/100 |
+| 1920×1080 | 2.042 | 100/100 |
+| 2048×2048 | 4.098 | 100/100 |
+
+**Đối chứng âm** (vì 99/100 ở 640×360 tốt đến mức đáng ngờ — mỗi mã cao ~9 điểm ảnh):
+
+| Đối chứng | Kết quả |
+|---|---|
+| hạt giống **khác** @640×360 | đọc đúng **100/100 mã MỚI**, dính **0/100** mã cũ |
+| ảnh **trắng** @640×360 | **0** mã |
+
+⇒ Model **thật sự đọc**. Trên nội dung này, **514 token là đủ**, và 4.098 token
+  ⛔ không mua thêm gì.
+
+### ⛔ VÀ VÌ SAO TÔI VẪN KHÔNG HẠ TRẦN
+
+| Đã đo | Chưa đo |
+|---|---|
+| Đọc chữ, nội dung **tổng hợp, sạch**, phông đơn sắc trên nền trắng | **Ảnh chụp màn hình thật**: giao diện, màu, phông hệ thống nhỏ, nhiễu nén |
+| | **Định vị** — thứ một agent dùng khi hỏi *"bấm vào đâu"* |
+
+Hạ trần dựa trên bảng trên là lấy một phép đo trả lời **một câu hỏi khác** — đúng
+cái đã làm tôi chọn sai sàn 1024, chỉ đổi chiều.
+
+⚠️ Và lợi ích thực tế **nhỏ**: `--image-max-tokens = 2048` chỉ chạm ảnh **trên
+~2 Mpx**. Ảnh chụp 1080p (2.042 token) **không đổi**. Tức ta đánh đổi một rủi ro
+chưa đo lấy một khoản tiết kiệm chỉ áp cho ảnh cỡ tối đa.
+
+⇒ **GIỮ NGUYÊN** `--image-max-tokens 4096` và `IMAGE_BUDGET.maxPixels = 2048²`.
+  Ghi lại đây kèm phép đo còn thiếu, để lần sau ai làm thì biết **chính xác** cần
+  đo gì: một bộ ảnh chụp màn hình THẬT + một bài định vị.
+
+---
+
 ## 8. THỨ TỰ TRIỂN KHAI (sau khi khoá)
 
 ```

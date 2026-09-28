@@ -459,8 +459,9 @@ Và `qc_do_luong` (`:258-260`) thiếu venv đo thì **vẫn `succeeded`** với
 |---|---|---|---|---|
 | ~~P0-a~~ | ✅ **XONG** `toc_doc_giong` — hàm thuần, siết một chiều, đường lui tường minh | `cai_dat.py`, `ho_so_dich.py` | sonnet | — |
 | ~~P0-b~~ | ✅ **XONG** — đã ĐO, ⛔ không sửa mã → `W4_...md` | — | sonnet | — |
-| 🔴 **P0-a2** | **NỐI DÂY** `toc_doc_giong` vào phép tính `do_dai_toi_da` mỗi câu — hiện giá trị **có mà ⛔ không ai đọc** | `long_tieng.py`, `ngon_ngu.py` | **opus** | P0-a ✅ |
-| **P0-c** | Dời **cắt đầu** vào `media_prepare` (trước ASR) | `giai_doan_media.py`, `ke_cat.py` | **opus** | — |
+| ~~P0-a2~~ | ✅ **XONG** — `ngan_sach_do_dai(..., toc_doc_giong=)` siết một chiều; `long_tieng.py:300` gọi **trong vòng `for` từng đoạn** | `long_tieng.py`, `ngon_ngu.py` | opus | — |
+| **P0-a3** | **Nợ của P0-a2**: nối chỗ gọi còn lại `dich_thuat.py:374` (`min` của `min` — chỉ được SIẾT) | `dich_thuat.py` | sonnet | P0-a2 ✅ |
+| ~~P0-c~~ | 🔴 **⛔ KHÔNG LÀM** — đo ra một bản giao SAI mà QC **đồng thuận**; 28 phép đo giữ lại làm bẫy | `tests/test_4973..4977` | opus | — |
 | 🔑 **P1-0** | **MỘT lượt đổi `CHUOI`**: gộp `audio_prepare`+`transcribe` · khai `vung_che_*` · bỏ `edit_plan` · nối lại **mọi** `sau=` | `pipeline.py` (**chủ DUY NHẤT**) + `tests/test_402*` | **opus** | W4 ✅ |
 | **P1-a** | **THÂN** job `gpu_asr` (một lease, hai luồng) | `apps/asv_gpu/jobs.py`, `manifest.py` — ⛔ không chạm `pipeline.py` | **opus** | P1-0 |
 | **P1-b** | **THÂN** hai module `vung_che_tinh` / `vung_che_bam` | `apps/auto_scan_video/vung_che_*.py` (mới) — ⛔ không chạm `pipeline.py` | **opus** | P1-0 |
@@ -469,12 +470,59 @@ Và `qc_do_luong` (`:258-260`) thiếu venv đo thì **vẫn `succeeded`** với
 | **P3** | `phu_de_canh_giong.srt` khoá riêng + `outputs["phu_de_da_dung"]` | `giai_doan_thoi_gian.py` | sonnet | P0-a ✅ |
 | **P4** | Chế độ chạy lẻ `chi_asr`/`chi_dich`/`chi_dub` | `tools/asv_chay_tai_cho.py` | sonnet | P1-0 |
 
-🔴 **P0-a2 là nợ của P0-a, ⛔ đừng bỏ quên.** P0-a đã **tự khai**: `long_tieng.loi_nhac`
-và `ngon_ngu.ngan_sach_do_dai` **chưa đọc** `toc_doc_giong`, và nó chốt ranh giới ấy bằng
-một test AST (`test_4961::..._CHUA_duoc_long_tieng_doc__ranh_gioi_pham_vi`) — test đó sẽ
-**đỏ** khi P0-a2 nối dây, và đó là **đúng ý**: nó bắt người nối dây cập nhật lời khai.
-⇒ Bỏ quên P0-a2 thì ta có đúng [[can-gat-dat-duoc-doc-lai-duoc-nhung-khong-ai-doc]]:
-một cần gạt vặn được, đọc lại được, mà ⛔ **không ai đọc**.
+✅ **Chuỗi `toc_doc_giong` — ba làn, mỗi làn tự khai nợ cho làn sau.** `P0-a` tạo giá trị
+(hàm thuần; bảng đo riêng **rỗng** hôm nay ⇒ rơi về `ngon_ngu.NHIP`, ⛔ không bao giờ trả
+`0`). `P0-a2` nối vào `do_dai_toi_da`. `P0-a3` nối chỗ gọi cuối.
+
+⭐ **Ba điều `P0-a2` làm đúng — lấy làm khuôn cho mọi làn sau:**
+1. Bài ranh giới AST của `P0-a` đỏ vì một dòng **docstring**, ⛔ không vì chỗ gọi ⇒ nó
+   **viết lại bài để đo bằng AST** (đọc ở đâu · đúng một lời gọi · nằm trong vòng `for`
+   từng đoạn), ⛔ không đếm chuỗi. Đó là [[banh-coc-do-cach-go-thay-vi-do-tinh-chat]]
+   được chữa đúng chỗ.
+2. **Ba phép tiêm nghịch tiêm vào MÃ THẬT**, ⛔ không vào test: `min` thành hai chiều ·
+   bỏ tham số ở chỗ gọi · kéo lời gọi ra ngoài vòng `for`. Mỗi cái có bài đỏ tương ứng.
+   ⇒ *"đã nối dây"* giờ là một **phép đo**, ⛔ không phải một lời khai.
+3. **⛔ Không tăng `PHIEN_BAN_LONG_TIENG`** vì hành vi hôm nay ⛔ không đổi một đơn vị, và
+   ghi **nghĩa vụ tăng ngay tại hằng số** cho lần thêm dòng đầu vào bảng đo.
+
+🔴 **`P0-c` — dời cửa sổ cắt đầu/đuôi: ĐO RỒI, và câu trả lời là ⛔ KHÔNG.**
+
+Chủ dự án chốt 28/09: *"cắt đầu đuôi họ làm đầu là đúng nếu chỉ 1 lần render"*. Tiền đề
+ấy **đúng** (§1: ta đã chỉ có một lần encode). Nhưng cái chặn nằm ở chỗ khác, và nó là một
+**luật của chính module** — `cat_dau_cuoi.py:10-13`, luật **L1**:
+
+> Toạ độ là **PHÂN SỐ 0..1 của THỜI LƯỢNG, ⛔ không bao giờ giây**… Đổi sang giây xảy ra
+> đúng **MỘT chỗ** — nơi biết thời lượng thật.
+
+⇒ Đặt lần áp thứ hai ở `media_prepare` là **phân số nhân hai lần**: khai `[0,05; 0,95]`
+thành **0,81** thay vì **0,90**. Khách mất thêm **24,751 s** đã yêu cầu GIỮ.
+
+🔴 **Và đây là lý do thật để dừng, ⛔ không phải con số trên:** hai người áp
+(`giai_doan_hinh_anh.py:369` cắt thật · `giai_doan_qc.py:272` dựng lại để biết độ dài
+mong đợi) **vẫn ĐỒNG Ý với nhau trên một bản giao SAI**. `_thoi_luong_mong_doi` trả đúng
+độ dài của tệp đã bị cắt **hai lần** ⇒ **T2 lệch 0 giây**. Tức **QC XANH trên một bản giao
+sai**, và ⛔ không một cổng nào của ta phát hiện.
+⇒ Đúng họ [[hai-cho-khai-cung-mot-dieu-khong-ai-bat-khop]]: hai chỗ cùng dẫn xuất từ một
+**trục sai** thì phép đối soát giữa chúng ⛔ không còn nói gì.
+
+**Cái được, cũng đã đo**: vật liệu ASR giảm đúng **10 %**. ⇒ Đánh đổi rõ ràng: 10 % thời
+gian ASR, đổi lấy một đường mà lỗi của nó **vô hình với QC**. ⛔ Không đáng, và nó
+⛔ **không** nằm trên đường then chốt (`P1-0 → P1-a/b → P2`).
+
+⭐ **Điều kiện tiên quyết sẽ ĐỔI câu trả lời này** (ghi để lần sau ⛔ không ai đo lại):
+đổi cửa sổ từ **phân số** sang **giây tại một điểm duy nhất** (nên nó ⛔ không thể nhân
+hai lần), **và** làm các chỗ đọc `run.source_key` biết bù `dau_cat`. Lúc ấy mở một làn
+sở hữu `giai_doan_hinh_anh.py` + `giai_doan_qc.py` + `giai_doan_chep_loi.py`.
+
+⚠️ **Một mong manh tiềm ẩn P0-c bắt được nhân thể**, đã chốt bằng `test_4976`:
+`giai_doan_chep_loi.py:104-107` chọn bản tiếng theo **đuôi `.wav`** ⇒ đảo thứ tự
+`khoa_asset` cho **hai trục khác nhau, cùng mã, ⛔ không lỗi nào**.
+
+⚠️ **Và một bài học về chính BÁO CÁO của agent.** `P0-a2` khai nợ ở `nan_cho_vua.py:338`.
+Tôi đếm lại: `grep -rn "ngan_sach_do_dai" apps/` cho chỗ gọi thật là **`dich_thuat.py:374`**;
+`nan_cho_vua.py:338` là `mau_so_co_gian`, một hàm khác. ⇒ **Neo dòng trong báo cáo agent
+phải ĐẾM LẠI trước khi thành mệnh lệnh cho làn sau** — cùng luật §0b, chỉ khác nguồn: lần
+này lời khai lệch đến từ một **làn**, ⛔ không từ plan cũ.
 
 ✅ **P2 đi CÙNG chiều một quyết định đã chốt, ⛔ không ngược** — soát 28/09:
 `apps/auto_scan_video/phu_de.py:8-20` gọi việc này bằng tên nội bộ **"Pha 26 —
