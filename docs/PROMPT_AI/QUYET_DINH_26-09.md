@@ -46,6 +46,68 @@ lượng khác nhau cùng giá. Làn E đã tự rút lại sau khi tôi đưa s
 | H-6 | Đường ống giao bài dựng trên `platform_core/storage.py` + `phat_media.py`, **không** import app→app, **không** path đĩa | §9 — bản gốc chạy được vì cùng tiến trình cùng đĩa |
 | H-7 | Bộ đếm lượt iterate miễn phí nằm trong CSDL, gắn với kịch bản | Q-7 |
 
+## Q-18 — HÌNH DẠNG của pha 6 (chốt 28/09/2026)
+
+**Chốt: MỘT job, chia lô bên trong worker, THÊM một cờ huỷ mà worker kiểm ở đầu
+mỗi lô.** Khách dừng được ở **ranh lô**, ⛔ không phải giữa một lô.
+
+### ⚠️ Đính chính một dữ kiện tôi đã nói sai khi đặt câu hỏi
+
+Tôi trình bày *"nhiều lô nhỏ"* như thứ **`prompt_canh` đã chạy thật nên có mã để
+port"*. Đọc mã thì ⛔ **KHÔNG**:
+
+| | `prompt_canh` thật sự làm gì |
+|---|---|
+| Job | **MỘT** — `job_types=("prompt_canh.run",)` |
+| Chia lô | **bên trong worker**: `services/kich_ban.py::chay()` lặp `LO_BUOC2 = 10`, `LO_BUOC3 = 5`, báo qua `tien_do(pt, mo_ta)` |
+| Tiền | `credit_cost=_gia` trả **0** ở tầng job; tiền thu **từng lượt gọi model** qua `runtime_noi_bo.luong` |
+| Dừng giữa đường | ⛔ **không có** — chạm trần `3600 s` thì, theo đúng chú thích trong `manifest.py`, *"khách đã trả mà không nhận gì"* |
+
+Nên nó là *một job chia lô bên trong* **cộng** thu tiền theo lượt gọi — có cái hay
+của "nhiều lô" về **tiền**, ⛔ không có cái hay về **dừng giữa đường**.
+
+⇒ Sau khi biết điều đó, chủ dự án chốt lại: port hình dạng đã chạy thật, rồi thêm
+đúng phần còn thiếu (cờ huỷ). ⭐ Ghi lại cả lần nói sai này vì nó là lý do câu hỏi
+phải hỏi **hai lần**, và vì một quyết định dựa trên một dữ kiện sai thì không phải
+một quyết định.
+
+### Vì sao hình dạng này, nói theo cái giá
+
+| | Port `prompt_canh` + cờ huỷ (CHỐT) | Nhiều job nhỏ |
+|---|---|---|
+| Mã để port | `kich_ban.chay` + `tien_do` **đã chạy thật tới 250 cảnh** | ⛔ không có, phải tự dựng |
+| Sổ credit | **MỘT** bút toán, tiền theo lượt gọi — khuôn `_gia() -> 0` đã giải | nhiều bút toán cho một lượt ⇒ đụng `credit.py`, tệp **có tiền thật** |
+| `jobs.py` | ⛔ không đụng | phải dựng sổ gom tiến độ nhiều job |
+| Khách dừng | ở **ranh lô** (`LO_BUOC3 = 5` cảnh) | ở từng cảnh |
+| Rủi ro | thấp | cao — hai tệp có bút toán thật |
+
+⇒ Chênh lệch **duy nhất** khách thấy được là hạt dừng: ranh lô 5 cảnh so với từng
+cảnh. Cái giá để đi từ 5 xuống 1 là chạm hai tệp giữ sổ tiền. ⛔ Không đáng.
+
+### Ba điều bản port PHẢI mang theo, ⛔ không được bỏ
+
+1. **`credit_cost` trả 0 kèm lý do.** Khai một giá ở tầng job là **thu hai lần**
+   cho cùng một việc (`runtime_noi_bo.luong` đã giữ credit theo trần token rồi hoàn
+   về token thật). Cùng khuôn `apps/chatltt/gia_nghien_cuu.py`.
+2. **Điều kiện TRƯỚC KHI NỘP ở `routes.py`**, vì `0` mở một lỗ: job vào hàng đợi mà
+   **không giữ chỗ**, nên tài khoản 0 credit vẫn nộp được, worker vẫn chạy, rồi lượt
+   model đầu trả `ThieuCredit` — khách chờ vô ích. Đó là một **điều kiện**, ⛔ không
+   phải một **giá**, nên nó không nằm trong sổ tiền.
+3. **Trần thời gian phải KHỚP trần số cảnh, và có phép kiểm chốt bất đẳng thức đó.**
+   `prompt_canh` làm điều này ở `tests/test_1105`: `250 cảnh = 76 lượt gọi`,
+   `3600 s / 76 = 47 s` mỗi lượt. Hai con số ấy trôi khỏi nhau thì khách trả tiền
+   rồi chết ở trần.
+
+### Cờ huỷ — phần DUY NHẤT là mã mới
+
+- Worker kiểm cờ **ở đầu mỗi lô**, ⛔ không kiểm giữa lô: một lô đã gọi model là đã
+  tiêu tiền, cắt giữa lô làm khách trả mà không nhận.
+- Huỷ ⇒ job kết thúc **THÀNH CÔNG một phần**, mang theo số cảnh đã sinh. ⛔ Không
+  phải `FAILED`: khách chủ động dừng thì đó không phải một lỗi, và một `FAILED`
+  mang dữ liệu dùng được là đúng hình dạng `hai-trang-thai-gop-thanh-mot-gia-tri`.
+- Tiền tự đúng, ⛔ không cần hoàn: `runtime_noi_bo.luong` đã thu theo từng lượt gọi
+  nên lô chưa chạy thì chưa thu.
+
 ## Còn chờ chủ dự án
 
 - Danh sách tối ưu hoá logic vận hành mà chủ dự án nói sẽ liệt kê.
