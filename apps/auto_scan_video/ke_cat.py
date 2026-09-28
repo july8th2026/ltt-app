@@ -255,6 +255,42 @@ def khe_thoai_tu_ke_hoach(ke_hoach: dict) -> tuple[tuple[float, float], ...]:
     return tuple(ra)
 
 
+def thoai_bi_xoa(thoai, khoang) -> tuple[int, int]:
+    """So khe `thoai` bi CUA SO KHACH xoa, so voi `khoang` thuc su duoc giao.
+
+    ⭐ Dung lai `khe_thoai_tu_ke_hoach`/`co_thoai` — day chi la mot phep DEM tren
+       CUNG du lieu do da tra ve, ⛔ khong tu dinh nghia mot truc thoi gian moi.
+       Goi dung: `thoai` la khe tren truc BAN RA (`khe_thoai_tu_ke_hoach`),
+       `khoang` la cac khoang GIU SAU KHI giao voi cua so khach
+       (`cat_dau_cuoi.giao`) — CUNG mot truc voi `thoai`, nen phep so ⛔ khong
+       can doi moc (E1, 28/09).
+
+    Tra `(so_mat_han, so_mat_mot_phan)`:
+      · **mat han**      — khe khong con giay nao trong `khoang`
+      · **mat mot phan** — khe con it nhat mot giay, nhung khong con TRON VEN
+
+    ⭐ `chon()` da bao dam moi khe trong `thoai` nam TRON trong `ke.giu` (luat
+       cung `co_thoai`, xem docstring dau tep) — nen moi mat mat do day tinh ra
+       chi co the do CUA SO KHACH thu hep tiep, ⛔ khong bao gio do chinh sach
+       tu dong (`ke_cat.chon`). ⛔ Chi CANH BAO — quyet dinh chan hay khong la
+       cua noi goi, ham nay chi DEM.
+    """
+    mat_han = 0
+    mat_mot_phan = 0
+    for tb, tk in (thoai or ()):
+        tb, tk = float(tb), float(tk)
+        dai_goc = tk - tb
+        if dai_goc <= 0:
+            continue
+        con_lai = sum(max(0.0, min(tk, float(k)) - max(tb, float(b)))
+                      for b, k in (khoang or ()))
+        if con_lai <= KHIT_GIAY:
+            mat_han += 1
+        elif con_lai < dai_goc - KHIT_GIAY:
+            mat_mot_phan += 1
+    return mat_han, mat_mot_phan
+
+
 def kiem(ke: KeCat) -> None:
     """NEM `KeCatError` kem ly do cu the. ⛔ Khong kep, ⛔ khong lam tron.
 
@@ -319,12 +355,22 @@ def chon(ung_vien, *, thoai=(), thoi_luong: float,
                  key=lambda u: (-float(u.diem_kem), -u.dai, float(u.bat)))
 
     ngan_sach = tl * float(tran)
-    da_cat = 0.0
     nhan: list[UngVien] = []
+    da_nhan: list[tuple[float, float]] = []
     for uv in xep:
-        if da_cat + uv.dai <= ngan_sach + 1e-9:
+        # 🔴 **Ngan sach do bang HOP, ⛔ khong bang TONG (E3, 28/09).** Cong
+        #    thang `dai` cua tung ung vien dem MOT vung CHONG NHAU hai lan ⇒
+        #    ngan sach dong SOM va `vuot_tran` oan cho mot ung vien von vua.
+        #    Kho tham chieu `C:\Cut_only ver2\nerf_engine\stages\select.py` tu
+        #    to giac dung bay nay: *"counting overlapping chunks twice, which
+        #    makes the selector stop early"*. Hom nay moi canh mot ung vien
+        #    (khong chong nhau) nen loi CHUA no, nhung day van la dai luong
+        #    DUNG — va no phai la CUNG mot dai luong voi `KeCat.giay_cat` bao
+        #    cao sau do (ca hai deu doc tren khoang da qua `_gop`).
+        thu = da_nhan + [(float(uv.bat), float(uv.ket))]
+        if _do_dai_hop(thu) <= ngan_sach + 1e-9:
             nhan.append(uv)
-            da_cat += uv.dai
+            da_nhan = thu
         else:
             # 🔴 **KHAI RA, ⛔ khong im lang cat it di.** Mot ban ra it hon cai
             #    tieu chi doi la mot su that van hanh; giau no di la de nguoi doc
@@ -358,6 +404,19 @@ def _gop(cat: tuple[tuple[float, float], ...]
         else:
             gop.append((b, k))
     return tuple(gop)
+
+
+def _do_dai_hop(khoang: list[tuple[float, float]]) -> float:
+    """Do dai HOP cac khoang (giay) — merge truoc (`_gop`), cong do dai sau.
+
+    ⭐ Dung lai `_gop` thay vi tu viet mot phep quet rieng: hai dinh nghia
+       "cham nhau" o hai noi la hai co hoi de lech. Ham nay la mau so cho CA
+       cong ngan sach (`chon`) LAN bao cao (`KeCat.giay_cat` doc tren
+       `self.cat` cung da qua `_gop`) — CUNG mot dai luong o CA hai cho, dung
+       bay "so dung nhung gan cho sai buoc".
+    """
+    return sum(k - b for b, k in _gop(tuple(sorted(
+        (float(b), float(k)) for b, k in khoang))))
 
 
 def tom_tat(ke: KeCat) -> dict:
