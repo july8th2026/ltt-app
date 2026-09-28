@@ -69,8 +69,11 @@ KHOA_SCHEMA = "schema"
 #: ⭐ `ho_so_noi_dung` la ho so ma `AUTO_MATCH` dung ra (bang chung + nguon cua
 #:    tung mat). No nam o day chu khong o `dich_vu_tao.KHOA_NHAN`: cua tao
 #:    **khong** nhan no tu khach — chi `giai_doan_noi_dung` ghi no, mot lan.
+#: ⭐ `toc_doc_giong` (B17 §4.1, lan P0-a) cung mot ho: he thong tinh MOT LAN
+#:    (`ho_so_dich.voi_toc_doc_giong`), khong phai khach nhap — xem `toc_doc_giong()`
+#:    va `KHOA_DAN_XUAT` duoi day.
 KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de", "am_thanh",
-             "bien_tap", "lop", "ho_so_noi_dung")
+             "bien_tap", "lop", "ho_so_noi_dung", "toc_doc_giong")
 
 #: 🔴 **Khoa do CHINH HE THONG ghi vao GIUA mot lan chay, khong phai khach nhap.**
 #:
@@ -90,7 +93,17 @@ KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de", "am_thanh",
 #: ⛔ Chi them khoa vao day khi no do HE THONG sinh ra. Mot khoa KHACH nhap ma
 #:    nam o day se lam mot lan doi cai dat khong vo hieu cache — tuc khach doi
 #:    thong so roi nhan lai y nguyen ban cu.
-KHOA_DAN_XUAT: frozenset = frozenset({"dac_diem_giong", "ho_so_noi_dung"})
+#:
+#: 🔑 `toc_doc_giong` (B17 §4.1): ghi tu `ho_so_dich.dung()`, GIUA chuoi
+#:    `content_process` — dung hinh dang nguy hiem ma doc o tren canh bao (mot
+#:    dong ghi settings giua chuoi lam `jobs._vo_hieu_giai_doan_da_lech` dat
+#:    lai media_prepare/audio_prepare/transcribe). Loai no khoi van tay giai
+#:    doan KHONG lam mat phep vo hieu nao: gia tri la HAM THUAN cua `giong_id`
+#:    + `ngon_ngu_dich` (xem `toc_doc_giong()`), va CA HAI truong ay DA nam
+#:    trong `long_tieng.van_tay_long_tieng` (tham so `ma_giong`, `ngon_ngu_dich`)
+#:    — doi giong hay doi dich da tu dong lam van tay do khac di roi.
+KHOA_DAN_XUAT: frozenset = frozenset(
+    {"dac_diem_giong", "ho_so_noi_dung", "toc_doc_giong"})
 
 
 def cho_van_tay(tho: Mapping | None) -> dict:
@@ -101,6 +114,132 @@ def cho_van_tay(tho: Mapping | None) -> dict:
     mot ho so cu bong nhien bam ra khac di.
     """
     return {k: v for k, v in dict(tho or {}).items() if k not in KHOA_DAN_XUAT}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Toc doc CUA GIONG — settings dan xuat, giai chu trinh DAG (B17 §4.1)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 **Vi sao ham nay ton tai.** `content_process` (giai doan 4/9, B17 §6) can
+#    neo do dai cau dich theo toc doc CUA GIONG se doc no — nhung giong that
+#    chi duoc CHOT o `voice_synthesis` (giai doan 6), chay SAU dich. Trong DAG:
+#    `4 -> 6` theo `sau=`, ma `4` can mot dai luong cua `6` — MOT CHU TRINH.
+#
+# ⭐ **Cach giai DUY NHAT dung, muon nguyen tu Viral** (`localize.py:1946`
+#    `_wps_giong_that`, neo o `docs/auto_scan_video_final/B17_PLAN_TRIEN_KHAI_
+#    THEO_VIRAL.md` §4.1): KHONG do giong luc chay. Tra mot BANG DA DO TRUOC —
+#    ham THUAN cua `giong_id` + hang so trong ma — nen tinh duoc TU DAU, khong
+#    doi giai doan nao khac chay xong. ⛔ KHONG cai kieu "giai doan giong do
+#    roi bao lai giai doan dich": ca ay KHONG no — no chi neo SAI, va khong
+#    phep kiem nao do.
+#
+# ⚠️ **`min()` MOT CHIEU** (copy nguyen tinh chat cua Viral `localize.py:
+#    15112-15117`, nguyen van *"CHI SIET, KHONG NOI"*): xem `toc_doc_giong()`.
+
+#: Bang toc doc DA DO theo TUNG GIONG cu the — don vi la `ngon_ngu.DON_VI_DO_DAI`
+#: cua ngon ngu DICH, moi giay. Khoa la MA GIONG (gia tri `giong_id`/`ma_giong`
+#: LTT Voice tra ve), KHONG phai ten hien thi.
+#:
+#: 🔴 Neo Viral `:15109` do theo NGON NGU CUA GIONG (7 dong `id/en/es/vi/pt/
+#:    ko/fr`) — MOT bang khac, dung o MOT cho khac (`dich_gemini_web._TU_MOI_
+#:    GIAY`, hang so theo dich). Bang o DAY dong vai `capcut_tts.toc_doc` cua
+#:    ho (`:15136`): do theo TUNG GIONG rieng le, ⛔ khong theo ngon ngu — cai
+#:    do o ta la `ngon_ngu.NHIP`.
+#:
+#: ⛔ **RONG hom nay, va do la mot su that trung thuc chu khong phai mot cho
+#:    dang do.** LTT Voice co nhieu giong cung mot dich, nhung ta moi do TOC
+#:    DO THAT cho DUNG MOT giong tham chieu moi dich (`vi`: "Minh Duc"; `en`:
+#:    giong khao chuan — xem docstring `ngon_ngu.NHIP`), va so do do da nam
+#:    trong `ngon_ngu.NHIP` roi. Bang rong ⇒ `toc_doc_giong()` luon roi vao
+#:    duong lui (hang so ngon ngu) cho MOI giong — DUNG hanh vi hom nay
+#:    (`ngon_ngu.ngan_sach_do_dai` cung dang dung chung mot hang so cho moi
+#:    giong), khong phai mot hoi quy. Do THAT them mot giong thi them DUNG
+#:    mot dong o day, khoa la ma giong do — khong doi gi khac.
+TOC_DOC_GIONG_DA_DO: dict[str, float] = {}
+
+
+def toc_doc_giong(giong_id: str, ngon_ngu_dich,
+                  *, bang: Mapping[str, float] | None = None) -> float:
+    """Toc doc CUA GIONG `giong_id` khi doc tieng `ngon_ngu_dich` — ham THUAN.
+
+    Dung `bang` (mac dinh `TOC_DOC_GIONG_DA_DO`) tra so do RIENG cho giong nay;
+    khong co thi tra thang **hang so ca-ngon-ngu** `ngon_ngu.NHIP[dich]` — day
+    la **duong lui TUONG MINH** cho ca "chua do giong nay", tach bach voi ca
+    "da do ra giong CHAM/NHANH hon". ⛔ Khong bao gio tra `0`: `0` gop hai
+    trang thai "chua do" va "do ra bang khong" thanh mot, xem
+    [[hai-trang-thai-gop-thanh-mot-gia-tri]].
+
+    Dich ngoai hop dong (`ngon_ngu.DICH_HOP_LE`) ⇒ nem `NgonNguError` cua
+    chinh `ngon_ngu` — CUNG mot cua loi voi `ngan_sach_do_dai`, khong phai mot
+    cua rieng cho ham nay.
+
+    ⚠️ **`min()` MOT CHIEU — CHI SIET, KHONG NOI.** Copy nguyen tinh chat cua
+       Viral (`localize.py:15112-15117`, nguyen van *"CHI SIET, KHONG NOI"*):
+
+           giong do CHAM hon hang so  ⇒ neo bi SIET theo giong cham do (khach
+                                         doc kip khe da cho)
+           giong do NHANH hon hang so ⇒ neo GIU NGUYEN hang so, ⛔ KHONG noi
+                                         len theo giong nhanh
+
+       Ly do KHONG noi: noi neo cho giong nhanh se cho mot ban dich DAI hon,
+       roi TTS phai nen (atempo) NANG hon de doc kip khe cu — dung NGUOC voi
+       muc dich cua viec neo do dai. Ha neo cho giong cham thi chi co loi,
+       nen `min()` la phep an toan MOT CHIEU — khong ca nao te di.
+    """
+    d = ngon_ngu.chuan_dich(ngon_ngu_dich)
+    hang_so_ngon_ngu = ngon_ngu.NHIP.get(d)
+    if hang_so_ngon_ngu is None:
+        raise ngon_ngu.NgonNguError(f"dich {d!r} khong nam trong hop dong")
+    bang_do = TOC_DOC_GIONG_DA_DO if bang is None else bang
+    do_rieng = bang_do.get(str(giong_id or "").strip())
+    if not do_rieng or do_rieng <= 0:
+        return hang_so_ngon_ngu
+    return min(hang_so_ngon_ngu, float(do_rieng))
+
+
+def voi_toc_doc_giong(tho: Mapping | None,
+                      *, bang: Mapping[str, float] | None = None) -> dict:
+    """Ho so nguyen ven, kem THEM khoa `toc_doc_giong` da tinh.
+
+    Ham THUAN tren dict — khong cham DB/`run`.
+
+    🔴 **KHONG goi `chuan_hoa()` o day — bai hoc do duoc khi viet lan nay.**
+       Ban dau ham nay tra `chuan_hoa(tho)` (cung khuon `ho_so_noi_dung.bao_dam`),
+       va do LAM VO mot phep kiem dau-cuoi that (`test_408::TestAnToanCuocGoiTraTien
+       ::test_giai_doan_hong_MO_HO_thi_job_KHONG_quay_lai_hang_doi`): `tao_run`
+       luu `settings` THO, ⛔ CHUA chuan hoa (`features.tao_run`), va cac giai
+       doan TRUOC (`media_prepare`/`audio_prepare`/`transcribe`) da tinh van
+       tay tren ban THO do. Goi lai `chuan_hoa()` giua chuoi doi HINH DANG ca
+       nhung khoa KHONG lien quan (them `preset`/`timing_mode`/`che_do_giong`/
+       `voice_id`/`ngon_ngu_nguon`/`tu_dien` mac dinh) — `cho_van_tay` doi theo,
+       va `jobs._vo_hieu_giai_doan_da_lech` **dat lai ca bon giai doan truoc
+       do**, dung hinh dang canh bao o docstring `KHOA_DAN_XUAT`. `KHOA_DAN_XUAT`
+       chi loai tru mot KHOA, no ⛔ khong bao ve duoc truoc viec dinh dang LAI
+       toan bo cac khoa con lai.
+
+    ⇒ Chi THEM dung mot khoa, giu MOI thu khac y nguyen tung bit — an toan du
+       `tho` dang o hinh dang nao (tho hay da chuan hoa).
+
+    🔑 **Ghi VO DIEU KIEN, khong canh gac "da co chua".** `toc_doc_giong()` la
+       ham THUAN cua `giong_id`/`ngon_ngu_dich` — hai truong nay khong doi
+       giua cac lan goi TRONG CUNG mot lan chay, nen goi lai nhieu lan (mot
+       VONG SUA cua `content_process`) tren cung dau vao cho ra CUNG mot ket
+       qua. Khac voi `ho_so_noi_dung.bao_dam` (goi MODEL, ton tien nen phai
+       canh "da co chua"), o day khong co gi de tiet kiem ca.
+
+    🔴 **Vi sao goi tu `ho_so_dich.py`, khong phai tu giai doan MEDIA_PREPARE
+       that su (GD1 that):** lan nay (B17, P0-a) chi so huu `cai_dat.py` +
+       `ho_so_dich.py`. Nhung ket qua GIONG HET du goi o GD1 hay o day, vi
+       `toc_doc_giong()` khong doc gi ngoai hai truong da co san trong
+       `settings` TU TRUOC `content_process`. "Tinh o giai doan 1" (B17 §4.1)
+       la mot dac tinh cua HAM (thuan, khong doi giong khac chay xong), khong
+       phai mot rang buoc ve NOI GOI — goi som hay muon deu ra dung mot so.
+    """
+    ra = dict(tho or {})
+    tam = tu_ho_so(ra)
+    ra["toc_doc_giong"] = toc_doc_giong(tam.giong_id, tam.ngon_ngu_dich, bang=bang)
+    return ra
+
 
 #: ⛔ `voice_id` la mot BI DANH cu cua `giong_id`, khong phai mot truong thu hai.
 #:    Xem `rang_giong.tu_thiet_lap`: hai khoa nay da song song mot thoi gian va
@@ -150,6 +289,13 @@ class CaiDat:
     #: hoac `None` = mac dinh (giong TAT, nhac+vfx BAT o gain 1,0). Xem
     #: `tach_tieng.LOP_STEM`/`chuan_hoa_lop`.
     lop: dict | None = None
+    #: Toc doc CUA GIONG da chot (B17 §4.1, `toc_doc_giong()`), hoac `None` =
+    #: **chua tinh** — mot lan chay chua qua `content_process` (ho_so_dich.dung)
+    #: thi khoa nay CHUA CO trong `settings`. `None` o day KHONG phai loi doc:
+    #: cung mot cau chuyen voi `phu_de`/`am_thanh` — "chua co" la mot trang
+    #: thai hop le, phan biet voi "da tinh ra 0" (khong bao gio xay ra, xem
+    #: `toc_doc_giong()`).
+    toc_doc_giong: float | None = None
 
     @property
     def co_sua_diem_anh(self) -> bool:
@@ -250,7 +396,13 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
         phu_de=(dict(tho.get("phu_de")) if tho.get("phu_de") else None),
         am_thanh=(dict(am) if (am := tho.get("am_thanh")) else None),
         bien_tap=(dict(bt) if (bt := tho.get("bien_tap")) else None),
-        lop=(dict(lp) if (lp := tho.get("lop")) else None))
+        lop=(dict(lp) if (lp := tho.get("lop")) else None),
+        # `None` = chua tinh (xem docstring truong `toc_doc_giong` tren
+        # `CaiDat`) — kiem `is not None`, KHONG kiem truthy: `0.0` se khong
+        # bao gio xay ra tren duong ghi that (`toc_doc_giong()`), nhung mot
+        # ho so bi go tay/hong khong duoc lang le doi no thanh "chua tinh".
+        toc_doc_giong=(float(tdg) if (tdg := tho.get("toc_doc_giong")) is not None
+                      else None))
 
 
 def doc(run) -> CaiDat:

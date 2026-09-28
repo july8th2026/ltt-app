@@ -389,8 +389,9 @@ class TestSoDoKhacCuaG4:
             assert (suc.token_anh_toi_thieu, suc.token_anh_toi_da) == (
                 h.token_anh_toi_thieu, h.token_anh_toi_da), alias
             # Trần phải phủ MỌI số đo thật, ke ca o dinh (2048x2048 = 4.098).
-            for rong, cao, mong in ((320, 240, 82), (1024, 768, 770),
-                                    (1920, 1080, 2042), (2048, 2048, 4098)):
+            # ⛔ Chi neo cac co TREN san: so cua co duoi san phu thuoc SAN dang
+            #    cau hinh, va `test_4205` la noi ghim phep kep ay.
+            for rong, cao, mong in ((1920, 1080, 2042), (2048, 2048, 4098)):
                 that = AT.token_anh(rong, cao, toi_thieu=h.token_anh_toi_thieu,
                                     toi_da=h.token_anh_toi_da) + AT.TOKEN_DAU_VISION
                 assert that == mong, (alias, rong, cao, that, mong)

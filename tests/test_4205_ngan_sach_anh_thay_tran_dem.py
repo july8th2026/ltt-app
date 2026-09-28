@@ -81,16 +81,31 @@ def test_tran_phu_MOI_so_do_that():
     """
     from platform_core.llm import anh_token as AT
 
-    do_duoc = ((320, 240, 82), (512, 512, 258), (1024, 768, 770),
-               (1280, 720, 922), (1920, 1080, 2042), (2048, 2048, 4098),
-               (3840, 2160, 4082))
-    for rong, cao, mong in do_duoc:
-        that = AT.token_anh(rong, cao,
-                            toi_thieu=ngan_sach.TOKEN_ANH_TOI_THIEU,
+    # So DO o SAN 8 - day la su that ve CONG THUC, khong ve cau hinh.
+    do_o_san_8 = ((320, 240, 82), (512, 512, 258), (1024, 768, 770),
+                  (1280, 720, 922), (1920, 1080, 2042), (2048, 2048, 4098),
+                  (3840, 2160, 4082))
+    san = ngan_sach.TOKEN_ANH_TOI_THIEU
+    duoi_san = []
+    for rong, cao, o_san_8 in do_o_san_8:
+        that = AT.token_anh(rong, cao, toi_thieu=san,
                             toi_da=ngan_sach.TOKEN_ANH_TOI_DA) + AT.TOKEN_DAU_VISION
-        assert that == mong, f"{rong}x{cao}: tinh {that}, do duoc {mong}"
-        assert ngan_sach.TOKEN_ANH_TOI_DA + AT.TOKEN_DAU_VISION >= mong, (
-            f"tran {ngan_sach.TOKEN_ANH_TOI_DA} THAP hon chi phi that {mong}")
+        if o_san_8 - AT.TOKEN_DAU_VISION < san:
+            # Co nay nam DUOI san hien tai => phai bi kep len dung san.
+            duoi_san.append((rong, cao))
+            assert that == san + AT.TOKEN_DAU_VISION, (
+                f"{rong}x{cao}: san {san} ma tinh ra {that}, mong "
+                f"{san + AT.TOKEN_DAU_VISION} - phep kep san khong chay")
+        else:
+            assert that == o_san_8, (
+                f"{rong}x{cao}: tinh {that}, do duoc {o_san_8} - co nay TREN san "
+                f"nen san khong duoc cham vao no")
+        assert ngan_sach.TOKEN_ANH_TOI_DA + AT.TOKEN_DAU_VISION >= that, (
+            f"tran {ngan_sach.TOKEN_ANH_TOI_DA} THAP hon chi phi that {that}")
+    # ⭐ Doi chung: phai CO it nhat mot co duoi san, neu khong phep tren khong
+    #    thu phep kep bao gio - va no se xanh ca khi phep kep bi go.
+    assert duoi_san, (
+        f"san {san} thap hon MOI co trong bang, nen phep kep chua tung duoc thu")
 
 
 def test_hang_phang_cu_KHONG_con_tren_duong_dat_cho():

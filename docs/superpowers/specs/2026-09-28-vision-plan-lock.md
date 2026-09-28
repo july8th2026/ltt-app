@@ -552,35 +552,91 @@ luôn chính lỗi cấu hình gây ra nó."*
    * **chữ** làm vượt ⇒ hạ ảnh **không cứu được** ⇒ vẫn `context_window_exceeded`.
    ⛔ Gộp hai ca này thành một nhánh là lớp lỗi *"một nhánh gánh hai tình huống khác loại"*.
 
-### 7.2 C4 — gỡ trần đếm: rủi ro tồn dư, ghi ra
+### 7.2 C4 — rủi ro tồn dư: ĐÃ ĐO (Đ-4, 28/09) VÀ NÓ KHÉP LẠI
 
-Ngân sách KV **không** chặn *"200 ảnh 64×64"*: ~3.000 token KV nhưng **200 lượt mã hoá mmproj
-nối tiếp** trên `mtmd_context` dùng chung.
+**Lo ban đầu:** ngân sách KV không chặn được *"200 ảnh 64×64"* — ~1.600 token KV
+nhưng 200 lượt mã hoá mmproj nối tiếp trên một `mtmd_context` **dùng chung** cho
+mọi slot. Cờ whale không đỡ hộ vì 1.600 token không phải whale.
 
-Và **cơ chế whale không đỡ hộ**: cờ whale bật theo `token_prefill_moi ≥ nguong_whale`
-(`tham_so_da_luot.py:148`). Với ngân sách đúng, 200 ảnh nhỏ = ~3.000 token ⇒ **không phải
-whale** ⇒ không bị hãm. Rủi ro này **mở và chưa được đỡ**.
+**Đo thật** (`tools/do_do_tre_anh.py`, tuần tự, trên cấu hình production `-np 4`):
 
-⇒ Ghi vào sổ như một **rủi ro đã nhận**, kèm thuốc rẻ nhất nếu nó xảy ra thật: **Đ-4** cho
-mẫu số, rồi dựng trần theo **độ trễ** (§5.4) — không phải dựng lại `max_images = 4`.
-⚠️ Điều kiện phát hiện phải viết ra chứ không chờ khách phàn nàn: quan trắc **độ trễ prefill
-theo SỐ ẢNH** ở `--metrics`, không chỉ theo số token.
+| Ảnh | token/ảnh | ms/ảnh | **ms/token** |
+|---|---|---|---|
+| 320×240 | 82 | 3,75 | 0,046 |
+| 1024×768 | 770 | ~30 | 0,039 |
+
+⇒ Giải hệ hai điểm: **≈ 0,6 ms cố định mỗi ảnh + 0,038 ms mỗi token ảnh.**
+
+⭐ **CHI PHÍ MÃ HOÁ TỈ LỆ VỚI TOKEN, KHÔNG VỚI SỐ ẢNH.** Đó là điều lật ngược nỗi
+lo: **ngân sách token ĐÃ chặn thời gian mã hoá**, chỉ là chặn gián tiếp.
+
+Ca xấu nhất tính được — một request ăn trọn cửa sổ ngữ cảnh bằng ảnh ở **sàn**
+8 token (số ảnh nhiều nhất có thể):
+
+```
+262.144 / 8              = 32.768 ảnh          (trần là NGỮ CẢNH, không phải byte:
+                                                32.768 × ~160 B = 5,2 MB < 32 MiB)
+32.768 × (0,6 + 8×0,038) ≈ 29,5 giây mã hoá
+```
+
+**Và đây là phép so quyết định:** một whale **chữ** ăn trọn cùng cửa sổ ấy tốn
+`262.144 / 1.350 tok/s ≈ 194 giây` prefill — **gấp 6,6 lần** ca ảnh xấu nhất. Mà
+whale chữ thì **cơ chế whale đã xử** (`nguong_whale`, `mot_prefill_dai`).
+
+⇒ **KHÔNG cần trần đếm, và không cần cơ chế mới.** Ca ảnh xấu nhất **nhẹ hơn** ca
+  mà hệ đã có lưới. Rủi ro tồn dư ở bản trước của mục này **được khép bằng số**,
+  không bằng một lời hứa sẽ đo.
+
+⚠️ Một điều bản trước của tôi **đoán sai**, ghi lại: tôi ước "32.768 ảnh nhỏ =
+   123 giây" vì giả định chi phí theo **số ảnh**. Đo được thì nó theo **token**,
+   nên con số thật là ~30 giây. Một ước lượng dựa trên đại lượng sai cho ra một
+   rủi ro lớn hơn thực **4 lần** — và nếu tôi hành động theo nó, tôi đã dựng một
+   cơ chế đếm mà hệ không cần.
 
 ---
 
-## 7-TER. TIẾN ĐỘ THẬT (cập nhật 28/09/2026, nhánh `phien/vision-plan-lock`)
+## 7-TER. TIẾN ĐỘ THẬT (đo lại 28/09/2026 sau khi deploy xong)
 
-| Pha | Trạng thái | Commit |
+### Tổng: **85 %** của plan như đã khoá (Pha 0-6 + ba việc deploy)
+
+| Hạng mục | % | Bằng chứng |
 |---|---|---|
-| **0 — ĐO** | ✅ xong (§6-BIS) | `a79da8f0` |
-| **1 — SỰ THẬT** (cờ engine tường minh, sửa 2 chú thích sai) | ✅ xong | `a79da8f0` |
-| **2 — TÍNH** (`anh_token.py` ×2 byte-identical) | ✅ xong | `a6dd4be3` |
-| **3(B) — cổng máy B tính ngân sách, gỡ `max_images`** | ✅ xong | `a6dd4be3` |
-| **4a — trần thân 4 → 32 MiB** | ✅ xong | `a6dd4be3` |
-| **3(A) — máy A ĐO ảnh, công bố ra catalog** | ✅ xong | `546ab376` |
-| **5 — client nhả theo ngân sách** | 🔨 đang làm (kho `LTTCODEAPP`) | — |
-| **6 — tự hạ + header `X-LTT-Anh-Thu-Nho`** | ⬜ chưa | — |
-| **DEPLOY** | 🔴 **CHẶN — cần chủ dự án** | §7-TER.3 |
+| **Pha 0 — ĐO** | **70 %** | Đ-1 ✅ Đ-2 ✅ Đ-3 ✅ Đ-6 ✅ · **Đ-4 ⬜ Đ-5 ⬜** |
+| **Pha 1 — SỰ THẬT** | **100 %** | `a79da8f0` |
+| **Pha 2 — TÍNH** | **100 %** | `a6dd4be3` · `anh_token.py` ×2 byte-identical |
+| **Pha 3 — NGÂN SÁCH** | **100 %** | `a6dd4be3` (B) + `546ab376` (A), **đã deploy + nghiệm thu** |
+| **Pha 4a — THÂN 32 MiB** | **100 %** | live: `x-ltt-max-body-bytes: 33554432` |
+| **Pha 5 — CLIENT** | **80 %** | `39f3a56` (LTTCODEAPP), 146 xanh — **chưa tới tay khách**, cần build 0.2.17 |
+| **Pha 6 — TỰ HẠ + header** | **0 %** | chưa bắt đầu |
+| **D1 máy B** | **100 %** | `EXITCODE` n/a (deploy.ps1) + restart, 16/16 ô đo khớp |
+| **D2 máy A** | **100 %** | `/health/version` = `3ee8b6a660b6`, `nghiem_thu_deploy` lệch 0 |
+| **D3 WebP** | **100 %** | `1024×768 webp → 770` (trước deploy: 400) |
+
+### ⛔ HAI LỖ HỔNG MỚI, lộ ra khi đo tiến độ — không có trong plan gốc
+
+**(d) 🔴 `docs/PUBLIC_API/` KHÔNG có một chữ nào về bốn trường mới.**
+`grep min_image_tokens docs/PUBLIC_API/` = **rỗng**. Ta đang **công bố** bốn con số
+ra hợp đồng công khai mà **không khách nào học được chúng ở đâu**.
+
+⚠️ Và đây là chỗ tôi **tự mâu thuẫn**: §7.1-BIS dẫn **L-26** làm khuôn, mà L-26 ghi
+tài liệu ở **ba** nơi — `manifest.py`, `DEVELOPER_GUIDE.md`, `CHANGELOG.md`. Tôi
+chỉ làm **một** (`manifest.py`). Dẫn một tiền lệ rồi làm một phần ba của nó là
+tệ hơn không dẫn, vì nó tạo cảm giác đã theo khuôn.
+
+**(e) `MAX_REQUEST_IMAGE_BYTES = 20 MiB` ở client KHÔNG còn chết — và chưa ai xét lại nó.**
+Plan ghi *"gỡ … đã chết"*. Nhưng trần thân nay 32 MiB > 20 MiB, nên nó **sống lại**
+và thành một trần con hợp lý. Giữ là đúng; ⛔ nhưng **20 MiB chưa được đối chiếu**
+với 32 MiB − sàn chữ 2,31 MiB. Việc trong plan phải đổi từ "gỡ" sang "xét lại".
+
+**(f) `plugins/llm-ltt/CONTRACT.md:162`** còn ghi preflight theo `max_images` —
+tài liệu client nói về một trần đã không tồn tại.
+
+### Đ-3 đã tự khép, và không theo đường plan dự tính
+
+Plan định đo *"một ảnh RGBA thật đi hết đường LTTCODE"*. **D3 làm câu hỏi ấy mất
+nghĩa**: máy B nay giải mã được WebP, nên việc harness mã hoá `hasAlpha ⇒ webp`
+không còn là lỗi. ⇒ Đ-3 ✅, nhưng **bằng một bản vá, không bằng một phép đo** —
+ghi ra để không ai tưởng đã có số.
 
 ### 7-TER.1 Ba lỗ hổng THẬT tìm thấy trong lúc làm (không có trong plan gốc)
 
@@ -635,6 +691,104 @@ khách đọc catalog (không còn trần đếm), gửi 10 ảnh, và ăn 400 m
 ⛔ Và `check_mypy` báo `assignment 56 → 57` — đo lại trên **`main`** thấy `main`
    **tự nó** đã vỡ bánh cóc ấy. Không phải của plan này, và ⛔ không `--accept`
    (làm thế là che hồi quy của phiên khác).
+
+---
+
+## 7-QUATER. Đ-5 ĐÃ ĐO (28/09) — VÀ NÓ LÀ PHÉP ĐO ĐÁNG GIÁ NHẤT CỦA CẢ PLAN
+
+### Số
+
+Bộ thử: mã 6 ký tự **ngẫu nhiên tiền định** (không từ tiếng Anh nào để model đoán),
+render ở bốn cỡ **đều dưới 1.024 token**, hỏi model đọc lại. `temperature=0`,
+`seed=7`. Cùng một bộ ảnh cho cả ba lần đo (`tools/do_chat_luong_doc_anh.py`).
+
+| Cỡ ảnh | token (sàn 8) | **sàn 8** | **sàn 512** | **sàn 1024** |
+|---|---|---|---|---|
+| 128×48 | 8 | 5/5 | 5/5 | 5/5 |
+| 192×64 | 12 | 4/5 | 4/5 | 5/5 |
+| 256×96 | 24 | **0/5** | 5/5 | 4/5 |
+| 384×128 | 48 | **0/5** | 5/5 | 5/5 |
+| **Tổng** | | **9/20 · CER 0,817** | **19/20 · CER 0,050** | **19/20 · CER 0,050** |
+
+⇒ Cảnh báo của thượng nguồn (`clip.cpp:1662-1667`, issue #16842) **đúng, và cái
+giá của việc bỏ qua nó là lớn**: hơn **một nửa** ảnh nhỏ đang bị đọc sai.
+
+### Đối chứng âm — vì một kết quả tốt bất thường phải bị nghi trước khi được tin
+
+Ở sàn 8, ảnh **nhỏ nhất** (8 token) đọc **hoàn hảo** còn ảnh lớn hơn thì hỏng —
+ngược hẳn giả thuyết. Nên tôi chạy đối chứng trước khi tin:
+
+| Đối chứng | Kết quả |
+|---|---|
+| ảnh **trắng**, không chữ | `''` — ⛔ model KHÔNG bịa mã |
+| mã **thật** ở 128×48 | `4WK69C` đúng |
+| mã **khác** ở 128×48 | `PQRT79` đúng ⇒ nó ĐỌC, không phải nhớ |
+| cùng hai mã ở 384×128 | `And`, `HIJ` — rác |
+
+⇒ 5/5 ở ảnh nhỏ là **thật**. Và các đầu ra hỏng (`HEEEEEE…`, `And`) là **bệnh giải
+mã lặp**, không phải "không thấy điểm ảnh" — cùng hình dạng với llama.cpp #17534.
+
+### ⚠️ Ô sai duy nhất ở sàn 512/1024 là MỘT LỖI CHẤM, không phải lỗi đọc
+
+`HETPYH → НЕТРУН`: model trả **chữ Kirin đồng dạng** (Н Е Т Р У Н), tức nó đọc
+đúng **hình** và chọn sai **bảng chữ**. Phép chấm của tôi đếm đó là sai. ⇒ Độ chính
+xác thật ở 512 và 1024 là **20/20**, không phải 19/20.
+
+### 🔴 CHỌN **512** — và đây là chỗ tôi đã TỰ SUY một lần rồi phải sửa
+
+Bản đầu của mục này chọn **1024**, lý do: *"thượng nguồn khuyên thế cho tác vụ
+định vị, mà bài đo của ta chỉ đo đọc chữ"*. Chủ dự án bảo **tra nguồn thay vì
+suy**. Tra xong (28/09), lý do ấy **không đứng được**:
+
+| Điều tôi tin | Nguồn nói |
+|---|---|
+| "1024 là khuyến nghị của upstream" | Một **câu** của một người Qwen trong comment #16842 (*"in grounding tasks we recommend around 1024–2048"*), **không kèm số nào**. PR #16921 thêm cảnh báo có body gồm **đúng một link Ref**, **0 review comment**. |
+| "1024 vì định vị" | Chính **ggerganov** trong cùng issue kết luận nguyên nhân thật là **prompt**: *"I think I found the issue — it's all about the prompt and the output formatting."* |
+| — | **Tài liệu chính thức Qwen**: dải khuyến nghị **256–1280** token/ảnh, mục đích ghi rõ *"to balance performance and cost"* (model card 2.5-VL + README 3-VL). |
+| — | **`cookbooks/ocr.ipynb` chính thức** đặt `min_pixels = 512×32×32` ⇒ **sàn 512** — nguồn gần bài của ta nhất (đọc chữ, không xuất toạ độ). |
+| — | Mặc định chính thức trong `preprocessor_config`: **4** (2.5-VL) / **64** (3-VL). ⛔ Không phải 1024. |
+
+⚠️ **Và một nhiễu chưa ai tính:** mọi bằng chứng dẫn tới 1024 thu thập **10–11/2025**
+trên một bản llama.cpp **đang có lỗi toạ độ grounding** (#16880), vá bởi PR #25781
+(07/2026). Build của ta (`91f6a6cf3`, 09/2026) **đã có bản vá**. ⛔ Chưa ai đo lại
+khuyến nghị ấy sau khi lỗi được sửa.
+
+⇒ **512** có nguồn chính thức, có số đo của chính ta (19/20, **bằng** 1024), và rẻ
+  bằng **một nửa**. ⛔ Không tồn tại phép đo nào — của ai — so 512 với 1024 trên
+  tác vụ đọc chữ.
+
+> 🔑 Bài học, và nó đắt hơn con số: **"thượng nguồn khuyên thế" không phải một
+> nguồn.** Tôi dừng ở chỗ `clip.cpp` in cảnh báo và coi đó là bằng chứng. Đi thêm
+> một bước thì thấy cảnh báo ấy dẫn về một câu không có số, trong một issue mà
+> người viết engine đã kết luận nguyên nhân là thứ khác. ⇒ Một cảnh báo trong mã
+> là **con trỏ tới nguồn**, ⛔ không phải nguồn.
+
+### ⬜ Một việc phát sinh từ lượt tra: `--image-max-tokens` = 4096 CAO hơn tài liệu 3,2×
+
+Tài liệu Qwen khuyến nghị dải **256–1280** cho **cả** `min` lẫn `max`. Ta đang để
+`max = 4096` (hard-code trong `clip.cpp:1660`, ⛔ không đọc từ GGUF), và
+`cookbooks/ocr.ipynb` đặt `max = 2048`.
+
+⛔ **Chưa đổi**, vì ⛔ chưa đo: hạ trần ảnh hưởng **ảnh lớn** (2048×2048 sẽ từ 4 098
+   rơi xuống 2 050), mà bài đo của ta chỉ đo **ảnh nhỏ**. Một lần hạ trần không có
+   phép đo cho ảnh lớn là đúng lỗi tôi vừa sửa ở trên, chỉ đổi chiều.
+
+### Và cái giá phải nói cho đúng
+
+⛔ **Không phải "ảnh nhỏ đắt lên 12,5×"**. Ảnh dưới 1.024 token **hiện đang không
+dùng được** (9/20). Ta không làm thứ đang chạy đắt lên — ta làm thứ đang **hỏng**
+chạy được. Một khách gửi ô cắt 320×240 hôm nay trả 82 token cho một câu trả lời **sai**.
+
+Ảnh **không** bị ảnh hưởng: mọi ảnh từ ~1 Mpx trở lên, tức **ảnh chụp màn hình
+1080p và lớn hơn giữ nguyên chi phí** (1920×1080 = 2.042 token, đã trên sàn).
+
+### 🔴 Con bọ trong phép đo, ghi lại vì chính tôi vừa viết tài liệu cảnh báo nó
+
+Lần đo đầu ra **0/20 với content RỖNG**. Không phải model đọc sai — `max_tokens=24`
+bị **suy nghĩ** ăn hết rồi bị cắt. `DEVELOPER_GUIDE.md` §13 mà tôi vừa viết cảnh
+báo **đúng điều này** ("thinking spends that same budget… return empty content with
+finish_reason=length"), và tôi vẫn mắc. ⇒ Công cụ nay trả **cả `finish_reason`**:
+một phép đo không phân biệt được *"đọc sai"* với *"bị cắt"* thì không đo gì.
 
 ---
 

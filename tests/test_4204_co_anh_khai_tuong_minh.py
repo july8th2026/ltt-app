@@ -41,10 +41,11 @@ import pytest
 
 from llm_gateway import vat_ly
 
-#: Mac dinh llama.cpp dat cho ho `qwen3vl_merger` (ca hai mmproj cua ta deu la
-#: ho nay - doc sieu du lieu GGUF 28/09). Khai tuong minh trong yaml ⇒ hai so
-#: nay KHONG doi hanh vi; chung chi lam con so ngam thanh con so doc duoc.
-SAN_MONG_DOI = 8
+#: ⭐ SAN nay KHONG con la mac dinh cua llama.cpp (8). No la 512, lay tu
+#: `cookbooks/ocr.ipynb` CHINH THUC cua Qwen (min_pixels = 512*32*32) va xac nhan
+#: bang phep do D-5 (san 8 -> 9/20, san 512 -> 19/20). TRAN van la mac dinh cua
+#: ho `qwen3vl_merger`.
+SAN_MONG_DOI = 512
 TRAN_MONG_DOI = 4096
 
 
@@ -68,11 +69,15 @@ def test_hai_so_dung_bang_mac_dinh_engine(ho_so):
     """Khai tuong minh phai khai DUNG thu dang chay - khong tien tay doi hanh vi.
 
     🔴 Doi mot trong hai so nay la mot DANH DOI SAN PHAM (do chinh xac doi lay KV
-       + credit khach tra), khong phai mot viec don dep. San 8 la mot no chat
-       luong da biet: clip.cpp:1662-1667 canh bao Qwen-VL can >= 1.024 token anh
-       cho tac vu dinh vi (issue #16842). Tra no ay can phep do D-5 va mot quyet
-       dinh cua chu du an - xem
-       `docs/superpowers/specs/2026-09-28-vision-plan-lock.md` muc C1.
+       + credit khach tra), khong phai mot viec don dep.
+
+    ⛔ VA CANH BAO CUA `clip.cpp:1662-1667` (">= 1024 token") KHONG PHAI NGUON DU
+       DE NANG SAN LEN 1024. Tra 28/09: con so ay den tu MOT CAU trong comment
+       issue #16842, khong kem so nao; PR #16921 them canh bao co body gom dung
+       mot link Ref va 0 review; va chinh ggerganov trong cung issue ket luan
+       nguyen nhan that la PROMPT. Tai lieu CHINH THUC cua Qwen dat san OCR o
+       512 (`cookbooks/ocr.ipynb`) va khuyen dai 256-1280 "to balance performance
+       and cost". Xem `apps/ltt_llm/ngan_sach.TOKEN_ANH_TOI_THIEU`.
     """
     for ten, v in ho_so.items():
         assert v.token_anh_toi_thieu == SAN_MONG_DOI, (

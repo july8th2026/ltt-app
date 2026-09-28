@@ -73,15 +73,22 @@ def test_hai_may_dung_CUNG_MOT_phep_tinh_token_anh():
     from platform_core.llm import anh_token as at_a
 
     assert not hasattr(ngan_sach, "TOKEN_GIU_MOI_ANH_DA_GO"), "canh ten"
-    # Cùng phép tính, chứng minh bằng KẾT QUẢ trên đúng bảng đã đo 28/09.
-    for rong, cao, mong in ((320, 240, 82), (1024, 768, 770), (1280, 720, 922),
-                            (2048, 2048, 4098), (3840, 2160, 4082)):
+    # ⭐ Chu de la HAI BAN CHO CUNG KET QUA, khong phai "ket qua la bao nhieu"
+    #    (so tuyet doi phu thuoc SAN dang cau hinh - xem `test_4205`). Nen phep
+    #    nay so A voi B tren nhieu co, va KHONG go cung mot con so mong doi.
+    for rong, cao in ((320, 240), (1024, 768), (1280, 720),
+                      (2048, 2048), (3840, 2160)):
         for m, h in ngan_sach.HO_SO.items():
             a = at_a.token_anh(rong, cao, toi_thieu=h.token_anh_toi_thieu,
                                toi_da=h.token_anh_toi_da) + at_a.TOKEN_DAU_VISION
             b = at_b.token_anh(rong, cao, toi_thieu=h.token_anh_toi_thieu,
                                toi_da=h.token_anh_toi_da) + at_b.TOKEN_DAU_VISION
-            assert a == b == mong, (m, rong, cao, a, b, mong)
+            assert a == b, (m, rong, cao, a, b)
+    # Va mot neo TUYET DOI o mot co TREN san, de phep tren khong the xanh bang
+    # cach ca hai ban cung hong y het nhau.
+    for m, h in ngan_sach.HO_SO.items():
+        assert at_a.token_anh(1920, 1080, toi_thieu=h.token_anh_toi_thieu,
+                              toi_da=h.token_anh_toi_da) + 2 == 2042, m
     # 770 chỉ đúng cho 1024x768 — KHÔNG phải "chi phí một ảnh".
     assert ngan_sach.TOKEN_MOI_ANH == 770
 

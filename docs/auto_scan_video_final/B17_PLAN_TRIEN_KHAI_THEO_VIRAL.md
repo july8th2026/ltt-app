@@ -25,6 +25,67 @@ phải đọc nguyên văn vùng đó **trước** khi sửa, ⛔ không dựa v
 
 ---
 
+## 0b. QUY TẮC VẬN HÀNH PLAN NÀY — chủ dự án chốt 28/09/2026
+
+> *"Tiếp tục theo quy trình. ⛔ Không dừng lại giữa các pha."*
+
+### Điều phối: ⛔ KHÔNG dừng giữa các pha
+
+Làn xong ⇒ **gộp → chạy lưới → mở làn kế**, ⛔ không xin duyệt, ⛔ không tóm tắt tiến
+độ rồi chờ. Hết **mọi** pha thì MỘT gate → gộp `main` → deploy (nếu cần) → **báo**.
+
+⛔ **Dừng CHỈ khi**: gate đỏ · thao tác ⛔ không đảo được · thay đổi chưa commit ⛔ không
+rõ của ai · rủi ro bảo mật. (Hợp đồng §10.)
+
+⭐ **HỎI chỉ khi câu trả lời ⛔ không nằm trong mã, trong số đo, hay trong nguồn**: đánh
+đổi **sản phẩm** · hai đường **đều đúng** mà dữ liệu ⛔ không chọn hộ · việc **chỉ chủ dự
+án làm được** (bí mật, quyền, dashboard ngoài).
+
+### Lưới sau mỗi lượt gộp — theo LOẠI lượt gộp, ⛔ không một cỡ cho tất cả
+
+| Lượt gộp | Phải chạy |
+|---|---|
+| thuần `docs/` | `pre-commit run --all-files` (**9 giây**, nhóm *vừa*, ⛔ không cần khoá) |
+| có **mã** | `scan_source_secrets` · `check_mypy` · `check_silent_except` (**< 45 giây**) **+** test nhắm **+** `pre-commit` |
+
+🔑 Ba bộ kiểm hình dạng bắt loại lỗi **test nhắm ⛔ KHÔNG THỂ bắt**: mã **đúng hành vi,
+sai bất biến toàn kho**.
+
+⛔ **KHÔNG chạy `gate.py` trong phiên** — không L1, không L2, không L3. Gate **MỘT lần**
+ở **cuối plan**, **MỘT cấp**. Hết một pha / một làn / một lượt gộp `main` ⛔ **không phải**
+cuối plan.
+
+### Một tệp một chủ — và `pipeline.py` là sổ đăng ký dùng chung
+
+Mỗi làn MỘT worktree + MỘT nhánh. ⛔ Không hai làn sửa cùng tệp.
+🔴 `apps/auto_scan_video/pipeline.py` có **chủ duy nhất** là làn `P1-0`. Làn khác cần
+đổi `CHUOI`/`sau=` thì **báo điều phối**, ⛔ không tự sửa — mỗi lượt đổi `sau=` trả một
+lần giá vân tay (§6).
+
+### 🔴 Trước khi giao một dòng việc: va vào MÃ, ⛔ không chỉ vào plan trước
+
+Một dòng trong bảng việc là một **MỆNH LỆNH** — agent ⛔ không cân nhắc, nó thi hành.
+28/09 luật này sinh ra sau **hai** ca thật trong một buổi (`edit_plan`, gộp 3 QC): plan
+ra lệnh đúng điều mà **mã cùng ngày đã cấm, kèm lý do**.
+
+```bash
+sed -n '1,30p' <tep chinh cua dong viec>      # docstring dau tep = noi cac phien
+                                              # truoc ghi phan quyet
+grep -rn "⛔ KHONG\|⛔ KHÔNG" --include=*.py <thu muc> | grep -i "<viec>"
+```
+
+⭐ Lượt quét ấy trả **cả hai chiều**: nó tìm ra lệnh **cấm** (bỏ `edit_plan`, gộp QC) và
+cả **tiền lệ đồng thuận** (*"Pha 26 — Renderer fusion"* ở `phu_de.py:8-20`) để agent tra
+thay vì thiết kế lại.
+
+### 🔴 Làn tự khai NỢ ⇒ mở làn trả nợ NGAY
+
+Một làn báo *"giá trị đã có nhưng chưa ai đọc"* / *"ngoài phạm vi sở hữu"* là một
+**cần gạt chết**. Điều phối mở làn trả nợ trong **cùng pha**, ⛔ không đẩy vào *"sau
+này"*. Tiền lệ: `P0-a` → `P0-a2`.
+
+---
+
 ## 1. TRẬT TỰ VĨ MÔ THẬT của `localize.chay()` — 14 khối, đúng thứ tự thực thi
 
 Rút từ 150 câu lệnh cấp 1. Cột **ta có?** so với `pipeline.CHUOI` hiện hành.
@@ -53,7 +114,30 @@ Rút từ 150 câu lệnh cấp 1. Cột **ta có?** so với `pipeline.CHUOI` h
 tiếng **tự burn phụ đề bên trong nó**, ⛔ không đi qua một bước burn riêng.
 
 ⇒ Chuỗi của ta có `compose` **rồi** `render` **nối tiếp** là một **hình dạng khác**,
-⛔ không phải một thứ tự khác. Đây là gốc của *"vì sao ta encode hai lần"*.
+⛔ không phải một thứ tự khác.
+
+### 🔴 ĐÍNH CHÍNH LỚN NHẤT của tệp này — *"ta encode hai lần"* là SAI
+
+Vòng một tôi viết câu ấy và suy nó ra từ **hình dạng chuỗi**, ⛔ không đo. Đo (28/09):
+
+| Giai đoạn | Làm gì với ĐIỂM ẢNH | Bằng chứng |
+|---|---|---|
+| `compose` | ⛔ **không chạm** — dựng `ban_dung.json` + trộn `master.wav`, đo LUFS | `pipeline.py:365-384` |
+| `render` | ⛔ **không chạm** — **`-c:v copy`**, nguyên văn *"Hình ⛔ không bị chạm tới"* | `ket_xuat.py:8,30-33` |
+| `image_finish` | ✅ **lần encode hình DUY NHẤT** | `che_do_render.py:133-143` (một bộ codec, ⛔ không pass 2) |
+
+⇒ 🔑 **Ta ĐÃ chỉ có MỘT lần encode hình.** Và việc tách hai giai đoạn chính là **để**
+GĐ1 ⛔ không phải chạm điểm ảnh: `ket_xuat.py:30-33` ghi rõ hai hệ quả — **⛔ không dùng
+GPU** (nên `RENDER` nằm làn `asv_media`, ⛔ không khai `tai_nguyen`) và **⛔ không mất chất
+lượng** (*"hình của khách ra đúng bằng bit nó vào"*).
+
+🔴 ⇒ **Gộp `compose`+`render` vào lượt encode là một BƯỚC LÙI**, ⛔ không phải tối ưu: nó
+kéo một lượt CPU rẻ (`-c:v copy`, vài chục giây cho video 10 phút) vào bên trong một
+lượt **giữ lease GPU**, và bắt việc trộn tiếng phải chờ card.
+
+⇒ Việc thật của P2 **hẹp hơn nhiều**: ⛔ không phải *gộp ba giai đoạn*, mà là **sửa THỨ
+TỰ NODE và thêm node còn thiếu bên TRONG lượt encode đã có một mình**. Đối chiếu sẵn ở
+`W3_MOT_LAN_ENCODE.md` §2.5.
 
 ---
 
@@ -291,7 +375,11 @@ có, chỉ **sai chỗ**).
 | **XOÁ trước, CHE sau** (node 4 trước node 5) | `:7293-7303` | chốt 04/09: che chạy trước làm watermark **bị chép xuống bản sao**, đo thật `y≈500 → y≈620` |
 | **phụ đề / text_wm vẽ SAU reframe** | `:7103-7146`, `:8198`, `:8257` | reframe sau burn ⇒ cỡ chữ tính theo `W,H` **GỐC** rồi bị co theo hệ số reframe ⇒ chữ nhỏ đi. Có hàm bù `_wh_bu_reframe` (`:7109`) cho nhánh ⛔ không hoãn được |
 
-### Ba câu trả lời cho *"gộp `render` + `image_finish`"*
+### Ba câu W3 trả lời — vẫn dùng được, nhưng đọc lại với đính chính §1
+
+⚠️ Brief tôi giao W3 hỏi *"gộp `render`+`image_finish`"*. §1 đã cho thấy câu hỏi ấy
+**sai tiền đề** (`render` ⛔ không chạm điểm ảnh). Ba câu trả lời của nó **vẫn đúng và
+vẫn cần** — chúng nói về `burn_phude`, tức về **lượt encode duy nhất** của ta.
 
 | Câu | Trả lời (W3, đọc trực tiếp) |
 |---|---|
@@ -307,53 +395,108 @@ Nó **⛔ không thuộc `burn_phude`**. Nó sống trong `_ghep_track_khop` (`:
 
 ---
 
-## 6. CHUỖI MỚI — 9 giai đoạn, và vì sao ⛔ không phải 8 như B16
+## 6. CHUỖI MỚI — vẫn **13** giai đoạn, và cái thắng ⛔ KHÔNG phải số bước
 
-B16 khai 8. W2 §2.2 buộc tách `vung_che` làm hai ⇒ **9**.
+🔴 **B16 đuổi theo một con số sai.** Nó khai *"8 giai đoạn"*, tôi sửa thành 9. Soát
+28/09 cho thấy **gần như mọi giai đoạn của ta đều có lý do đã đo**, nên phép trừ ra:
 
-🔑 **Máy DAG đã sẵn, ⛔ không phải viết mới**: `pipeline.ke_tiep()` đã trả về **list**, và
-`TIMING_ALIGN` đã khai `sau=(VOICE_SYNTHESIS, AUDIO_PREPARE)` — **hai** tiền nhiệm.
-⇒ Chuỗi hiện hành thẳng **vì lời khai `sau=`**, ⛔ không vì giới hạn công cụ.
+| Đổi | Δ | Vì sao được / ⛔ không được |
+|---|---|---|
+| `audio_prepare` + `transcribe` → `gpu_asr` | **−1** | một lease GPU, hai luồng trong một tiến trình (§3) |
+| + `vung_che_tinh`, `vung_che_bam` | **+2** | W2 §2.2 buộc tách, ⛔ không gộp được |
+| − `edit_plan` | **−1** | W4 đo: giá có biên, tự lành — và **đi kèm miễn phí** với lượt đổi `sau=` |
+| ~~gộp `compose`+`render`+`image_finish`~~ | **0** | 🔴 **⛔ KHÔNG** — `render` đã `-c:v copy`, xem đính chính §1 |
+| ~~gộp 3 QC~~ | **0** | 🔴 **⛔ KHÔNG** — xem 🔴 dưới |
+| | **= 13** | |
+
+⇒ ⭐ **Cái ta thắng là BA thứ khác, ⛔ không phải bước ngắn hơn:**
+**(a)** song song thật qua DAG (§2-3) · **(b)** thứ tự node đúng trong lượt encode đã có
+(§5) · **(c)** ba đường ngược chuỗi được nối đúng (§4).
+
+### 🔴 ⛔ KHÔNG gộp 3 QC — quyết định đã ghi, kèm lý do
+
+`tests/test_402_asv_mach_doc_gia.py:247-251`, nguyên văn:
+
+> `qc_ai` được thêm SAU `qc`, ⛔ không thay `qc`: QC kỹ thuật là một cổng **PHÁT HÀNH
+> tất định** — đo được, chạy lại cho cùng kết quả — còn QC bằng AI hỏi một bên **CHỦ
+> QUAN và TRẢ TIỀN**. Gộp hai thứ vào một giai đoạn là làm một lần chạy hỏng vì một
+> phán quyết chủ quan **trước khi ai kịp xem phép đo tất định nói gì**.
+
+Và `qc_do_luong` (`:258-260`) thiếu venv đo thì **vẫn `succeeded`** với mọi bộ đo
+`khong_kha_dung` — một cổng hạ cấp có chủ đích. ⇒ **Làn P1-c bị BỎ.**
+
+### Chuỗi đích
 
 ```
-1 media_prepare ─┬─> 2 gpu_asr ──────┬─> 4 content_process ─> 6 voice_synthesis ─> 7 timing_align ─┐
-                 │                   │                                                            │
-                 └─> 3 vung_che_tinh ─┴─> 5 vung_che_bam ──────────────────────────────────────────┴─> 8 render_mot_lan ─> 9 qc
-                     (🔀 song song 2)
+1 media_prepare ─┬─> 2 gpu_asr ───────┬─> 4 content_process ─> 6 voice_synthesis ─> 7 timing_align
+                 │                    │                                                 │
+                 └─> 3 vung_che_tinh ──┴─> 5 vung_che_bam ──┐                            v
+                     (🔀 song song 2)                        │                  8 compose (audio)
+                                                             │                            v
+                                                             └────────────> 10 image_finish <── 9 render (-c:v copy)
+                                                                                 │
+                                                                                 v
+                                                                    11 qc -> 12 qc_do_luong -> 13 qc_ai
 ```
 
-| # | Giai đoạn | `sau=` | Gộp từ | Neo Viral |
+| # | Giai đoạn | `sau=` | Đổi gì | Chạm điểm ảnh? |
 |---|---|---|---|---|
-| 1 | `media_prepare` | — | + settings dẫn xuất, + **cắt đầu**, + 4 khoá cache | `15039-15236`, `15732`, `15943/15983/16068/16111` |
-| 2 | `gpu_asr` | `(1,)` | 🔑 **`audio_prepare` + `transcribe` MỘT job GPU** | `15611`, `15710` (luồng) + `16381-18110` (ASR) |
-| 3 | `vung_che_tinh` | `(1,)` | mới — chỉ đọc **video** | `15880` → `18289` |
-| 4 | `content_process` | `(2,)` | như cũ, **neo bằng settings GĐ1** | `16990`, `17631`, `17940` |
-| 5 | `vung_che_bam` | `(2, 3)` | mới — đọc `hop_ocr.json` | `18204-18914`, `18230-18238` |
-| 6 | `voice_synthesis` | `(4,)` | **giữ nguyên của ta** (TTS của ta) | — |
-| 7 | `timing_align` | `(6, 2)` | bậc thang nắn + `phu_de_canh_giong.srt` | `9018-9022`, `9043-9050`, `20327` |
-| 8 | `render_mot_lan` | `(5, 7)` | 🔑 **`compose`+`render`+`image_finish`** → MỘT encode | `6560-8425` (10 node §5) |
-| 9 | `qc` | `(8,)` | `qc`+`qc_do_luong`+`qc_ai` → **một bước + module gọi được** | — |
-
-**Bỏ hẳn**: `edit_plan` (đã luôn trả kế hoạch rỗng từ 28/09 — bỏ khai, ⛔ không bỏ mã).
+| 1 | `media_prepare` | — | + `toc_doc_giong` ✅, + **cắt đầu**, + 4 khoá cache | ⛔ |
+| 2 | `gpu_asr` | `(1,)` | **gộp** `audio_prepare`+`transcribe` | ⛔ |
+| 3 | `vung_che_tinh` | `(1,)` | **mới** — chỉ đọc video | ⛔ |
+| 4 | `content_process` | `(2,)` | neo bằng `toc_doc_giong` của GĐ1 | ⛔ |
+| 5 | `vung_che_bam` | `(2, 3)` | **mới** — đọc `hop_ocr.json` | ⛔ |
+| 6 | `voice_synthesis` | `(4,)` | **giữ nguyên** (TTS của ta) | ⛔ |
+| 7 | `timing_align` | `(6, 2)` | bậc thang nắn + `phu_de_canh_giong.srt` | ⛔ |
+| 8 | `compose` | `(7,)` | giữ — dựng bản dựng + `master.wav` | ⛔ |
+| 9 | `render` | `(8,)` | giữ — **`-c:v copy`**, CPU, ⛔ không lease | ⛔ |
+| 10 | `image_finish` | `(9, 5)` | 🔑 **10 node đúng thứ tự §5** + cắt cuối `-t` | ✅ **DUY NHẤT** |
+| 11-13 | `qc` → `qc_do_luong` → `qc_ai` | nối tiếp | **giữ cả ba** | ⛔ |
 
 ### Bảng việc — mỗi làn MỘT worktree, MỘT nhánh, ⛔ không hai làn sửa cùng tệp
 
 | Làn | Việc | Tệp (chủ duy nhất) | Model | Chặn bởi |
 |---|---|---|---|---|
-| **P0-a** | `settings` dẫn xuất `wps_giong` + bảng đã đo + `min()` một chiều | `apps/auto_scan_video/cai_dat.py`, `ho_so_dich.py` | sonnet | — |
-| **P0-b** | Bỏ khai `edit_plan` khỏi `CHUOI`; hợp nhất 3 QC thành GĐ9 | `apps/auto_scan_video/pipeline.py` | sonnet | — |
-| **P0-c** | Dời **cắt đầu** vào `media_prepare` (trước ASR) | `apps/auto_scan_video/giai_doan_media.py`, `ke_cat.py` | sonnet | — |
-| **P1-a** | 🔑 Gộp demucs+whisper thành **một job GPU** `gpu_asr` | `apps/asv_gpu/jobs.py`, `manifest.py` | **opus** | P0-b |
-| **P1-b** | Tách `vung_che_tinh` / `vung_che_bam`, khai `sau=` | `apps/auto_scan_video/vung_che*.py` (mới) | **opus** | P0-b |
-| **P2** | 🔑 **MỘT encode**: 10 node đúng thứ tự §5, cắt cuối bằng `-t` trong đó | `apps/auto_scan_video/che_do_render.py` | **opus** | P1-a, P1-b |
-| **P3** | `phu_de_canh_giong.srt` khoá riêng + `outputs["phu_de_da_dung"]` | `apps/auto_scan_video/giai_doan_thoi_gian.py` | sonnet | P0-a |
-| **P4** | Chế độ chạy lẻ `chi_asr`/`chi_dich`/`chi_dub` (cổng, ⛔ không chuỗi riêng) | `tools/asv_chay_tai_cho.py` | sonnet | P1-a |
+| ~~P0-a~~ | ✅ **XONG** `toc_doc_giong` — hàm thuần, siết một chiều, đường lui tường minh | `cai_dat.py`, `ho_so_dich.py` | sonnet | — |
+| ~~P0-b~~ | ✅ **XONG** — đã ĐO, ⛔ không sửa mã → `W4_...md` | — | sonnet | — |
+| 🔴 **P0-a2** | **NỐI DÂY** `toc_doc_giong` vào phép tính `do_dai_toi_da` mỗi câu — hiện giá trị **có mà ⛔ không ai đọc** | `long_tieng.py`, `ngon_ngu.py` | **opus** | P0-a ✅ |
+| **P0-c** | Dời **cắt đầu** vào `media_prepare` (trước ASR) | `giai_doan_media.py`, `ke_cat.py` | **opus** | — |
+| 🔑 **P1-0** | **MỘT lượt đổi `CHUOI`**: gộp `audio_prepare`+`transcribe` · khai `vung_che_*` · bỏ `edit_plan` · nối lại **mọi** `sau=` | `pipeline.py` (**chủ DUY NHẤT**) + `tests/test_402*` | **opus** | W4 ✅ |
+| **P1-a** | **THÂN** job `gpu_asr` (một lease, hai luồng) | `apps/asv_gpu/jobs.py`, `manifest.py` — ⛔ không chạm `pipeline.py` | **opus** | P1-0 |
+| **P1-b** | **THÂN** hai module `vung_che_tinh` / `vung_che_bam` | `apps/auto_scan_video/vung_che_*.py` (mới) — ⛔ không chạm `pipeline.py` | **opus** | P1-0 |
+| ~~P1-c~~ | 🔴 **BỎ LÀN** — `test_402:247-251` cấm gộp QC tất định với QC chủ quan trả tiền | — | — | — |
+| **P2** | 🔑 Sửa **THỨ TỰ NODE** + thêm node thiếu **bên trong** lượt encode đã có một mình | `che_do_render.py` | **opus** | P1-0, P1-b |
+| **P3** | `phu_de_canh_giong.srt` khoá riêng + `outputs["phu_de_da_dung"]` | `giai_doan_thoi_gian.py` | sonnet | P0-a ✅ |
+| **P4** | Chế độ chạy lẻ `chi_asr`/`chi_dich`/`chi_dub` | `tools/asv_chay_tai_cho.py` | sonnet | P1-0 |
+
+🔴 **P0-a2 là nợ của P0-a, ⛔ đừng bỏ quên.** P0-a đã **tự khai**: `long_tieng.loi_nhac`
+và `ngon_ngu.ngan_sach_do_dai` **chưa đọc** `toc_doc_giong`, và nó chốt ranh giới ấy bằng
+một test AST (`test_4961::..._CHUA_duoc_long_tieng_doc__ranh_gioi_pham_vi`) — test đó sẽ
+**đỏ** khi P0-a2 nối dây, và đó là **đúng ý**: nó bắt người nối dây cập nhật lời khai.
+⇒ Bỏ quên P0-a2 thì ta có đúng [[can-gat-dat-duoc-doc-lai-duoc-nhung-khong-ai-doc]]:
+một cần gạt vặn được, đọc lại được, mà ⛔ **không ai đọc**.
+
+✅ **P2 đi CÙNG chiều một quyết định đã chốt, ⛔ không ngược** — soát 28/09:
+`apps/auto_scan_video/phu_de.py:8-20` gọi việc này bằng tên nội bộ **"Pha 26 —
+Renderer fusion"**, nguyên văn *"tồn tại để gộp mọi biến đổi điểm ảnh vào MỘT lần
+encode"*, và nó đã **từ chối** gọi `burn.burn()` vì *"nó chạy một lượt ffmpeg ĐẦY ĐỦ của
+riêng nó, tức video bị mã hoá lại hai lần"*. ⇒ Agent làm P2 **tra "Pha 26" / "Renderer
+fusion"** trước khi thiết kế — phần việc này đã có tiền lệ và có người đã nghĩ về nó.
+
+⚠️ Cùng tệp, `:22` mở một khối tiêu đề **`🔴 TRỤC THỜI GIAN — chỗ dễ sai nhất, và nó đã
+có một tiền lệ`** (`che_do_render.loc_cat_noi` CẮT rồi NỐI ⇒ mốc dịch). **Đọc khối đó
+nguyên văn**, nó nói đúng về trục mà §5 của tệp này nói.
 
 🔴 **Đã đo (28/09)**: mọi chỗ của ta truyền filtergraph bằng `-filter_complex` **trên
 DÒNG LỆNH** (`am_master.py:537,752,1033,1081`), ⛔ không qua `-filter_complex_script`.
 ⇒ Gộp 10 node vào một lượt **làm dài chuỗi ấy**, và trần 32.767 ký tự của Windows là
 trần **thật**, ⛔ không phải trần giả thiết. Thuốc rẻ: `-filter_complex_script <tệp>`.
 ⛔ Đừng để P2 phát hiện điều này lúc ffmpeg đã báo lỗi khó đọc.
+
+🔑 **Vì sao hợp nhất 3 QC là P1-c, ⛔ không P0** (quyết 28/09): `QC_DO_LUONG` khai
+`job_type="asv_gpu"` ⇒ nó **xin lease GPU**. Gộp nó vào một bước ⛔ không-GPU là đúng lớp
+lỗi ở §3 — đổi nền đồng thời dưới chân một việc mà ⛔ không phép đo nào đỏ. Phải đi cùng
+P1-a (nơi ta đang sắp xếp lại ai giữ lease).
 
 ⚠️ **`[ĐỌC TRƯỚC]` cho P2**: W3 chỉ đọc **17%** thân `burn_phude`. Vùng
 `:6670-7263` (dựng dải che chi tiết) và thân `khung_filter_parts` / `text_wm_parts` /
@@ -372,6 +515,7 @@ trần **thật**, ⛔ không phải trần giả thiết. Thuốc rẻ: `-filte
 | Ba nhánh song song có vượt `tai_nguyen_suat` máy A? | `tai_may.py` trước/sau một lượt thật | P1-b |
 | `gop_khe` có lệch phụ đề thật ⛔ không, lệch bao nhiêu ms? | so `.vi.srt` với `.dubsync.vi.srt` theo từng cue | P3 |
 | Đại lượng onset trong `_ghep_track_khop` là gì? | đọc `localize.py:9600-9790` nguyên văn | P3 |
+| Bỏ một phần tử khỏi `CHUOI` làm gãy gì (`ha_nguon_cua` · vân tay · lineage · `giai_doan_lech_van_tay`)? | làn W4 — **đếm**, ⛔ không suy | mọi việc đổi `CHUOI` |
 
 ⭐ **Phép đo cuối cùng, MỘT lượt** (theo đúng chốt của chủ dự án: *"những gì viral đã
 đo rồi thì ta dùng, ⛔ không đo lại; về cuối đo một lượt luôn"*): `T1a-ter` trên worker
