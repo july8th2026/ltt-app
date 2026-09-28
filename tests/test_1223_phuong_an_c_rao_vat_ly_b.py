@@ -74,7 +74,14 @@ def _theo_pyyaml(van: str) -> dict:
         ra[ten] = VL.VatLy(ctx=_so_co(t, "-c", "--ctx-size"),
                            np=_so_co(t, "-np", "--parallel"),
                            reasoning_budget=_so_co(t, "--reasoning-budget"),
-                           kvu=("-kvu" in t or "--kv-unified" in t))
+                           kvu=("-kvu" in t or "--kv-unified" in t),
+                           # 28/09: tran token ANH cua engine. Ban tham chieu nay
+                           # phai biet MOI truong cua `VatLy`, neu khong phep so
+                           # `==` se mac dinh bo qua truong moi va bo doc hep co
+                           # the doc sai ma khong ai thay (test_4204 khai thac
+                           # dung hai truong nay).
+                           token_anh_toi_thieu=_so_co(t, "--image-min-tokens"),
+                           token_anh_toi_da=_so_co(t, "--image-max-tokens"))
     return ra
 
 

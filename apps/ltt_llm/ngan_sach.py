@@ -65,11 +65,38 @@ DEM_UOC = 2_048
 
 #: Token ĐẶT CHỖ cho mỗi ảnh (sổ KV, không phải hoá đơn).
 #:
-#: ⛔ KHÁC `TOKEN_MOI_ANH` (770, số ĐO cho ảnh 1024×768, dùng cho hoá đơn/tài
-#:    liệu). Đặt chỗ phải phủ ảnh LỚN NHẤT được phép, và chưa ai đo ảnh ấy —
-#:    nên giữ 2.048 (bằng `llm_gateway/ngan_sach.TOKEN_GIU_MOI_ANH` của máy B) cho tới
-#:    khi đo. Đặt chỗ thừa chỉ tốn suất; đặt thiếu là tràn `-kvu`.
+#: ⛔ KHÁC `TOKEN_MOI_ANH` (770 — xem hằng ấy). Đặt chỗ phải phủ ảnh LỚN NHẤT
+#:    được phép; đặt chỗ thừa chỉ tốn suất, đặt thiếu là tràn `-kvu`.
 #: 🔴 O-11 (17/09): thay env `LTT_LLM_TOKEN_MOI_ANH` (ĐÃ GỠ).
+#:
+#: ══════════════════════════════════════════════════════════════════════════
+#: 🔴 ĐÃ ĐO 28/09/2026 — VÀ SỐ ĐO PHỦ ĐỊNH CHÍNH HẰNG NÀY
+#:
+#: Bản trước của chú thích này viết: *"Đặt chỗ phải phủ ảnh LỚN NHẤT được phép,
+#: và **chưa ai đo ảnh ấy** — nên giữ 2.048 … **cho tới khi đo**."* Nay đã đo,
+#: nên điều kiện tự đặt ra ấy đã tới hạn.
+#:
+#: Chi phí thật là một HÀM của kích thước, không phải một hằng. Đo bằng hiệu
+#: `usage.prompt_tokens` trên CẢ HAI model production (`tools/do_token_anh.py`,
+#: 14/14 ô khớp), và công thức chốt từ siêu dữ liệu GGUF của chính hai tệp
+#: mmproj (`clip.projector_type = qwen3vl_merger`, `patch_size = 16`,
+#: `spatial_merge_size = 2` ⇒ **1 token = 32×32 điểm ảnh**):
+#:
+#:      320×240   →     82        1920×1080 →  2.042   (≈ 2.048: hằng này được
+#:      512×512   →    258        2048×2048 →  4.098    hiệu chuẩn cho 1080p,
+#:      1024×768  →    770        3840×2160 →  4.082    và CHỈ đúng ở 1080p)
+#:      1280×720  →    922
+#:
+#: ⇒ 2.048 sai **CẢ HAI CHIỀU**: thừa tới 136× ở ảnh 320×240, và 🔴 **THIẾU 2×**
+#:   ở 2048×2048 — vốn đúng bằng cỡ tối đa client LTTCODE gửi
+#:   (`plugins/llm-ltt/src/adapter.ts` `IMAGE_BUDGET.maxPixels = 2048²`).
+#:   Thiếu là chiều nguy hiểm: `DatChoVuotPool` sinh ra để chặn đúng chiều ấy,
+#:   và một lần tràn `-kvu` giết MỌI slot (llama.cpp b10689).
+#:
+#: ⇒ Hằng này **sẽ bị gỡ** ở Pha 3, thay bằng `Σ anh_token.token_anh(w, h)`.
+#:   Giữ lại tới lúc đó vì gỡ nó đụng bốn tệp ở hai máy.
+#:   Kế hoạch: `docs/superpowers/specs/2026-09-28-vision-plan-lock.md`.
+#: ══════════════════════════════════════════════════════════════════════════
 TOKEN_GIU_MOI_ANH = 2_048
 
 #: Biên bể KV (token) A không cho đặt chỗ — `token_budget = -c − BIEN_POOL_TOKEN`.
@@ -107,8 +134,25 @@ DUONG_PREFILL_TOK_S = {
 
 #: Token ngữ cảnh một ảnh 1024×768 ăn. Đo bằng **hiệu** `n_prompt_tokens` giữa
 #: cùng một câu hỏi có ảnh và không ảnh (17 → 787), nên phần chữ triệt tiêu.
-#: Giống nhau ở cả hai model. ⛔ Không ước bằng công thức patch: mỗi bản mmproj
-#: băm ảnh một kiểu, và con số này **đi thẳng vào hoá đơn**.
+#: Giống nhau ở cả hai model.
+#:
+#: 🔴 ĐÍNH CHÍNH 28/09/2026 — HAI CÂU Ở ĐÂY SAI, VÀ CẢ HAI ĐỀU DẠY NGƯỜI SAU SAI:
+#:
+#: 1. *"con số này **đi thẳng vào hoá đơn**"* — **KHÔNG**. Hoá đơn đọc
+#:    `usage.prompt_tokens` THẬT của llama-server (`llm_gateway/so_luot.py`,
+#:    `platform_core/llm/cong_vlm.py`), và `prompt_tokens` **đã tính token ảnh**.
+#:    Hằng này chỉ được `apps/auto_scan_video` dùng để **ước trước** (`test_436`).
+#:    ⇒ Hoá đơn ảnh **vốn đã đúng theo độ phân giải**. Đừng "sửa" nó.
+#:
+#: 2. *"⛔ Không ước bằng công thức patch: mỗi bản mmproj băm ảnh một kiểu"* —
+#:    đúng về nguyên tắc, sai về sự thật ở đây. Đọc siêu dữ liệu GGUF của **cả
+#:    hai** mmproj: `clip.projector_type = 'qwen3vl_merger'`, `patch_size = 16`,
+#:    `spatial_merge_size = 2` ⇒ công thức có thật và **giống nhau ở hai model**.
+#:    Nó cho đúng 770 cho 1024×768 (= 32×24 + 2 dấu vision) và khớp **14/14** ô
+#:    đo trên production. Xem `tools/do_token_anh.py`.
+#:
+#: ⇒ 770 **chỉ đúng cho 1024×768**. Đừng dùng nó như "chi phí một ảnh".
+#:    Chi phí một ảnh bất kỳ: `anh_token.token_anh(w, h)`.
 TOKEN_MOI_ANH = 770
 
 #: 🔴 TRẦN ẢNH — cưỡng chế ở **cổng máy B**, công bố ở đây. Thêm 14/09/2026.
