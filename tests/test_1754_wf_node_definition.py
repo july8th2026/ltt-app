@@ -93,5 +93,16 @@ def test_idempotency_va_side_effect_di_nguyen_tu_toolspec():
 def test_moi_tool_that_dung_duoc_NodeDefinition():
     from platform_core.workflow.cong_cu import tat_ca
     ra = [nut.tu_toolspec(cc) for cc in tat_ca().values()]
-    assert len(ra) >= 19
+    # 🔴 HA 19 -> 18 (28/09): app `prompt_canh` bi xoa o `0c2aabab` (E5),
+    #    mang theo ToolSpec `prompt_canh.run`. Ba phep LOAI TRU truoc khi
+    #    ha — thieu chung thi ha banh coc la GIAU mot hoi quy that:
+    #      1. so tut DUNG 1 (19 -> 18), khong phai 2+;
+    #      2. `registry.discover()` bao 0 app nap loi => khong app nao
+    #         rung vi sai kieu, tuc khong phai cai lo phep kiem nay canh;
+    #      3. tool mat di dung la `prompt_canh.run` (doc tu
+    #         `git show 0c2aabab^:apps/prompt_canh/manifest.py`).
+    #    ⚠️ Hai tep nay bi BO SOT o luot ha 19->18 dau tien (chi sua
+    #    `test_1756`/`test_1758`) vi ca hai phien deu dem tu THONG DIEP LOI
+    #    cua mot tap con, khong dem KHANG DINH trong kho.
+    assert len(ra) >= 18
     assert all(nd.type.startswith("app.") for nd in ra)
