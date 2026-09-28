@@ -73,13 +73,111 @@ vad_onset = 0,500   vad_offset = 0,363   no_speech_threshold = 0,6
 | khả năng | ai bỏ đoạn | phân biệt bằng |
 |---|---|---|
 | (A) pyannote VAD coi 65–98 s là **không tiếng** | tầng VAD | dump khoảng VAD, ⛔ không giải mã whisper |
-| (B) VAD cho qua, `no_speech_threshold=0,6` loại khối | tầng whisper | cùng lượt dump đó |
+| (B) VAD cho qua, whisper loại khối | tầng whisper | cùng lượt dump đó |
 
-⛔ **Chưa đo được cái nào — và tôi ⛔ không đoán.** Một lượt chạy pyannote VAD
-**một mình** (⛔ không decode) trên tệp này là ~10 s GPU và tách hẳn hai khả năng.
-Đó là việc **đầu tiên** của hạng mục này, và nó ⛔ không được bỏ qua: hai khả
-năng dẫn tới hai cần gạt **khác nhau** (`vad_onset` so với `no_speech_threshold`),
-và vặn sai cần gạt thì kết quả ⛔ không đổi một ký tự.
+### ✅ ĐÃ ĐO 28/09 — câu trả lời là **(B)**, ⛔ không phải (A)
+
+Chạy `whisperx.vads.Pyannote` **một mình** (⛔ không decode) với **đúng mặc định
+của gói** (`chunk_size 30 · vad_onset 0,500 · vad_offset 0,363`) trên chính bản
+tiếng 16 kHz của lượt đã đo:
+
+```
+VAD: 11 khoi · tong 247,27 s coi la CO TIENG   = 89,9 % cua 275,0 s
+     khoi  34,25.. 62,15  = 27,89 s
+     khoi  64,27.. 94,26  = 29,99 s   <- DUNG chunk_size 30, TRUM ca lo hong
+     khoi  94,26..117,26  = 23,00 s
+ban chep ASR:                211,56 s          = 76,9 %
+⇒ 35,7 giay VAD goi la TIENG ma whisper ⛔ KHONG ra mot chu
+```
+
+🔑 Và `seg_0024` — đoạn nhả lại `initial_prompt` — nằm ở **`64,27..65,17`**, tức
+**0,9 giây ĐẦU của khối 30 giây ấy**. Cả khối 30 giây chỉ sinh ra lời nhắc của
+chính ta rồi **tắt hẳn**; khối kế cũng mất 3,4 giây đầu (chữ đầu ở `97,66`).
+
+⇒ Đây là **hỏng giải mã CẢ MỘT KHỐI**, ⛔ không phải VAD bỏ vùng. ⛔ **Đừng chạm
+`vad_options`** — cần gạt nằm ở `asr_options` (`no_speech_threshold = 0,6` ·
+`log_prob_threshold = -1,0` · `compression_ratio_threshold = 2,4` ·
+`hallucination_silence_threshold = None`), và ở **chính `initial_prompt`**.
+
+⭐ **Giá trị của việc tách này**: nếu tôi đi thẳng vào vá theo giả thuyết (A) —
+hạ `vad_onset` — thì bản chép ra **y hệt**, và tôi sẽ kết luận *"đã vá, ⛔ không
+ăn"* thay vì *"vặn sai cần gạt"*. Đúng bẫy `whisperx_runner.py:78` ghi (đo 24/09).
+
+⚠️ **Đánh đổi sản phẩm còn treo:** nếu cách sửa duy nhất là **bỏ
+`initial_prompt`** thì ta mất dấu câu (đo 24/09: **0 dấu câu / 646 ký tự** trên
+văn Hán), và ⛔ không dấu câu thì **mọi** phép chia đoạn hạ nguồn mất chỗ bám
+(11 → 78 đoạn). ⇒ Đó là **quyết định của chủ dự án**, ⛔ không phải của làn.
+
+### 1.4 🔴 BA cần gạt của `asr_options` là NO-OP trên đường ta đang chạy
+
+Chủ dự án dặn 28/09: *"gặp vấn đề khó thì check cốt từ `D:\Viral` để lấy lời
+giải."* Làm thế, và nó dẫn tới một phép kiểm trên **chính gói đã cài**.
+
+Đếm trong cả `C:\LTTPlatform\whisperx-venv\Lib\site-packages\whisperx\asr.py`:
+
+```
+temperatures                 1 lan / ca tep
+compression_ratio_threshold  1
+log_prob_threshold           1
+no_speech_threshold          1
+prompt_reset_on_temperature  1
+```
+
+**Đúng một lần** = chỉ ở `default_asr_options` (dòng 371-398). ⛔ **Không ai đọc
+lại.** Và `generate_segment_batched` — đường `FasterWhisperPipeline.transcribe`
+thật sự đi — chỉ đọc `initial_prompt` · `without_timestamps` · `prefix` ·
+`hotwords` · `beam_size` · `patience` · `length_penalty` · `suppress_*` ·
+`no_repeat_ngram_size` · `repetition_penalty`.
+
+⇒ ⛔ **Không nấc lui theo temperature · ⛔ không kiểm `no_speech` · ⛔ không kiểm
+tỉ lệ nén.** Một khối giải mã tệ thì **MẤT, ⛔ không có lượt thử lại nào**.
+
+| cần gạt | phán quyết |
+|---|---|
+| `no_speech_threshold` · `compression_ratio_threshold` · `hallucination_silence_threshold` | 🔴 **NO-OP** trên đường batched |
+| `initial_prompt` | ✅ **CÓ ăn** |
+
+⭐ **Đây là lý do việc TÁCH (A)/(B) ở §1.3 chưa đủ.** Tách xong ta biết thủ phạm ở
+tầng giải mã — rồi suýt vặn **ba cần gạt ⛔ không nối vào đâu cả**, và kết quả sẽ
+là *"⛔ không đổi một ký tự"*, đọc y hệt *"giả thuyết sai"*. Cùng bẫy
+`OMP_NUM_THREADS` ở B12 §3: **một cần gạt mang đúng TÊN việc ta muốn vẫn có thể
+⛔ không nối vào đâu.** ⇒ 🔑 *Sau khi biết TẦNG nào hỏng, còn phải hỏi **cần gạt
+của tầng đó có được ĐỌC không** — và câu ấy chỉ có trong mã gói.*
+
+### 1.5 Lời giải của `D:\Viral` — HAI cơ chế, ⛔ không phải một ngưỡng
+
+**(1) `localize.py:598-616` — nấc lui theo ĐỘ PHỦ.** Đo thật của họ: *"video rap
+65 s ra **2 câu** với VAD, **24 câu** khi tắt VAD; hạ `WHISPER_VAD_THR` **VÔ TÁC
+DỤNG** với nhạc."*
+```
+_phu_kem = _vdur > 30 and (len(segs) <= 2 or _phu_cuoi < _vdur * 0.6)
+   -> chay LAI 1 lan voi vad_filter=False, GIU ban phu tot hon
+```
+⭐ **Đó chính là CỬA A/B của B2, nhưng biến thành HÀNH ĐỘNG.** Ta đo `phu_song`
+rồi **cảnh báo**; họ đo rồi **chạy lại và chọn bản tốt hơn**. Cùng phép đo, khác
+kết cục — và ngưỡng của ta (`76,9 %` vs VAD `89,9 %`) **nhạy hơn** trigger 60 %
+của họ.
+
+**(2) Họ ⛔ KHÔNG dùng whisperx batched.** Họ gọi faster-whisper **thường**, nơi
+các cần gạt ấy **CÓ** ăn: `temperature=[0,0.2..1.0]` (họ ghi rõ `temperature=0.0`
+cố định **TẮT** cơ chế tự-giải-mã-lại), `compression_ratio_threshold=2.4`,
+`no_speech_threshold=0.4`, `hallucination_silence_threshold=2.0`.
+
+🔑 **Và kho TA ĐÃ CÓ đúng đường đó**: `transcription._transcribe_faster`. Nay nó
+chỉ chạy khi sidecar chết ⇒ nó là **ứng viên cho lượt SỬA CHỮA**.
+⚠️ Nhưng nó là nhánh `fallback_unaligned`: mốc từ **có** mà ⛔ không qua căn cưỡng
+bức ⇒ kém chính xác hơn, và `timing_align` bám vào mốc đó. Kho đã có khuôn khai
+suy giảm (`_khai_suy_giam_can_chinh()`) — ⭐ dùng lại, ⛔ đừng để một bản ghi trộn
+hai chất lượng mốc mà ⛔ không khai.
+
+**(3) ⭐ Quà thêm cho B1** (`localize.py:620-622`): họ lọc ảo giác theo chiều
+**NGƯỢC** với ta —
+```
+_dur >= 6.0 and _nchar <= 10 and _nchar / max(_dur, 0.1) < 0.6   -> BO
+```
+tức **quá ÍT** ký tự mỗi giây trên một đoạn DÀI. Ta chỉ có
+`NGUONG_KY_TU_MOI_GIAY = 30` (quá NHIỀU). **Hai đầu của cùng một trục, và ta đang
+mù một đầu.**
 
 ### 1.4 🔑 Và ta ĐÃ ĐO đại lượng đúng rồi — ⛔ không ai đọc nó
 
@@ -668,10 +766,26 @@ tới cuối plan.
 ## 10. Trạng thái — `main` = `bb62ca93`, production = `1e34780f`
 
 ```
-TOAN PLAN        12 / 31 hang muc  =  39 %
- ├ phan MA       12 / 16           =  75 %   (khong can chay gi de lam)
- └ phan PHAI CHAY 0 / 15           =   0 %   (do · OCR · gate · deploy · nghiem thu)
+TOAN PLAN        16 / 29 hang muc  =  55 %     (A5 va C7 DA TAN — xem duoi)
+ ├ phan MA       13 / 13           = 100 %
+ ├ phan DO        3 /  6           =  50 %     A3 ✅ · C1 ✅ · C2 ✅ · B5/D/E2 dang chay
+ └ nghiem thu     0 /  8           =   0 %     A1 · §9.4 · G1-G6
 ```
+
+⭐ **Hai hạng mục TAN ra thay vì được làm, và đó là kết quả tốt nhất của vòng này:**
+- **A5** (đổi tên hai khoá `tom_tat`) — A4 cho `he_so_toc` **PHẢN CHIẾU** hệ số
+  thật sự được áp, nên hai trường đi từ **SAI thành ĐÚNG**, ⛔ không phải từ SAI
+  thành CHẾT. Câu hỏi *"đổi tên hay xoá"* ⛔ không còn.
+- **C7** (sửa sổ khai `asv_doi_soat.py`) — hệ quả của A5, nên tan theo. Bản nháp
+  còn ở `wip/c7-doi-ten` (`81f3bfb9`) làm dấu vết.
+
+⇒ 🔑 *Một hạng mục biến mất vì tiền đề của nó sai thì tốt hơn một hạng mục được
+làm xong đúng theo một tiền đề sai.*
+
+⚠️ **Hai mẫu số, ⛔ đừng gộp.** `55 %` đếm **hạng mục**, mà hạng mục ⛔ không đồng
+hạng: `G5` (một lượt `T1a-ter` trên worker thật) một mình quyết sản phẩm có đạt
+hay không, còn `C5` là sửa một câu chú thích. Nói *"plan xong 55 %"* mà ⛔ không
+nói *"0 % phần nghiệm thu"* là báo tiến độ kiểu dễ nghe.
 
 ⚠️ **Hai mẫu số, ⛔ đừng gộp.** `39 %` đếm **hạng mục**, mà hạng mục ⛔ không đồng
 hạng: `G5` (một lượt `T1a-ter` trên worker thật) một mình quyết sản phẩm có đạt

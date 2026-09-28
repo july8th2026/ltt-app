@@ -113,6 +113,74 @@ canh rằng không ai lặng lẽ mở một cửa ghi ở tầng trang.
 
 _(mới nhất ở trên)_
 
+- `2026-09-28` `ui8b` — **UI-8b xong: Agent Designer XEM TRƯỚC (diff) rồi mới
+  ghi đè canvas — B7 (`02_SCORECARD.md`) khép nốt vế còn lại (vế "mất lịch sử
+  hoàn tác" đã vá từ trước, KHÔNG đụng lại).**
+
+  - `soanBangAI` (`useWorkflowRun.ts`) không còn `napTaiLieu` ngay: nó tính
+    `tinhDiffThietKe(cu, moi, dinhNghia)` (mới, `DesignerDiff/diff.ts`, THUẦN)
+    và chờ ở `soanXemTruoc`; `apDungSoan`/`huySoan` là hai ngã rẽ duy nhất.
+  - Lớp xem trước `DesignerDiff.tsx` (nạp trễ như 3 panel kia của
+    `EditorShell`): đếm thêm/xoá/đổi tham số + tên bước (`nhanNode`, dùng lại
+    của `graph.ts` — ⛔ không viết lại quy tắc đặt tên), `role="dialog"` +
+    `aria-labelledby`, bẫy focus (`useFocusTrap` có sẵn), `Escape`=Huỷ xử lý
+    NGAY TẠI component (⛔ không qua `dongHet` toàn cục — lớp này là dữ liệu
+    CHƯA áp dụng, tự trị thì kiểm độc lập được).
+  - **302/302 test xanh** (`npm test -- --run`, 22 tệp) + `npm run typecheck`
+    sạch. 3 bài MỚI trực tiếp: `DesignerDiffLogic.test.ts` (9 ca, diff thuần),
+    `DesignerDiff.test.tsx` (12 ca, trợ năng + đại lượng hiển thị — tên bước
+    ĐỌC ĐƯỢC, ⛔ không phải `node_id`), `UseWorkflowRunSoanXemTruoc.test.tsx`
+    (4 ca, tích hợp hook). Cập nhật 2 bài CŨ trong `CanvasShell.test.tsx`
+    (chúng giả định hành vi nạp-thẳng cũ) + thêm 1 bài mới canh "Huỷ" ở tầng
+    tích hợp `CanvasShell` thật.
+  - **Tiêm lỗi đối chứng (bắt buộc) — chạy thật, không suy diễn**: sửa tạm
+    `huySoan` gọi `ts.napTaiLieu(...)` (mô phỏng "Huỷ vẫn ghi đè") rồi chạy lại
+    `UseWorkflowRunSoanXemTruoc.test.tsx` + `CanvasShell.test.tsx` — **CẢ HAI
+    bộ đỏ đúng bài canh Huỷ** (1 ca mỗi tệp), revert xong chạy lại **xanh cả
+    302 bài**. Kết luận: bài "Huỷ ⇒ không đổi document" bắt được lỗi thật, ở cả
+    hai tầng (hook đơn vị và tích hợp `CanvasShell`).
+  - `test_95_agent_canvas_build.py`: **10/10 PASS**. `main-*.js` build ra
+    502.48 kB thô (trần `TRAN_JS_THO=510.000`) — `DesignerDiff` tách chunk
+    riêng (`DesignerDiff-*.js` 1.60 kB, `DesignerDiff-*.css` 1.96 kB, nạp trễ
+    qua `React.lazy`), ⛔ không cộng vào tổng lần ghé đầu.
+  - Ba bộ kiểm hình dạng cả cây: `scan_source_secrets.py` PASS (0 phát hiện),
+    `check_mypy.py` PASS (550 phát hiện, GIẢM so mốc — không tăng), `check_
+    silent_except.py` PASS (53, đúng mốc). Không thêm chuỗi tiếng Việt phía
+    Python (`_t()`), nên ⛔ không chạm `check_dich_thieu.py`/`messages.po` —
+    chuỗi UI của `agent-canvas` vốn KHÔNG nằm trong catalog `.po` đó (đã kiểm:
+    `Soạn bằng AI` cũ cũng không có mục nào trong `messages.po`).
+  - **Nghiệm thu trình duyệt thật — PASS**, đo ở MÁY CHỦ THỬ CỤC BỘ (production
+    `1e34780f` chưa có mã này, đúng dự đoán trong brief): `tests/browser/
+    agent_ui_v2_ui8b_may_chu.py` (cổng **8211** — 8201-8210 đã cấp hết cho các
+    làn trước), `tests/browser/agent_ui_v2_ui8b_nghiem_thu.js` qua
+    `playwright-cli`. ⛔ `chay_web_that.py` không dùng được (hardcode
+    `app.lttstudios.com`, chỉ hợp khi tính năng ĐÃ deploy).
+    - Máy chủ thử **mock `platform_core.agent.planner.goi_model`** thành một
+      hàm tất định (2 node cố định) — khỏi tốn quota LLM nội bộ thật cho một
+      phép đo lớp UI; đường đi thật của `route → soan_draft → chuan_hoa →
+      bien_dich` vẫn chạy nguyên, chỉ đầu vào model là giả.
+    - Kết quả đo được (chữ THẬT trong dialog, không phải suy diễn):
+      `+2 bước, −1 bước · +1 đường nối, −0 đường nối` — tên bước hiện
+      `Sinh văn bản từ hội thoại`/`Sinh ảnh từ mô tả` (lấy từ palette thật),
+      ⛔ không id kỹ thuật nào lọt ra (`ai_n1`/`ai_n2`/`user_n1` — kiểm bằng
+      `innerText()` của dialog, không phải grep HTML).
+    - Xác nhận qua mạng THẬT (không phải fetch giả của vitest): mở "Xem trước"
+      ⇒ canvas còn 1 node; "Áp dụng" ⇒ 2 node; đặt lại 1 node, soạn lại, "Huỷ"
+      ⇒ vẫn 1 node; soạn lại lần ba, `Escape` ⇒ vẫn 1 node. 0 pageerror/console
+      error/request hỏng/5xx trong suốt kịch bản.
+    - 🔴 Bắt được MỘT lỗi thật khi viết kịch bản (không phải lỗi sản phẩm): id
+      node có gạch ngang (`ai-n1`) làm `bien_dich._doc_chuoi` (dùng `ast.parse`
+      để trích tham chiếu `nodes.<id>.output.<cổng>`) đọc `nodes.ai-n1...`
+      thành phép TRỪ `nodes.ai - n1...` — sửa id mẫu sang gạch dưới
+      (`ai_n1`). Ghi lại trong docstring `may_chu.py` cho người sau.
+    - Đã dừng `uvicorn`, đóng phiên `playwright-cli`, xác nhận cổng 8211 đã
+      nhả (không tiến trình mồ côi).
+  - Worktree base LÚC NHẬN VIỆC không có UI-3 (main cục bộ khi đó ở
+    `40046d20`, `frontend/agent-canvas/src/features/editor` không tồn tại) —
+    `main` cục bộ đã được lượt khác đẩy lên `1541672e` (có đủ UI-3/5/7/10b)
+    giữa lúc làm; đã `git merge main --ff-only` hai lần (đầu phiên + trước khi
+    commit) thay vì làm việc trên nền cũ.
+
 - `2026-09-28` `điều phối` — **ĐÃ DEPLOY `1e34780f` LÊN PRODUCTION. Nghiệm thu
   trình duyệt trên `https://app.lttstudios.com`: PASS.**
 

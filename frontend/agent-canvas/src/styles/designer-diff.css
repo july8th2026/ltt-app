@@ -1,0 +1,60 @@
+/* Lớp xem trước "Soạn bằng AI" (UI-8b — vá B7). Giống `run.css`/`node.css`:
+ * KHÔNG sửa `canvas.css` (S1, chủ UI-2) — mỗi token đây đọc lại của nó, mỗi
+ * token kèm giá trị lùi nếu `:root` chưa khai (đề phòng nạp trễ ngoài thứ
+ * tự CSS, xem chú thích tương tự trong `run.css`).
+ */
+.designer-diff-backdrop {
+  position: fixed; inset: 0; z-index: 80;
+  display: grid; place-items: center; padding: 24px;
+  background: #0009;
+}
+.designer-diff {
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  display: grid; gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border-strong, #4b5563);
+  border-radius: 12px;
+  background: var(--surface-raised, #14161c);
+  color: var(--text-primary, #f3f4f6);
+  box-shadow: 0 24px 70px #000c;
+}
+.designer-diff header { display: grid; gap: 2px; }
+.designer-diff h2 { margin: 0; font-size: 16px; }
+.designer-diff-tomtat { margin: 0; color: var(--text-secondary, #a1a1aa); font-size: var(--fs-helper, 12px); }
+.designer-diff-list {
+  margin: 0; padding: 0; list-style: none;
+  display: grid; gap: 6px; max-height: 320px; overflow: auto;
+}
+.designer-diff-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 8px;
+  background: var(--surface-overlay, #1c1f26);
+}
+.designer-diff-badge {
+  min-width: 84px; padding: 2px 8px; border-radius: 999px;
+  font-size: var(--fs-helper, 12px); text-align: center;
+}
+.designer-diff-item.is-them .designer-diff-badge {
+  background: var(--status-success-soft, #0f2e1c); color: var(--status-success, #34d399);
+}
+.designer-diff-item.is-xoa .designer-diff-badge {
+  background: var(--status-danger-soft, #3a1414); color: var(--status-danger, #f87171);
+}
+.designer-diff-item.is-doi_tham_so .designer-diff-badge {
+  background: var(--status-warning-soft, #3a2c0f); color: var(--status-warning, #fbbf24);
+}
+.designer-diff-ten { color: var(--text-primary, #f3f4f6); }
+.designer-diff footer { display: flex; justify-content: flex-end; gap: 8px; }
+.designer-diff footer button {
+  min-height: 44px; padding: 0 16px;
+  border: 1px solid var(--border-strong, #4b5563); border-radius: 8px;
+  background: var(--surface-interactive, #22252d); color: var(--text-primary, #f3f4f6);
+}
+.designer-diff footer button.is-primary {
+  border-color: var(--brand-primary, #dc2f2a); background: var(--brand-strong, #b8241f); color: #fff;
+}
+
+.theme-light .designer-diff { background: #fffffff5; box-shadow: 0 14px 36px #2532461f; }
+.theme-light .designer-diff-item { background: var(--surface-overlay); }
