@@ -566,3 +566,99 @@ khác chạy song song được.
 - 7 lỗ hổng còn lại (2,1–7,4 s) có cùng nguyên nhân với hố 32,5 s hay không.
 - `use_rec=True` tốn thêm bao nhiêu lõi và bao nhiêu giây (hạng mục 5b).
 - `cv2.setNumThreads` có thật sự ăn trên bản OpenCV đã cài (hạng mục 6#3).
+
+---
+
+## 9. Sau khi triển khai — plan này SAI ở đâu (28/09, đo bởi năm làn)
+
+### 9.1 🔴 §3.4 SAI CHIỀU — hai máy ⛔ không nhân nhau, một cái bị BỎ RƠI
+
+Tôi viết: một `ma` nằm trong **cả hai** tập sẽ bị `1,15 × 1,3333 = 1,53`. **Sai.**
+Đo (L1): `ket_xuat.py:214-216` nạp đúng `duong_video` + `duong_master` và map
+`1:a:0`; `duong_lop` **chỉ bị ĐẾM** ở `:173` và ⛔ **không bao giờ vào `cmd`**.
+
+⇒ `ke_hoach.he_so_toc` ⛔ **KHÔNG được áp**. Một `raise` chống nhân đôi là một
+**nhánh chết** — đúng thứ sổ kho gọi *"mã phòng thủ cho ca không thể xảy ra"*.
+
+🔑 **Chiều CÓ THẬT thì ngược lại, và nó tệ hơn:** `thoi_gian.lap_ke_hoach` đã đặt
+các đoạn theo `dai / he_so_toc`, tức **chừa chỗ hẹp hơn** vì tin rằng tiếng sẽ
+được tăng tốc. Tăng tốc ấy ⛔ không xảy ra ⇒ **12 đoạn** của lượt đã đo có tiếng
+**DÀI HƠN chỗ kế hoạch chừa**. Và `thoi_gian.kiem:391` ⛔ không bắt được: nó kiểm
+chồng lấn trên `dai_ms` **đã chia rồi**, tức nó đo bản đồ chứ ⛔ không đo lãnh thổ.
+
+⭐ Tôi đã dặn L1 *"đọc trước, ⛔ đừng viết mã phòng thủ cho ca không thể xảy
+ra"* — và chính lời dặn ấy làm lộ ra rằng **giả thuyết của tôi sai, còn lỗi thật
+nằm ngược phía**. Nguồn cho ý định gốc (*"vốn định áp ở render"*):
+`docs/auto_scan_video/reports/13_REPORT.md:190`.
+
+Hiện trạng: `thoi_gian.doi_chieu_he_so_toc` (hàm thuần) **đếm và cảnh báo** từng
+đoạn lệch + tính tích lớn nhất của hai máy. ⛔ **Không `raise`** — 12 đoạn lệch
+hôm nay thì `raise` làm đỏ **mọi** lượt thật.
+
+⇒ **HẠNG MỤC MỚI (P1, làn L1):** quyết `he_so_toc` sẽ được **áp** (ở đâu) hay
+**bỏ** (và `lap_ke_hoach` thôi chừa chỗ hẹp). Hai đường đều đúng về kỹ thuật, nên
+đây là **đánh đổi sản phẩm** — phải hỏi chủ dự án. ⛔ Đừng để nguyên trạng: hôm
+nay 12 đoạn tiếng tràn chỗ chừa mà chỉ có một dòng `log.warning` canh.
+
+### 9.2 ⚠️ B4 ⛔ không làm trọn được trong phạm vi L1 như plan viết
+
+Đổi tên `he_so_toc_lon_nhat` / `so_doan_tang_toc` làm đỏ `test_408` theo **hai**
+chiều (khoá mới chưa khai, và khoá đã khai mà ⛔ không ai ghi), và bản vá phải
+nằm ở `tools/asv_doi_soat.py` — mà **§7.0 giao `tools/` cho L3**.
+
+L1 đi đường lồng (`KHOA_CAN["timing_align"] = ("master",)` nên khoá con tự do) +
+docstring. ⇒ **NỢ:** muốn đổi tên thật thì **L3 phải nhận thêm một hàng**.
+
+⭐ Đây là chi phí thật của luật *một-tệp-một-chủ*: nó ngăn xung đột gộp, nhưng một
+việc **đúng** có thể bị chặn vì nó vắt qua hai làn. Ghi ra thay vì để làn tự vượt
+ranh.
+
+### 9.3 🔴 NỢ MỚI — một bánh cóc đang đo CÁCH GÕ
+
+`tests/test_2018::test_he_so_toc_KHONG_bi_kep_ve_tran` **đỏ khi
+`giai_doan_thoi_gian` gọi cả `min` lẫn `max`**, kể cả khi `max` ⛔ không kẹp gì.
+Nó đã **bắt oan** bản vá đầu của L1.
+
+⇒ Đúng họ *"bánh cóc đo CÁCH GÕ thay vì đo tính chất"* đã ghi sổ: `pass` so với
+docstring cùng nghĩa mà khác kết quả, và **báo động giả làm người ta TẮT cổng**.
+L1 né được bằng cách đẩy số học sang `thoi_gian.py` (thật sự sạch hơn), nhưng
+bánh cóc vẫn hỏng. **Giao L3** (nó đã có nghề với đúng lớp lỗi này).
+
+### 9.4 ⚠️ NỢ MỚI — `dem_lech_cuoi` nay là cận TRÊN
+
+Nó so `giay / h_ap` với **`khe`** trong khi ngân sách rộng hơn ⇒ **đếm thừa**
+(chỉ với đoạn bị kẹp `> 2,0`, cực hiếm). Sửa đúng cần `ngan_sach` trên **từng
+dòng `ban_ke`**, tức một bất biến của `nan_thoi_luong` — ⛔ không phải tệp của L1.
+Đã ghi trong docstring. **Giao lượt sau.**
+
+### 9.5 Hai thay đổi làm SỐ BÁO CÁO ⛔ không so được với lượt cũ
+
+| đổi | cái giá | vì sao vẫn đúng |
+|---|---|---|
+| `he_so == 1,0` nay là `VUA`, ⛔ không còn `CO_GIAN` | `so_vua` phồng, `so_co_gian` teo | một `CO_GIAN` hệ số 1,0 kể về một `atempo` **chưa từng chạy** — đúng con bọ `nan_cho_vua.NGAN` đã ghi 25/09 |
+| `ty_le_phu_song` nay đo **HỢP** | ⛔ không so được với lượt cũ nếu có chồng lấn | `outputs["phu_song"]` **giữ TỔNG** nên dữ liệu cũ vẫn so được; hai tên, hai đại lượng |
+
+⭐ Cả hai đều là **sửa phân loại**, ⛔ không phải sửa số. Nhưng ai đọc báo cáo qua
+hai mốc thời gian phải biết — nên chúng nằm ở đây chứ ⛔ không chỉ trong commit.
+
+### 9.6 ⛔ HAI bánh cóc bắt được sau khi gộp, và cả hai NGOÀI pre-commit
+
+```
+check_silent_except    53 -> 57   (TANG 4)    tools/asv_chay_tai_cho.py
+check_mypy union-attr  88 -> 90               cung tep, dong 100-101
+```
+
+Từng làn **xanh**, tổng thì **đỏ** — đúng lý do sổ kho gọi ba bộ này là *"hình
+dạng CẢ CÂY"*: mã **đúng hành vi, sai bất biến toàn kho**, và test nhắm ⛔ **không
+thể** bắt.
+
+🔑 Và `union-attr` là **lỗi của người điều phối**: tôi dặn thêm
+`sys.stdout.reconfigure` (tên phim tiếng Trung làm console cp1252 ném) mà ⛔ không
+dặn **dùng khuôn nào**. Kho đã có khuôn đúng ở `asv_chay_worker_that.py:59-63`.
+⇒ ⭐ *Một lời dặn nêu ĐÍCH mà ⛔ không nêu KHUÔN thì agent sẽ tự dựng khuôn thứ
+hai* — và khuôn thứ hai của nó còn **ném thật** khi `stdout` đã bị thay.
+
+⛔ Và ⛔ **không `--accept`** để hạ mốc `mypy` (nó đang mời, `arg-type 108→106`,
+`index 32→31`): hạ mốc siết bánh cóc cho **cả kho**, trong khi phiên khác còn
+việc dở — một mốc chặt hơn làm việc của họ đỏ vì lý do ⛔ không liên quan. Để
+tới cuối plan.
