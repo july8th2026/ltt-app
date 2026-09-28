@@ -1,12 +1,14 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { RunDiff } from '../../../RunDiff'
 import { RunInspector } from '../../../RunInspector'
 import { RunV3Panel } from '../../../RunV3Panel'
 import '../../../styles/run.css'
 import type { CanvasPage, RunV3, SoSanhRunV3, Workflow } from '../../../workflowApi'
 import { nhanNode, type BangDinhNghia } from '../graph'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import type { PhaLuu, NganDesktop } from '../kieu'
 import { BaoGiaTruocKhiChay } from './BaoGiaTruocKhiChay'
+import { DuyetNguoi } from './DuyetNguoi'
 
 type Props = {
   moNgan: (ngan: NganDesktop) => void
@@ -56,6 +58,10 @@ type Props = {
  *     Plan v1. May chu chot `credit_max` ngay luc publish.
  */
 export function ExecutionPanel(p: Props) {
+  // Ngan nay LUON gan trong DOM (an/hien bang CSS `is-open`, xem canvas.css) —
+  // bay focus chi BAT khi dang mo, keo khong thi no khoa Tab ca luc an.
+  const ngan = useRef<HTMLElement>(null)
+  useFocusTrap(ngan, p.dangMo)
   // TÊN BƯỚC cho dòng thời gian và nhật ký. `nhanNode` là CÙNG hàm mà bảng
   // "Lớp" và menu ngữ cảnh dùng ⇒ một bước có MỘT tên trên khắp giao diện.
   const tenBuoc = useMemo(() => {
@@ -75,7 +81,7 @@ export function ExecutionPanel(p: Props) {
     return (nodeId: string) => bang.get(nodeId)
   }, [p.soSanh])
 
-  return <nav className={`operation-drawer${p.dangMo?' is-open':''}`} aria-label="Chạy workflow"><header><strong>Chạy workflow</strong><button aria-label="Đóng bảng chạy" onClick={()=>p.moNgan(null)}>×</button></header>
+  return <nav ref={ngan} className={`operation-drawer${p.dangMo?' is-open':''}`} aria-label="Chạy workflow"><header><strong>Chạy workflow</strong><button aria-label="Đóng bảng chạy" onClick={()=>p.moNgan(null)}>×</button></header>
     {/* ⭐ Bao gia TRUOC nut, khong sau: nguoi ta doc tu tren xuong, va quyet
         dinh tieu tien duoc dua o dong ngay tren cai nut. */}
     {!p.run&&<BaoGiaTruocKhiChay liveQuotes={p.liveQuotes}
@@ -86,6 +92,11 @@ export function ExecutionPanel(p: Props) {
       disabled={p.readOnly||!p.workflow||!p.page.nodes.length||p.phase==='saving'||p.dangGui}
       onClick={p.chayWorkflow}>{p.dangGui?'Đang gửi…':'Chạy ngay'}</button>}
     {p.runDaXong&&<button onClick={p.taoBanChayMoi}>Tạo bản chạy mới</button>}
+    {/* Task UI-8a — TRÊN dòng thời gian: đây là hành động khẩn, không phải
+        một dòng lịch sử để cuộn tới. */}
+    {/* ⛔ KHONG truyen `thamSo`: cau hoi duyet den tu payload cua RUN (ban da
+        ghim), ⛔ khong tu ban nhap. Xem `DuyetNguoi.tsx` + `test_5605`. */}
+    <DuyetNguoi run={p.run} tenBuoc={tenBuoc}/>
     <RunV3Panel run={p.run} onCancel={p.huyRun} onChayLaiTu={p.chayLaiTuNode}
       tenBuoc={tenBuoc} thamSo={thamSo} dauRa={dauRa}/>
     {p.runError && <span className="run-error" role="alert">{p.runError}</span>}

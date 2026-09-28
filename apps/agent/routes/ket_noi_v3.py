@@ -55,7 +55,6 @@ dien noi thang *"LTT chua cau hinh cho nha cung cap nay"*.
 """
 from __future__ import annotations
 
-import logging
 import os
 import re
 
@@ -101,8 +100,6 @@ KHOA_CHE = frozenset({"gia_tri", "mat_khau", "client_secret", "json_khoa"})
 KHOA_NHIEU_DONG = frozenset({"json_khoa"})
 
 #: Ten ket noi do khach dat — gioi han bang chinh cot (`Credential.ten`).
-_log = logging.getLogger(__name__)
-
 _DAI_TEN = 120
 #: `nha_cung_cap` la mot slug, khong phai chu tu do: no di vao ten bien moi
 #: truong (`LTT_OAUTH_<...>_CLIENT_ID`), nen mot khoang trang o day la mot bien
@@ -406,21 +403,19 @@ async def v3_thu_hoi_ket_noi(request: Request, ket_noi_id: str,
     """
     try:
         body = await request.json()
-    except Exception:                               # noqa: BLE001
-        # ⛔ Thân RỖNG ở đây làm bánh cóc `check_silent_except` TĂNG (53 → 54)
-        #    và ⇒ `main` đỏ ở bước gate `nuot loi lang le` cho MỌI phiên.
-        #    `pre-commit --all-files` ⛔ không phủ bước này — nó là bước GATE,
-        #    không phải hook, nên một lượt pre-commit xanh không nói gì về nó.
+    except (ValueError, UnicodeDecodeError):
+        # ⛔ **Bắt ĐÚNG LOẠI, ⛔ không bắt `Exception`.** Một thân rỗng hoặc
+        #    lệch cú pháp là chuyện thường của cửa này, và `{}` là câu trả lời
+        #    đúng cho nó — `_verify_json_csrf` ngay dưới sẽ từ chối.
         #
-        # ⚠️ `debug` chứ không `warning`: thân rỗng ở đây là đường HỢP LỆ
-        #    (khách gửi DELETE không kèm thân), nên một dòng mỗi lượt sẽ là rác.
-        #    Nhưng nó phải có MỘT dòng, vì `except Exception` cũng bắt cả lỗi
-        #    đọc thân bị cắt giữa đường — và ca đó thì đáng thấy.
-        # ⚠️ Thong diep log viet KHONG DAU: banh coc `check_i18n` coi mot chuoi
-        #    co dau la chuoi hien cho khach va doi boc `_()`. Log la cho NGUOI
-        #    VAN HANH doc, ⛔ khong dich — nen ca kho viet log khong dau.
-        _log.debug("ket_noi_v3: than request khong phai JSON, coi nhu rong",
-                   exc_info=True)
+        #    Nhưng `except Exception` ở đây nuốt CẢ những thứ ⛔ không phải
+        #    "thân xấu": một `MemoryError` hay một lỗi lập trình trong chính
+        #    `request.json()` cũng biến thành `{}` rồi trả 403 — một thông điệp
+        #    **thuyết phục và sai**. Bánh cóc `nuot loi lang le` đếm đúng dòng
+        #    đó (`check_silent_except`), và nó ĐỎ trên `main` vì dòng này.
+        #
+        # ⭐ Khuôn này lấy từ `server/nexus/routes.py` — bốn cửa ở đó đọc thân
+        #    JSON tuỳ chọn theo đúng cách này từ trước.
         body = {}
     _verify_json_csrf(request, body if isinstance(body, dict) else {})
     user = _user(request)

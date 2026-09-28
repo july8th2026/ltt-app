@@ -42,8 +42,12 @@ from fastapi.testclient import TestClient
 #: có chủ đích: xem chú thích ở chỗ dùng.
 _BI_MAT_PHIEN_THU = "ui1-ia-session-value"
 
-#: Năm mục IA đã khai ở `manifest.nav` mà nội dung thuộc làn khác.
-DAT_CHO = ["/agent/runs", "/agent/templates", "/agent/connections",
+#: Bốn mục IA còn lại đã khai ở `manifest.nav` mà nội dung thuộc làn khác.
+#: ⭐ 28/09 (UI-9): `/agent/templates` GỠ khỏi danh sách này — nó không còn là
+#:    một trang đặt chỗ, `apps/agent/routes/trang.py::trang_templates` phục vụ
+#:    danh mục MAU thật (`apps/agent/mau.py`). Bánh cóc riêng cho
+#:    nó: `tests/test_6690_agent_templates.py`.
+DAT_CHO = ["/agent/runs", "/agent/connections",
            "/agent/agents", "/agent/settings"]
 
 

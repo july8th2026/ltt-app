@@ -4,6 +4,27 @@ export type CanvasNode = {
   position: { x: number; y: number }
   label?: string
   data: Record<string, unknown>
+  /** Khoa vao kho ket noi cua khach (lan UI-5, `/api/v3/ket-noi`).
+   *
+   *  🔴 O **MUC TREN CUNG**, ⛔ KHONG duoi `data`. `bien_dich` doc
+   *     `n.get("credential_ref")` o ba cho (`bien_dich.py` 560, 569, 648) va no
+   *     doc muc tren cung. Ghi vao `data.credential_ref` se lam bien dich doc ra
+   *     rong ⇒ node bi tu choi `credential_thieu` — va ⛔ KHONG mot loi
+   *     TypeScript nao xuat hien, vi `data` la `Record<string, unknown>` nen no
+   *     nhan moi khoa. Do la dung hinh dang cua ba lan `canvas_to_plan()` vut
+   *     cong di trong im lang.
+   *
+   *  ⭐ `undefined` va `''` la HAI trang thai khac nhau o trinh soan: vang =
+   *     *buoc nay chua bao gio can ket noi*; `''` = *nguoi dung da xoa ket noi*.
+   *     May chu lam phang ca hai thanh `''` (`str(... or "")`), nhung trinh soan
+   *     thi ⛔ khong duoc gop — gop la mat kha nang phan biet.
+   *
+   *  ⚠️ Truoc 28/09 truong nay ⛔ khong duoc khai o day, va lan UI-5 phai dung
+   *     mot kieu CUC BO (`BuocCoKetNoi = CanvasNode & { credential_ref?: string }`)
+   *     vi ho khong duoc sua so dung chung S4. Mot kieu chung khong biet ve mot
+   *     truong thi ⛔ khong ai duoc canh bao khi mot phep bien doi danh roi no.
+   *     Bat bien nay nay do o `tests/CredentialRefSongSot.test.tsx`. */
+  credential_ref?: string
 }
 
 export type CanvasEdge = { id: string; source: string; target: string;
@@ -448,7 +469,22 @@ export type RunV3Node = { node_id: string; status: string; attempt: number
   // han", P9b task 5). Khong co co nay thi mot node tu di nhanh `reject` vi
   // het gio hien Y HET mot node vua duoc nguoi duyet bam: cung `SUCCEEDED`,
   // cung `waiting_kind` rong.
-  het_han: boolean }
+  het_han: boolean
+  /** Câu hỏi người duyệt phải đọc, và chế độ hết hạn — CHỈ có ở node
+   *  `core.human`, và **đến từ đồ thị ĐÃ GHIM** của run
+   *  (`runs_v3._tham_so_human_da_ghim` đọc `version.graph`).
+   *
+   *  🔴 ⛔ KHÔNG đọc hai thứ này từ bản nháp. Một lượt chạy thi hành một
+   *     `workflow_version` BẤT BIẾN, còn bản nháp sửa được bất kỳ lúc nào ⇒
+   *     nếu giao diện đọc từ bản nháp thì người duyệt có thể đọc *"Xoá toàn bộ
+   *     playlist?"* rồi bấm Duyệt, trong khi động cơ đi nhánh `approve` của
+   *     câu *"Đăng bài này lên kênh chính?"*. Họ đồng ý với một câu hỏi họ
+   *     **chưa từng được hỏi**.
+   *
+   *  ⚠️ `het_han_che_do` (`fail|route|approve|reject`) KHÁC `het_han`
+   *     (boolean: *đã* hết hạn chưa). Hai thứ khác loại ⇒ hai tên. */
+  cau_hoi?: string
+  het_han_che_do?: string }
 export type RunV3Event = { seq: number; loai: string; node_id: string
   du_lieu: Record<string, unknown>; created_at: string }
 export type RunV3 = { id: string; workflow_id: string; version_id: string

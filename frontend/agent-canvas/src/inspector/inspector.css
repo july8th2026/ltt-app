@@ -112,3 +112,81 @@
 }
 .inspector-hanh-dong button { flex: 1; min-height: 36px; }
 .inspector-hanh-dong button.danger { color: var(--nguy-hiem, #f87171); }
+
+/* ── Bo chon du lieu — tab "Dữ liệu vào" (§7, lan UI-6) ──────────────────── */
+.chon-du-lieu { display: grid; gap: 8px; }
+.chon-du-lieu-thanh input[type="search"] { width: 100%; }
+.chon-du-lieu-dich {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary, #c2c8d0);
+}
+.chon-du-lieu-dich select { flex: 1; min-width: 0; }
+
+.chon-du-lieu-cay { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.chon-du-lieu-nhom > strong,
+.chon-du-lieu-buoc > strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  color: var(--text-muted, #858e9b);
+}
+/* "Bước trước" long ben trong mot buoc con — thut le nhe de doc ra day la
+ * cay HAI TANG (buoc -> cong cua buoc), khong phai mot danh sach phang. */
+.chon-du-lieu-nhom .chon-du-lieu-buoc { margin-left: 10px; margin-top: 7px; }
+
+.chon-du-lieu-nhom ul,
+.chon-du-lieu-buoc ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chon-du-lieu-nhom ul button,
+.chon-du-lieu-buoc ul button {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  width: 100%;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary, #f2f4f7);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.chon-du-lieu-nhom ul button:hover:not(:disabled),
+.chon-du-lieu-buoc ul button:hover:not(:disabled) {
+  background: var(--surface-interactive, #1d222c);
+}
+.chon-du-lieu-nhom ul button:disabled,
+.chon-du-lieu-buoc ul button:disabled { opacity: .5; cursor: not-allowed; }
+.chon-du-lieu-ten { font-family: ui-monospace, monospace; }
+.chon-du-lieu-phu { opacity: .65; font-size: 11px; }
+/* ⭐ Chinh nhung `.chua-publish-duoc` cua o goi y bieu thuc — MOT mau cho
+ * "cong publish chua nhan bieu thuc nay" o ca hai cho, ⛔ khong dinh nghia
+ * mau moi. */
+button.chua-publish-duoc .chon-du-lieu-ten { opacity: .6; }
+.chon-du-lieu-nhom ul button .canh-bao,
+.chon-du-lieu-buoc ul button .canh-bao {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--nguy-hiem, #f87171);
+  opacity: .9;
+}
+.chon-du-lieu-trong { padding: 9px; }
+.chon-du-lieu-trong p {
+  margin: 0;
+  padding: 9px;
+  border: 1px dashed var(--border-strong, #3a424f);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--text-muted, #858e9b);
+}

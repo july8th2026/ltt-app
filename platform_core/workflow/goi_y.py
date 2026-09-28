@@ -92,6 +92,42 @@ def _goc() -> list[dict]:
             for ten in _cs.NAMESPACE if ten != _GOC_BUNG]
 
 
+def tham_chieu_node(nid: str) -> str:
+    """`nodes.<id>` khi `<id>` là định danh hợp lệ, ngược lại `nodes['<id>']`.
+
+    ## 🔴 Lỗi CHẶN TÍNH NĂNG mà hàm này tồn tại để sửa (UI-11 tìm ra 28/09/2026)
+
+    `editorState.ts::nextNode()` sinh id `` `n${Date.now().toString(36)}-${count}` ``
+    — **LUÔN có gạch ngang** (vd `nmukpruo1-1`). Còn hàm gợi ý trước đây xây
+    đường dạng có dấu chấm: `nodes.nmukpruo1-1.output.anh`.
+
+    Ngôn ngữ §6 ⛔ **không** nhận một đoạn sau dấu chấm mà không phải định danh.
+    Và **cả hai** bộ duyệt đồng ý với nhau — đo được:
+
+        _bieu_thuc_s6_hop_le('nodes.nmukpruo1-1.output.x')    -> False
+        trich_tham_chieu('nodes.nmukpruo1-1.output.x')        -> LoiBienDich
+        _bieu_thuc_s6_hop_le("nodes['nmukpruo1-1'].output.x") -> True
+        trich_tham_chieu("nodes['nmukpruo1-1'].output.x")     -> ThamChieu(...)
+
+    ⇒ Đây ⛔ **KHÔNG** phải một tật của `ast.parse`: dạng dấu chấm với id chứa
+      gạch ngang **thật sự không phải §6 hợp lệ**. Ngôn ngữ đã có sẵn dạng đúng
+      cho khoá không-phải-định-danh — **subscript** — nên bản vá thuộc phía
+      **SINH**. Sửa phía ĐỌC là sửa NGÔN NGỮ, và sẽ phải sửa **hai** bộ duyệt để
+      chúng khỏi nói ngược nhau về cùng một chuỗi.
+
+    ⚠️ Hậu quả trước bản vá: bất kỳ người dùng thật nào thêm ≥2 bước từ palette
+       rồi dùng Data Picker đều nhận **422** ở `/publish`, kèm thông điệp **sai
+       lạc** *"chỉ hỗ trợ đúng MỘT biểu thức"* — câu ấy ⛔ không liên quan gì tới
+       nguyên nhân, nên nó còn dẫn người đi sai hướng.
+
+    ⭐ CHỈ bọc khi CẦN, ⛔ không bọc luôn: `nodes.n1.output.anh` dễ đọc hơn
+       `nodes['n1'].output.anh`, và chuỗi này **người dùng nhìn thấy** trong ô
+       tham số. Một bản vá bọc-tất-cả cũng đúng về kỹ thuật nhưng trả giá bằng
+       thứ mà người đọc phải chịu mỗi ngày.
+    """
+    return f"nodes.{nid}" if nid.isidentifier() else f"nodes[{nid!r}]"
+
+
 def _cua_node(ct: _bd.CauTruc, node_id: str) -> list[dict]:
     """Mọi thứ node `node_id` đọc được của **tổ tiên** nó, và chỉ thế.
 
@@ -102,14 +138,14 @@ def _cua_node(ct: _bd.CauTruc, node_id: str) -> list[dict]:
     nhan = {n["id"]: n["type"] for n in ct.nodes}
     for nid in sorted(ct.to_tien.get(node_id) or ()):
         for cong in sorted(ct.cong_ra.get(nid) or ()):
-            duong = f"nodes.{nid}.output.{cong}"
+            duong = f"{tham_chieu_node(nid)}.output.{cong}"
             ra.append({"duong": duong, "loai": "cong", "node": nid,
                        "cong": cong, "node_type": nhan.get(nid, ""),
                        "qua_publish": _bd.cong_params_nhan(duong)})
         for mat in _bd.MAT_NODE:
             if mat == "output":
                 continue                    # đã bung thành từng cổng ở trên
-            duong = f"nodes.{nid}.{mat}"
+            duong = f"{tham_chieu_node(nid)}.{mat}"
             ra.append({"duong": duong, "loai": "mat_node", "node": nid,
                        "cong": "", "node_type": nhan.get(nid, ""),
                        "qua_publish": _bd.cong_params_nhan(duong)})

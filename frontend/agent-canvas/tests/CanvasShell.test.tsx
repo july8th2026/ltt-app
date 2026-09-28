@@ -154,7 +154,16 @@ describe('CanvasShell', () => {
     await themVanBan()
     fireEvent.click(screen.getByRole('button', { name: 'Chi tiết' }))
     const inspector = screen.getByRole('complementary', { name: 'Chi tiết node' })
-    const prompt = within(inspector).getByLabelText('prompt *')
+    // 🔴 `find*` chu KHONG phai `get*`: lan UI-10a doi `StepInspector` sang
+    //    `React.lazy` + `import()`, va cho goi boc no trong
+    //    `<Suspense fallback={null}>`. Nen the `<aside>` (complementary) co mat
+    //    NGAY, con RUOT thi den sau mot nhip — `getByRole('complementary')` dau
+    //    ma `getByLabelText` truot.
+    //
+    // ⚠️ Do la ly do bai nay do o gate ma xanh o may toi: `npm test --
+    //    --maxWorkers=2` doi nhip so voi `npx vitest run`. Mot tien de ngam ve
+    //    THOI GIAN thi chi lo ra khi nhip doi — va no lo ra o cho dat nhat.
+    const prompt = await within(inspector).findByLabelText('prompt *')
     fireEvent.change(prompt, { target: { value: 'viết một đoạn' } })
     expect(prompt).toHaveValue('viết một đoạn')
     // O SO co cong tac bieu thuc (task 15, viec them 2).
@@ -225,12 +234,16 @@ describe('CanvasShell', () => {
   })
 
   it('opens layers and keyboard command palette with working display toggles', async () => {
+    // ⭐ UI-10a: `LayersDrawer`/`CommandPalette` nay nap tre (`React.lazy`) —
+    //    tep JS chi tai khi mo, nen ngay sau `fireEvent.click`/`keyDown` panel
+    //    CHUA hien ngay lap tuc (mot nhip mang, du la nap tu local trong test).
+    //    `findByRole` (khong phai `getByRole`) doi cho dung nhip do.
     render(<CanvasShell />)
     await themVanBan()
     fireEvent.click(screen.getByRole('button',{name:'Mở danh sách lớp'}))
-    expect(screen.getByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
+    expect(await screen.findByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
     fireEvent.keyDown(window,{key:'k',ctrlKey:true})
-    expect(screen.getByRole('dialog',{name:'Bảng lệnh Canvas'})).toBeInTheDocument()
+    expect(await screen.findByRole('dialog',{name:'Bảng lệnh Canvas'})).toBeInTheDocument()
     fireEvent.change(screen.getByRole('textbox',{name:'Tìm lệnh'}),{target:{value:'lưới'}})
     fireEvent.click(screen.getByRole('button',{name:'Ẩn lưới'}))
     fireEvent.keyDown(window,{key:'k',ctrlKey:true})

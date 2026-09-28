@@ -158,25 +158,83 @@ def _nhap_cua(p: pathlib.Path) -> set[str]:
     return ra
 
 
-def test_KHONG_module_nao_trong_apps_con_goi_RapidOCR():
-    """🔑 Bat bien 3 — do bang **duong NHAP** (AST), ⛔ khong bang chuoi.
+def test_KHONG_module_nao_trong_apps_dung_OCR_de_LAY_LOI_THOAI():
+    """🔑 Bất biến 3 — đo bằng **đường NHẬP** (AST), ⛔ không bằng chuỗi.
 
-    ⭐ Do CHUOI se do sai thu: `do_vung.py` nhac ten `RapidOCR` trong mot chu
-       thich ghi lai mot phep DO co that (`RapidOCR 73,5-82,1 % vs OpenCV
-       74,9-80,7 %` tren cung mot video) — do la bang chung lich su, ⛔ khong
-       phai mot nguoi goi. Bai hoc `banh-coc-do-CACH-GO-thay-vi-tinh-chat`:
-       phep kiem phai do **tinh chat** (co nap goi khong), ⛔ khong do cach go.
+    🔴 **THU HẸP 28/09 (B10-4) — chủ dự án chốt, và lý do là một phép đo.**
 
-    ⚠️ `ocr_khung`/`phu_de_cung` cung bi hoi o day: mot `import` con sot lai lam
-       app hong o **luc nap**, tuc o mot cho khong ai dang xem.
+       Bản cũ cấm **mọi** đường nhập `rapidocr` trong `apps/`. Lệnh cấm ấy
+       **rộng hơn lý do sinh ra nó**: quyết định 22/09 bỏ `nguon_loi` =
+       `ocr`/`embedded`/`auto`, tức bỏ việc dùng OCR để **LẤY LỜI THOẠI** thay
+       cho ASR. Việc xoá hai module và gỡ gói là **hệ quả dọn dẹp** của quyết
+       định ấy, ⛔ không phải một phán quyết rằng OCR vô dụng cho mọi việc.
+
+    ⚠️ Và chính `do_vung.py` giữ một phép đo nói **ngược lại** cho việc dò dải
+       (chú thích `BU_MOI_DAU`, cùng video `H=1280`):
+
+           RapidOCR 73,5–82,1 %   ·   OpenCV 74,9–80,7 %
+           ⇒ OpenCV hụt ~1,4 % mỗi đầu ≈ 18 px ⇒ đỉnh và chân chữ Hán LỘ ra
+
+       Ta đã phải thêm hằng số bù `BU_MOI_DAU = 0.015` để vá đúng chỗ hụt đó.
+
+    ⭐ Đo lại 28/09 trên phim nghiệm thu, qua chính `_dai_chu_nhieu_tang`:
+
+           tầng lùi   cao 15,5 %  ·  rộng 100 %
+           tầng OCR   cao 10,7 %  ·  rộng 80,8 %     ⇒ diện tích **/1,78**
+
+    ⇒ Bất biến nay nói đúng điều quyết định gốc nói: **⛔ không dùng OCR để lấy
+      LỜI THOẠI.** Dò **HỘP** (det-only) thì được — xem bài kế tiếp, nó chốt
+      rằng đường mới ⛔ không hề đọc trường văn bản.
     """
-    xau = ("rapidocr", "ocr_khung", "phu_de_cung")
+    xau = ("ocr_khung", "phu_de_cung")
     vi_pham = []
     for p in sorted((GOC / "apps").rglob("*.py")):
         for ten in _nhap_cua(p):
             if any(s in ten for s in xau):
                 vi_pham.append(f"{p.relative_to(GOC).as_posix()} — nhap {ten!r}")
-    assert not vi_pham, "con nhap duong OCR trong apps/:\n  " + "\n  ".join(vi_pham)
+    assert not vi_pham, ("con nhap duong OCR-lay-loi trong apps/:\n  "
+                         + "\n  ".join(vi_pham))
+
+
+def test_CHI_MOT_module_duoc_nhap_rapidocr_va_no_KHONG_doc_chu():
+    """🔑 Bất biến 3b (MỚI, B10-4) — cái giá của việc thu hẹp bất biến 3.
+
+    ⛔ Thu hẹp một lệnh cấm mà ⛔ không đặt lại hàng rào ở chỗ mới thì là **gỡ**
+       lệnh cấm. Hai vế, và cả hai đều cần:
+
+       1. **Đúng MỘT module** được nhập `rapidocr`. Một lệnh cấm đổi thành
+          "được phép ở khắp nơi" là ⛔ không còn lệnh cấm.
+       2. Module ấy **⛔ không đọc trường văn bản**. Chủ dự án chốt 28/09:
+          *"⛔ không sử dụng text để đối chiếu"*.
+
+    ⚠️ Vế 2 đo bằng **AST**: tìm mọi phép chỉ mục `muc[i]` trên kết quả OCR và
+       đòi chỉ có `[0]` (hộp toạ độ). `[1]` là văn bản, `[2]` là điểm tin cậy.
+
+       ⭐ Đo CHUỖI ở đây sẽ đo sai thứ: tệp ấy **nói về** văn bản trong nhiều
+          chú thích (*"`use_rec=False` VẪN trả `[hộp, văn_bản, điểm]`"*) — đó
+          là bằng chứng, ⛔ không phải một phép đọc. Đúng bài học
+          `banh-coc-do-CACH-GO-thay-vi-tinh-chat`.
+    """
+    import ast as _ast
+
+    nhap = [p for p in sorted((GOC / "apps").rglob("*.py"))
+            if any("rapidocr" in t for t in _nhap_cua(p))]
+    assert [p.name for p in nhap] == ["do_vung_ocr.py"], (
+        "dung MOT module duoc nhap rapidocr; thay: %s"
+        % [p.relative_to(GOC).as_posix() for p in nhap])
+
+    cay = _ast.parse(nhap[0].read_text(encoding="utf-8"))
+    chi_muc = set()
+    for n in _ast.walk(cay):
+        if (isinstance(n, _ast.Subscript) and isinstance(n.value, _ast.Name)
+                and n.value.id in ("muc", "kq", "kq2", "box")
+                and isinstance(n.slice, _ast.Constant)
+                and isinstance(n.slice.value, int)):
+            chi_muc.add(n.slice.value)
+    assert chi_muc <= {0}, (
+        "module do vung dang doc chi muc %s cua ket qua OCR; chi `[0]` (hop "
+        "toa do) duoc phep — `[1]` la VAN BAN va chu du an da chot khong dung"
+        % sorted(chi_muc))
 
 
 def test_hai_module_cua_duong_OCR_da_bi_XOA():

@@ -241,3 +241,71 @@ def test_lop_phu_van_KHONG_kep_ve_bien():
         ["/tmp/chu.txt"], "vao", "ra", cao_khung=576))
     assert "max(" not in loc and "min(" not in loc
     assert "x=(W*0.000000)-text_w/2" in loc
+
+
+# ── B10-1: cỡ chữ neo CẠNH NGẮN + kẹp theo chiều cao DẢI ────────────────────
+
+def test_BB5_khung_1920x1080_KHONG_hoi_quy():
+    """BB-5 — `min(W,H) = H` ⇒ y hệt công thức cũ cho khách 16:9.
+
+    ⭐ Đây là vế giữ chỗ: một bản vá *"cho chữ vừa dải"* rất dễ đổi luôn cỡ chữ
+       của **mọi** khung ngang đang chạy.
+    """
+    # ⛔ Phép quy chiếu chỉ HẠ: khung lớn hơn tham chiếu ⇒ GIỮ cỡ preset.
+    #    Bản đầu của tôi cho `48 -> 90` ở đây và `test_472` bắt được — xem
+    #    chú thích trong `tran_co_chu`.
+    assert pd.tran_co_chu(48, rong=1920, cao=1080) == 48
+    assert pd.tran_co_chu(48, rong=1024, cao=576) == 48
+
+
+def test_BB5b_khung_DOC_KHONG_bi_coi_la_khung_ngang_bi_hong():
+    """🔴 Bản đầu tôi quy chiếu `cao × 16/9` — nó cho khung `1080×1920` cỡ chữ
+    **15 px**, vì coi một khung dọc như khung `3413×1920` bị cắt hẹp.
+
+    Luật cạnh ngắn cho `48 × 1080/576 = 90` — **gấp 6 lần**.
+    """
+    # Cạnh ngắn `1080 > 576` ⇒ hệ số > 1 ⇒ bị kẹp về `48`, ⛔ không tụt.
+    assert pd.tran_co_chu(48, rong=1080, cao=1920) == 48
+    # ⭐ Ca THẬT SỰ cần sửa: khung ra hẹp hơn tham chiếu.
+    assert pd.tran_co_chu(48, rong=324, cao=576) == round(48 * 324 / 576)
+
+
+#: ⚠️ Ngưỡng kẹp cắt ở `cao_dai × 576 × 0,85 / 1,15 = 48` ⇒ `cao_dai ≈ 0,1127`.
+#:    Bản đầu tôi đặt `0,14 -> True` và nó ĐỎ, **mâu thuẫn với chính
+#:    `test_BB6b` ngay dưới** (bài ấy tính tay ra `59 > 48` nên ⛔ không kẹp).
+#:    ⭐ Hai bài trong cùng một tệp nói ngược nhau: *bài kiểm cũng là một tập
+#:    phải đọc hết trước khi thêm vào*.
+@pytest.mark.parametrize("cao_dai,mong_doi_nho_hon", [(0.05, True),
+                                                      (0.10, True),
+                                                      (0.14, False),
+                                                      (0.40, False)])
+def test_BB6_dai_HEP_thi_chu_NHO_theo(cao_dai, mong_doi_nho_hon):
+    """BB-6 — dải hẹp đi ⇒ chữ nhỏ đi; dải rộng ⇒ chữ tới trần, ⛔ không vượt.
+
+    ⚠️ Chốt **cả hai chiều**. Chỉ chốt chiều hẹp thì một hàm `return 1` cũng
+       qua; chỉ chốt chiều rộng thì một hàm bỏ qua `dai` cũng qua.
+    """
+    dai = {"y0": 0.90 - cao_dai, "y1": 0.90, "da_che": True}
+    co = pd.tran_co_chu(48, rong=1024, cao=576, dai=dai)
+    assert (co < 48) is mong_doi_nho_hon, (
+        "dai cao %.2f -> co chu %d (tran 48)" % (cao_dai, co))
+    assert co >= 1
+
+
+def test_BB6b_cong_thuc_kep_dai_tinh_duoc_bang_TAY():
+    """⭐ Một hằng số chỉ kiểm được khi con số ra tay tính được.
+
+    Dải `y 0,82–0,96` trên khung cao 576 ⇒ `0,14 × 576 × 0,85 / 1,15 = 59,6`
+    ⇒ `59`. Lớn hơn trần cạnh-ngắn 48 nên **48 thắng**.
+    """
+    dai = {"y0": 0.82, "y1": 0.96, "da_che": True}
+    assert int((0.14 * 576 * 0.85) / 1.15) == 59
+    assert pd.tran_co_chu(48, rong=1024, cao=576, dai=dai) == 48
+    # Khung RA hẹp: trần cạnh-ngắn `48 × 324/576 = 27`, vẫn dưới 59 ⇒ 27.
+    assert pd.tran_co_chu(48, rong=324, cao=576, dai=dai) == 27
+
+
+def test_tran_chi_HA_KHONG_bao_gio_nang(tmp_path):
+    """⛔ Một dải rộng ⛔ không phải lý do phóng to chữ quá mức preset."""
+    rong_het = {"y0": 0.0, "y1": 1.0, "da_che": True}
+    assert pd.tran_co_chu(48, rong=1024, cao=576, dai=rong_het) == 48

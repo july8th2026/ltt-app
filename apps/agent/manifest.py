@@ -76,8 +76,9 @@ MANIFEST = AppManifest(
          NavEntry(N_("Workflows"), "/agent/workflows", "◇", "agent_workflows"),
          NavEntry(N_("Lượt chạy"), "/agent/runs", "🕘", "agent_runs",
                   built=False),
-         NavEntry(N_("Mẫu"), "/agent/templates", "📚", "agent_templates",
-                  built=False),
+         # UI-9 (28/09): trang thật (danh mục mẫu), không còn "đang xây" —
+         # xem `apps/agent/routes/trang.py::trang_templates`.
+         NavEntry(N_("Mẫu"), "/agent/templates", "📚", "agent_templates"),
          NavEntry(N_("Các kết nối"), "/agent/connections", "🔌",
                   "agent_connections", built=False),
          NavEntry(N_("Agent"), "/agent/agents", "✦", "agent_agents",

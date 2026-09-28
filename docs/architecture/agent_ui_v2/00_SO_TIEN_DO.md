@@ -21,12 +21,14 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-4 Node UX V2 | `ui4` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui4` | `src/nodes/**` · `useDisplayGraph.ts` · `styles/node.css` | — | dải **6000-6099** · `canvas.css` diff **RỖNG** · `app.video.generate` cao **525 → 279 px** (16 hàng cổng → 7 hàng + 9 khay) · ba mức độ zoom **200/280/360 px** · `core.switch` `"1 nhánh"` → **`"5 nhánh"`** · hồi quy cổng UI-0 **y nguyên** · ⚠️ brief ghi 456px, họ đo **285px** — brief sai |
 | UI-7 Execution + Runs | `ui7` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui7` | `ExecutionPanel/**` · `RunV3Panel/Inspector` · `styles/run.css` | — | dải **6100-6199** · chủ **S4** · bảng run **176 → 366 px**, hàng cao nhất **139 → 57 px** · báo giá **12 credit** trên nút · `workflowApi.ts` diff **RỖNG** ⇒ UI-5 không phải chờ · 🔴 báo một `.sr-only` **SAI**, xem nhật ký |
 | UI-5 Inspector + Connections | `ui5` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui5` | `ket_noi_v3.py` (mới) · `src/inspector/**` | — | dải **6300-6399** · Q4 = **C** · node publish được **27 → 60** (+33 mở khoá) · publish **422 → 200** · 4 cửa `/api/v3/ket-noi` · wizard OAuth 6 chặng · 🔴 va UI-3 ở `StepInspector`, xem nhật ký |
-| UI-8a Human approval ⭐ | — | CHƯA MỞ | — | — | — | chặn bởi UI-7 · nâng ưu tiên sau phân tích CrewAI |
-| UI-6 Data picker | — | CHƯA MỞ | — | — | — | chặn bởi UI-5 |
-| UI-8b Agent Designer diff | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
-| UI-9 Templates | — | CHƯA MỞ | — | — | — | chặn bởi UI-1 |
-| UI-10 i18n + trợ năng + mobile | — | CHƯA MỞ | — | — | — | ⛔ **không song song hoá được** — chạm mọi tệp |
-| UI-11 Nghiệm thu + hồi quy | — | CHƯA MỞ | — | — | — | cuối cùng, rồi mới **gate một lần** |
+| UI-8a Human approval ⭐ | `ui8a` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui8a` | `routes/phe_duyet_v3.py` (mới) · `ExecutionPanel/**` · `cho_doi.py` (nếu buộc) | — | dải **6500-6599** · cổng **8206** · 🔴 `core.human` đã ĐỦ (`NHANH_HUMAN`, waitpoint, hết hạn ⇒ `reject`) nhưng ⛔ KHÔNG cửa nào BẤM duyệt được ⇒ mở cửa là TRONG phạm vi phase |
+| UI-6 Data picker | `ui6` | ✅ **ĐÃ GỘP** 🔴 *(bị chặn bởi lỗi id gạch ngang)* | `phien/agent-ui-v2-ui6` | `src/inspector/FormTuLuocDo.tsx` · `inspector.css` · tệp mới trong `src/inspector/` | — | dải **6400-6499** · cổng **8205** · dùng lại `/bieu-thuc/goi-y` ⇒ ⛔ không cửa mới |
+| UI-9 Mẫu / Templates | `ui9` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui9` | `routes/trang.py` (⭐ giữ) · `templates/agent_templates.html` (mới) · `platform_core/workflow/mau.py` (mới) | — | dải **6600-6699** · cổng **8207** · dùng lại `POST /api/v3/workflows` với `document` ⇒ ⛔ không cửa mới · mỗi mẫu PHẢI publish được thật |
+| UI-8b Agent Designer diff | — | ⛔ **CHƯA MỞ** | — | — | — | hạng mục DUY NHẤT của plan chưa làm. ⛔ Không chặn bởi gì nữa (UI-3 xong) — nó là **phạm vi bị hoãn có chủ đích**, ⛔ không phải việc bị bỏ quên |
+| UI-10a Hiệu năng bundle | `ui10a` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui10a` | `EditorShell.tsx` · `vite.config.ts` · `test_95` | — | dải **6700** · cổng **8208** · nạp trễ 3 panel ⇒ entry **517.837 → 500.640** thô, zstd-3 **164.335 → ~156.000**; trần hạ 520k→510k, 170k→165k |
+| UI-10b Trợ năng + mobile | `ui10b` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui10b` | `canvas.css` · `styles/**` · `features/editor/**` (trừ `EditorShell`) · `inspector/**` · `nodes/**` | — | dải **6800** · cổng **8209** · tiêu chí 89-94: bẫy focus 4 nơi · bảng phím tắt 14 dòng · `aria-pressed` đổi thật · viền Controls/MiniMap **6,20:1** tối / **5,22:1** sáng · cổng 24px 6/6 · mobile 3 tab |
+| ⛔ UI-10 (gộp một làn) | — | **ĐÃ TÁCH** | — | — | — | audit ghi *"không song song hoá được"*; đo lại thì **tách được**: hiệu năng chạm `EditorShell.tsx` + `vite.config.ts`, trợ năng chạm CSS + component — hai tập **rời nhau** |
+| UI-11 Nghiệm thu + hồi quy | `ui11` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui11` | chỉ máy chủ thử 8210 (⛔ không sửa sản phẩm) | — | dải **6900** · cổng **8210** · **6/7 bước E2E đi được**; bước 3 lộ lỗi CHẶN (id gạch ngang) đã vá ở `ed204316` |
 
 ## Phiếu tệp đang giữ
 
@@ -110,6 +112,262 @@ canh rằng không ai lặng lẽ mở một cửa ghi ở tầng trang.
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-28` `điều phối` — **UI-11 NGHIỆM THU TỔNG: 6/7 bước E2E đi được, và
+  bước thứ 7 lộ một LỖI CHẶN TÍNH NĂNG CỐT LÕI.**
+
+  ### 🔴 `{{ nodes.<id>.output.<cổng> }}` VỠ với mọi node do Canvas sinh
+
+  | Nơi | Điều nó làm |
+  |---|---|
+  | `editorState.ts:299` `nextNode()` | mọi node sinh id `` `n${Date.now().toString(36)}-${count}` `` — **LUÔN có gạch ngang** (vd `nmukpruo1-1`) |
+  | `bien_dich.trich_tham_chieu()` | duyệt `{{ }}` bằng `ast.parse(mode="eval")` |
+
+  Python đọc `-` là phép **TRỪ**, nên `nodes.nmukpruo1-1.output.prompt` tách thành
+  `nodes.nmukpruo1 - 1 .output.prompt` ⇒ `SyntaxError: invalid decimal literal`
+  ⇒ `publish` trả **422 `bieu_thuc_chua_ho_tro`** kèm thông điệp **sai lạc**
+  *"chỉ hỗ trợ đúng MỘT biểu thức"* — câu ấy ⛔ không liên quan gì tới nguyên nhân.
+
+  ⇒ **Bất kỳ người dùng thật nào** thêm ≥2 bước từ palette rồi dùng **Data Picker**
+  (chức năng chủ lực của UI-6) sẽ **KHÔNG BAO GIỜ** chạy được workflow.
+
+  ### ⭐ PHÁT HIỆN LÀM HẸP HẲN BẢN VÁ: dạng **subscript** ĐÃ chạy
+
+  Điều phối đo trực tiếp `trich_tham_chieu` (28/09):
+
+  ```
+  nodes.nabc.output.x            ->  OK
+  nodes.nmukpruo1-1.output.x     ->  LoiBienDich  invalid decimal literal
+  nodes['nmukpruo1-1'].output.x  ->  OK  ThamChieu(node='nmukpruo1-1', cong='x')
+  ```
+
+  ⇒ Ngữ pháp Sec6 **đã** nhận định danh có gạch ngang — qua `ast.Subscript`, và
+  `_chuoi_doan` đã xử đúng. Nên bản vá ⛔ **KHÔNG cần** một tokenizer riêng:
+  chỉ cần chuẩn hoá `nodes.<id>` → `nodes['<id>']` **trước** `ast.parse`, hoặc
+  đổi phía SINH ra để nó phát dạng subscript.
+
+  ⚠️ Nhưng phải chọn **một** chỗ và nói rõ, vì có **hai** phía sinh:
+  - `platform_core/workflow/goi_y.py:106` xây `duong` dạng **có dấu chấm** →
+    Data Picker (`ChonDuLieu.tsx:140`) chỉ bọc `{{ ... }}` quanh thứ máy chủ trả.
+  - người dùng **gõ tay** cũng sẽ gõ dấu chấm (tài liệu §6 viết
+    `nodes.<id>.output`).
+  ⇒ Sửa **phía đọc** (`bien_dich`) phủ được cả hai; sửa phía sinh chỉ phủ một.
+
+  ### ⚠️ Vì sao 12 làn trước ⛔ không ai bắt được
+
+  Mọi bài test và mọi lượt nghiệm thu đều **tự đặt id sạch** (`n1`, `n2`,
+  `n-img`, `imggen`) khi `PUT` thẳng tài liệu qua API. ⛔ Không lượt nào **vừa**
+  để Canvas sinh id **vừa** gọi `/publish` sau khi chèn biểu thức.
+
+  ⇒ Cùng họ với hai ca hôm nay: **fixture tự dựng một tiền đề mà sản phẩm ⛔
+  không có** (`phe_duyet_v3` import tường minh ⇒ 404 trên production;
+  `ai_dang_dung_may_chu` tự đặt `LTT_DATABASE_URL` ⇒ luôn `KHONG BIET` ngoài đời).
+  ⭐ Ở đây tiền đề tự dựng là **hình dạng của một ID** — thứ trông vô hại nhất
+  trong một fixture, và chính nó giấu một lỗi chặn toàn bộ tính năng.
+
+  ### 7 bước E2E
+
+  | # | Bước | Kết quả |
+  |---|---|---|
+  | 1-2 | Workflows → mới → Canvas mở **đúng** id vừa tạo (đo bằng 2 workflow khác nhau, ⛔ không phải `items[0]`) | ĐI ĐƯỢC |
+  | 3 | palette → nối dây thật (kéo chuột) → Inspector → Data Picker chèn biểu thức | thao tác ĐI ĐƯỢC, **kết quả ⛔ KHÔNG chạy được** |
+  | 4 | báo giá **trước** khi chạy | ĐI ĐƯỢC — *"62 credit cho 3 bước"* |
+  | 5 | chạy → timeline **tên bước** | ĐI ĐƯỢC khi ⛔ không dùng biểu thức (*"Chạy thủ công"*, *"Sinh ảnh từ mô tả"* — ⛔ không phải `node_id` thô) |
+  | 6 | Templates → *Dùng mẫu này* | ĐI ĐƯỢC — 6 node/6 cạnh, publish OK |
+  | 7 | lưu trữ → biến mất → kho → mở lại | ĐI ĐƯỢC — đo bằng đếm dòng trước/sau |
+
+  ### Hồi quy — tất cả còn sống
+
+  ```
+  cong noi 24px + elementFromPoint   27/27 trung
+  nut `+` chen buoc chet             0
+  trigger.manual publish duoc        OK
+  loi goi vao khong gian id v2       0
+  ba panel nap tre                   khong tai luc dau, tai dung luc bam
+  ```
+
+  ### ⚠️ UI-11 nói rõ thứ nó ⛔ KHÔNG đo được
+
+  *Run có **thật sự hoàn tất** không* — cần worker chạy dưới `LocalSystem`, ⛔
+  không có trong fixture dev. Cùng giới hạn UI-7 đã ghi. ⇒ Còn treo cho một lượt
+  đo trên production sau deploy.
+
+  ⭐ Và nó **⛔ không tự vá** lỗi tìm được, đúng luật: người nghiệm thu sửa sản
+  phẩm thì ⛔ không còn ai nghiệm thu. Bản vá chạy ở một phiên riêng.
+
+- `2026-09-28` `điều phối` — **ĐÃ DEPLOY `8907b4dd`. Nghiệm thu web thật: 3/4 ĐẠT,
+  1 hỏng — và cái hỏng là lỗi của TÔI.** Mở wave 4: UI-10a + UI-10b.
+
+  ### Nghiệm thu trên `https://app.lttstudios.com`
+
+  ```
+  UI-5  4 cua /ket-noi   GET 200 · GET 200 · POST 400(CSRF) · DELETE 400   DAT
+        + than KHONG chua khoa nghi la bi mat                              DAT
+  UI-9  /agent/templates 200 · 3 nut dung mau · 0 badge "Dang xay"         DAT
+  Canvas                 tai xong 434 ms                                   DAT
+  UI-8a POST .../duyet   404 tu ROUTER                                      ❌
+  ```
+
+  ### 🔴 Một tính năng đi qua MỌI cổng rồi chết im lặng
+
+  `phe_duyet_v3` ⛔ không được `routes/__init__.py` import. Làn UI-8a **báo tôi
+  đúng việc đó** trong báo cáo cuối và tôi bỏ sót. Nó có **9 test xanh** +
+  nghiệm thu trình duyệt **PASS**.
+
+  ⚠️ Vì sao ⛔ không phép kiểm nào của làn đó bắt được: `_shared.router` là đối
+  tượng **dùng chung**, và fixture của họ `import` module **tường minh** (đúng
+  theo hướng dẫn của chính tôi). Import ấy gắn route **trong tiến trình test**;
+  `create_app()` ngoài đời chỉ nạp thứ `__init__.py` import.
+
+  ⇒ Đây là một **họ RIÊNG**, ⛔ không phải *"đo thứ đại diện"*: mọi phép đo đều
+  đúng, đều chạy, đều xanh. Cái sai là **bộ test tự dựng một tiền đề mà sản phẩm
+  ⛔ không có** — nó đo trong **một thế giới do chính nó tạo ra**. Và ⛔ không mức
+  độ phủ nào chỉ ra được, vì dòng mã ấy **CÓ chạy**.
+
+  ⭐ Cơ học hoá: `test_5606` hỏi *"có tệp `.py` nào trong `apps/agent/routes/` mà
+  `__init__.py` ⛔ không import không?"*, đọc **AST** — ⛔ **không** soi
+  `sys.modules`, vì một module có thể đã ở đó do **một tệp test khác** vừa import
+  nó, và khi ấy phép kiểm xanh vì lý do ⛔ không liên quan. *Một phép kiểm mà tiền
+  đề của nó bị ô nhiễm bởi chính thứ nó đang kiểm thì ⛔ không kiểm gì cả.*
+  Tiêm lỗi: gỡ tên khỏi tuple ⇒ **2 đỏ**. Route v3: 23 → **24**.
+
+  ### 🔴 Bộ đo nghiệm thu của tôi tự sai BA lần — hai báo động giả
+
+  Lượt đầu báo **ba** hỏng; chỉ **một** thật:
+
+  | | vì sao |
+  |---|---|
+  | ✅ thật | `POST .../duyet` 404 từ ROUTER |
+  | ❌ giả | `data-mau-slug` = 0 — tôi **tự bịa** tên thuộc tính; thật là `data-mau-dung` |
+  | ❌ giả | `/đang xây/` khớp — tôi quét **cả body**, mà thanh điều hướng hiện badge đó cho **bốn mục KHÁC** |
+  | ❌ giả | "3 lỗi trang" — console error do **chính các phép thăm dò của tôi** sinh ra (`POST` thiếu CSRF ⇒ 400 có ý) |
+
+  ⇒ Nếu báo cáo ngay lượt đầu, tôi sẽ báo **ba** lỗi sản phẩm trong khi có **một**,
+  và hai cái sẽ đẩy người khác đi sửa thứ ⛔ không hỏng. **Một báo động giả đắt
+  hơn một phép đo ⛔ không chạy.**
+  ⭐ Hai luật rút ra: *một phép đo trả `0` phải trả lời thêm "nếu thứ tôi tìm CÓ ở
+  đây, nó có trả khác 0 không?"*, và *một bộ đo phải **trừ dấu vết của chính nó**
+  ra khỏi số liệu*.
+
+  ### ⚠️ Trần bundle đo GZIP trong khi Cloudflare phục vụ ZSTD
+
+  ```
+  byte tho          517.837
+  gzip -9           158.681   <- tran CU do cai nay  ⇒  DUOI tran 160.000, XANH
+  zstd -3 (o nha)   164.335
+  THAT TREN DAY     164.252   ⇒  VUOT tran 2,7 %
+  ```
+
+  🔴 Bánh cóc **xanh** trong khi thứ khách tải **vượt trần**. Và tôi đã dùng chính
+  con số gzip để **biện minh việc NÂNG trần** sáng nay.
+
+  ⛔ Hy vọng *"gzip là cận trên an toàn cho zstd"* thì **SAI**: `zstd -3` **lớn
+  hơn** `gzip -9`, còn `-9`/`-19` thì nhỏ hơn — zstd ⛔ không đơn điệu, nó phụ
+  thuộc **mức nén**, và ⛔ không ai ngoài CDN biết mức họ dùng.
+
+  ⭐ Dụng cụ đúng: `PerformanceResourceTiming.encodedBodySize`. Hai dụng cụ hiển
+  nhiên đều trả lời câu khác — `content-length` **vắng mặt** ở phản hồi zstd
+  streaming; `response.body()` trả **thân đã giải nén**.
+  ⚠️ `encodedBodySize = 0` là **KHÔNG ĐO ĐƯỢC** (cache / thiếu
+  `Timing-Allow-Origin`), ⛔ không phải *"0 byte"*.
+
+  Sửa: `test_95` nén bằng `zstd -3`, trần `170.000` trên **số THẬT**. Và vì
+  `test_95` chạy offline nên nó **tin** mức 3 ≈ CDN — niềm tin ấy được đo lại ở
+  `tests/browser/agent_ui_v2_byte_tren_day.js` (lệch **0,11 %**).
+  ⚠️ **MỘT** nguồn chân lý: trần ở `test_95`; kịch bản trình duyệt **báo số + kiểm
+  mô hình**, ⛔ không phán quyết trần.
+
+  ### 🔴 Tôi vi phạm luật "dựng lại bundle" BA lần, kể cả sau khi tự nới rộng nó
+
+  Lần đầu: sau một lần gộp. Lần hai: `13717fea` đổi `workflowApi.ts` trong một
+  commit **thường** — luật cũ nói *"sau mọi lần GỘP"* nên ⛔ không kích hoạt.
+  Lần ba: `d85a044a` đổi hai tệp `.ts`, ngay sau khi tôi đã nới thành *"sau mọi
+  thay đổi NGUỒN frontend"*.
+
+  ⇒ **Một luật phát biểu đúng ⛔ KHÔNG thay thế được một phép kiểm cưỡng chế nó.**
+  Cả ba lần thứ bắt được là `test_95::..._is_fresh`, ⛔ không phải câu văn.
+  ⭐ Và *"luật hẹp"* = *"tham chiếu chết"* ở hai vật liệu khác nhau: cả hai sản
+  xuất **niềm tin rằng có lưới**, và niềm tin ấy **đắt hơn** việc ⛔ không có lưới.
+
+  ### ⚠️ Deploy KHỞI ĐỘNG LẠI WORKER — trạng thái ⛔ không nằm trong git
+
+  Phiên kia chặn tôi deploy vì họ có job ASV chạy dở (giai đoạn 8/13, 11 phút,
+  50 credit); khởi động lại giữa chừng **giết** nó. `git status` sạch + gate xanh
+  ⛔ không nói gì về việc **có ai đang dùng máy chủ không**.
+  ⇒ `tools/ai_dang_dung_may_chu.py` (mới): `0 RANH` · `3 DANG DUNG` ·
+  **`4 KHONG BIET`**. Mã `4` ⛔ **không** được gộp vào `0` — gộp lại thì một CSDL
+  ⛔ không đọc được sẽ trông y hệt một máy rảnh, và cái lẫn ấy nghiêng về phía
+  **giết job của khách**. ⛔ **CHƯA** đấu vào `2-cai-dat.ps1`: đó là thay đổi
+  đường deploy ⇒ chủ dự án chốt.
+
+  ### ⚠️ `main` từng dời BỐN lần trong một cửa sổ deploy
+
+  `708fdf3d → 13717fea → c1e09dfd → 8907b4dd`, mỗi lần phiên kia đo lại thì nó
+  dời tiếp. ⇒ **Một bằng chứng có hạn dùng ngắn hơn thời gian thu thập nó thì ⛔
+  không bao giờ hợp lệ.** Thuốc ⛔ không phải đo nhanh hơn — là **đóng băng cây**.
+  Tôi đã đóng băng `main` cho tới khi họ deploy xong.
+  ⭐ Và `--ff-only` là hình dạng đúng: **nó TỪ CHỐI thay vì đo lại**.
+
+  ### Wave 4 — hai làn, tệp rời nhau
+
+  | Làn | Dải test | Cổng | Tệp giữ |
+  |---|---|---|---|
+  | UI-10a hiệu năng | 6700-6799 | 8208 | `EditorShell.tsx` ⭐ · `vite.config.ts` · `test_95` |
+  | UI-10b trợ năng | 6800-6899 | 8209 | `canvas.css` · `styles/**` · `features/editor/**` **trừ** `EditorShell.tsx` · `inspector/**` · `nodes/**` |
+
+  UI-10b được bảo **ĐO LẠI** tiêu chí 93 (vùng bấm) và 94 (mobile) thay vì tin
+  điểm audit cũ — cả hai đã được UI-0 và điều phối sửa từ lúc audit chấm điểm.
+
+- `2026-09-28` `điều phối` — **MỞ WAVE 3: UI-6 · UI-8a · UI-9 chạy song song.**
+
+  Cấp tài nguyên **TRƯỚC** khi giao việc, vì đợt trước tôi quên cấp **cổng** và
+  cả bốn brief đều ghi `8198` — suýt giết tiến trình của UI-7.
+
+  | Làn | Dải test | Cổng | Tệp giữ |
+  |---|---|---|---|
+  | UI-6 data picker | 6400-6499 | 8205 | `src/inspector/**` |
+  | UI-8a human approval | 6500-6599 | 8206 | `routes/phe_duyet_v3.py` · `ExecutionPanel/**` |
+  | UI-9 mẫu | 6600-6699 | 8207 | `routes/trang.py` · `templates/agent_templates.html` · `workflow/mau.py` |
+
+  ⭐ **Tệp rời nhau hoàn toàn.** Hai chỗ dễ va nhất đã chỉ định chủ tường minh:
+  `trang.py` → **chỉ** UI-9 (UI-8a bị cấm chạm); `src/inspector/**` → **chỉ**
+  UI-6 (UI-8a bị cấm chạm). `routes/__init__.py` · `locale/` · `canvas.css` ·
+  `editorState.ts` · `workflowApi.ts` → **điều phối giữ**, làn chỉ BÁO dòng cần.
+
+  ### ⭐ Hai làn được bảo DÙNG LẠI cửa đã có, một làn được phép MỞ cửa
+
+  | Làn | Cửa | Vì sao |
+  |---|---|---|
+  | UI-6 | `POST …/bieu-thuc/goi-y` **đã có** | ⛔ không mở cửa mới |
+  | UI-9 | `POST /api/v3/workflows` **đã nhận `document`** | "mở mẫu" = tạo workflow thật, y như *Nhân bản* đã làm |
+  | UI-8a | **ĐƯỢC mở** cửa duyệt/từ chối | phase này tồn tại CHÍNH VÌ cửa ấy thiếu |
+
+  🔴 **UI-8a là ca *lưu trữ workflow* lần thứ hai**: `core.human` đã đủ —
+  waitpoint, `NHANH_HUMAN = ("approve","reject")`, `che_do_het_han` mặc định
+  `reject`, và `runs_v3` **đọc** được waitpoint còn mở — nhưng ⛔ **không cửa nào
+  cho người dùng BẤM**. Nghĩa đã sống, cửa thì chưa.
+  ⇒ Khác lần trước ở một điểm: lần này cửa ⛔ **không phải** một quyết định mới —
+  lộ trình UI-0→UI-10 mà chủ dự án đã duyệt có sẵn mục *"UI-8a Human approval"*,
+  nên cái cửa **là chính nội dung của phase**. Brief vẫn cấm mở **bất kỳ cửa nào
+  khác**.
+
+  ⚠️ Brief UI-8a nhấn hai bất biến tiền, vì cửa duyệt rất dễ trượt sang đó:
+  nó ⛔ **không** tạo run, ⛔ **không** tính tiền, ⛔ **không** đi vòng qua
+  `tao_run.py` (cửa DUY NHẤT tạo run). Nó chỉ **đóng một waitpoint**.
+  Và một bước `WAITING` vì `core.delay` ⛔ **không** được hiện nút duyệt — cùng
+  `status`, **khác `kind`**; phải đọc `kind`, ⛔ đừng suy từ `status`.
+
+  ### ⭐ Brief lần này mang theo bài học của cả ngày
+
+  Ba bộ kiểm **hình dạng cả cây** (`scan_source_secrets` · `check_mypy` ·
+  `check_silent_except`, **< 45 giây**) nay là **bắt buộc trước khi báo xong** —
+  chúng bắt loại lỗi mà test nhắm ⛔ không thể bắt: **mã đúng hành vi mà sai bất
+  biến toàn kho**. Đêm 27-28/09 có **ba** lỗi như vậy lọt lên `main`.
+
+  Kèm ba bẫy làm một lượt Playwright **xong** trông như **chết** (`const` ở mức
+  ngoài cùng ⇒ `SyntaxError` · `click` rồi `goto` ⇒ `ERR_ABORTED` · hồ sơ giữ
+  cookie ⇒ `page.fill` timeout), và luật **đo TÍNH CHẤT chứ đừng đo VĂN BẢN**
+  kèm cả ba ca thật của hôm nay.
 
 - `2026-09-28` `điều phối` — **BA LÀN CÒN LẠI ĐÃ GỘP. `main` = `2cb3f702`.**
   Cùng lượt: **cửa lưu trữ workflow** (chủ dự án duyệt mở bề mặt HTTP mới).
@@ -349,6 +607,11 @@ _(mới nhất ở trên)_
   | UI-7 | 8202 |
   | UI-1 | 8203 |
   | UI-5 | 8204 |
+  | UI-6 | 8205 |
+  | UI-8a | 8206 |
+  | UI-9 | 8207 |
+  | UI-10a | 8208 |
+  | UI-10b | 8209 |
 
   🔴 **Còn treo, và UI-1 dừng ĐÚNG chỗ:** *lưu trữ workflow* chưa làm —
   `archived_at` có trong lược đồ và danh sách **đã lọc** theo nó, nhưng ⛔ không

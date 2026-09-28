@@ -9,8 +9,9 @@
 // 2. O KET NOI nam ngay trong tab nay, va tao duoc mot ket noi TAI CHO
 //    (`OKetNoi`).
 //
-// ⭐ PHA NAY LAM DUNG TAB "Cấu hình". Bon tab kia DAT CHO — va chung noi thang
-//    ra rang chung dat cho. ⛔ Mot tab trong trong nhu da hoat dong la thu te
+// ⭐ PHA NAY (UI-5) LAM DUNG TAB "Cấu hình". Lan UI-6 lam tiep "Dữ liệu vào"
+//    (`ChonDuLieu`, §7). Ba tab con lai VAN DAT CHO — va chung noi thang ra
+//    rang chung dat cho. ⛔ Mot tab trong trong nhu da hoat dong la thu te
 //    nhat: no lam nguoi dung ket luan "tinh nang nay hong", va lam lan sau
 //    khong ai phan biet duoc "chua lam" voi "lam roi ma loi".
 //
@@ -20,6 +21,7 @@
 import { useState } from 'react'
 import type { NodeDefinition } from '../nodeDefinition'
 import type { CanvasEdge, CanvasNode, GoiYBieuThuc } from '../workflowApi'
+import { ChonDuLieu } from './ChonDuLieu'
 import { FormTuLuocDo } from './FormTuLuocDo'
 import { OKetNoi } from './OKetNoi'
 import './inspector.css'
@@ -99,11 +101,10 @@ export function StepInspector({ buoc, dinhNghia, nodes, edges, csrf, readOnly,
           giaTri={(buoc.data.params ?? {}) as Record<string, unknown>}
           readOnly={readOnly} goiY={goiY} onChange={onParam} />
       </>}
-      {tab === TAB[1] && <DatCho ten="Dữ liệu vào"
-        vi_sao={`Cây dữ liệu của các bước trước (kéo một trường sang ô để sinh
-          biểu thức) là việc của lằn Data picker. Hôm nay bước này có
-          ${edges.filter(e => e.target === buoc.id).length} đường nối vào và
-          ${nodes.length} bước trên trang.`} />}
+      {tab === TAB[1] && <ChonDuLieu buocId={buoc.id} nodes={nodes} edges={edges}
+        goiY={goiY} luocDo={dinhNghia.tham_so}
+        giaTri={(buoc.data.params ?? {}) as Record<string, unknown>}
+        readOnly={readOnly} onChen={onParam} />}
       {tab === TAB[2] && <DatCho ten="Tuỳ chọn"
         vi_sao="Số lần thử lại, thời gian chờ, cách xử lý lỗi và mức chạy song
           song đọc từ lược đồ máy chủ. Các ô ấy chưa được nối." />}

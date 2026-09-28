@@ -112,11 +112,34 @@ def test_node_loi_chua_publish_duoc_thi_bao_ra_chu_khong_giau(api):
         "trigger.piece.gmail.gmail_new_email_received",
         "trigger.piece.notion.new_database_item",
     }
-    # Điều bài này thật sự chốt: node CHƯA publish được thì palette **khai ra**,
-    # ⛔ không giấu đi. Hỏi từng cái theo TÊN.
+    # ⭐ 28/09/2026 (Q11): `trigger.manual` `False` -> `True`. Nay CA BAY trigger
+    #    publish được, nên nhóm TRIGGERS ⛔ không còn một ví dụ `False` nào.
     for ten, x in theo_ten.items():
-        ky_vong = False if ten == "trigger.manual" else True
-        assert x["publish_duoc"] is ky_vong, ten
+        assert x["publish_duoc"] is True, ten
+
+    # 🔴 NHƯNG mệnh đề bài này thật sự canh ⛔ KHÔNG phải *"trigger.manual là
+    #    False"* — nó là: **node chưa publish được thì palette KHAI RA, ⛔ không
+    #    giấu đi**. Nếu chỉ sửa vòng lặp trên thành `is True` rồi dừng, mệnh đề
+    #    ấy mất nhân chứng: một bản vá giấu mọi node `publish_duoc=False` khỏi
+    #    palette sẽ **xanh** ở đây.
+    #
+    # ⇒ Giữ nhân chứng, lấy từ nhóm còn `False` thật. Hôm nay là ba node `ai.*`
+    #   (`ai.llm` · `ai.extract` · `ai.router`, plan 10 mở). ⛔ Đừng ghim đúng ba
+    #   tên ấy — mở một cái là bài đỏ vì lý do không liên quan; ghim **sự tồn tại
+    #   của ít nhất một nhân chứng** cùng bất biến "khai ra chứ không giấu".
+    from platform_core.workflow import nut_loi
+
+    chua_mo = {t for t, nd in nut_loi.tat_ca().items() if not nd.publish_duoc}
+    moi_nut = {x["type"]: x for nhom in body["nhom"] for x in nhom["nut"]}
+    assert chua_mo, (
+        "⛔ KHONG con node nao `publish_duoc=False` trong registry ⇒ bai nay mat "
+        "nhan chung. Neu that su moi node da mo, chuyen menh de 'khai ra chu "
+        "khong giau' sang mot bai khac RUOC KHI xoa cho nay.")
+    for ten in chua_mo:
+        assert ten in moi_nut, (
+            f"{ten} chua publish duoc ma palette GIAU no — nguoi soan se khong "
+            "hieu vi sao mot buoc ho can khong ton tai")
+        assert moi_nut[ten]["publish_duoc"] is False, ten
 
 
 def test_khong_lo_job_type_noi_bo_cua_provider(api):

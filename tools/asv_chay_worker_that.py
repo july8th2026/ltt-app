@@ -47,6 +47,21 @@ import sys
 import time
 from datetime import datetime, timezone
 
+# 🔴 **⛔ Khong de bang ma cua NOI GOI quyet dinh cong cu nay chay duoc hay
+#    khong.** Do 28/09: goi tu cong cu Bash (console cp1252) thi dong
+#    `print("PHIM  :", video)` **nem** `UnicodeEncodeError` ngay o ten tep phim
+#    tieng Trung — cong cu chet truoc khi tao duoc lan chay, va thong diep noi
+#    ve `charmap` chu ⛔ khong noi gi ve viec thieu mot cai `reconfigure`.
+#
+# ⭐ Cung ho voi bay `tar` cua Git Bash o duong deploy va `mypy .` vs
+#    `check_mypy.py`: **mot cai ten tro toi hai thu khac nhau tuy CHO DUNG**.
+#    Thuoc la ghim chi CUA MINH, ⛔ khong dan nguoi goi nho dat bien moi truong.
+for _luong in (sys.stdout, sys.stderr):
+    try:
+        _luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except (AttributeError, OSError):
+        pass
+
 GOC = pathlib.Path(__file__).resolve().parent.parent
 if str(GOC) not in sys.path:
     sys.path.insert(0, str(GOC))

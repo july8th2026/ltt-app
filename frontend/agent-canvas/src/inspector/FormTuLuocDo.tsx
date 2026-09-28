@@ -21,6 +21,31 @@ type Props = {
 
 const laBieuThuc = (v: unknown) => typeof v === 'string' && v.includes('{{')
 
+// ── Dung chung voi ChonDuLieu (lan UI-6, tab "Dữ liệu vào") ────────────────
+//
+// ⛔ HAI cho tinh "truong nao dang HIEN" la dung hinh dang da bi cha 3 lan
+//    trong ho so du an ("cho noi hai module vut truong im lang"). Mot ham,
+//    hai noi goi.
+function anDuocTruong(luat: TruongLuocDo, giaTri: Record<string, unknown>): boolean {
+  const cha = luat['x-ltt-dong']?.prop
+  return Boolean(cha) && chuaChon(giaTri[cha as string])
+}
+
+/** Cac truong dang HIEN (bo truong phu thuoc dang an — §6 luat 1). Dung o ca
+ *  form nay lan `ChonDuLieu` (chon O DICH de chen bieu thuc). */
+export function truongHienThi(luocDo: LuocDo,
+                              giaTri: Record<string, unknown>): [string, TruongLuocDo][] {
+  return Object.entries(luocDo.properties ?? {})
+    .filter(([, luat]) => !anDuocTruong(luat, giaTri))
+}
+
+/** `true` khi truong nhan duoc mot chuoi `{{ ... }}` qua giao dien. Enum dung
+ *  `<select>` (khong go chu duoc) va boolean dung o tick — ca hai KHONG co
+ *  duong nao nhan bieu thuc, dung nhu `MotO` o duoi da phan biet. */
+export function nhanBieuThuc(luat: TruongLuocDo): boolean {
+  return !Array.isArray(luat.enum) && luat.type !== 'boolean'
+}
+
 function ChuThich({ luat }: { luat: TruongLuocDo }) {
   const dong = luat['x-ltt-dong']
   return <>
@@ -124,7 +149,7 @@ function MotO({ ten, luat, bat_buoc, gia, readOnly, goiY, onChange }: {
         onChange={v => onChange(v)} />
       {so && <button type="button" className="o-cong-tac-bieu-thuc"
         aria-label={`Dùng biểu thức cho ${ten}`} disabled={khoa}
-        aria-pressed={true}
+        aria-pressed={bieuThuc}
         onClick={() => setMoBieuThuc(m => !m)}>{'{{ }}'}</button>}
     </>)
   }
@@ -172,9 +197,8 @@ export function FormTuLuocDo({ luocDo, giaTri, readOnly, goiY, onChange }: Props
   //    KHONG CO GI DE THAY.
   const an = new Map<string, string[]>()
   const hien = muc.filter(([ten, luat]) => {
-    const cha = luat['x-ltt-dong']?.prop
-    if (!cha || !chuaChon(giaTri[cha])) return true
-    an.set(cha, [...(an.get(cha) ?? []), ten])
+    if (!anDuocTruong(luat, giaTri)) return true
+    an.set(luat['x-ltt-dong']!.prop, [...(an.get(luat['x-ltt-dong']!.prop) ?? []), ten])
     return false
   })
 

@@ -252,9 +252,11 @@ describe('§6 — nam tab', () => {
     expect(screen.getByLabelText('model *')).toBeInTheDocument()
   })
 
-  it('bon tab chua lam NOI RA la chung chua lam', () => {
+  it('ba tab chua lam NOI RA la chung chua lam', () => {
+    // ⚠️ "Dữ liệu vào" lam THAT o lan UI-6 (`ChonDuLieu` — xem
+    //    `ChonDuLieu.test.tsx`) nen KHONG con trong danh sach dat cho o day.
     veInspector()
-    for (const ten of ['Dữ liệu vào', 'Tuỳ chọn', 'Kết quả', 'Chạy thử']) {
+    for (const ten of ['Tuỳ chọn', 'Kết quả', 'Chạy thử']) {
       fireEvent.click(screen.getByRole('button', { name: ten }))
       // ⛔ Mot tab trong trong nhu da hoat dong la thu te nhat.
       expect(screen.getByText(`${ten} — chưa hoạt động`)).toBeInTheDocument()

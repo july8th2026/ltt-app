@@ -216,4 +216,36 @@ describe('FormTuLuocDo', () => {
     expect(screen.getByLabelText('preview')).toBeDisabled()
     expect(screen.getByLabelText('cau_hinh')).toBeDisabled()
   })
+
+  // ⭐ Hang muc 91 (Screen reader, scorecard 02): `aria-pressed={true}` tung
+  // dong CUNG o nut nay. Gia tri DA LUU la bieu thuc (nhanh `so && bieuThuc`)
+  // thi cong tac phai VAN doi duoc ve `false` khi ban ROI khoi bieu thuc — tat
+  // ca duong tat ve `!laBieuThuc` deu phai qua o CHU roi doi kieu, nen phep
+  // nay ep component sang nhanh so hoc that su bang cach xoa het `{{ }}`.
+  it('doi tu bieu thuc da luu ve so hoc thi cong tac tro ve false', () => {
+    const bat = vi.fn()
+    const { rerender } = render(<FormTuLuocDo luocDo={luocDo}
+      giaTri={{ count: '{{ nodes.a.output.n }}' }} onChange={bat} />)
+    expect(screen.getByRole('button', { name: 'Dùng biểu thức cho count' }))
+      .toHaveAttribute('aria-pressed', 'true')
+    // Gia tri cha doi thanh so thuong (nguoi dung xoa bieu thuc o noi khac,
+    // vd. dan lai gia tri) MA khong dung cong tac — `bieuThuc` phai theo
+    // GIA TRI THAT, khong con "dong cung true" tu lan render truoc.
+    rerender(<FormTuLuocDo luocDo={luocDo} giaTri={{ count: 3 }} onChange={bat} />)
+    expect(screen.getByLabelText('count')).toHaveAttribute('type', 'number')
+    expect(screen.getByRole('button', { name: 'Dùng biểu thức cho count' }))
+      .toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // Bay tiem loi (hop dong §"Tiem loi"): mot `aria-pressed={true}` DONG CUNG
+  // se qua het cac phep tren vi cai nhanh do luon render dung luc bieuThuc
+  // that su true — do la CHINH LY DO no nam yen duoc nhieu ngay. Bat no bang
+  // quet nguon, khong bang DOM.
+  it('khong con aria-pressed dong cung (literal true/false) trong nguon', async () => {
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+    const nguon = fs.readFileSync(
+      path.resolve(__dirname, '../src/inspector/FormTuLuocDo.tsx'), 'utf8')
+    expect(nguon).not.toMatch(/aria-pressed=\{(true|false)\}/)
+  })
 })

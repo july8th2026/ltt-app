@@ -1322,14 +1322,22 @@ mang vào, rồi FF-merge vào `main` và push origin.
 - 3 ratchet kiểm lại trên cây đã merge cuối: mypy `đạt mốc: 558` (⊆ 569)
   · silent-except `PASS` (53/53) · bo-qua `PASS` (76).
 
-**Đang chạy:** gate L1 `python tools/cay_gate.py chay --doi` trên cây gate
-(`D:\LTTSTUDIOSAPP-cay-gate`, ghim `0b2ae6f6`) — kết quả sẽ ghi thêm vào mục
-này khi xong.
+**Gate L1 đầu (26/09, `--doi --tu bf1cf83f`):** `FAIL 2/33` — cả 2 KHÔNG phải
+nợ TCN (phạm vi TCN: 4 thành phần, 308 tệp test, **5361 passed / 0 failed**):
+- `secret scan` + `test_44_release_build` (2 bài) — cùng 1 nguồn:
+  `tests/test_408_asv_dich_thuat.py:545`, dòng comment chép **stage_id
+  production** (`asvs_b725…`) từ commit ASV `cb2cae1a` (Task 5b). ID tham
+  chiếu ⛔ không phải bí mật, nhưng `bare_32_char_hex` chỉ nhận chữ báo
+  "băm" TRƯỚC hex — dòng comment không có. Đã nhắn chủ khu ASV (luật
+  §10.4: lỗi khu người thì báo, không tự vá).
 
-⚠️ **Deploy — CHƯA:** `NHAT_KY.md` mục 26/09 chiều chốt rằng làn ASV đang
-chặn deploy (`app.lttstudios.com` vẫn bán giá VPS cũ, bản chạy `dff24d4b`).
-Chặn gỡ khi làn ASV báo xong 13/13. Lần deploy tới sẽ mang luôn TCN này
-(`git archive` xuất HEAD). UI verify theo luật 7 đợi cửa sổ deploy chung.
+**Kéo 28/09:** Làn ASV đã xong và **tự vá** đúng dòng đó (cắt hex 12 ký tự
+đầu — hình thức `<hex>` rút gọn vẫn nhận dạng được ID, giữ nguyên nghĩa
+bằng chứng). Main tiến tới `41da12b9` (24 commit sau bản production
+`8907b4dd` — TCN nằm trong đó, đã là tổ tiên của main). `alembic/` **rỗng**
+từ `8907b4dd..main` ⇒ không migration mới. `scan_source_secrets.py`:
+**Findings: 0**. Cây chính sạch. Gate L1 chốt + deploy thực hiện ở phần tiếp
+theo của mục này (28/09).
 
 
 ## 2026-09-26 (chiều, sau) — Gói Nhỏ lên **2 vCPU / 4 GB**; và "cấu hình" ⛔ không phải "đang chạy"

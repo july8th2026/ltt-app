@@ -299,3 +299,110 @@ def test_bo_tach_than_ham_PHAN_BIET_duoc_hai_khai_bao():
     than = _than_ham(mau)
     assert set(than) == {"a", "b"}
     assert "/agent/api/a" in than["a"] and "/agent/api/b" not in than["a"]
+
+
+# ── Bộ đo này ⛔ KHÔNG ĐƯỢC ÂM THẦM MÙ ─────────────────────────────────────────
+#
+# 🔴 Vì sao cần thêm hai bài dưới đây, khi tám bài trên đã xanh.
+#
+#    Bộ đo này ĐÃ mù một lần, và mù **im lặng**: UI-3 tách `CanvasShell` xuống
+#    `features/editor/hooks/`, đường import thành ba cấp, và `_IMPORT` chỉ khớp
+#    được một hoặc hai cấp. Nó tụt từ 22 tên hàm với tới được xuống **1** — bài
+#    chính vẫn chạy mà ⛔ không còn canh gì.
+#
+#    Lần ấy ta biết **chỉ vì** hai bài đối chứng đỏ theo. Đó là may: hai bài ấy
+#    được viết cho một mục đích khác (chống *"xanh vì tập rỗng"*), và chúng tình
+#    cờ đủ nhạy. ⛔ Một lần may ⛔ không phải một cơ chế.
+#
+# ⚠️ Và mỗi lần kiến trúc frontend đổi lại là một cơ hội mù MỚI:
+#      · UI-3   tách thư mục             -> import sâu hơn      (ĐÃ mù)
+#      · UI-10a `React.lazy` + `import()` -> module chỉ nạp động
+#    Lần sau sẽ là một cơ chế ta chưa nghĩ ra.
+#
+# ⇒ Hai bài dưới đây ⛔ không đo sản phẩm. Chúng đo **CHÍNH BỘ ĐO**, và mỗi bài
+#   nhắm một loại mù khác nhau: một cái đo **hậu quả** (độ phủ tụt, bất kể cơ
+#   chế), một cái đo **nguyên nhân đã biết** (một dạng import bộ đo không hiểu).
+
+
+#: Sàn độ phủ. Đo 28/09/2026 trên `main` `b6a19a46`: **27** hàm với tới được
+#: trên **28** hàm/const `export` của `workflowApi.ts`.
+#:
+#: ⭐ Đặt sàn thấp hơn số thật một khoảng rộng là CÓ Ý: bài này ⛔ không canh
+#:    *"độ phủ phải đúng 27"* — một refactor hợp lệ có thể gộp hay tách vài hàm,
+#:    và một sàn sát quá sẽ đỏ vì chuyện ⛔ không liên quan rồi bị nới ra cho tới
+#:    khi vô dụng. Thứ nó canh là **một cú SỤP**: `22 -> 1` như lần UI-3.
+SAN_DO_PHU = 20
+
+
+def _ham_voi_toi_duoc() -> set[str]:
+    """Tập tên hàm trong `workflowApi.ts` mà giao diện với tới được.
+
+    ⚠️ Lặp lại logic của `duong_voi_toi_duoc` một cách CÓ Ý: hàm kia trả về
+       *đường dẫn*, còn bài này cần *số HÀM*. Gọi hàm kia rồi đếm đường sẽ đo một
+       đại lượng khác — hai hàm có thể cùng trỏ một đường, và một hàm có thể ⛔
+       không chứa đường nào.
+    """
+    than = _than_ham(bo_chu_thich(API_TS.read_text(encoding="utf-8")))
+    goc: set[str] = set()
+    for tep in sorted(SRC.rglob("*.ts*")):
+        if tep == API_TS:
+            continue
+        nguon = bo_chu_thich(tep.read_text(encoding="utf-8"))
+        for khoi in _IMPORT.finditer(nguon):
+            for phan in khoi.group(1).split(","):
+                ten = phan.replace("type", " ").strip().split(" ")[-1].strip()
+                if ten:
+                    goc.add(ten)
+    toi = {t for t in goc if t in than}
+    while True:
+        them = {g for t in toi for g in _GOI.findall(than[t])
+                if g in than and g not in toi}
+        if not them:
+            break
+        toi |= them
+    return toi
+
+
+def test_bo_do_KHONG_bi_mu_sau_mot_lan_refactor():
+    """🔴 Đo **hậu quả**, nên nó bắt được MỌI cơ chế làm mù — kể cả cơ chế chưa
+    ai nghĩ ra.
+
+    Nếu bài này đỏ, ⛔ **đừng hạ `SAN_DO_PHU`**. Hãy hỏi: *đường import đã đổi
+    dạng gì mà `_IMPORT` ⛔ không còn hiểu?* Lần trước câu trả lời là
+    `'../../../workflowApi'` (ba cấp).
+    """
+    toi = _ham_voi_toi_duoc()
+    assert len(toi) >= SAN_DO_PHU, (
+        f"do phu cua bo do TUT xuong {len(toi)} ham (san {SAN_DO_PHU}). "
+        "Bo do dang MU: bai chinh van chay ma khong con canh gi. "
+        "DUNG ha san — kiem `_IMPORT` co con khop dang import hien tai khong; "
+        "lan truoc la duong sau BA cap sau khi UI-3 tach thu muc. "
+        f"Ham doc ra duoc: {sorted(toi)}")
+
+
+#: `import('...workflowApi')` — dạng ĐỘNG. `_IMPORT` chỉ hiểu dạng TĨNH.
+_IMPORT_DONG = re.compile(r"""import\s*\(\s*['"]([^'"]*workflowApi)['"]""")
+
+
+def test_KHONG_ai_import_workflowApi_bang_import_DONG():
+    """⚠️ Đo **nguyên nhân đã biết**, vì nó nói được cách sửa.
+
+    `_IMPORT` chỉ khớp `import { x } from '...workflowApi'`. Một
+    `await import('../../workflowApi')` sẽ **vô hình** với bộ đo — và làn UI-10a
+    vừa đưa `React.lazy(() => import(...))` vào kho, nên khuôn ấy nay có tiền lệ
+    và sẽ lan.
+
+    ⭐ Bài này ⛔ KHÔNG cấm nạp động (nó là một kỹ thuật đúng, và UI-10a dùng nó
+       để giảm byte thật). Nó chỉ đòi: **nếu dùng cho `workflowApi` thì sửa
+       `_IMPORT` TRƯỚC** — nếu không, bộ đo mù mà ⛔ không ai biết.
+    """
+    thay: list[str] = []
+    for tep in sorted(SRC.rglob("*.ts*")):
+        nguon = bo_chu_thich(tep.read_text(encoding="utf-8"))
+        for mo in _IMPORT_DONG.finditer(nguon):
+            thay.append(f"{tep.relative_to(SRC).as_posix()} -> {mo.group(1)}")
+    assert not thay, (
+        "co noi import `workflowApi` bang `import()` DONG, ma `_IMPORT` chi hieu "
+        "dang TINH ⇒ nhung loi goi trong do VO HINH voi bo do: "
+        + " | ".join(thay)
+        + ". Mo rong `_IMPORT` cho dang dong TRUOC, roi moi dung khuon nay.")

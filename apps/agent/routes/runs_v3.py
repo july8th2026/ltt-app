@@ -310,6 +310,46 @@ def _waiting_kind(db: Session, run_id: str, node_id: str) -> str:
     return ",".join(dict.fromkeys(kinds))  # thu tu on dinh, khong lap
 
 
+#: Tham so cua node `core.human` mà NGƯỜI DUYỆT cần thấy, đọc từ đồ thị **ĐÃ
+#: GHIM** của run.
+#:
+#: 🔴 VÌ SAO PHẢI TỪ BẢN GHIM, ⛔ KHÔNG TỪ BẢN NHÁP.
+#:
+#:    Một lượt chạy thi hành `run.version_id` — một `workflow_version` BẤT BIẾN.
+#:    Bản nháp thì sửa được bất kỳ lúc nào, kể cả trong lúc run đang chờ người.
+#:    Nếu giao diện đọc câu hỏi từ bản nháp thì chuỗi này xảy ra mà ⛔ không cần
+#:    ai cố ý:
+#:
+#:        publish `cau_hoi = "Đăng bài này lên kênh chính?"` -> chạy -> chờ
+#:        ai đó sửa bản nháp thành `"Xoá toàn bộ playlist?"`
+#:        người duyệt đọc câu MỚI, bấm Duyệt
+#:        động cơ đi nhánh `approve` của bản CŨ  ->  đăng bài
+#:
+#:    ⇒ Người duyệt đã đồng ý với một câu hỏi họ **chưa từng được hỏi**, và ⛔
+#:      không dấu vết nào nói màn hình đã hiện một câu khác.
+#:
+#: ⭐ Kho này đã học đúng bài này ở đường TIỀN: `estimated_max` bị đóng băng
+#:    cùng graph đã biên dịch vì *"tính lại lúc chạy nghĩa là một lượt có thể
+#:    vượt một trần mà người duyệt chưa từng thấy con số ấy"* (`test_969`). Câu
+#:    ấy đúng y nguyên khi thay *con số* bằng *câu hỏi*.
+#:
+#: ⚠️ CHỈ cho node `core.human`. Trả `cau_hoi` cho mọi node có khoá đó sẽ làm
+#:    giao diện vẽ thẻ duyệt cho một node ⛔ không chờ ai.
+def _tham_so_human_da_ghim(do_thi: dict) -> dict[str, dict]:
+    ra: dict[str, dict] = {}
+    for nut in do_thi.get("nodes") or []:
+        if str(nut.get("type") or "") != "core.human":
+            continue
+        p = nut.get("params") or {}
+        ra[str(nut.get("id") or "")] = {
+            "cau_hoi": str(p.get("cau_hoi") or ""),
+            # Tên khoá KHÁC `het_han` (boolean "đã hết hạn chưa") ở cùng payload
+            # — hai thứ khác loại thì ⛔ không dùng một tên.
+            "het_han_che_do": str(p.get("het_han") or ""),
+        }
+    return ra
+
+
 def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
     """Trạng thái hiện tại của MỌI node trong đồ thị đã ghim.
 
@@ -321,6 +361,7 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
     ver = db.get(WorkflowVersion, run.version_id)
     do_thi = (ver.graph if ver is not None else {}) or {}
     theo_than, khong_xac_dinh = _gop_than_foreach(db, run, do_thi)
+    human = _tham_so_human_da_ghim(do_thi)
     ra: list[dict] = []
     for nut in do_thi.get("nodes") or []:
         nid = str(nut.get("id") or "")
@@ -374,6 +415,10 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
             #    GIÂY trong luồng SSE.
             "het_han": (anh.output_ref or {}).get("het_han") is True,
             "error": anh.error,
+            # ⭐ Chỉ gắn khi node NÀY thật sự là `core.human` — xem
+            #    `_tham_so_human_da_ghim`. Node khác ⛔ không có hai khoá này,
+            #    nên giao diện ⛔ không thể vẽ thẻ duyệt cho một node không chờ ai.
+            **human.get(nid, {}),
         })
     return ra
 

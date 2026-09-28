@@ -1,17 +1,14 @@
-import { useCallback, useState } from 'react'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import '../../canvas.css'
 import { activePage } from '../../editorState'
 import type { CanvasDocument, CanvasNode } from '../../workflowApi'
-import { CommandPalette } from './CommandPalette'
 import { ContextMenu } from './ContextMenu'
 import { ExecutionPanel } from './ExecutionPanel'
-import { LayersDrawer } from './LayersDrawer'
 import { LeftRail } from './LeftRail'
 import { MobileTabs } from './MobileTabs'
 import { PageDock } from './PageDock'
-import { StepInspector } from '../../inspector/StepInspector'
 import { StepLibrary } from './StepLibrary'
 import { WorkflowCanvas } from './WorkflowCanvas'
 import { WorkflowHeader } from './WorkflowHeader'
@@ -28,6 +25,28 @@ import { useLiveQuote } from './hooks/useLiveQuote'
 import { useStepLibrary } from './hooks/useStepLibrary'
 import { useWorkflowDocument } from './hooks/useWorkflowDocument'
 import { useWorkflowRun } from './hooks/useWorkflowRun'
+
+/** ⭐ RANH GIỚI NẠP TRỄ (UI-10a, hiệu năng bundle) — xem `docs/architecture/
+ *  agent_ui_v2/00_SO_TIEN_DO.md` và chú thích `TRAN_JS_NEN` ở
+ *  `tests/test_95_agent_canvas_build.py`.
+ *
+ *  Ba mảng này CHỈ vẽ khi người dùng chủ động mở chúng (bàn phím Ctrl/Cmd+K,
+ *  nút "Lớp", hoặc bấm một node) — tách chúng ra chunk riêng bằng `import()`
+ *  nghĩa là byte của chúng KHÔNG rời đường truyền ở lần ghé đầu, ⛔ không
+ *  phải một cách đóng gói lại cùng một lượng byte.
+ *
+ *  ⚠️ Giá phải trả: một nhịp chờ mạng lần ĐẦU mở (đo trong báo cáo UI-10a).
+ *     `Suspense` dùng `fallback={null}` cho `CommandPalette`/`LayersDrawer` —
+ *     đây là lớp phủ/ngăn kéo xuất hiện tức thời theo cử chỉ, một khung chờ
+ *     nhấp nháy còn tệ hơn một nhịp trễ ngắn không có gì hiện ra. */
+const CommandPalette = lazy(() =>
+  import('./CommandPalette').then(m => ({ default: m.CommandPalette })))
+const LayersDrawer = lazy(() =>
+  import('./LayersDrawer').then(m => ({ default: m.LayersDrawer })))
+// `StepInspector` (+ `ChonDuLieu`/`FormTuLuocDo`/`OKetNoi` mà nó kéo theo) chỉ
+// cần khi có node đang chọn — nạp trễ ở ĐÂY, ⛔ không sửa tệp đó (chủ UI-5/6).
+const StepInspector = lazy(() =>
+  import('../../inspector/StepInspector').then(m => ({ default: m.StepInspector })))
 
 /** Bố cục trình soạn + phím tắt toàn cục. Mọi trạng thái sống trong `hooks/`.
  *
@@ -154,8 +173,8 @@ function Editor() {
         moNgan={moNgan} dispatch={dispatch}>
         {!!Object.keys(run.loiNode).length && <div className="validation-banner" role="alert"><strong>Workflow chưa biên dịch được</strong>
           <span>{run.runError||Object.values(run.loiNode).join(' · ')}</span></div>}
-        {showLayers&&<LayersDrawer page={page} dinhNghia={dinhNghia}
-          dong={() => setShowLayers(false)} dispatch={dispatch}/>}
+        {showLayers&&<Suspense fallback={null}><LayersDrawer page={page} dinhNghia={dinhNghia}
+          dong={() => setShowLayers(false)} dispatch={dispatch}/></Suspense>}
       </WorkflowCanvas>
       <PageDock document={state.document} activeId={page.id} dispatch={dispatch}/>
       {contextMenu&&<ContextMenu menu={contextMenu} dong={() => setContextMenu(null)}
@@ -197,6 +216,7 @@ function Editor() {
                  : desktopPanel==='inspector')&&
         <aside className={`canvas-inspector${desktopPanel==='inspector'?' is-open':''}`}
                aria-label="Chi tiết node">
+          <Suspense fallback={<p>Đang tải…</p>}>
           <StepInspector buoc={selectedNode ?? null}
             dinhNghia={selectedDinhNghia ?? null}
             nodes={page.nodes} edges={page.edges} csrf={csrf}
@@ -211,18 +231,19 @@ function Editor() {
               edges:page.edges})}
             onNhanBan={selectedNode?()=>edits.duplicateNode(selectedNode.id):undefined}
             onXoa={selectedNode?()=>dispatch({type:'delete',ids:[selectedNode.id]}):undefined}/>
+          </Suspense>
         </aside>}
     </div>
     {/* `readOnly`/`selected`/`duplicate`/`toggleErrorBranch`: bon lenh SUA da
         roi ngan keo "Chay workflow" sang day (lan UI-7) — xem chu thich trong
         `CommandPalette.tsx`. */}
-    {commandOpen&&<CommandPalette truyVan={commandQuery} datTruyVan={setCommandQuery}
+    {commandOpen&&<Suspense fallback={null}><CommandPalette truyVan={commandQuery} datTruyVan={setCommandQuery}
       dong={() => setCommandOpen(false)}
       dongVaXoa={() => { setCommandOpen(false); setCommandQuery('') }}
       showGrid={showGrid} showConnections={showConnections} showMinimap={showMinimap}
       readOnly={readOnly} selected={sel.selected} selectedEdges={sel.selectedEdges}
       selectedEdge={selectedEdge} duplicate={edits.duplicate}
-      toggleErrorBranch={edits.toggleErrorBranch} dispatch={dispatch}/>}
+      toggleErrorBranch={edits.toggleErrorBranch} dispatch={dispatch}/></Suspense>}
   </section>
 }
 
