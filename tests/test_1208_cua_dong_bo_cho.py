@@ -1012,14 +1012,15 @@ def test_luat_cho_doc_so_CUA_MODEL_va_tra_rong_khi_khong_co_pool():
     assert tham_so_da_luot.luat_cho(AdmissionModel("x", 1, 0), lop=luat_nhan.TUONG_TAC,
                                     token_vao_uoc=10, xin_ra=10) == {}
     suc = AdmissionModel("x", 3, 100_000, nguong_whale=500, dem_uoc=7,
-                         token_giu_moi_anh=11)
+                         token_anh_toi_thieu=8, token_anh_toi_da=4_096)
     ra = tham_so_da_luot.luat_cho(suc, lop=luat_nhan.NEN, token_vao_uoc=10, xin_ra=20)
     assert ra["lop"] == luat_nhan.NEN and ra["token_pool"] == 100_000
     assert ra["token_dat_truoc"] == 30 + 7
-    # Ảnh cũng vào phép tính, cùng một chỗ.
+    # Ảnh cũng vào phép tính, cùng một chỗ. 28/09: `token_anh` là TỔNG ĐÃ ĐO,
+    # nên `luat_cho` CỘNG nó vào — ⛔ không còn nhân với số ảnh ở đây.
     co_anh = tham_so_da_luot.luat_cho(suc, lop=luat_nhan.NEN, token_vao_uoc=10,
-                                      xin_ra=20, so_anh=2)
-    assert co_anh["token_dat_truoc"] == 30 + 7 + 2 * 11
+                                      xin_ra=20, token_anh=22)
+    assert co_anh["token_dat_truoc"] == 30 + 7 + 22
 
 
 def test_luat_cho_VUOT_pool_thi_NEM_khong_kep_im_lang():
@@ -1035,11 +1036,11 @@ def test_luat_cho_VUOT_pool_thi_NEM_khong_kep_im_lang():
     from platform_core.registry import AdmissionModel
 
     suc = AdmissionModel("x", 3, 1_000, nguong_whale=500, dem_uoc=7,
-                         token_giu_moi_anh=11)
+                         token_anh_toi_thieu=8, token_anh_toi_da=4_096)
     with pytest.raises(tham_so_da_luot.DatChoVuotPool) as e:
         tham_so_da_luot.luat_cho(suc, lop=luat_nhan.TUONG_TAC, token_vao_uoc=900,
-                                 xin_ra=900, so_anh=4)
-    assert (e.value.dat, e.value.pool) == (900 + 900 + 7 + 4 * 11, 1_000)
+                                 xin_ra=900, token_anh=44)
+    assert (e.value.dat, e.value.pool) == (900 + 900 + 7 + 44, 1_000)
     # Bản khai pool > 0 mà thiếu đệm ước là bản khai hỏng, không phải "đệm 0".
     with pytest.raises(ValueError):
         tham_so_da_luot.luat_cho(AdmissionModel("x", 3, 1_000), lop=luat_nhan.NEN,
@@ -1062,8 +1063,12 @@ def test_cua_stream_va_cua_job_dung_CHUNG_phep_tinh_luat_cho():
                 "platform_core/job_runner.py", "platform_core/agent/planner.py"):
         cay = ast.parse((goc / ten).read_text(encoding="utf-8"))
         thay = [n.attr for n in ast.walk(cay) if isinstance(n, ast.Attribute)
-                and n.attr in ("dem_dat_truoc", "dem_uoc", "token_giu_moi_anh",
-                               "nguong_whale")]
+                # 28/09: `token_giu_moi_anh` ĐÃ GỠ. Hai tên thay nó KHÔNG vào
+                # danh sách này: `luong.do_anh` ĐƯỢC PHÉP đọc chúng, vì nó là
+                # người ĐO ảnh — còn `luat_cho` chỉ CỘNG tổng đã đo. Bản sao thứ
+                # hai mà phép kiểm này chặn là bản sao của PHÉP TÍNH ĐẶT CHỖ, và
+                # phép đo ảnh không phải một bản sao của nó.
+                and n.attr in ("dem_dat_truoc", "dem_uoc", "nguong_whale")]
         assert not thay, (f"{ten} van tu doc {thay} — ban sao thu hai cua phep "
                           "tinh dat cho / gan co whale")
 

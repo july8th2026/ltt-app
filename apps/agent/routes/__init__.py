@@ -14,6 +14,8 @@ duoc dang ky vao router truoc khi nen tang gan vao FastAPI.
     bieu_thuc_v3.py    Goi y cho trinh soan bieu thuc §6 (P2 Task 8).
     bao_gia_v3.py      MOT cua bao gia cho CA do thi (no §5, lan p10-don).
     agent_v3.py        Agent Designer §12.2: soan draft v3 bang AI. KHONG publish.
+    trigger_v3.py      Trigger workflow (UI-12): dat LICH (CRON) + cap URL WEBHOOK,
+                       cong voi trang HTML `/agent/workflows/{id}/triggers`.
     phe_duyet_v3.py    Cua duyet/tu choi mot waitpoint `core.human` (lan UI-8a).
                        ⛔ No KHONG tao run, KHONG tinh tien, KHONG di vong qua
                        `tao_run.py` — chi DONG mot waitpoint.
@@ -34,6 +36,6 @@ from apps.agent.routes._shared import router
 from apps.agent.routes import (  # noqa: F401  (import de dang ky route)
     trang, workspace, workflows, admin,
     drafts_v3, runs_v3, palette_v3, bieu_thuc_v3, bao_gia_v3, agent_v3,
-    ket_noi_v3, phe_duyet_v3)
+    trigger_v3, ket_noi_v3, phe_duyet_v3)
 
 __all__ = ["router"]

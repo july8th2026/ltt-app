@@ -155,7 +155,14 @@ def _vat_ly(tran_vao: int = 200_000, *, max_out: int = 16_384, np: int = 64,
        chỗ con số được khai.
     """
     ctx = int(tran_vao) + int(max_out) + int(dem_uoc)
-    return {m: VatLy(ctx=ctx, np=np, kvu=True) for m in ("qwen38-api", "qwen35-api")}
+    # 28/09: hai tran token ANH cua engine. Thieu chung thi `kiem_tra` nem
+    # `ThieuTranAnhEngine` cho MOI anh (fail-closed co chu y - xem
+    # `vat_ly.VatLy.token_anh_toi_thieu`), nen mot rao vat ly gia MA THIEU chung
+    # se lam moi phep kiem ve anh trong tep nay do vi mot ly do khong lien quan.
+    # Gia tri lay dung bang `llama-swap.yaml` dang deploy.
+    return {m: VatLy(ctx=ctx, np=np, kvu=True,
+                     token_anh_toi_thieu=8, token_anh_toi_da=4096)
+            for m in ("qwen38-api", "qwen35-api")}
 
 
 def _cfg(tran_vao: int = 200_000, np: int = 64, **ghi_de) -> Config:
@@ -169,7 +176,7 @@ def _cfg(tran_vao: int = 200_000, np: int = 64, **ghi_de) -> Config:
         # ton tai.
         models_mo=("qwen38-api", "qwen35-api"),
         max_output_tokens=16_384,
-        max_images=4, max_image_bytes=12 * 1024 * 1024,
+        max_image_bytes=12 * 1024 * 1024,
         upstream_timeout_s=600.0, stream_timeout_s=900.0,
         ram_trong_toi_thieu_gb=48.0, trong_tai_bat=True,
         # Tat nhip tim trong bo test nay: no do NGAN SACH/TRONG TAI/DON DEP,
@@ -413,14 +420,78 @@ def test_MOI_ho_so_dang_mo_deu_NHAN_duoc_anh():
         assert len(up.goi) == 1
 
 
-def test_qua_nhieu_anh_thi_413():
-    c, _ = _client(_cfg(max_images=2))
-    noi_dung = [{"type": "image_url", "image_url": {"url": "data:image/png;base64,QUJD"}}
-                for _ in range(3)]
+def _png(rong: int, cao: int) -> str:
+    """`data:` URL cua mot anh PNG chi co HEADER — du de doc kich thuoc.
+
+    `anh_token.kich_thuoc` doc chunk IHDR (24 byte dau), khong giai ma anh. Nen
+    mot header la du, va phep kiem khong phai dung mot anh 6 MB de hoi mot cau
+    ve SO TOKEN.
+    """
+    import base64
+    import struct
+    # Chu ky PNG viet bang SO, khong bang chuoi escape: 137 P N G CR LF SUB LF.
+    chu_ky = bytes([137, 80, 78, 71, 13, 10, 26, 10])
+    d = chu_ky + struct.pack(">I", 13) + b"IHDR" + struct.pack(">II", rong, cao)
+    return "data:image/png;base64," + base64.b64encode(d).decode()
+
+
+def test_nhieu_anh_bi_tu_choi_theo_NGAN_SACH_chu_khong_theo_DEM():
+    """⭐ THAY `test_qua_nhieu_anh_thi_413` (28/09/2026, quyet dinh C4).
+
+    Phep cu chung minh `max_images` chay. Tran do DA GO: con so 4 khong co phep
+    do nao dung sau, va llama.cpp khong co tran so anh - tran that luon la NGU
+    CANH. Nen chu de dung la: *nhieu anh van bi tu choi, nhung bi tu choi boi
+    NGAN SACH TOKEN, va con so trong loi la con so THAT.*
+
+    BA VE, va ve thu ba moi la ve co suc phan biet:
+
+      (a) MOT anh 1920x1080  = 2.042 token  -> vua tran 5.000 -> 200
+      (b) BA anh 1920x1080   = 6.126 token  -> vuot           -> 413
+      (c) BA MUOI anh 320x240 = 2.460 token -> vua            -> 200
+
+    🔴 VE (b) MOT MINH KHONG PHAN BIET DUOC GI, va tui suyt de no lai nhu vay:
+       voi hang phang cu 2.048 thi ba anh = 6.144 token, CUNG vuot 5.000. Tuc ve
+       (b) xanh tren ca ma dung lan ma sai - dung lop "phep tiem nghich xanh ma
+       khong do gi" ma kho nay da ghi nhieu lan.
+
+    ⭐ VE (c) LA THU PHAN BIET. Ba muoi anh nho:
+         do that      30 x   82 =  2.460  -> vua tran  -> 200
+         hang phang   30 x 2.048 = 61.440 -> vuot 12x   -> 413
+       Nen ve (c) do NGAY khi ai thay `f(rong, cao)` bang mot hang. Va no dong
+       thoi chung minh tran DEM da that su bien mat: ba muoi anh trong mot yeu
+       cau, truoc 28/09 la 413 `image_count_exceeded` o anh thu nam.
+    """
+    c, _ = _client(_cfg(tran_vao=5_000))
+    mot = _png(1920, 1080)
+
+    def _gui(so_anh: int):
+        return c.post("/v1/chat/completions", json={
+            "model": "qwen35-api", "messages": [{"role": "user", "content": [
+                {"type": "image_url", "image_url": {"url": mot}}
+                for _ in range(so_anh)]}]})
+
+    # Doi chung DUONG: mot anh phai LOT. Thieu ve nay thi phep kiem xanh ca khi
+    # cong bi hong thanh "tu choi moi anh".
+    assert _gui(1).status_code == 200, _gui(1).text
+
+    r = _gui(3)
+    assert r.status_code == 413, r.text
+    chi_tiet = r.json()["detail"]
+    assert chi_tiet["canonical_code"] == "input_tokens_exceeded", chi_tiet
+    assert chi_tiet["field"] == "input_tokens"
+    # 3 x (1920/32 x 1088/32 + 2 dau vision) = 3 x 2.042 = 6.126, cong phan chu.
+    assert chi_tiet["actual"] >= 6_126, chi_tiet
+    assert chi_tiet["limit"] == 5_000, chi_tiet
+
+    # (c) Ve PHAN BIET - xem docstring. 30 anh nho phai LOT.
+    nho = _png(320, 240)
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen35-api", "messages": [{"role": "user", "content": noi_dung}]})
-    assert r.status_code == 413
-    assert r.json()["detail"]["field"] == "images"
+        "model": "qwen35-api", "messages": [{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": nho}} for _ in range(30)]}]})
+    assert r.status_code == 200, (
+        "30 anh 320x240 = 2.460 token that, phai vua tran 5.000. Do nay nghia la "
+        "hoac tran DEM con song, hoac chi phi anh lai bi quy bang mot HANG PHANG "
+        f"(30 x 2.048 = 61.440). Than: {r.text[:400]}")
 
 
 def test_anh_qua_lon_thi_413():
@@ -475,7 +546,7 @@ def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
 
     with pytest.raises(NS.VuotNganSach) as e:
         NS.kiem_tra(than, max_input_tokens=cua_so * 2, max_output_tokens=cua_so,
-                    max_images=4, max_image_bytes=1 << 20, max_context=cua_so,
+                    max_image_bytes=1 << 20, max_context=cua_so,
                     co_vision=True)
     assert e.value.truong == "context" and e.value.tran == cua_so
 
@@ -491,14 +562,33 @@ def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
 
 
 def test_anh_kieu_anthropic_va_responses_deu_dem_duoc():
-    """Ba giao thức khai ảnh ba kiểu khác nhau — không được bỏ sót kiểu nào."""
-    c, _ = _client(_cfg(max_images=0))
-    anthropic = {"model": "qwen35-api", "messages": [{"role": "user", "content": [
-        {"type": "image", "source": {"type": "base64", "data": "QUJD"}}]}]}
-    responses = {"model": "qwen35-api", "input": [{"role": "user", "content": [
-        {"type": "input_image", "image_url": "data:image/png;base64,QUJD"}]}]}
-    assert c.post("/v1/messages", json=anthropic).status_code == 413
-    assert c.post("/v1/responses", json=responses).status_code == 413
+    """Ba giao thức khai ảnh ba kiểu khác nhau — không được bỏ sót kiểu nào.
+
+    28/09: CAI DO doi tu `max_images=0` (tran dem, DA GO) sang mot tran vao HEP
+    hon chi phi cua mot anh. Ban moi manh hon ban cu: no chung minh anh khong chi
+    duoc THAY MA con duoc DO - vi nguong 1.500 nam GIUA 82 (anh nho) va 2.042
+    (anh 1080p), nen mot bo dem phang se khong cho ra dung cap ket qua nay.
+    """
+    c, _ = _client(_cfg(tran_vao=1_500))
+    to = _png(1920, 1080)                      # 2.042 token > 1.500 -> phai 413
+    nho = _png(320, 240)                       #    82 token < 1.500 -> phai 200
+
+    for cua, than_to, than_nho in (
+        ("/v1/messages",
+         {"model": "qwen35-api", "messages": [{"role": "user", "content": [
+             {"type": "image", "source": {"type": "base64",
+                                          "data": to.split(",", 1)[1]}}]}]},
+         {"model": "qwen35-api", "messages": [{"role": "user", "content": [
+             {"type": "image", "source": {"type": "base64",
+                                          "data": nho.split(",", 1)[1]}}]}]}),
+        ("/v1/responses",
+         {"model": "qwen35-api", "input": [{"role": "user", "content": [
+             {"type": "input_image", "image_url": to}]}]},
+         {"model": "qwen35-api", "input": [{"role": "user", "content": [
+             {"type": "input_image", "image_url": nho}]}]}),
+    ):
+        assert c.post(cua, json=than_to).status_code == 413, f"{cua}: anh to phai bi chan"
+        assert c.post(cua, json=than_nho).status_code == 200, f"{cua}: anh nho phai lot"
 
 
 # ── 4. Trọng tài: bận là 429, không phải lỗi ─────────────────────────────────

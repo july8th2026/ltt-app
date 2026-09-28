@@ -84,8 +84,15 @@ def _dang_codex(model) -> dict:
         "max_output_tokens": int(rang_buoc.get("max_output_tokens")
                                  or TOKEN_RA_TOI_DA),
         "max_input_tokens": int(rang_buoc["max_input_tokens"]),
-        "max_images": int(rang_buoc["max_images"]),
         "max_image_bytes": int(rang_buoc["max_image_bytes"]),
+        # 🔴 Bốn số dưới đây phải có ở ĐÂY nữa, không chỉ ở `models[]`. Lần đầu
+        #    tôi gỡ `max_images` khỏi phép chiếu này mà quên thêm bộ mới, và
+        #    `test_1707` bắt ngay: hai cửa công bố HAI BỘ khác nhau, đúng cái
+        #    khuyết tật phép kiểm ấy sinh ra để chặn.
+        "image_pixels_per_token": int(rang_buoc["image_pixels_per_token"]),
+        "min_image_tokens": int(rang_buoc["min_image_tokens"]),
+        "max_image_tokens": int(rang_buoc["max_image_tokens"]),
+        "image_token_markers": int(rang_buoc["image_token_markers"]),
         "accepted_image_schemes": list(rang_buoc["accepted_image_schemes"]),
         "default_reasoning_level": mac_dinh_nghi,
         "supported_reasoning_levels": cac_muc_nghi,
@@ -148,9 +155,24 @@ def _gioi_han_model(model) -> dict:
                 source.get("max_output_tokens") or TOKEN_RA_TOI_DA
             ),
             "input_modalities": ["text", "image"] if reads_images else ["text"],
-            "max_images": int(source.get("max_images") or 0) if reads_images else 0,
+            # ⛔ ĐÃ GỠ `max_images` (28/09/2026, C4). Con số ấy không có phép đo
+            #    nào đứng sau và llama.cpp không có trần số ảnh. Thay bằng ba số
+            #    cho client TỰ TÍNH được chi phí ngữ cảnh của từng ảnh — đó là
+            #    thứ quyết định một ảnh có lọt hay không, chứ không phải số lượng.
             "max_image_bytes": (
                 int(source.get("max_image_bytes") or 0) if reads_images else 0
+            ),
+            "image_pixels_per_token": (
+                int(source.get("image_pixels_per_token") or 0) if reads_images else 0
+            ),
+            "min_image_tokens": (
+                int(source.get("min_image_tokens") or 0) if reads_images else 0
+            ),
+            "max_image_tokens": (
+                int(source.get("max_image_tokens") or 0) if reads_images else 0
+            ),
+            "image_token_markers": (
+                int(source.get("image_token_markers") or 0) if reads_images else 0
             ),
             "accepted_image_schemes": ["data"] if reads_images else [],
         }

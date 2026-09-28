@@ -1,6 +1,6 @@
 {
   "src/features/editor/CommandPalette.tsx": {
-    "file": "assets/CommandPalette-D6XvKvhI.js",
+    "file": "assets/CommandPalette-B8OJXHFq.js",
     "name": "CommandPalette",
     "src": "src/features/editor/CommandPalette.tsx",
     "isDynamicEntry": true,
@@ -9,7 +9,7 @@
     ]
   },
   "src/features/editor/DesignerDiff/DesignerDiff.tsx": {
-    "file": "assets/DesignerDiff-DvWPix8o.js",
+    "file": "assets/DesignerDiff-dZux8M9s.js",
     "name": "DesignerDiff",
     "src": "src/features/editor/DesignerDiff/DesignerDiff.tsx",
     "isDynamicEntry": true,
@@ -21,7 +21,7 @@
     ]
   },
   "src/features/editor/LayersDrawer.tsx": {
-    "file": "assets/LayersDrawer-C3s6Dv5C.js",
+    "file": "assets/LayersDrawer-3DVAISEe.js",
     "name": "LayersDrawer",
     "src": "src/features/editor/LayersDrawer.tsx",
     "isDynamicEntry": true,
@@ -30,7 +30,7 @@
     ]
   },
   "src/inspector/StepInspector.tsx": {
-    "file": "assets/StepInspector-B3VgXcAx.js",
+    "file": "assets/StepInspector-B6eSUmZC.js",
     "name": "StepInspector",
     "src": "src/inspector/StepInspector.tsx",
     "isDynamicEntry": true,
@@ -42,7 +42,7 @@
     ]
   },
   "src/main.tsx": {
-    "file": "assets/main-DBIPlTGY.js",
+    "file": "assets/main-BPj2J2Mk.js",
     "name": "main",
     "src": "src/main.tsx",
     "isEntry": true,

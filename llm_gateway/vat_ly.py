@@ -59,6 +59,21 @@ class VatLy:
     reasoning_budget: Optional[int] = None
     #: Cờ `-kvu` / `--kv-unified` có mặt.
     kvu: bool = False
+    #: `--image-min-tokens` / `--image-max-tokens` — sàn và trần token của MỘT ảnh.
+    #:
+    #: ⭐ Đây là hai con số duy nhất quyết định chi phí ngữ cảnh của một ảnh, và
+    #:    trước 28/09/2026 chúng **ngầm** (không hồ sơ nào truyền cờ) nên không ai
+    #:    tính được chi phí ấy trước khi đặt chỗ KV. Xem
+    #:    `docs/superpowers/specs/2026-09-28-vision-plan-lock.md`.
+    #:
+    #: ⛔ KHÔNG `bat_buoc=True`, và đó là một quyết định về **kiểu hỏng**: một
+    #:    yaml cũ (chưa kịp deploy) sẽ làm cổng **không khởi động được** — tức
+    #:    một lỗi ảnh biến thành một sự cố toàn phần cho cả khách chỉ gửi chữ.
+    #:    Vắng ⇒ `None` ⇒ người tính ngân sách ảnh từ chối ĐÚNG ảnh, với lỗi rõ
+    #:    ràng, còn đường chữ chạy nguyên. `tests/test_4204_*` canh để tệp yaml
+    #:    của ta không bao giờ thiếu chúng một cách lặng lẽ.
+    token_anh_toi_thieu: Optional[int] = None
+    token_anh_toi_da: Optional[int] = None
 
 
 # ── Tìm tệp ────────────────────────────────────────────────────────────────────
@@ -218,6 +233,8 @@ def doc_van_ban(van: str) -> dict[str, VatLy]:
             np=int(_so_sau(tach, ("-np", "--parallel"), ho_so, True) or 0),
             reasoning_budget=_so_sau(tach, ("--reasoning-budget",), ho_so, False),
             kvu=("-kvu" in tach or "--kv-unified" in tach),
+            token_anh_toi_thieu=_so_sau(tach, ("--image-min-tokens",), ho_so, False),
+            token_anh_toi_da=_so_sau(tach, ("--image-max-tokens",), ho_so, False),
         )
     return ra
 

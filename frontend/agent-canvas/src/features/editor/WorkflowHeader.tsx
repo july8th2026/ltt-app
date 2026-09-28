@@ -39,6 +39,13 @@ export function WorkflowHeader(p: Props) {
       <button title="Bảng lệnh" aria-label="Mở bảng lệnh" onClick={p.moBangLenh}>⌘</button>
       {/* Nut "AI" (Assistant) va "↗" (Phien ban & chia se) da bo: ca hai ngan
           keo phia sau chung chi goi cua v2, va cua v2 khong biet id v3. */}
+      {/* UI-12: dat lich (cron) + cap URL webhook. Trang rieng server-render
+          (`/agent/workflows/{id}/triggers`), khong phai mot panel React —
+          giu bundle Canvas KHONG phinh them mot mang trang thai moi cho
+          mot thao tac hiem (tao/xoa trigger), va tranh dung vao gate bundle
+          (`test_95`) cho mot man hinh khong lien quan render do thi. */}
+      {p.workflow&&<button title="Trigger: đặt lịch & webhook" aria-label="Mở trang trigger"
+        onClick={()=>{location.href=`/agent/workflows/${p.workflow!.id}/triggers`}}>⏰</button>}
       <button className="run-primary" disabled={p.readOnly||!p.page.nodes.length} aria-pressed={p.desktopPanel==='run'} onClick={()=>p.moNgan(p.desktopPanel==='run'?null:'run')}>Chạy</button></div>
     {p.children}</header>
 }

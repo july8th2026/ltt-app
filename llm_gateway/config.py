@@ -61,9 +61,15 @@ class Config:
     #: Trần token sinh ra mỗi yêu cầu (= `ngan_sach.TOKEN_RA_TRAN` của máy A;
     #: `deploy.ps1` ghi nó vào `gateway.env` bằng cách ĐỌC ngan_sach, không gõ).
     max_output_tokens: int
-    #: Trần số ảnh mỗi yêu cầu. Mỗi ảnh nuốt hàng nghìn token ngữ cảnh.
-    max_images: int
     #: Trần byte của một ảnh gửi kèm (base64 đã giải mã).
+    #:
+    #: ⛔ ĐÃ GỠ `max_images` (env `LTT_LLM_MAX_IMAGES`, 28/09/2026, quyết định C4
+    #:    của chủ dự án). Lý do: con số 4 không có phép đo nào đứng sau, llama.cpp
+    #:    KHÔNG có trần số ảnh, và trần thật luôn là NGỮ CẢNH. Chi phí ngữ cảnh
+    #:    của một ảnh nay được TÍNH (`anh_token.token_anh`, đo 14/14 ô ngày
+    #:    28/09) thay vì quy bằng một hằng phẳng, nên đếm ảnh không còn đo gì.
+    #:    Rủi ro tồn dư (nhiều ảnh nhỏ ⇒ nhiều lượt mã hoá mmproj) ghi ở
+    #:    `docs/superpowers/specs/2026-09-28-vision-plan-lock.md` §7.2.
     max_image_bytes: int
 
     # ── Thời gian ────────────────────────────────────────────────────────────
@@ -166,7 +172,6 @@ class Config:
             #    `gateway.env`, và `tests/test_334_ngan_sach_ltt_llm.py` +
             #    `tests/test_1223_phuong_an_c_rao_vat_ly_b.py` đỏ khi lệch.
             max_output_tokens=_int("LTT_LLM_MAX_OUTPUT_TOKENS", 32_768),
-            max_images=_int("LTT_LLM_MAX_IMAGES", 4),
             max_image_bytes=_int("LTT_LLM_MAX_IMAGE_BYTES", 12 * 1024 * 1024),
             upstream_timeout_s=_float("LTT_LLM_UPSTREAM_TIMEOUT_S", 600.0),
             stream_timeout_s=_float("LTT_LLM_STREAM_TIMEOUT_S", 900.0),

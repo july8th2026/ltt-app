@@ -326,7 +326,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             suc=suc,
             user_id=principal.user_id, request_id=request_id, cua="sync",
             token_vao_uoc=int(vao_uoc), xin_ra=int(xin_ra),
-            so_anh=cua_luong.dem_anh(than),
+            token_anh=cua_luong.do_anh(than, suc)[1],
             han_s=cua_luong.han_cho_dong_bo(
                 ngan_sach_s=float(_tran_giay()),
                 da_tieu_s=time.monotonic() - t0),

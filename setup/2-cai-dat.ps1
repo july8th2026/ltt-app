@@ -289,9 +289,60 @@ $srcChep  = $src          # duong lui: cay song, y nhu truoc 08/09
 $xuatTam  = $null
 $shaXuat  = ''
 if (Test-Path $gitPath -PathType Container) {
-    try { $shaXuat = (& git -C $src rev-parse HEAD 2>$null) } catch { $shaXuat = '' }
+    # ======================================================================
+    #  XUAT TU REF `refs/heads/main`, KHONG TU `HEAD` CUA CAY. Do 28/09/2026.
+    # ======================================================================
+    #
+    #  Ban cu doc `rev-parse HEAD` cua cay chinh. Nhung cay chinh ganh HAI VAI:
+    #    1. be mat deploy cua MOI phien (CLAUDE.md luat 5);
+    #    2. cho dung lam viec cua MOT phien.
+    #
+    #  Do duoc trong reflog cua chinh kho nay:
+    #      18:05  checkout: moving from main to phien/vision-plan-lock
+    #      12:42  checkout: moving from main to phien/lan-giong-theo-danh-muc
+    #      12:46  checkout: moving from phien/lan-giong... to main
+    #
+    #  => Muon cay chinh lam cho dung la chuyen BINH THUONG o day, khong phai
+    #    mot su co. Luc toi do, nhanh ay co 13 commit chua len `main`.
+    #
+    # !! Va luot deploy 18:04:32 hom nay chi kip chay TRUOC cu checkout 18:05 -
+    #    sat mot phut. Neu no chay luc 18:06 thi no da xuat
+    #    `phien/vision-plan-lock` len production, va nhat ky se ghi
+    #    `[OK] Xuat commit 9f963938` trong trang thai hoan toan binh thuong.
+    #    Khong mot dong nao trong quy trinh hoi *"cay dang o nhanh nao?"*.
+    #
+    # !! Script CO mot cua chan deploy nham CAY (~dong 66, chong deploy tu mot
+    #    worktree). No khong chan deploy nham NHANH trong dung cay. Cung ho voi
+    #    bon ca khac hom nay: mot cua ten la "chan deploy nham" nhung chi do MOT
+    #    chieu nham.
+    #
+    # ** Vi sao doc REF tot hon mot cua chan: `git archive` nhan mot tree-ish bat
+    #    ky, nen doc ref lam deploy DUNG `main` **du** ai dang muon cay chinh.
+    #    Mot cua chan se chan OAN chinh nhung phien dang lam viec hop le o do.
+    #    => Cua chan la thuoc cho trieu chung; doc ref go luon cai benh.
+    #
+    #  Phien `Prompt AI` de nghi cach nay, va ho dung.
+    try {
+        $shaXuat = (& git -C $src rev-parse refs/heads/main 2>$null)
+    } catch { $shaXuat = '' }
     if ($LASTEXITCODE -ne 0) { $shaXuat = '' }
     $global:LASTEXITCODE = 0
+    if ($shaXuat) {
+        $shaXuat = $shaXuat.Trim()
+        $nhanhCay = ''
+        try { $nhanhCay = (& git -C $src rev-parse --abbrev-ref HEAD 2>$null) } catch { }
+        $global:LASTEXITCODE = 0
+        if ($nhanhCay -and $nhanhCay.Trim() -ne 'main') {
+            # NOI RA, dung im: nguoi doc nhat ky phai biet ban giao KHONG phai
+            # thu dang nam trong cay. Khong phai loi, nhung la mot su that can khai.
+            Canh ("cay chinh dang o nhanh '" + $nhanhCay.Trim() +
+                  "' - deploy xuat tu refs/heads/main (" +
+                  $shaXuat.Substring(0, 12) + "), KHONG tu cay")
+        }
+    } else {
+        # KHONG roi ve HEAD: roi ve HEAD la dung lai chinh con bo nay.
+        throw 'khong doc duoc refs/heads/main - DUNG deploy, kiem kho truoc'
+    }
 }
 if ($shaXuat) {
     $shaXuat = $shaXuat.Trim()
@@ -808,10 +859,45 @@ Ok "Da copy $n file vao $appDir"
 #    BOM, json.load() vo, va /health/ready tra 503 trong khi dich vu van chay.
 #    Loi do da that su lam production sap o du an nay.
 $vanTay = Join-Path $appDir "dau_van_tay.json"
-$sha = ""
-try { $sha = (& git -C $src rev-parse HEAD 2>$null) } catch { $sha = "" }
-if ($LASTEXITCODE -ne 0) { $sha = "" }
-$global:LASTEXITCODE = 0
+
+# ==========================================================================
+#  MARKER PHAI LA SHA DA XUAT, KHONG PHAI HEAD LUC NAY. Do duoc 28/09/2026.
+# ==========================================================================
+#
+#  Ban cu goi `git rev-parse HEAD` **LAN THU HAI** o day. Giua dong 292 (noi
+#  `git archive` chup `$shaXuat`) va dong nay co ~520 dong va **90 giay** thuc
+#  te. Tren may nay `main` la cay DUNG CHUNG cua nhieu phien, nen no dich duoc
+#  trong khoang do.
+#
+#  Ca that, luot deploy 18:04:32 hom nay:
+#
+#      [OK] Xuat commit 4ab49b267bb0: 6318 tep      <- thu THAT SU duoc giao
+#      dau_van_tay.commit = 979130b09b47            <- thu marker KHAI
+#      /health/version    = 979130b09b47            <- va khach/ta doc cai nay
+#
+#  `979130b0` **chua bao gio duoc xuat**. Production tu khai mot commit khong
+#  phai thu no dang chay.
+#
+# !! Vi sao no te hon mot con so sai thuong: `dau_van_tay.json` va
+#    `/health/version` la **nguon chan ly** cho cau *"dang chay ban nao"*
+#    (docs/16 bang tra cuu chi thang vao chung, va `api_prod_canary.py` doc
+#    chung thay cho mot bang chep tay). Mot nguon chan ly noi sai thi moi phep
+#    do dung tren no deu sai theo -- va hom nay no lam chinh toi ket luan rang
+#    da deploy mot SHA chua qua gate, trong khi khong he.
+#
+# !! Va day la "hai cho khai mot dieu, khong ai bat khop" o dang re nhat de
+#    tranh: MOT bien da ton tai san. `$shaXuat` duoc tinh o dong ~292 va la
+#    chinh cai `git archive` dung. Dung lai no.
+#
+#  Roi ve `rev-parse` chi khi `$shaXuat` rong (duong lui chep cay song, khong
+#  co ban xuat) -- va luc ay marker mo ta dung thu duoc chep: cay luc nay.
+$sha = $shaXuat
+if (-not $sha) {
+    try { $sha = (& git -C $src rev-parse HEAD 2>$null) } catch { $sha = "" }
+    if ($LASTEXITCODE -ne 0) { $sha = "" }
+    $global:LASTEXITCODE = 0
+    if ($sha) { Canh "marker dung HEAD hien tai (khong co ban xuat commit)" }
+}
 if ($sha) {
     # !! GHI CA NOI DUNG DA GIAO, KHONG CHI COMMIT DINH GIAO.
     #

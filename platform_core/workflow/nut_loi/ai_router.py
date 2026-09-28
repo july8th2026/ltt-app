@@ -102,6 +102,7 @@ AI_ROUTER = dang_ky(NodeDefinition(
     resource={"class": "api"}, gia=Gia.theo_registry(ai_llm.JOB_TYPE_TEXT_CHAT),
     credential=(), quyen=frozenset({"network"}),
     cho=("JOB",), ma_loi=ai_loi.MA_LOI_AI,
+    doi_tham_so=ai_llm.doi_tham_so_ai,
     doi_dau_ra=doi_dau_ra_router,
     publish_duoc=True))
 

@@ -131,7 +131,43 @@ from dataclasses import dataclass, field
 #:    ở đây — cần đo xem ảnh có thật sự đi đường này trước khi chọn số.
 #:
 #: ⭐ Vẫn cách trần 100 MB của Cloudflare rất xa, nên đây không phải lời hứa suông.
-DEFAULT_MAX_BODY_BYTES = 4 * 1024 * 1024
+#: ══════════════════════════════════════════════════════════════════════════════
+#: 🔴 NÂNG 4 MiB → 32 MiB (28/09/2026). Con số này **đi mượn**, không tự suy.
+#:
+#: Chủ dự án chốt: *"không được tự suy con số này"*. Nên nó lấy từ hợp đồng công
+#: bố của các API ảnh thật, tra 28/09:
+#:
+#:     Anthropic Messages     32 MB / request · 10 MB mỗi ảnh · 100 ảnh
+#:     Google Gemini          20 MB / request (trên mức này phải đi Files API)
+#:     Cohere                 20 MB tổng dữ liệu ảnh
+#:     OpenAI                 512 MB / request · 20 MB mỗi ảnh
+#:
+#: Dải thực tế của các API **nhận ảnh** là **20–32 MB**. Trần 4 MiB của ta nằm
+#: **dưới tất cả**.
+#:
+#: ⭐ CHỌN 32 MiB THEO **ANTHROPIC**, và lý do là giao thức, không phải số lớn
+#:    hơn: client chính của ta (LTTCODE, Claude Code) nói `/v1/messages` — giao
+#:    thức Anthropic. Một client viết đúng theo hợp đồng Anthropic **phải** chạy
+#:    trên ta. Lấy 20 MB (Gemini/Cohere) là hẹp hơn hợp đồng mà client của ta
+#:    được dạy để tin.
+#:
+#: ⚠️ VÀ ANTHROPIC Ở ĐÚNG HOÀN CẢNH CỦA TA: tài liệu của họ nói thẳng rằng trên
+#:    API trực tiếp, **Cloudflare trả 413 trước khi request tới máy chủ của họ** —
+#:    tức 32 MB của họ cũng bị ghim vào trần CDN. Ta cũng đứng sau Cloudflare
+#:    (Free/Pro: 100 MB), nên 32 MiB còn cách trần CDN rất xa.
+#:
+#: 🔴 BÀI HỌC ĐI KÈM, đáng hơn con số: **trần thân mà không ai CHỌN thì sẽ là
+#:    trần của một thư viện.** HuggingFace TGI phục vụ 2 MB vì đó là
+#:    `DefaultBodyLimit` của `axum` — không ai ở HuggingFace chọn nó, và nó làm
+#:    mọi ảnh base64 > 1 MB hỏng (TGI issue #1802). `nginx` và `ingress-nginx`
+#:    mặc định `1m`, và đó là thứ mọi triển khai LLM đụng đầu tiên (LibreChat
+#:    #5041, open-webui #10371/#3273). `uvicorn`/`starlette`/`FastAPI` — nền của
+#:    ta — **không có trần thân nào cả**, nên nếu ta không đặt thì không ai đặt.
+#:
+#: ⛔ Nâng nữa thì phải hỏi: mỗi request nở thẳng vào RAM của tiến trình web
+#:    (FastAPI đọc cả thân). 32 MiB × số lượt đồng thời là một con số thật.
+#: ══════════════════════════════════════════════════════════════════════════════
+DEFAULT_MAX_BODY_BYTES = 32 * 1024 * 1024
 MIN_MAX_BODY_BYTES = 1024
 # Cloudflare Free/Pro rejects a larger body before the origin sees it, so a
 # higher value here would only be a lie told to the caller.

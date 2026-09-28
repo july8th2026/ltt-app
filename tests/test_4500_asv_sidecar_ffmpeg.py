@@ -354,3 +354,109 @@ def test_banh_coc_do_khi_them_mot_cho_moi():
     # d) Khong doi ⇒ xanh.
     tang, giam = bc.so_voi_moc({"apps/a/x.py": [(1, "ffmpeg"), (2, "ffmpeg")]}, moc)
     assert not tang and not giam
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  LUẬT MỚI (B13, 28/09) — filtergraph mở pool luồng RIÊNG, `-threads` không
+#  với tới. Ca thứ TƯ của lớp lỗi OMP_NUM_THREADS/cv2.setNumThreads/
+#  asr_options — L4 đo trên video thật: `-threads 2` một mình đỉnh 13,42 lõi;
+#  thêm `-filter_threads`/`-filter_complex_threads` hạ xuống 2,27-2,41 lõi.
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _thieu_loc(nguon: str) -> list[tuple[int, str]]:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import check_ffmpeg_tran as bc
+    return bc.cho_thieu_luong_loc(nguon)
+
+
+def test_TIEM_DUONG_vf_khong_filter_threads_thi_DO():
+    xau = ('cmd = [media.ffmpeg_bin(), "-i", src, "-vf", "scale=100:100", dst]\n'
+          'run(cmd)\n')
+    assert len(_thieu_loc(xau)) == 1
+
+
+def test_TIEM_DUONG_them_filter_threads_thi_XANH():
+    """Vế đối chứng: thêm ĐÚNG cờ còn thiếu là sạch."""
+    xau = ('cmd = [media.ffmpeg_bin(), "-i", src, "-vf", "scale=100:100", '
+          '"-filter_threads", "2", dst]\nrun(cmd)\n')
+    assert _thieu_loc(xau) == []
+
+
+def test_TIEM_NGHICH_giu_threads_bo_filter_threads_van_DO():
+    """🔑 Phép tiêm NGHỊCH bắt buộc — đây là chỗ khác BA ca trước
+    (`OMP_NUM_THREADS`/`cv2.setNumThreads`/`asr_options`): `-threads` CÓ nối,
+    chỉ là nối SAI thứ (luồng giải mã, ⛔ không phải luồng filtergraph). Một
+    bánh cóc chỉ hỏi *"có `-threads` không"* sẽ XANH ở đây — SAI.
+
+    Lấy đúng hình dạng lời gọi ĐÃ VÁ của L4 (`-threads 2` +
+    `-filter_complex_threads 2`), rồi bỏ `-filter_threads` — vẫn phải ĐỎ.
+    """
+    xau = ('cmd = [media.ffmpeg_bin(), "-threads", "2", "-i", src,\n'
+          '       "-filter_complex", "[0:v]scale=100:100[v]",\n'
+          '       "-filter_complex_threads", "2", "-map", "[v]", dst]\n'
+          'run(cmd)\n')
+    thieu = _thieu_loc(xau)
+    assert len(thieu) == 1 and "filter_threads" in thieu[0][1], (
+        "giu -threads nhung bo -filter_threads van phai DO — mot banh coc chi "
+        "hoi 'co -threads khong' se XANH sai o day")
+
+
+def test_TIEM_NGHICH_ban_da_va_DU_ca_hai_co_thi_XANH():
+    """Vế đối chứng cho phép tiêm nghịch: đúng hình dạng L4 đã đo — 2,27-2,41
+    lõi — với ĐỦ cả ba cờ."""
+    xau = ('cmd = [media.ffmpeg_bin(), "-threads", "2", "-i", src,\n'
+          '       "-filter_complex", "[0:v]scale=100:100[v]",\n'
+          '       "-filter_threads", "2", "-filter_complex_threads", "2",\n'
+          '       "-map", "[v]", dst]\nrun(cmd)\n')
+    assert _thieu_loc(xau) == []
+
+
+def test_khong_co_filtergraph_gi_thi_sach():
+    xau = 'cmd = [media.ffmpeg_bin(), "-i", src, dst]\nrun(cmd)\n'
+    assert _thieu_loc(xau) == []
+
+
+def test_luat_MOI_khong_dam_vao_luat_CU_media_ffmpeg_bin_van_mien():
+    """Luật 1 (tên trần) vẫn chỉ xét vị trí 0 là literal `"ffmpeg"`/
+    `"ffprobe"` — `media.ffmpeg_bin()` (đã có thuốc N-59) vẫn được luật 1
+    miễn, dù luật MỚI có thể vẫn bắt cùng dòng lệnh đó vì thiếu cờ luồng."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import check_ffmpeg_tran as bc
+
+    xau = ('cmd = [media.ffmpeg_bin(), "-i", src, "-vf", "scale=1:1", dst]\n'
+          'run(cmd)\n')
+    assert bc.cho_goi_tran(xau) == []          # luat 1: sach (dung ham thuoc)
+    assert len(bc.cho_thieu_luong_loc(xau)) == 1  # luat MOI: van bat
+
+
+def test_moc_RIENG_khong_trung_ten_khong_trung_tep():
+    """⛔ Hai luật PHẢI có hai mốc riêng, ⛔ không trộn dưới một tên — yêu cầu
+    người điều phối 28/09."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import check_ffmpeg_tran as bc
+
+    assert bc.TEP_MOC != bc.TEP_MOC_LOC
+    assert bc.DAU_HIEU != bc.DAU_HIEU_LOC
+    assert bc.TEP_MOC_LOC.name == "check_ffmpeg_tran_loc.moc"
+
+
+def test_moc_loc_DAT_tren_cay_hien_tai():
+    """Mốc luật MỚI phải ĐẶT ngay bây giờ trên cây thật — nếu không, nó
+    không phải một mốc. ⛔ Không tự sửa các chỗ bị bắt (tệp của làn khác);
+    chỉ chốt mốc để chặn TĂNG THÊM từ đây."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import check_ffmpeg_tran as bc
+
+    hien_tai = bc.quet_loc()
+    moc = bc.doc_moc(bc.TEP_MOC_LOC)
+    assert moc, "thieu tools/check_ffmpeg_tran_loc.moc"
+    moi = {d: len(v) for d, v in hien_tai.items()
+          if d not in moc or len(v) > moc[d]}
+    assert not moi, f"cho thieu luong loc MOI: {moi}"
+
+
+def test_TEN_BUOC_LOC_phoi_ra_cong_khai_cho_gate_goi():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import check_ffmpeg_tran as bc
+
+    assert isinstance(bc.TEN_BUOC_LOC, str) and bc.TEN_BUOC_LOC

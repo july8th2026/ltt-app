@@ -144,6 +144,38 @@ class NodeDefinition:
     mock: Optional[Callable[[dict], dict]] = None
     cho: tuple = ()
     ma_loi: tuple = ()
+    #: Dịch `params` của node sang **từ vựng params của JOB**. `(params) -> dict`.
+    #: `None` = params của node đi thẳng sang job.
+    #:
+    #: 🔴 **Đối xứng của `doi_dau_ra`, và tôi đã vá MỘT NỬA rồi dừng — đo được
+    #:    trên production 28/09/2026.**
+    #:
+    #:    Tôi thấy hai từ vựng khác nhau ở đường **RA** (`content` → `text`) và
+    #:    vá nó. Tôi ⛔ **không hỏi** đường **VÀO** có cùng vấn đề không. Kết quả,
+    #:    một run thật trên production:
+    #:
+    #:        node y_tuong (ai.llm)  FAILED
+    #:        provider_loi: ThamSoSai: `messages` phai la mot danh sach khong rong
+    #:
+    #:    Node `ai.llm` khai `params = {prompt, model}`; handler `ltt_llm.chat`
+    #:    đòi `messages = [{role, content}]` (`apps/ltt_llm/features.py:352`).
+    #:    ⛔ Không ai dịch giữa hai hình dạng ấy.
+    #:
+    #: ⚠️ Và docstring của `ai_llm.py` **đã nói thẳng** điều đó ngay từ đầu:
+    #:    *"`tham_so`/cổng của `ai.llm` là từ vựng RIÊNG của node (đơn giản hơn
+    #:    `text.chat` thô: một `prompt`, không phải mảng `messages` đầy đủ vai
+    #:    trò)"*. Tôi **đọc** câu ấy, rút ra kết luận đúng về đường ra, và ⛔ không
+    #:    đi tiếp một bước sang đường vào.
+    #:
+    #: ⭐ ⇒ Khi phát hiện hai module dùng hai từ vựng, câu hỏi ⛔ **không** phải
+    #:    *"chỗ nào lệch?"* mà là ***"CẢ HAI chiều đã được dịch chưa?"***. Một
+    #:    chỗ nối có hai đầu, và vá một đầu làm cái còn lại **khó thấy hơn** —
+    #:    vì nay node publish được, chạy được, và chỉ hỏng ở tận provider.
+    #:
+    #: ⛔ Áp **sau** `giai_tham_so` (biểu thức đã giải) và **trước** `tinh_gia` +
+    #:    `_khoa_idem`: giá phải tính trên thứ THẬT SỰ gửi đi, và khoá khử trùng
+    #:    phải mô tả đúng lượt gửi ấy.
+    doi_tham_so: Optional[Callable[[dict], dict]] = None
     #: Dịch `result` của job sang **từ vựng cổng ra của node**. `(ket_qua,
     #: params) -> dict`. `None` = output của node LÀ `result` thô của job.
     #:
