@@ -139,6 +139,76 @@ thư mục tệp tạm là **cấu hình bảo mật** — chỉ chủ dự án 
 `whisper`, TTS) thành ~10 luồng torch. ⇒ Test nạp model thật nằm sau rào
 `LTT_TEST_NANG` (`tests/rao_chan_nang.py`, marker `nang`).
 
+## 4c. ⭐ BA tầng canh CPU — và vì sao thiếu một tầng thì hai tầng kia vô dụng
+
+**Chuẩn hoá 28/09/2026** sau lần treo máy thứ ba. Ba tầng, mỗi tầng bắt một loại hộ
+tiêu thụ mà hai tầng kia **không thể** thấy:
+
+| tầng | ai bắt | thứ nó thấy | thứ nó KHÔNG thấy |
+|---|---|---|---|
+| **1. khai báo** | `cua_so_yen` (`so_loi`) | phiên đã **XIN khoá** | pytest gõ tay, build, tiến trình mồ côi |
+| **2. trần tại hộ** | `torch.set_num_threads`, `chan_loi()`, `-n`, `--maxWorkers` | hộ ta **biết tên** | thư viện mới mặc-định-lấy-hết-lõi |
+| **3. van ĐỘNG** | `gate._chay_theo_lich._do_lai_tran`, `tai_may.do()` | **CPU thật**, bất kể ai đốt | — (nhưng chỉ *phản ứng*, không ngăn trước) |
+
+🔴 **Tầng 3 vừa được lắp 28/09; trước đó nó chỉ tồn tại một nửa.** `loi_dang_ban()`
+có từ 03/09 và đo đúng — nhưng nó được lấy mẫu ở **đúng hai chỗ, cả hai lúc khởi
+động**. Nên ngân sách lõi là một **hằng số suốt lượt**, và mọi tải **đến sau** đi
+qua miễn phí: Windows Defender (5,45 lõi), một `RapidOCR` 15,2 lõi nằm trong một
+worker pytest (`docs/auto_scan_video_final/B12_...md`), một tiến trình mồ côi.
+
+### Bốn lỗ đã vá, và hình dạng chung của chúng
+
+| # | lỗ | tệp |
+|---|---|---|
+| 1 | `_chay_theo_lich` lấy ngân sách **per-RUN**: `tru_phien_khac` là **mã chết** từ 03/09 — có tài liệu, có phép kiểm riêng, **không nơi nào truyền `True`** ⇒ hai lượt gate song song đều lấy 8 lõi trên một máy 10 lõi | `tools/gate.py` |
+| 2 | bộ đếm lõi là hằng số ⇒ tải đến sau không ai trừ | `tools/gate.py` (van động + `SAN_LOI_DONG`) |
+| 3 | `tai_may.do()` phán quyết **chỉ theo RAM**, mà `chay_nang.py` chờ theo đúng hàm này ⇒ máy bị chiếm 9,5/10 lõi vẫn trả `RANH` | `tools/tai_may.py` |
+| 4 | `conftest` xin `cpu_nhieu` mà **không khai `so_loi`** ⇒ `loi_da_hua` rơi về mặc định **8**, nên một `pytest -n 2` gõ tay làm mọi phiên khác tụt ngân sách về sàn | `tests/conftest.py` |
+
+⭐ **Không lỗ nào sai một con số.** Cả bốn sai ở chỗ **ai đọc con số ấy**: một hàm đo
+đúng tải rồi không ai gọi, một phép đo đúng rồi không lấy mẫu lại, một phán quyết
+đúng về RAM rồi bị hỏi về CPU, một con số biết rõ rồi không khai. ⇒ Khi rà một cơ
+chế an toàn, câu hỏi đắt nhất **không** phải *"con số này đúng chưa?"* mà là
+***"ai đọc nó, và họ đọc lúc nào?"***
+
+### Vận hành — thứ tự rẻ dần, dùng từ trên xuống
+
+1. **`--ho-so doi` (L1)** cho mọi lượt trong phiên. Khi hạ cấp nó **bỏ** `bo test`
+   — tức bỏ đúng bước chiếm ~85 % thời gian và 7 worker. Lượt nhẹ nhất.
+2. **`-j 2..3`** khi cần chạy nhóm tĩnh mà máy đang có phiên khác.
+3. **`--noi-tiep`** khi cần một con số **không bị nhiễu**: một bước một lúc, MỘT
+   tiến trình pytest.
+4. ⛔ **`--ho-so day-du` chỉ ở cuối plan, và chỉ khi `tai_may` nói `RANH`.** Số học
+   của lần treo 28/09: `7` worker + `-j 8` bước tĩnh + `~5,4` Defender trên **10**
+   lõi vật lý.
+
+### Đọc dòng `[tai may]` thế nào
+
+```
+[tai may] 0.8/10 loi VAT LY dang ban -> RANH
+```
+
+⚠️ Dòng này **từng trộn ba đơn vị** (vá 28/09): ngưỡng so với hằng số 20-thang,
+mẫu số in ra là 20 trong khi tử số tối đa là 10. Hậu quả: một máy bận **60 %** in ra
+`RANH`, và `6.0/20` đọc như 30 %. ⇒ Bản ghi gate cũ hơn 28/09 có dòng `[tai may]`
+**không so sánh được** với bản mới.
+
+### Ngưỡng của `tai_may` — đơn vị LÕI, không phải phần trăm
+
+`tai_may.py` **cố ý** không có ngưỡng CPU theo phần trăm (nền máy này dao động gần
+mười lần trong ngày). Cửa mới là một phép trừ **có đơn vị**: *còn bao nhiêu lõi vật
+lý rảnh*. `< 3` ⇒ `BAN`, `< 2` ⇒ `QUA TAI`. Con số 3 chọn để Defender **một mình**
+(5,45 lõi ⇒ còn 4,55) ⛔ **không** chặn được lệnh nặng — `chay_nang.py` chờ 30 phút
+rồi *thoát 3 = không chạy*, nên mỗi lần bắt oan là một lệnh nặng bị huỷ ở **mọi**
+phiên. Cùng họ *"báo động giả làm người ta TẮT cổng"*.
+
+⭐ `chay_nang.py` nằm **ngoài kho** (`~/.claude/ltt/`) nhưng vòng chờ của nó đọc
+`tools/tai_may.py`, nên nó **tự hưởng** cửa mới — ⛔ không cần sửa tệp ngoài kho, và
+mọi phiên của mọi dự án được che cùng lúc.
+
+Phép kiểm: `tests/test_5610_van_dong_cpu_va_cua_loi_ranh.py` (có tiêm lỗi đối chứng
+cho cả bốn lỗ).
+
 ## 4b. Build (`cargo` / `npm` / `tauri`) — chạy NGOÀI khoá, NHƯNG phải bị chặn lõi
 
 **Chủ dự án chốt 23/09:** một lượt build phần lớn thời gian chỉ ăn vài lõi mà **chặn cả hàng**

@@ -118,11 +118,40 @@ QUA_TAI = "QUA TAI"
 #: Trung binh CPU do trong bao lau. Xem ghi chu dau tep.
 CUA_SO_DO_S = 2.0
 
-#: ⛔ KHONG co nguong CPU. Xem muc "Phan quyet dua tren RAM" o dau tep: nen CPU
-#:    cua may nay bien dong gan muoi lan trong mot ngay (27% -> 3%), nen mot
-#:    nguong CPU co dinh se bat sai theo gio chu khong theo tai that.
+#: ⛔ KHONG co nguong CPU **theo PHAN TRAM**. Xem muc "Phan quyet dua tren RAM"
+#:    o dau tep: nen CPU cua may nay bien dong gan muoi lan trong mot ngay
+#:    (27% -> 3%), nen mot nguong phan tram co dinh se bat sai theo gio chu
+#:    khong theo tai that.
 NGUONG_RAM_TRONG_BAN_GIB = 8.0
 NGUONG_RAM_TRONG_QUA_TAI_GIB = 4.0
+
+#: 🔴 **LO DO DUOC 28/09/2026, sau lan treo may thu ba.**
+#:
+#:    `chay_nang.py` vong cho **chi doc ham nay** de quyet dinh co cho hay khong.
+#:    Ham nay phan quyet **chi theo RAM**. Nen mot may dang bi chiem 9,5/10 loi
+#:    van tra `RANH`, va moi lenh nang cua moi phien cu the lao vao. Lan treo
+#:    28/09: gate `--ho-so day-du` (7 worker + 8 buoc tinh) canh Windows Defender
+#:    (5,45 loi) — `tai_may` bao RANH suot.
+#:
+#: ⭐ Va day **khong** phai mot nguong phan tram — do la thu tep nay tu choi, co
+#:    ly. Day la mot phep tru co DON VI: *con bao nhieu LOI VAT LY ranh*. Mot
+#:    lenh nang can it nhat vai loi; duoi con so nay thi khong con cho de chay,
+#:    bat ke dong ho treo tuong noi may dang ban bao nhieu phan tram.
+#:
+#: ⚠️ Chi ha xuong `BAN`/`QUA TAI`, ⛔ khong bao gio nang len `RANH`: RAM van la
+#:    ve co the mot minh tuyen QUA TAI. Hai ve, lay ve TE HON.
+#: 📐 **Vi sao 3,0 chu khong 4,0** — `chay_nang.py` cho khi phan quyet la `BAN`
+#:    HOAC `QUA TAI`, va cho qua 30 phut thi **thoat 3 = khong chay**. Nen moi
+#:    lan cua nay bat oan la mot lenh nang bi huy, o MOI phien.
+#:
+#:    Do 25/09: Windows Defender an **5,45 loi** ⇒ con **4,55** ranh. Nguong 4,0
+#:    se bat MOI lan Defender quet — tuc bien mot cua canh thanh mot cua chan,
+#:    va nguoi ta se hoc cach go `--khong-khoa` de di vong.
+#:
+#: ⚠️ 3,0 van bat dung ca da lam treo may: gate `bo test` 7 worker + 8 buoc tinh
+#:    (ranh ~0) va ca `RapidOCR` 15,2 loi tu trong mot worker (B12, phien khac).
+LOI_RANH_TOI_THIEU_BAN = 3.0
+LOI_RANH_TOI_THIEU_QUA_TAI = 2.0
 
 
 def do() -> dict:
@@ -142,15 +171,32 @@ def do() -> dict:
     trong = bo_nho.available / (1024 ** 3)
     loi = psutil.cpu_count() or 0
 
-    # Chi RAM quyet dinh. CPU chi di kem de nguoi doc co ngu canh.
+    # ── Ve RAM ──────────────────────────────────────────────────────────────
     if trong < NGUONG_RAM_TRONG_QUA_TAI_GIB:
         pq, ly_do = QUA_TAI, "RAM trong qua thap - 14 tien trinh nua rat de het"
     elif trong < NGUONG_RAM_TRONG_BAN_GIB:
         pq, ly_do = BAN, "RAM trong dang hep - nen chay cum nho, dung bat model that"
     else:
         pq, ly_do = RANH, "du bo nho cho mot luot day du"
+
+    # ── Ve LOI RANH (them 28/09/2026) ───────────────────────────────────────
+    #
+    # ⭐ Don vi VAT LY, cung don vi `gate.loi_cong_cu_tu_do()` va `-n`. ⛔ Khong
+    #    dung `psutil.cpu_count()` (= 20 LOGIC) o day: tron hai don vi la chinh
+    #    con bo `-n 11 > auto 10` da lam treo may 03/09.
+    vat_ly = psutil.cpu_count(logical=False) or loi or 1
+    ranh = max(0.0, vat_ly * (100.0 - cpu) / 100.0)
+    if ranh < LOI_RANH_TOI_THIEU_QUA_TAI:
+        pq = QUA_TAI
+        ly_do = (f"chi con {ranh:.1f}/{vat_ly} loi vat ly ranh - "
+                 f"khong con cho cho mot lenh nang ({ly_do})")
+    elif ranh < LOI_RANH_TOI_THIEU_BAN and pq == RANH:
+        pq = BAN
+        ly_do = (f"con {ranh:.1f}/{vat_ly} loi vat ly ranh - "
+                 f"chay cum nho thoi ({ly_do})")
     return {"phan_quyet": pq, "ly_do": ly_do, "cpu": cpu,
-            "ram_trong_gib": trong, "loi": loi}
+            "ram_trong_gib": trong, "loi": loi, "loi_ranh": ranh,
+            "loi_vat_ly": vat_ly}
 
 
 def ai_chiem_cho(toi_da: int = 8) -> list[dict]:
@@ -197,7 +243,15 @@ def _in(k: dict) -> None:
     if k["phan_quyet"] is None:
         print(f"KHONG DO DUOC: {k['ly_do']}")
         return
-    print(f"CPU {k['cpu']:.0f}% tren {k['loi']} loi | "
+    # ⭐ In CA HAI don vi va noi ro ten chung. Ban cu in `9% tren 20 loi` — dung
+    #    ca hai so, nhung nguoi doc khong the suy ra *con bao nhieu cho cho mot
+    #    `-n 7`*, vi `-n` dem loi VAT LY. Do la cung benh voi dong `[tai may]`
+    #    cua `gate.py`: mot con so dung ben mot mau so sai.
+    ranh = k.get("loi_ranh")
+    vat_ly = k.get("loi_vat_ly")
+    them = (f" | ranh {ranh:.1f}/{vat_ly} loi VAT LY"
+            if ranh is not None and vat_ly else "")
+    print(f"CPU {k['cpu']:.0f}% tren {k['loi']} loi LOGIC{them} | "
           f"RAM trong {k['ram_trong_gib']:.1f} GiB")
     print(f"RESULT: {k['phan_quyet']} - {k['ly_do']}")
 

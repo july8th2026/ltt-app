@@ -361,6 +361,19 @@ TRAN_N_GO_TAY = 7
 #:       da lam mat HAI.
 TRAN_WORKER_BO_TEST = 7
 
+#: SAN cua van DONG (`_chay_theo_lich._do_lai_tran`). Tran loi khong bao gio
+#: xuong duoi con so nay, du may bi chiem het.
+#:
+#: 🔴 Vi sao phai co SAN chu khong de van tu do tut ve 0: Windows Defender co the
+#:    an 5,45 loi trong nhieu phut. Mot van khong san se ha tran ve 0 va gate
+#:    **dung han** cho tới khi Defender quet xong — tuc mot co che sinh ra de
+#:    tranh treo may lai tu no thanh mot cai treo.
+#:
+#: ⭐ 2 la so nho nhat con tien duoc: mot buoc khai 1 luon chay, va hai buoc nhe
+#:    van nap duoc vao nhau. Cham thi duoc, dung han thi khong — cung cau voi
+#:    `max(1, ...)` o `loi_cho_bo_test`.
+SAN_LOI_DONG = 2
+
 
 def loi_cho_bo_test(*, phien: str = "", do_tai: bool = True) -> int:
     """So worker cho `bo test`. **Ham DUY NHAT tra loi cau hoi nay.**
@@ -1433,7 +1446,8 @@ NHOM_RE = ("cong", "tinh", "frontend")
 
 
 def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
-                    dung_som: bool = False, _da_tach: bool = False) -> None:
+                    dung_som: bool = False, _da_tach: bool = False,
+                    phien: str = "") -> None:
     """Chạy các bước theo lịch, in mỗi bước khi nó **xong**.
 
     ## Vì sao không chạy tuần tự nữa
@@ -1489,7 +1503,7 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
         #    nen `dat` rong, va gate chet SAU khi da chay xong 24/24 buoc —
         #    tuc mat trang ca luot do vi mot phep chia cho khong.
         if re:
-            _chay_theo_lich(re, j=j, tuan_tu=tuan_tu)
+            _chay_theo_lich(re, j=j, tuan_tu=tuan_tu, phien=phien)
         if any(s.ok is False for s in re):
             if dat:
                 # ⛔ THUAN ASCII o moi dong xuat ra man hinh. `gate.py > gate.log`
@@ -1505,7 +1519,7 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
                       f"chua chay: {', '.join(s.name for s in dat)}", flush=True)
             return
         if dat:
-            _chay_theo_lich(dat, j=j, tuan_tu=tuan_tu, dung_som=True,
+            _chay_theo_lich(dat, j=j, tuan_tu=tuan_tu, dung_som=True, phien=phien,
                             _da_tach=True)
         return
 
@@ -1549,15 +1563,66 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
     #    te hon han cham.
     import threading
 
-    ngan_sach = ngan_sach_loi()
+    # 🔴 **HAI LO, do duoc 28/09/2026 sau mot lan treo may.**
+    #
+    #    LO 1 — `tru_phien_khac` la MA CHET. Tham so ay ton tai tu 03/09, co tai
+    #    lieu o `cua_so_yen.py:549`, va **khong mot noi nao truyen `True`**. Nen
+    #    bo dem nay lay 8 loi du may co MOT hay BON luot gate. `loi_cho_bo_test`
+    #    thi co tru — tuc `bo test` biet ve phien khac ma **lich chay thi khong**,
+    #    va nhom `tinh`/`frontend` phat thoai mai tren phan da co chu.
+    #
+    #    LO 2 — `ngan_sach` la mot HANG SO suot ca luot. `loi_dang_ban()` chi duoc
+    #    lay mau luc KHOI DONG (hai cho, ca hai trong pha dung len), nen tai **den
+    #    sau** khong ai tru. Windows Defender an toi 5,45 loi, nam ngoai moi khoa,
+    #    va no khong hoi ta luc nao thi bat dau quet.
+    #
+    # ⇒ `tran` duoi day la mot **van DONG**: mot luong nen do lai tai NGOAI luot
+    #   nay moi ~10 giay va ha/nang tran. Ba ve giu cho no khong tu bien thanh
+    #   mot cai chan:
+    #     · `SAN_LOI_DONG` — tran khong bao gio xuong duoi 2, luot van tien.
+    #     · buoc lon hon ca tran van chay **MOT MINH** (`con_lai == ngan_sach`) —
+    #       giu nguyen y dinh cu, neu khong `bo test` (khai 7) se treo vinh vien
+    #       moi khi Defender quet.
+    #     · `loi_dang_ban()` khong do duoc ⇒ tra 0.0 ⇒ tran = ngan sach = **y het
+    #       hanh vi cu**. Fail-open co chu y: mot van khong do duoc khong duoc
+    #       phep dung ca cong chat luong.
+    ngan_sach = ngan_sach_loi(phien=phien, tru_phien_khac=True)
     con_lai = ngan_sach
+    tran = ngan_sach
     khoa = threading.Condition()
+    xong_het = threading.Event()
+
+    def _do_lai_tran() -> None:
+        """Luong nen: ha `tran` khi co ai NGOAI luot nay chiem may.
+
+        ⚠️ `da_phat` la so KHAI BAO cua cac buoc dang chay, khong phai so do
+           duoc. Do 28/09: moi buoc `tinh` dot 0,15-0,97 loi tuy buoc, tuc khai
+           1 la **khai du hoac hoi thua**. Nen `ngoai` thien ve phia 0 — van nay
+           bo sot tai ngoai de hon la ha tran oan, va do la chieu an toan: mot
+           tran hoi rong lam may ban hon; mot tran hoi chat lam gate dung.
+        """
+        nonlocal tran
+        while not xong_het.is_set():
+            da_phat = max(0, ngan_sach - con_lai)
+            ngoai = max(0.0, loi_dang_ban(1.0) - da_phat)
+            moi = max(SAN_LOI_DONG, ngan_sach - int(ngoai + 0.5))
+            with khoa:
+                if moi != tran:
+                    cu, tran = tran, moi
+                    print(f"  [van dong] tran loi {cu} -> {moi} "
+                          f"({ngoai:.1f} loi bi chiem NGOAI luot nay)")
+                    khoa.notify_all()
+            xong_het.wait(9.0)
 
     def chay_co_ngan_sach(step: Step) -> None:
         nonlocal con_lai
         can = min(step.so_loi, ngan_sach)
         with khoa:
-            khoa.wait_for(lambda: con_lai >= can)
+            # ⛔ Ve thu hai (`con_lai == ngan_sach`) KHONG phai phong thu thua:
+            #    thieu no thi mot buoc khai nhieu hon `tran` hien tai cho mai.
+            khoa.wait_for(lambda: con_lai >= can
+                          and (ngan_sach - con_lai + can <= tran
+                               or con_lai == ngan_sach))
             con_lai -= can
         # 🔴 KIEM SAU KHI DA GIANH DUOC NGAN SACH, khong o vong nop.
         #
@@ -1601,9 +1666,17 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
     #    chet SAU khi 24/24 buoc da xanh — mat trang ca luot do vi mot phep
     #    `min()` cham day. `tests/test_1235::test_mot_nhom_RONG...` ghim lai.
     if thu_tu:
-        with ThreadPoolExecutor(max_workers=min(len(thu_tu), max(1, j))) as ex:
-            for f in [ex.submit(chay_co_ngan_sach, s) for s in thu_tu]:
-                f.result()
+        van = threading.Thread(target=_do_lai_tran, daemon=True)
+        van.start()
+        try:
+            with ThreadPoolExecutor(max_workers=min(len(thu_tu), max(1, j))) as ex:
+                for f in [ex.submit(chay_co_ngan_sach, s) for s in thu_tu]:
+                    f.result()
+        finally:
+            # ⛔ KHONG de luong nen song qua vong nop: no in ra sau khi bang ket
+            #    qua da in thi dong `[van dong]` lot vao giua phan quyet.
+            xong_het.set()
+            van.join(timeout=3)
 
     # ⛔ SAU khi `bo test` xong hẳn, KHÔNG song song với nó.
     #
@@ -2057,16 +2130,30 @@ def main() -> int:
         #    thay bon dich vu production dang ban. Do 03/09: `cua_so_yen
         #    trang-thai` bao RANH trong khi CPU 65%.
         ban = loi_dang_ban()
-        muc = ("RANH" if ban <= LOI_DE_DANH_CHO_MAY else
-               "BAN" if ban <= ngan_sach_loi() else "QUA TAI")
-        print(f"  [tai may] {ban:.1f}/{os.cpu_count()} loi dang ban -> {muc}")
+        # 🔴 **BA con so o day tung o BA don vi, do 28/09/2026.** Ban cu:
+        #
+        #        ban <= LOI_DE_DANH_CHO_MAY      # 10-thang VAT LY vs 20-thang LOGIC
+        #        ban <= ngan_sach_loi()          # dung don vi, nhung la NGAN SACH
+        #        f"{ban:.1f}/{os.cpu_count()}"   # in mau so 20 cho mot tu so max 10
+        #
+        #    Hau qua do duoc: mot may ban **60 %** in ra `RANH`, va `6.0/20` doc
+        #    nhu 30 %. Nguong `QUA TAI` o `> 8/10` = 80 % thi gan nhu khong bao
+        #    gio bat — ke ca lan Defender an 5,45 loi.
+        #
+        # ⚠️ Day dung la benh ma `loi_cong_cu_tu_do()` duoc viet ra de chua
+        #    (`-n 11` > `auto` = 10), tai phat o **duong BAO CAO** thay vi duong
+        #    tinh. Mot con so dung dat canh mot mau so sai thi la mot con so sai.
+        vat_ly = loi_cong_cu_tu_do()
+        muc = ("RANH" if ban <= LOI_DE_DANH_VAT_LY else
+               "BAN" if ban <= vat_ly - LOI_DE_DANH_VAT_LY else "QUA TAI")
+        print(f"  [tai may] {ban:.1f}/{vat_ly} loi VAT LY dang ban -> {muc}")
         if muc == "QUA TAI":
             print("  [tai may] CANH BAO: co thu gi do NGOAI luot nay dang chiem "
                   "may. Ket qua co the bi nhieu; xem `--noi-tiep`.")
         print()
         t0_chay = time.time()
         _chay_theo_lich(steps, j=args.j, tuan_tu=tuan_tu,
-                        dung_som=args.dung_som)
+                        dung_som=args.dung_som, phien=phien)
         tong_s = time.time() - t0_chay
 
     print("\n" + "=" * 62)
