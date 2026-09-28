@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% import "_app_head.html" as ah %}
+{% block title %}{{ _("Trigger workflow") }} — LTT Agent AI{% endblock %}
+{% block content %}
+<style>
+.trg-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.trg-item{border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+#trg-toast{position:fixed;z-index:100;right:24px;bottom:24px;background:#17191e;color:#fff;
+  border:1px solid #393c44;border-radius:9px;padding:11px 15px;opacity:0;transform:translateY(8px);
+  pointer-events:none;transition:.2s;font-size:12px;max-width:360px}
+#trg-toast.show{opacity:1;transform:none}
+#trg-toast.bad{border-color:#c8252b}
+</style>
+{{ ah.dau_trang("AI Studio", _("Trigger workflow"),
+   _("Cho workflow tự chạy: đặt lịch (cron) hoặc cấp một URL webhook để hệ thống ngoài gọi vào."),
+   lop="ag-head", quay_lai={"href": "/agent/canvas?wf=" + workflow_id, "nhan": _("Về Canvas")}) }}
+
+<div id="trg-app" data-csrf-token="{{ csrf_token }}" data-workflow-id="{{ workflow_id }}"
+    data-bo-lo-mac-dinh="{{ bo_lo_mac_dinh }}">
+
+  {# Chuoi da dich, doc bang JS qua `dataset` — tranh nhet `_()` vao trong
+     chuoi JS (de vo do escape dau nhay) ma van giu moi chu hien ra cho khach
+     di qua catalog gettext, ke ca phan JS dung lai. #}
+  <div id="trg-i18n" hidden
+    data-loading="{{ _('Đang tải…') }}"
+    data-empty-cron="{{ _('Chưa có lịch nào.') }}"
+    data-empty-webhook="{{ _('Chưa có URL webhook nào.') }}"
+    data-enabled="{{ _('Đang bật') }}"
+    data-disabled="{{ _('Đã tắt') }}"
+    data-turn-on="{{ _('Bật') }}"
+    data-turn-off="{{ _('Tắt') }}"
+    data-delete="{{ _('Xoá') }}"
+    data-confirm-delete="{{ _('Xoá trigger này? Không thể hoàn tác.') }}"
+    data-copy="{{ _('Sao chép') }}"
+    data-copied="{{ _('Đã sao chép vào clipboard.') }}"
+    data-next-fire="{{ _('Lần chạy kế tiếp') }}"
+    data-never-fired="{{ _('Chưa từng chạy') }}"
+    data-last-fired="{{ _('Lần chạy gần nhất') }}"
+    data-consecutive-errors="{{ _('Lỗi liên tiếp') }}"
+    data-generic-error="{{ _('Có lỗi xảy ra, thử lại.') }}"
+    data-created-cron="{{ _('Đã tạo lịch.') }}"
+    data-created-webhook="{{ _('Đã cấp URL webhook mới.') }}"
+    data-deleted="{{ _('Đã xoá trigger.') }}"
+    data-token-warning="{{ _('Token chỉ hiện MỘT LẦN ngay bây giờ — hãy sao chép và lưu lại. Mất token thì phải cấp một URL webhook mới, không có cách nào xem lại token cũ.') }}"
+    data-cron-invalid-hint="{{ _('Kiểm tra lại biểu thức cron (5 trường, cách nhau bằng khoảng trắng) và chu kỳ tối thiểu 5 phút.') }}"
+  ></div>
+
+  {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
+
+  <div class="card ag-form u-mt14">
+    <h2 class="u-m0 as-h2">{{ _("Đặt lịch (cron)") }}</h2>
+    <p class="dim">{{ _("Workflow tự chạy theo một biểu thức cron, ví dụ \"0 8 * * *\" chạy 8 giờ sáng mỗi ngày. Chu kỳ tối thiểu 5 phút.") }}</p>
+    <form id="trg-cron-form">
+      <div class="row">
+        <div class="field"><label>{{ _("Biểu thức cron") }}</label>
+          <input type="text" id="trg-cron-expr" name="cron" placeholder="*/30 * * * *" required></div>
+        <div class="field"><label>{{ _("Múi giờ") }}</label>
+          <input type="text" id="trg-cron-tz" name="tz" placeholder="Asia/Ho_Chi_Minh" value="Asia/Ho_Chi_Minh"></div>
+      </div>
+      <div class="field"><label>{{ _("Nếu lỡ lịch (server tắt lúc đến hạn)") }}</label>
+        <select id="trg-cron-bolo" name="bo_lo">
+          <option value="chay_mot_lan">{{ _("Chạy bù một lần cho mốc gần nhất") }}</option>
+          <option value="bo_qua">{{ _("Bỏ qua, chờ mốc kế tiếp") }}</option>
+        </select></div>
+      <div id="trg-cron-err" class="alert alert-err u-mt14" role="alert" hidden></div>
+      <button type="submit" class="btn u-mt14">{{ _("Tạo lịch") }}</button>
+    </form>
+    <div id="trg-cron-list" class="u-mt14" aria-live="polite"></div>
+  </div>
+
+  <div class="card ag-form u-mt14">
+    <h2 class="u-m0 as-h2">{{ _("Webhook") }}</h2>
+    <p class="dim">{{ _("Cấp một URL để hệ thống ngoài gọi POST vào, kèm token bí mật trong header X-LTT-Token. Tối đa 300 lần/phút cho mỗi URL.") }}</p>
+    <button id="trg-webhook-create" type="button" class="btn u-mt14">{{ _("Cấp URL webhook mới") }}</button>
+    <div id="trg-webhook-new" class="alert alert-ok u-mt14" hidden></div>
+    <div id="trg-webhook-list" class="u-mt14" aria-live="polite"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const root = document.getElementById('trg-app');
+  const csrf = root.dataset.csrfToken;
+  const wfId = root.dataset.workflowId;
+  const L = document.getElementById('trg-i18n').dataset;
+  const base = `/agent/api/v3/workflows/${wfId}/triggers`;
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const api = async (url, opts = {}) => {
+    opts.headers = {...(opts.headers || {}), 'X-CSRF-Token': csrf};
+    if (opts.body && typeof opts.body !== 'string') {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(opts.body);
+    }
+    const r = await fetch(url, opts);
+    let body;
+    try { body = await r.json(); } catch { body = {}; }
+    if (!r.ok) {
+      const detail = typeof body.detail === 'string' ? body.detail
+        : (body.detail ? JSON.stringify(body.detail) : L.genericError);
+      const err = new Error(detail);
+      err.status = r.status;
+      throw err;
+    }
+    return body;
+  };
+
+  const fmtDate = iso => iso ? new Date(iso).toLocaleString() : L.neverFired;
+
+  function itemRow(t, { showToken } = {}) {
+    const li = document.createElement('li');
+    li.className = 'trg-item';
+    const info = document.createElement('div');
+    info.innerHTML = `<strong>${t.kind === 'CRON' ? esc(t.config.cron || '') : esc(t.id)}</strong>
+      <div class="dim u-fs12">${L.nextFire}: ${esc(fmtDate(t.next_fire_at))}
+        · ${L.lastFired}: ${esc(fmtDate(t.last_fired_at))}
+        ${t.loi_lien_tiep ? `· <span class="chip v">${L.consecutiveErrors}: ${t.loi_lien_tiep}</span>` : ''}</div>`;
+    li.appendChild(info);
+    if (showToken && t.token) {
+      const box = document.createElement('div');
+      box.className = 'alert alert-ok u-mt14';
+      box.innerHTML = `<p><strong>${L.tokenWarning}</strong></p>
+        <p class="u-fs12">POST <code>${esc(t.webhook_url)}</code></p>
+        <p class="u-fs12">X-LTT-Token: <code id="trg-token-${t.id}">${esc(t.token)}</code></p>`;
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button'; copyBtn.className = 'btn ghost sm';
+      copyBtn.textContent = L.copy;
+      copyBtn.onclick = () => navigator.clipboard.writeText(t.token).then(
+        () => toast(L.copied));
+      box.appendChild(copyBtn);
+      li.appendChild(box);
+    } else if (t.kind === 'WEBHOOK') {
+      const p = document.createElement('p');
+      p.className = 'dim u-fs12';
+      p.textContent = `POST /hooks/wf/${t.id}`;
+      li.appendChild(p);
+    }
+    const actions = document.createElement('div');
+    actions.className = 'u-mt14';
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button'; toggleBtn.className = 'btn ghost sm';
+    toggleBtn.textContent = t.enabled ? L.turnOff : L.turnOn;
+    toggleBtn.onclick = () => setEnabled(t, !t.enabled);
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button'; delBtn.className = 'btn danger sm';
+    delBtn.textContent = L.delete;
+    delBtn.onclick = () => removeTrigger(t);
+    const state = document.createElement('span');
+    state.className = `chip ${t.enabled ? 'i' : 'm'}`;
+    state.textContent = t.enabled ? L.enabled : L.disabled;
+    actions.append(state, ' ', toggleBtn, ' ', delBtn);
+    li.appendChild(actions);
+    return li;
+  }
+
+  async function setEnabled(t, enabled) {
+    try {
+      await api(`${base}/${t.id}`, {method: 'PATCH', body: {enabled}});
+      await load();
+    } catch (e) { toast(e.message, 'bad'); }
+  }
+
+  async function removeTrigger(t) {
+    if (!confirm(L.confirmDelete)) return;
+    try {
+      await api(`${base}/${t.id}`, {method: 'DELETE'});
+      toast(L.deleted);
+      await load();
+    } catch (e) { toast(e.message, 'bad'); }
+  }
+
+  function toast(msg, type = '') {
+    let el = document.getElementById('trg-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'trg-toast';
+      el.setAttribute('role', 'status');
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.className = `toast show ${type}`;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.className = 'toast'; }, 3500);
+  }
+
+  let items = [];
+
+  async function load() {
+    const cronList = document.getElementById('trg-cron-list');
+    const hookList = document.getElementById('trg-webhook-list');
+    cronList.textContent = L.loading;
+    hookList.textContent = L.loading;
+    try {
+      const data = await api(base);
+      items = data.items || [];
+    } catch (e) {
+      toast(e.message, 'bad');
+      items = [];
+    }
+    const crons = items.filter(t => t.kind === 'CRON');
+    const hooks = items.filter(t => t.kind === 'WEBHOOK');
+    cronList.innerHTML = '';
+    if (!crons.length) {
+      cronList.textContent = L.emptyCron;
+    } else {
+      const ul = document.createElement('ul');
+      ul.className = 'trg-list';
+      crons.forEach(t => ul.appendChild(itemRow(t)));
+      cronList.appendChild(ul);
+    }
+    hookList.innerHTML = '';
+    if (!hooks.length) {
+      hookList.textContent = L.emptyWebhook;
+    } else {
+      const ul = document.createElement('ul');
+      ul.className = 'trg-list';
+      hooks.forEach(t => ul.appendChild(itemRow(t)));
+      hookList.appendChild(ul);
+    }
+  }
+
+  document.getElementById('trg-cron-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const errBox = document.getElementById('trg-cron-err');
+    errBox.hidden = true;
+    const cron = document.getElementById('trg-cron-expr').value.trim();
+    const tz = document.getElementById('trg-cron-tz').value.trim() || 'UTC';
+    const bo_lo = document.getElementById('trg-cron-bolo').value;
+    try {
+      await api(base, {method: 'POST',
+        body: {kind: 'CRON', cau_hinh: {cron, tz, bo_lo}}});
+      document.getElementById('trg-cron-expr').value = '';
+      toast(L.createdCron);
+      await load();
+    } catch (e) {
+      errBox.hidden = false;
+      errBox.textContent = `${e.message} ${e.status === 422 ? L.cronInvalidHint : ''}`;
+    }
+  });
+
+  document.getElementById('trg-webhook-create').addEventListener('click', async () => {
+    try {
+      const t = await api(base, {method: 'POST', body: {kind: 'WEBHOOK', cau_hinh: {}}});
+      const box = document.getElementById('trg-webhook-new');
+      box.hidden = false;
+      box.innerHTML = '';
+      box.appendChild(itemRow(t, {showToken: true}));
+      toast(L.createdWebhook);
+      await load();
+    } catch (e) { toast(e.message, 'bad'); }
+  });
+
+  load();
+})();
+</script>
+{% endblock %}

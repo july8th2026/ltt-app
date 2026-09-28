@@ -22228,3 +22228,123 @@ msgstr "A short-lived ticket used to send one scene to another app (for example 
 
 msgid "Vector đặc trưng khuôn mặt, suy từ ảnh nhân vật do khách tải lên, dùng để giữ đúng một mặt qua nhiều cảnh. Là dữ liệu sinh trắc học nên ⛔ không ra API; đi cùng nhân vật khi nhân vật bị xoá."
 msgstr "A facial feature vector derived from a character image the customer uploaded, used to keep the same face across scenes. It is biometric data, so it never leaves through the API; it goes with the character when the character is deleted."
+
+#: apps/agent/routes/trigger_v3.py
+msgid "Không tìm thấy trigger."
+msgstr "Trigger not found."
+
+#: apps/agent/routes/trigger_v3.py
+msgid "`bo_lo` phải là một trong {ds}, không phải {gia_tri!r}"
+msgstr "`bo_lo` must be one of {ds}, not {gia_tri!r}"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Trigger workflow"
+msgstr "Workflow triggers"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Cho workflow tự chạy: đặt lịch (cron) hoặc cấp một URL webhook để hệ thống ngoài gọi vào."
+msgstr "Let a workflow run on its own: set a cron schedule or issue a webhook URL for an outside system to call."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Về Canvas"
+msgstr "Back to Canvas"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Chưa có lịch nào."
+msgstr "No schedules yet."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Chưa có URL webhook nào."
+msgstr "No webhook URLs yet."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Xoá trigger này? Không thể hoàn tác."
+msgstr "Delete this trigger? This cannot be undone."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Sao chép"
+msgstr "Copy"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Đã sao chép vào clipboard."
+msgstr "Copied to clipboard."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Lần chạy kế tiếp"
+msgstr "Next run"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Chưa từng chạy"
+msgstr "Never run"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Lần chạy gần nhất"
+msgstr "Last run"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Lỗi liên tiếp"
+msgstr "Consecutive errors"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Có lỗi xảy ra, thử lại."
+msgstr "Something went wrong, try again."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Đã tạo lịch."
+msgstr "Schedule created."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Đã cấp URL webhook mới."
+msgstr "New webhook URL issued."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Đã xoá trigger."
+msgstr "Trigger deleted."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Token chỉ hiện MỘT LẦN ngay bây giờ — hãy sao chép và lưu lại. Mất token thì phải cấp một URL webhook mới, không có cách nào xem lại token cũ."
+msgstr "The token is shown only ONCE, right now — copy and save it. If it is lost, issue a new webhook URL; there is no way to see the old token again."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Kiểm tra lại biểu thức cron (5 trường, cách nhau bằng khoảng trắng) và chu kỳ tối thiểu 5 phút."
+msgstr "Check the cron expression (5 fields separated by spaces) and the 5-minute minimum interval."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Đặt lịch (cron)"
+msgstr "Set a schedule (cron)"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Workflow tự chạy theo một biểu thức cron, ví dụ \"0 8 * * *\" chạy 8 giờ sáng mỗi ngày. Chu kỳ tối thiểu 5 phút."
+msgstr "The workflow runs on its own on a cron expression, for example \"0 8 * * *\" runs at 8am every day. Minimum interval is 5 minutes."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Biểu thức cron"
+msgstr "Cron expression"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Múi giờ"
+msgstr "Time zone"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Nếu lỡ lịch (server tắt lúc đến hạn)"
+msgstr "If a run is missed (server was down when it was due)"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Chạy bù một lần cho mốc gần nhất"
+msgstr "Run once, to catch up on the most recent missed time"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Bỏ qua, chờ mốc kế tiếp"
+msgstr "Skip it, wait for the next scheduled time"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Tạo lịch"
+msgstr "Create schedule"
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Cấp một URL để hệ thống ngoài gọi POST vào, kèm token bí mật trong header X-LTT-Token. Tối đa 300 lần/phút cho mỗi URL."
+msgstr "Issue a URL for an outside system to POST to, with a secret token in the X-LTT-Token header. Up to 300 calls per minute for each URL."
+
+#: apps/agent/templates/agent_triggers.html
+msgid "Cấp URL webhook mới"
+msgstr "Issue a new webhook URL"

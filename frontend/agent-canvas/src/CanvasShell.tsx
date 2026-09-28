@@ -736,6 +736,13 @@ function Editor() {
         <button title="Bảng lệnh" aria-label="Mở bảng lệnh" onClick={()=>setCommandOpen(true)}>⌘</button>
         {/* Nut "AI" (Assistant) va "↗" (Phien ban & chia se) da bo: ca hai ngan
             keo phia sau chung chi goi cua v2, va cua v2 khong biet id v3. */}
+        {/* UI-12: dat lich (cron) + cap URL webhook. Trang rieng server-render
+            (`/agent/workflows/{id}/triggers`), khong phai mot panel React —
+            giu bundle Canvas KHONG phinh them mot mang trang thai moi cho
+            mot thao tac hiem (tao/xoa trigger), va tranh dung vao gate bundle
+            (`test_95`) cho mot man hinh khong lien quan render do thi. */}
+        {workflow&&<button title="Trigger: đặt lịch & webhook" aria-label="Mở trang trigger"
+          onClick={()=>{location.href=`/agent/workflows/${workflow.id}/triggers`}}>⏰</button>}
         <button className="run-primary" disabled={readOnly||!page.nodes.length} aria-pressed={desktopPanel==='run'} onClick={()=>setDesktopPanel(value=>value==='run'?null:'run')}>Chạy</button></div>
       <nav className={`operation-drawer${desktopPanel==='run'?' is-open':''}`} aria-label="Chạy workflow"><header><strong>Chạy workflow</strong><button aria-label="Đóng bảng chạy" onClick={()=>setDesktopPanel(null)}>×</button></header>
         <div className="run-tools"><button disabled={!selected.length || readOnly} onClick={duplicate}>Nhân bản</button>
