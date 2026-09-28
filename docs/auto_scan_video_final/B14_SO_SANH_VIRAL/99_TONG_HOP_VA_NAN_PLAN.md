@@ -157,3 +157,65 @@ HOI CHU DU AN: §2 — lam cham VIDEO 20 % de KHONG cat cau?
 - **D1/D2** tách đoạn theo **chữ đổi** — mượn nguyên `dai_sub_rapid.py:190-213`.
 - **A2/A4** mẫu số `ngan_sach` + bỏ chừa chỗ hẹp — ⭐ và §2 nay cho biết ta còn
   **thiếu nấc 0** (xén lặng trong audio TTS) mà Viral có.
+
+---
+
+## 3c. ✅ CHỐT 28/09 — ⛔ KHÔNG lấy nấc "giảm tốc video"
+
+Chủ dự án chốt: **⛔ không lấy** `Video Assist` của Viral. Giữ bậc thang thuần
+tiếng:
+
+```
+0  XEN LANG trong audio TTS truoc khi DO      (Viral DUB_TRIM_SIL — ta chua co)
+1  TRAN sang PAUSE truoc VA sau               (Viral DUB_LEAD/TAIL = 0,25 s)
+2  tang toc trong tran THUONG  1,15
+3  tran DUOI-NO 1,25, chi kich khi DA tre
+4  TROI (don ve cuoi), sub bam giong           (ta DA CO)
+—  ⛔ KHONG BAO GIO cat cau
+```
+
+### Vì sao ⛔ không lấy — ba cái giá đo được, và hai cái đầu nặng với TA hơn với họ
+
+**Cơ chế của họ là CỤC BỘ từng đoạn** (`localize.py:9255-9263`), ⛔ không phải cả
+video:
+```
+need_i = dur_i / slot_i
+need_i <= VOICE_CAP (1,12)  -> khong cham video doan nay (f_i = 1,0)
+need_i >  VOICE_CAP         -> cham video DOAN NAY  f_i = max(1-MAXSLOW, VOICE_CAP/need_i)
+```
+
+Bảng đo của họ (21/08, 60 cue thật, giọng thật, LEAD/TAIL 0,25):
+
+| MAXSLOW | 0 | 0,08 | 0,10 | 0,15 | 0,40 |
+|---|---|---|---|---|---|
+| nén TB | 1,194 | 1,151 | ~1,14 | 1,122 | 1,064 |
+| cue >1,3× | 35,0 % | 23,3 % | ~21 % | 18,3 % | 6,7 % |
+| **video dài thêm** | +0 % | **+4,7 %** | ~+6 % | **+8,4 %** | +17,1 % |
+
+⚠️ Mức `0,20` họ **đang dùng ⛔ KHÔNG nằm trong bảng** — nó là **nội suy** giữa
+0,15 và 0,40; chủ dự án của họ đã được báo rõ và vẫn chọn.
+
+| # | cái giá | vì sao nặng với TA |
+|---|---|---|
+| 1 | **video DÀI RA ~+10 %** ở `0,20` | vi phạm `D-ASV-03` (*bản lồng tiếng ⛔ không bao giờ dài hơn nguồn*) — **chắc chắn**, ⛔ không phải rủi ro |
+| 2 | 🔴 **chi phí RENDER nổ** | nguyên văn họ: *"mỗi câu tràn = 1 đoạn trim+concat… video 1h gần như câu nào cũng tràn ⇒ **hàng nghìn đoạn** ⇒ filtergraph khổng lồ ⇒ concat đơn luồng nghẽn, NVENC đói"*. Đo máy khách: **GPU 16 %, ghép 393/1795 s**. Họ phải hạ `VC_WARP_MAX_DOAN` 400→150. ⚠️ Ta vừa tìm **40 chỗ ffmpeg ⛔ không khai `-filter_threads`**, và máy production đã **treo hai lần** 28/09 — đúng lớp này |
+| 3 | ⚠️ **từng phá đồng bộ phụ đề** | phim 2296 s: hình **trôi muộn dần** (+1,3 → +2,4 → +9,2 → +12,1 s rồi bão hoà); **phụ đề Việt hiện TRƯỚC phụ đề gốc ~1,05 s** ở một số câu. Họ **tắt 3 tuần** (30/07 → 21/08) vì thế |
+
+⭐ Và một câu của họ **⛔ không làm đổi quyết định nhưng phải ghi lại**, vì nó sẽ
+được viện dẫn: *"đã đo và LOẠI mọi hướng chỉnh PROMPT (36 lô A/B, 6/12 = tung đồng
+xu) ⇒ **Video Assist là đòn bẩy DUY NHẤT đo được có tác dụng**."*
+
+⇒ 🔑 Với **họ** câu ấy đúng, vì họ **⛔ không có** bậc thang nấc 0/1 của ta (xén
+lặng + mượn pause hai đầu) như một cơ chế riêng biệt, và họ **⛔ không** có ngân
+sách "tới lúc đoạn sau bắt đầu" của `thoi_gian.ngan_sach_doan`. ⇒ Hai hệ **⛔ không
+cùng tập đòn bẩy**, nên *"đòn bẩy duy nhất"* của họ ⛔ **không** chuyển thành
+*"đòn bẩy duy nhất"* của ta.
+
+### ⚠️ Nếu bậc thang thuần tiếng VỠ thì mở lại hai đường, ⛔ không phải một
+1. lấy ở **`0,08`** (điểm **đã đo**: +4,7 % độ dài, cue gấp 35 % → 23,3 %) và
+   **nới `D-ASV-03`** — cần chủ dự án chốt lại vì đó là bất biến có phép kiểm **ném**;
+2. **tự xây bản BÙ TRỪ** — chậm chỗ dồn, **nhanh chỗ dư**, giữ **tổng** ⇒ `D-ASV-03`
+   còn nguyên. Viral ⛔ không làm thế (họ cho tổng dài ra). Cái giá: việc **tự xây**,
+   và phải đo xem mắt có thấy hình nhanh/chậm không đều ⛔ không.
+
+⇒ L1 đang đo **điểm vỡ** của bậc thang thuần tiếng. Có con số rồi mới bàn tiếp.
