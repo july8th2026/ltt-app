@@ -13,7 +13,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 
 | Pha | Làn | Trạng thái | Nhánh | Tệp SỞ HỮU | Gộp main | Ghi chú |
 |---|---|---|---|---|---|---|
-| UI-0 Lỗi P0 cơ khí | `ui0` | ✅ **ĐÃ GỘP** (`72ee199b`) | `claude/ltt-agent-automation-ux-audit-9e3764` | *(đã trả phiếu)* | ✅ | dải **5600-5699** · nghiệm thu trình duyệt PASS · ⏸ chưa deploy (chủ dự án: deploy CUỐI) |
+| UI-0 Lỗi P0 cơ khí | `ui0` | ✅ **ĐÃ GỘP** (`72ee199b`) | `claude/ltt-agent-automation-ux-audit-9e3764` | *(đã trả phiếu)* | ✅ | dải **5600-5699** · nghiệm thu trình duyệt PASS · ✅ **ĐÃ DEPLOY** `1e34780f` 28/09 (băm lệch 0/thiếu 0/thừa 0) |
 | UI-3 Tách CanvasShell | `ui3` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui3` | `src/**/*.tsx` · `editorState.ts` · `features/editor/**` | — | dải **5700-5799** · **ĐÃ MỞ KHOÁ song song hoá** — 31 tệp, lớn nhất 179 dòng · 165 test xanh · trình duyệt PASS |
 | UI-2 Design system | `ui2` | ✅ **ĐÃ GỘP** | `worktree-agent-a710623353e7caab2` | **chỉ** `canvas.css` | — | dải **5800-5899** · hex 482→**63** · lớp chết 79→**0** · `@media 640px` 6→**1** · theme sáng 20/20 ô tối→**0/20** · ⚠️ 2 tiêu chí KHÔNG đạt, xem nhật ký |
 | UI-N Nhãn ngắn node LTT | `uiN` | ✅ **ĐÃ GỘP** (`868f9db2`) | — | *(đã trả phiếu)* | ✅ | dải **5900-5999** · LTT_APPS 16/17 → **0/17** nhãn > 40 ký tự |
@@ -112,6 +112,71 @@ canh rằng không ai lặng lẽ mở một cửa ghi ở tầng trang.
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-28` `điều phối` — **ĐÃ DEPLOY `1e34780f` LÊN PRODUCTION. Nghiệm thu
+  trình duyệt trên `https://app.lttstudios.com`: PASS.**
+
+  ### Đường deploy — đo, ⛔ không tin `EXITCODE`
+
+  | phép đo | kết quả |
+  |---|---|
+  | gate L1 `--doi --tu 8907b4dd` trên `1e34780f` | **PASS**, hạ cấp `nhanh` (bộ test ⛔ KHÔNG chạy) |
+  | bản đang chạy TRƯỚC | `8907b4dd` — `dau_van_tay.json` **và** `/health/version` khớp nhau |
+  | diff `8907b4dd..1e34780f` | 67 tệp, **⛔ không migration alembic nào** |
+  | `ai_dang_dung_may_chu.py`, đo lại **ngay trước** `git archive` | RANH |
+  | `EXITCODE` | `0` (15:12:10 → 15:14:12) |
+  | `nghiem_thu_deploy.py` — đối chiếu băm từng tệp với commit | **lệch 0 · thiếu 0 · thừa 0**, 1313 tệp |
+  | `/health/version` sau deploy | `1e34780f5d08` |
+
+  ### Nghiệm thu production — bốn thứ thuộc bốn làn khác nhau
+
+  ```
+  GET  /ket-noi/nha-cung-cap        200        UI-5
+  GET  /ket-noi                     200, thân KHÔNG chứa khoá bí mật
+  POST /ket-noi (thiếu CSRF)        400        route TỒN TẠI, từ chối trước khi làm gì
+  POST .../nodes/{id}/duyet         400        UI-8a — cửa `core.human` SỐNG
+  GET  /agent/templates             200, 3 mẫu, 3 nút Dùng, `con_dat_cho: false`   UI-9
+  Canvas tải xong                   465 ms
+  ```
+
+  ⭐ `POST .../duyet` trả **400 `"Phiên đã hết hạn"`** chứ ⛔ không phải `404`. Đó
+  chính là phép phân biệt mà lỗi `phe_duyet_v3` hôm nay dạy: **`404` của router**
+  (route ⛔ không tồn tại) khác **`400` của thân** (route có, và nó từ chối trước
+  khi chạm dữ liệu). Trước lượt deploy này, cửa ấy trả `404` trên production
+  trong khi 9 phép kiểm cục bộ đều xanh.
+
+  ### 🔴 Một `null` đã che một phép đo — và trần vừa được đối chiếu THẬT
+
+  Lượt nghiệm thu PASS nhưng trả `tren_day: null` cho bundle. `null` ⛔ **không**
+  phải *"⛔ không có byte"* — là **⛔ không đo được**: Cloudflare phục vụ `zstd`
+  streaming, và phản hồi streaming ⛔ không mang `content-length`. Phép đo cũ hỏi
+  một tiêu đề **⛔ không tồn tại**.
+
+  Đo lại bằng `PerformanceResourceTiming.encodedBodySize`
+  (`tests/browser/agent_ui_v2_byte_zstd_production.js`):
+
+  ```
+  main-Dj6ighKc.js    encoded 159.511   decoded 500.649    trần test_95: 165.000 / 510.000
+  main-BvjQuzrR.css   encoded  12.218   decoded  57.876
+  ```
+
+  ⇒ **Lần đầu trần được đối chiếu với byte KHÁCH THẬT TẢI**, ⛔ không phải với
+  gzip cục bộ. Cả hai nằm dưới trần.
+
+  ⭐ Và câu hỏi `asset_ver` **⛔ không đổi** qua lượt deploy đã có đáp án: nó chỉ
+  băm `server/static/` (`ltt.css`, `htmx.min.js`…), còn bundle Canvas tự cache-bust
+  bằng **tên tệp có băm** (`main-Dj6ighKc.js`). Hai cơ chế khác nhau cho hai loại
+  tài sản — ⛔ không phải một cơ chế hỏng.
+
+  ### ⚠️ Thứ lượt này vẫn ⛔ KHÔNG đo được
+
+  *Run có **thật sự hoàn tất** trên production không.* `ai_dang_dung_may_chu.py`
+  trả RANH nghĩa là ⛔ **không có job nào** — tức cũng ⛔ không có run nào để xem.
+  Đo nó đòi **tạo một job thật trên máy thật của khách**, và kịch bản nghiệm thu
+  cố ý **CHỈ ĐỌC**. ⇒ Vẫn treo, và nay treo vì một lý do KHÁC trước: ⛔ không phải
+  *"thiếu worker LocalSystem"* nữa (worker production LÀ LocalSystem), mà là
+  *"chưa ai chọn trả tiền cho một run thật để đo"*.
+
 
 - `2026-09-28` `điều phối` — **UI-11 NGHIỆM THU TỔNG: 6/7 bước E2E đi được, và
   bước thứ 7 lộ một LỖI CHẶN TÍNH NĂNG CỐT LÕI.**
