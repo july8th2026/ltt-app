@@ -58,6 +58,74 @@ def handle(params: dict, ctx=None) -> dict:
     return _handle_generate(params, ctx=ctx)
 
 
+def _sinh_theo_lo(params: dict, model: str, ctx) -> tuple[dict, int, str]:
+    """Sinh canh theo LO. Tra `(raw, tong_tokens, loi_nhac_lo_dau)`.
+
+    ## 🔴 Vi sao chia lo (Q-16, do that 27/09/2026)
+
+    Hai luot doc lap o `scene_count=20` deu tra **19/20** canh, va do dai truong
+    `prompt` **co dan theo thu tu canh** (159->87 va 165->~90 ky tu) trong khi chi
+    dung 67 %/69 % cua `_MAX_TOKENS`. ⇒ Chat luong suy **TRUOC** khi cham tran
+    cung, nen nang tran token ⛔ KHONG phai thuoc.
+
+    ⭐ Canh thu 20 khong "kem", no la mot **placeholder** do vong
+       `while len(scenes) < requested` trong `_normalize_result` bu vao. Trung
+       thuc — nhung khach da tra tien cho no.
+
+    ## ⭐ Vi sao KHONG can mot loi nhac moi
+
+    `composer.director_prompt` da co san hai o dung cho viec nay:
+
+        scenes   = params["scene_count"]          -> co lo
+        existing = json.dumps(existing[:20])      -> lich su, dung de giu lien mach
+
+    Nen mot lo chi la goi lai chinh no voi hai khoa ay da thay. ⛔ Khong dung
+    `services/breakdown.py` — ham do nam tren duong ROUTE (`routes/storyboard.py`),
+    ⛔ khong nam tren duong job nay.
+
+    ## ⚠️ `bao_lo` duoc phep NEM, va do la co y
+
+    `ctx.progress_counter` tu nem `JobCancelled` khi khach bam Huy
+    (`job_runner.py:222`). Ham nay ⛔ KHONG duoc bat: bat va chay tiep nghia la job
+    ket thuc BINH THUONG sau khi bi huy, va tien duoc quyet toan DAY DU cho mot
+    luot chi giao mot phan. Ngoai le phai bay len cho biet ve TIEN (Task 4).
+
+    ⭐ Goi o RANH LO, ⛔ khong giua lo: mot lo da goi LLM la da tieu tien.
+    """
+    from apps.prompt_ai_ommi.services import chia_lo
+
+    tong = max(1, min(MAX_SCENES, int(params.get("scene_count") or 6)))
+    da_sinh: list[dict] = []
+    tong_tokens = 0
+    loi_nhac_dau = ""
+    goi_y: dict = {}
+
+    for dau, cuoi in chia_lo.cac_lo(tong):
+        p_lo = {**params, "scene_count": cuoi - dau + 1,
+                "existing_scenes": chia_lo.cua_so_lich_su(da_sinh)}
+        system, prompt = director_prompt(p_lo)
+        if not loi_nhac_dau:
+            # `master_prompt` giu loi nhac cua LO DAU: no la loi nhac dinh nghia ca
+            # goi (brief, phong cach, khoa nhan vat). Cac lo sau chi khac o o
+            # `existing`, nen ghep het vao day chi lam no dai ra ma khong them tin.
+            loi_nhac_dau = prompt
+        raw_lo, tokens = provider.generate_json(system, prompt, model=model)
+        tong_tokens += int(tokens or 0)
+        if not goi_y:
+            # `summary`/`anchors` lay tu lo DAU: chung mo ta CA goi, va mot ban
+            # ghi de tu lo cuoi se mo ta dung nam canh cuoi.
+            goi_y = {"summary": raw_lo.get("summary"),
+                     "anchors": raw_lo.get("anchors")}
+        da_sinh += list((raw_lo or {}).get("scenes") or [])[:cuoi - dau + 1]
+        if ctx is not None:
+            # ⛔ KHONG boc try/except: xem docstring.
+            ctx.progress_counter(min(len(da_sinh), tong), tong, don_vi="canh",
+                                 event_code="ommi_chia_lo")
+
+    raw = {"summary": goi_y.get("summary"), "anchors": goi_y.get("anchors"),
+           "scenes": da_sinh}
+    return raw, tong_tokens, loi_nhac_dau
+
 def _handle_generate(params: dict, ctx=None) -> dict:
     operation = str(params.get("operation") or "director")
     if operation not in {"director", "storyboard", "iterate",
@@ -79,12 +147,11 @@ def _handle_generate(params: dict, ctx=None) -> dict:
                          .format(n=TOI_THIEU_KY_TU_BRIEF))
     if ctx is not None:
         ctx.progress(10, "đang kiểm tra brief và consistency anchors")
-    system, prompt = director_prompt(params)
     if ctx is not None:
         ctx.progress(30, "AI Director đang phân cảnh")
     # D09: không khai model ⇒ `provider` tự hỏi bản khai của app (`model_mac_dinh`).
     model = str(params.get("model") or provider.model_mac_dinh())
-    raw, tokens = provider.generate_json(system, prompt, model=model)
+    raw, tokens, prompt = _sinh_theo_lo(params, model, ctx)
     if ctx is not None:
         ctx.progress(85, "đang chuẩn hóa prompt package")
     package = _normalize_result(raw, params)

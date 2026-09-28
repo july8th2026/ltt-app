@@ -70,7 +70,17 @@ def test_preview_and_worker_normalize_provider_output(monkeypatch):
         "scenes": [{"title": "Mở đầu", "prompt": "Wide establishing shot"}],
     }, 123))
     result = jobs.handle(params)
-    assert result["tokens_used"] == 123
+    # ⭐ TONG token qua CAC LO, khong phai token cua MOT luot goi (pha 6, 28/09).
+    #
+    #    `_sinh_theo_lo` goi `generate_json` mot lan moi lo, va gia lap o tren tra
+    #    123 **moi lan**. `tokens_used` co nghia *"job nay dung bao nhieu token"*
+    #    nen no phai la TONG — tra token cua mot lo la khai THIEU.
+    #
+    # ⛔ Doc `so_luot_goi` chu khong go mot con so: doi `LO_CANH` thi bai nay van
+    #    dung, va no do TINH CHAT (cong don) chu khong do mot gia tri.
+    from apps.prompt_ai_ommi.services import chia_lo
+    so_lo = chia_lo.so_luot_goi(project["brief"]["scene_count"])
+    assert result["tokens_used"] == 123 * so_lo
     assert len(result["prompt_package"]["scenes"]) == project["brief"]["scene_count"]
     assert result["prompt_package"]["scenes"][0]["versions"]
 
