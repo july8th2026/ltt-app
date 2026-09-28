@@ -568,6 +568,76 @@ theo SỐ ẢNH** ở `--metrics`, không chỉ theo số token.
 
 ---
 
+## 7-TER. TIẾN ĐỘ THẬT (cập nhật 28/09/2026, nhánh `phien/vision-plan-lock`)
+
+| Pha | Trạng thái | Commit |
+|---|---|---|
+| **0 — ĐO** | ✅ xong (§6-BIS) | `a79da8f0` |
+| **1 — SỰ THẬT** (cờ engine tường minh, sửa 2 chú thích sai) | ✅ xong | `a79da8f0` |
+| **2 — TÍNH** (`anh_token.py` ×2 byte-identical) | ✅ xong | `a6dd4be3` |
+| **3(B) — cổng máy B tính ngân sách, gỡ `max_images`** | ✅ xong | `a6dd4be3` |
+| **4a — trần thân 4 → 32 MiB** | ✅ xong | `a6dd4be3` |
+| **3(A) — máy A ĐO ảnh, công bố ra catalog** | ✅ xong | `546ab376` |
+| **5 — client nhả theo ngân sách** | 🔨 đang làm (kho `LTTCODEAPP`) | — |
+| **6 — tự hạ + header `X-LTT-Anh-Thu-Nho`** | ⬜ chưa | — |
+| **DEPLOY** | 🔴 **CHẶN — cần chủ dự án** | §7-TER.3 |
+
+### 7-TER.1 Ba lỗ hổng THẬT tìm thấy trong lúc làm (không có trong plan gốc)
+
+**(a) 🔴 `server/api/chat.py` — cửa sync CHƯA TỪNG đặt chỗ cho ảnh.**
+`so_anh` không bao giờ được truyền vào `cho_suat_dong_bo`, nên một lượt sync mang
+ảnh giữ thiếu **đúng toàn bộ phần ảnh**. Không phải hồi quy của plan này — nó có
+sẵn. Sửa cùng lúc, vì sửa một cửa mà bỏ cửa kia là dựng lại đúng lỗi "hai chỗ
+khai một điều".
+
+**(b) 🔴 Thứ tự kiểm tra của tôi che phép chặn SSRF.** Bản đầu đặt phép kiểm cấu
+hình engine **trước** `image_url_not_allowed`, nên một `image_url` trỏ vào
+`127.0.0.1:8188` trả về *"thiếu cờ engine"*. `test_1701` bắt ngay. Luật đã ghi vào
+mã: **khách nghe lỗi CỦA KHÁCH trước; lỗi CỦA TA chỉ nói khi yêu cầu đã hợp lệ
+mọi mặt khách kiểm soát được.**
+
+**(c) 🔴 `test_1223` bắt được A ⊆ B gãy — và nó gãy vì một BẢN GIẢ THIẾU THAM SỐ.**
+`_b_giu` gọi `do_yeu_cau` **không truyền** hai trần token ảnh, nên bản giả rơi về
+hằng phẳng: *"B giữ 39.209, A giữ 43.309"* — B đặt chỗ **ít hơn** A đúng một ảnh
+(4.098 thật vs 2.048 phẳng). Bài học: **một bản giả của đường chạy mà thiếu một
+tham số sẽ đo ra một con số KHÁC**, và không phép kiểm nào thấy nếu nó không đối
+chiếu hai bên.
+
+### 7-TER.2 Hai phép tiêm nghịch của TÔI từng RỖNG, và cách phát hiện
+
+* **`test_4200`**: dùng `cửa sổ rộng nhất × 2` — một hệ số gõ tay. Trần lên 32 MiB
+  thì model "gấp đôi" **vừa**, phép thử rỗng. Nay hệ số **suy từ chính trần**.
+* **`test_250`**: 3 ảnh 1080p = 6.126 đo thật, mà hằng phẳng cho 6.144 — **cả hai
+  đều vượt 5.000**, nên vế ấy xanh trên cả mã đúng lẫn mã sai. Thêm vế **30 ảnh
+  320×240** (2.460 đo thật vs 61.440 phẳng) mới có sức phân biệt. Đã chứng minh
+  bằng **đột biến**: thay `f(w,h)` bằng hằng ⇒ 2 phép đỏ.
+* **`test_4203`** (làn agent): ô `1440×240` không phân biệt được gì vì
+  `round(7.5) == 8` trùng `floor(7.5+0.5)`. Chỉ ô có **phần nguyên CHẴN** mới bắt
+  được (`round(22.5) == 22`). Đã đổi sang `1440×208`.
+
+> ⭐ Ba ca, một hình dạng: **một phép tiêm nghịch chỉ đo được khi hai nhánh cho
+> hai KẾT QUẢ KHÁC NHAU ở đúng ô đang dùng.** Viết xong phải chạy đột biến.
+
+### 7-TER.3 🔴 DEPLOY — ba việc chỉ chủ dự án quyết được
+
+`test_1259::test_BAN_SAO_khop_may_B` **ĐỎ có chủ ý**: máy B đang chạy vẫn cưỡng
+chế trần đếm 4 ảnh trong khi máy A đã gỡ. Đó là **sự thật**, không phải phép kiểm
+hỏng — và nó là **cửa deploy**. Hai máy phải deploy **cùng nhau**: nếu A lên trước,
+khách đọc catalog (không còn trần đếm), gửi 10 ảnh, và ăn 400 mà không chỗ nào báo.
+
+| # | Việc | Vì sao cần chủ dự án |
+|---|---|---|
+| **D1** | Deploy cổng LLM **máy B** (`llm_gateway/deploy/deploy.ps1`) + nạp lại `llama-swap.yaml` | **khởi động lại engine trên GPU production** ⇒ cắt mọi lượt đang chạy của khách |
+| **D2** | Deploy **máy A** để trần thân 32 MiB có hiệu lực | deploy giữa plan (hợp đồng §5) |
+| **D3** | Bật WebP: chép `ffmpeg`+`ffprobe` sang một thư mục **máy đọc được** trên máy B rồi thêm `--video-ffmpeg-dir` | ghi tệp lên máy B + khởi động lại engine |
+
+⚠️ **D1 và D2 phải cùng lúc.** D3 độc lập, làm sau được.
+⛔ Và `check_mypy` báo `assignment 56 → 57` — đo lại trên **`main`** thấy `main`
+   **tự nó** đã vỡ bánh cóc ấy. Không phải của plan này, và ⛔ không `--accept`
+   (làm thế là che hồi quy của phiên khác).
+
+---
+
 ## 8. THỨ TỰ TRIỂN KHAI (sau khi khoá)
 
 ```
