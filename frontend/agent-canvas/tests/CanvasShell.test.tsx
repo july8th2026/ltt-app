@@ -225,12 +225,16 @@ describe('CanvasShell', () => {
   })
 
   it('opens layers and keyboard command palette with working display toggles', async () => {
+    // ⭐ UI-10a: `LayersDrawer`/`CommandPalette` nay nap tre (`React.lazy`) —
+    //    tep JS chi tai khi mo, nen ngay sau `fireEvent.click`/`keyDown` panel
+    //    CHUA hien ngay lap tuc (mot nhip mang, du la nap tu local trong test).
+    //    `findByRole` (khong phai `getByRole`) doi cho dung nhip do.
     render(<CanvasShell />)
     await themVanBan()
     fireEvent.click(screen.getByRole('button',{name:'Mở danh sách lớp'}))
-    expect(screen.getByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
+    expect(await screen.findByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
     fireEvent.keyDown(window,{key:'k',ctrlKey:true})
-    expect(screen.getByRole('dialog',{name:'Bảng lệnh Canvas'})).toBeInTheDocument()
+    expect(await screen.findByRole('dialog',{name:'Bảng lệnh Canvas'})).toBeInTheDocument()
     fireEvent.change(screen.getByRole('textbox',{name:'Tìm lệnh'}),{target:{value:'lưới'}})
     fireEvent.click(screen.getByRole('button',{name:'Ẩn lưới'}))
     fireEvent.keyDown(window,{key:'k',ctrlKey:true})
