@@ -324,3 +324,66 @@ def test_chi_MOT_cho_quyet_dinh_sha_giao_hang(src):
         "co loi goi `rev-parse HEAD` tren duong CHINH ma khong sinh `$shaXuat` "
         "va khong nam trong nhanh du phong:\n  " + "\n  ".join(hong)
         + "\n⇒ Hai cho quyet dinh 'SHA giao hang' la hai cho se troi khoi nhau.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  5. Ban giao doc REF `refs/heads/main`, KHONG doc `HEAD` cua cay
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Cay chinh ganh HAI VAI, va chung va nhau:
+#      1. be mat deploy cua MOI phien (CLAUDE.md luat 5);
+#      2. cho dung lam viec cua MOT phien.
+#
+#   Reflog cua kho, do 28/09:
+#      18:05  checkout: moving from main to phien/vision-plan-lock   (13 commit chua len main)
+#      12:42  checkout: moving from main to phien/lan-giong-theo-danh-muc
+#      12:46  checkout: moving from phien/lan-giong... to main
+#
+#   ⇒ Muon cay chinh lam cho dung la chuyen BINH THUONG o day. Va luot deploy
+#     18:04:32 chi kip chay TRUOC cu checkout 18:05 — **sat mot phut**. Neu no
+#     chay luc 18:06, no da xuat `phien/vision-plan-lock` len production va nhat
+#     ky se ghi `[OK] Xuat commit 9f963938` trong mot trang thai hoan toan binh
+#     thuong. ⛔ Khong mot dong nao trong quy trinh hoi *"cay dang o nhanh nao?"*
+#
+# ⭐ Phien `Prompt AI` de nghi doc REF thay vi dat mot cua chan, va ho dung:
+#    mot cua chan se chan OAN chinh nhung phien dang lam viec hop le o cay chinh,
+#    con doc ref thi **go luon cai benh** — `git archive` nhan mot tree-ish bat
+#    ky nen no ⛔ khong quan tam cay dang checkout gi.
+#
+# ⚠️ Cua chan la thuoc cho TRIEU CHUNG; doc ref la thuoc cho BENH. Va mot cua
+#    khong can thiet la mot cua ⛔ khong the quen.
+
+def test_ban_giao_doc_REF_main_chu_khong_doc_HEAD_cua_cay(src):
+    """⛔ `$shaXuat` — bien ma `git archive` dung — phai den tu
+    `rev-parse refs/heads/main`, ⛔ KHONG tu `rev-parse HEAD`."""
+    ma = _bo_chu_thich_ps1(src)
+    mo = re.search(r"\$shaXuat\s*=\s*\(&\s*git[^)]*\)", ma)
+    assert mo, "khong tim thay phep gan `$shaXuat`"
+    assert "refs/heads/main" in mo.group(0), (
+        "`$shaXuat` doc `HEAD` cua cay chinh. Cay do co the dang checkout mot "
+        "nhanh khac (do duoc trong reflog: 2 lan trong mot ngay) ⇒ deploy se xuat "
+        "nhanh AY len production, va nhat ky trong hoan toan binh thuong. "
+        f"Thay: {mo.group(0)[:90]}")
+
+
+def test_KHONG_roi_ve_HEAD_khi_thieu_ref_main(src):
+    """⛔ Roi ve `HEAD` khi ⛔ khong doc duoc ref la dung lai chinh con bo nay —
+    va roi lang le, dung luc kho dang o trang thai la."""
+    ma = _bo_chu_thich_ps1(src)
+    i = ma.find("refs/heads/main")
+    assert i != -1
+    vung = ma[i:i + 1400]
+    assert re.search(r"throw", vung), (
+        "khong doc duoc `refs/heads/main` ma ⛔ khong `throw` ⇒ script di tiep voi "
+        "mot SHA rong hoac roi ve HEAD. Mot deploy bi hoan ton mot lan chay lai; "
+        "mot deploy xuat sai nhanh ton mot lan roll back tren production.")
+
+
+def test_NOI_RA_khi_cay_chinh_dang_o_nhanh_khac(src):
+    """⭐ Doc ref lam deploy DUNG, nhung nguoi doc nhat ky van phai biet ban giao
+    ⛔ KHONG phai thu dang nam trong cay — neu khong, mot lan deploy "thanh cong"
+    se lam ho tuong cay chinh sach."""
+    ma = _bo_chu_thich_ps1(src)
+    assert "--abbrev-ref HEAD" in ma, (
+        "script ⛔ khong hoi cay chinh dang o nhanh nao ⇒ no ⛔ khong the noi ra "
+        "khi ban giao khac thu dang nam trong cay")

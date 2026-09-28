@@ -289,9 +289,60 @@ $srcChep  = $src          # duong lui: cay song, y nhu truoc 08/09
 $xuatTam  = $null
 $shaXuat  = ''
 if (Test-Path $gitPath -PathType Container) {
-    try { $shaXuat = (& git -C $src rev-parse HEAD 2>$null) } catch { $shaXuat = '' }
+    # ======================================================================
+    #  XUAT TU REF `refs/heads/main`, KHONG TU `HEAD` CUA CAY. Do 28/09/2026.
+    # ======================================================================
+    #
+    #  Ban cu doc `rev-parse HEAD` cua cay chinh. Nhung cay chinh ganh HAI VAI:
+    #    1. be mat deploy cua MOI phien (CLAUDE.md luat 5);
+    #    2. cho dung lam viec cua MOT phien.
+    #
+    #  Do duoc trong reflog cua chinh kho nay:
+    #      18:05  checkout: moving from main to phien/vision-plan-lock
+    #      12:42  checkout: moving from main to phien/lan-giong-theo-danh-muc
+    #      12:46  checkout: moving from phien/lan-giong... to main
+    #
+    #  => Muon cay chinh lam cho dung la chuyen BINH THUONG o day, khong phai
+    #    mot su co. Luc toi do, nhanh ay co 13 commit chua len `main`.
+    #
+    # !! Va luot deploy 18:04:32 hom nay chi kip chay TRUOC cu checkout 18:05 -
+    #    sat mot phut. Neu no chay luc 18:06 thi no da xuat
+    #    `phien/vision-plan-lock` len production, va nhat ky se ghi
+    #    `[OK] Xuat commit 9f963938` trong trang thai hoan toan binh thuong.
+    #    Khong mot dong nao trong quy trinh hoi *"cay dang o nhanh nao?"*.
+    #
+    # !! Script CO mot cua chan deploy nham CAY (~dong 66, chong deploy tu mot
+    #    worktree). No khong chan deploy nham NHANH trong dung cay. Cung ho voi
+    #    bon ca khac hom nay: mot cua ten la "chan deploy nham" nhung chi do MOT
+    #    chieu nham.
+    #
+    # ** Vi sao doc REF tot hon mot cua chan: `git archive` nhan mot tree-ish bat
+    #    ky, nen doc ref lam deploy DUNG `main` **du** ai dang muon cay chinh.
+    #    Mot cua chan se chan OAN chinh nhung phien dang lam viec hop le o do.
+    #    => Cua chan la thuoc cho trieu chung; doc ref go luon cai benh.
+    #
+    #  Phien `Prompt AI` de nghi cach nay, va ho dung.
+    try {
+        $shaXuat = (& git -C $src rev-parse refs/heads/main 2>$null)
+    } catch { $shaXuat = '' }
     if ($LASTEXITCODE -ne 0) { $shaXuat = '' }
     $global:LASTEXITCODE = 0
+    if ($shaXuat) {
+        $shaXuat = $shaXuat.Trim()
+        $nhanhCay = ''
+        try { $nhanhCay = (& git -C $src rev-parse --abbrev-ref HEAD 2>$null) } catch { }
+        $global:LASTEXITCODE = 0
+        if ($nhanhCay -and $nhanhCay.Trim() -ne 'main') {
+            # NOI RA, dung im: nguoi doc nhat ky phai biet ban giao KHONG phai
+            # thu dang nam trong cay. Khong phai loi, nhung la mot su that can khai.
+            Canh ("cay chinh dang o nhanh '" + $nhanhCay.Trim() +
+                  "' - deploy xuat tu refs/heads/main (" +
+                  $shaXuat.Substring(0, 12) + "), KHONG tu cay")
+        }
+    } else {
+        # KHONG roi ve HEAD: roi ve HEAD la dung lai chinh con bo nay.
+        throw 'khong doc duoc refs/heads/main - DUNG deploy, kiem kho truoc'
+    }
 }
 if ($shaXuat) {
     $shaXuat = $shaXuat.Trim()
