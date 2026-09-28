@@ -104,8 +104,9 @@ def main() -> int:
     print(f"\n  anh {rong}x{cao}, model {a.model}, {a.lap} lan moi N, TUAN TU")
     print(f"  {'N':>4}{'tuong_ms (trung vi)':>22}{'token vao':>11}{'ms/anh them':>14}")
     print(f"  {'-' * 51}")
-    truoc_ms = None
-    truoc_n = None
+    # ⛔ Hai bien nay phai duoc thu hep CUNG LUC, khong chi `truoc_ms`: `mypy` bat
+    #    dung cho toi so `n > truoc_n` khi `truoc_n` con la `None`.
+    truoc: "tuple[float, int] | None" = None
     for n in cac_n:
         do = []
         vao = None
@@ -120,10 +121,10 @@ def main() -> int:
             continue
         tv = statistics.median(do)
         them = ""
-        if truoc_ms is not None and n > truoc_n:
-            them = f"{(tv - truoc_ms) / (n - truoc_n):>13.1f}"
+        if truoc is not None and n > truoc[1]:
+            them = f"{(tv - truoc[0]) / (n - truoc[1]):>13.1f}"
         print(f"  {n:>4}{tv:>22.1f}{vao if vao is not None else '?':>11}{them:>14}")
-        truoc_ms, truoc_n = tv, n
+        truoc = (tv, n)
     return 0
 
 
