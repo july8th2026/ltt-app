@@ -552,19 +552,46 @@ luôn chính lỗi cấu hình gây ra nó."*
    * **chữ** làm vượt ⇒ hạ ảnh **không cứu được** ⇒ vẫn `context_window_exceeded`.
    ⛔ Gộp hai ca này thành một nhánh là lớp lỗi *"một nhánh gánh hai tình huống khác loại"*.
 
-### 7.2 C4 — gỡ trần đếm: rủi ro tồn dư, ghi ra
+### 7.2 C4 — rủi ro tồn dư: ĐÃ ĐO (Đ-4, 28/09) VÀ NÓ KHÉP LẠI
 
-Ngân sách KV **không** chặn *"200 ảnh 64×64"*: ~3.000 token KV nhưng **200 lượt mã hoá mmproj
-nối tiếp** trên `mtmd_context` dùng chung.
+**Lo ban đầu:** ngân sách KV không chặn được *"200 ảnh 64×64"* — ~1.600 token KV
+nhưng 200 lượt mã hoá mmproj nối tiếp trên một `mtmd_context` **dùng chung** cho
+mọi slot. Cờ whale không đỡ hộ vì 1.600 token không phải whale.
 
-Và **cơ chế whale không đỡ hộ**: cờ whale bật theo `token_prefill_moi ≥ nguong_whale`
-(`tham_so_da_luot.py:148`). Với ngân sách đúng, 200 ảnh nhỏ = ~3.000 token ⇒ **không phải
-whale** ⇒ không bị hãm. Rủi ro này **mở và chưa được đỡ**.
+**Đo thật** (`tools/do_do_tre_anh.py`, tuần tự, trên cấu hình production `-np 4`):
 
-⇒ Ghi vào sổ như một **rủi ro đã nhận**, kèm thuốc rẻ nhất nếu nó xảy ra thật: **Đ-4** cho
-mẫu số, rồi dựng trần theo **độ trễ** (§5.4) — không phải dựng lại `max_images = 4`.
-⚠️ Điều kiện phát hiện phải viết ra chứ không chờ khách phàn nàn: quan trắc **độ trễ prefill
-theo SỐ ẢNH** ở `--metrics`, không chỉ theo số token.
+| Ảnh | token/ảnh | ms/ảnh | **ms/token** |
+|---|---|---|---|
+| 320×240 | 82 | 3,75 | 0,046 |
+| 1024×768 | 770 | ~30 | 0,039 |
+
+⇒ Giải hệ hai điểm: **≈ 0,6 ms cố định mỗi ảnh + 0,038 ms mỗi token ảnh.**
+
+⭐ **CHI PHÍ MÃ HOÁ TỈ LỆ VỚI TOKEN, KHÔNG VỚI SỐ ẢNH.** Đó là điều lật ngược nỗi
+lo: **ngân sách token ĐÃ chặn thời gian mã hoá**, chỉ là chặn gián tiếp.
+
+Ca xấu nhất tính được — một request ăn trọn cửa sổ ngữ cảnh bằng ảnh ở **sàn**
+8 token (số ảnh nhiều nhất có thể):
+
+```
+262.144 / 8              = 32.768 ảnh          (trần là NGỮ CẢNH, không phải byte:
+                                                32.768 × ~160 B = 5,2 MB < 32 MiB)
+32.768 × (0,6 + 8×0,038) ≈ 29,5 giây mã hoá
+```
+
+**Và đây là phép so quyết định:** một whale **chữ** ăn trọn cùng cửa sổ ấy tốn
+`262.144 / 1.350 tok/s ≈ 194 giây` prefill — **gấp 6,6 lần** ca ảnh xấu nhất. Mà
+whale chữ thì **cơ chế whale đã xử** (`nguong_whale`, `mot_prefill_dai`).
+
+⇒ **KHÔNG cần trần đếm, và không cần cơ chế mới.** Ca ảnh xấu nhất **nhẹ hơn** ca
+  mà hệ đã có lưới. Rủi ro tồn dư ở bản trước của mục này **được khép bằng số**,
+  không bằng một lời hứa sẽ đo.
+
+⚠️ Một điều bản trước của tôi **đoán sai**, ghi lại: tôi ước "32.768 ảnh nhỏ =
+   123 giây" vì giả định chi phí theo **số ảnh**. Đo được thì nó theo **token**,
+   nên con số thật là ~30 giây. Một ước lượng dựa trên đại lượng sai cho ra một
+   rủi ro lớn hơn thực **4 lần** — và nếu tôi hành động theo nó, tôi đã dựng một
+   cơ chế đếm mà hệ không cần.
 
 ---
 
