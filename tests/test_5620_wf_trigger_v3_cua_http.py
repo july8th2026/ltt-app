@@ -280,38 +280,44 @@ def test_trang_html_workflow_nguoi_khac_404(api):
 # cua phep tiem loi (a) — mot ban AST rieng o day se la MOT BAT BIEN HAI CHO
 # KHAI, va hai cho khai la cho chung se troi khoi nhau (xem docstring dau
 # tep). Ban thu nho tung nam o day DA BI XOA sau khi gop `main`.
+# ══════════════════════════════════════════════════════════════════════════════
+#  HAI PHEP TIEM LOI — ket qua THAT, ghi o day thay vi trong hai test LUON SKIP
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Ban dau hai phep tiem nay la hai HAM TEST goi `pytest.skip(reason=...)` de lam
+#    tai lieu. `tools/check_bo_qua.py` bat dung chung, va **banh coc dung**:
+#
+#        "Mot test bi bo qua la mot test KHONG canh gi ca."
+#
+# ⚠️ Mot `reason=` viet ro rang van ⛔ khong bien mot test luon-skip thanh mot phep
+#    do. No chi lam cai rac ay **doc nhu mot thu co ich** — va do la dang rac kho
+#    don nhat, vi nguoi sau se giu no lai vi tuong no dang canh gi do.
+#
+# ⭐ Tai lieu thuoc CHU THICH; phep do thuoc TEST. Hai loai, hai cho.
+#
+# ## Tiem (a) — go dong import `trigger_v3` khoi `routes/__init__.py`
+#
+#   ⛔ KHONG the tai hien tu ben trong chinh phien pytest dang chay:
+#      `apps.agent.routes` da nam trong `sys.modules`, va sua tep nguon ⛔ khong lam
+#      module do bay khoi bo nho.
+#
+#   Da xac minh THAT bang tay:
+#     1. xoa `trigger_v3` khoi dong import trong `apps/agent/routes/__init__.py`
+#     2. `pytest tests/test_5606_moi_module_route_phai_duoc_import.py -q`  -> DO
+#     3. hoan lai dong import, chay lai                                    -> XANH
+#
+#   ⇒ Phep do THUONG TRUC cho bat bien nay la
+#     `test_5606::test_moi_module_route_deu_duoc_init_import` — no doc **AST** cua
+#     `__init__.py` nen no ⛔ khong can module bay khoi `sys.modules`.
+#
+# ## Tiem (b) — bo `cfg.pop("token_hash", None)` trong `_trigger_json()`
+#
+#   Da xac minh THAT: DO khi bo dong `pop` (`token_hash` xuat hien trong than
+#   JSON), XANH khi hoan lai.
+#
+#   ⇒ Phep do THUONG TRUC la `test_GET_danh_sach_KHONG_LO_token_LAN_hash` o tren.
+#
+# ⭐ Ca hai phep tiem deu co mot phep do thuong truc tuong ung. Do la ly do xoa hai
+#    ham skip ⛔ khong mat gi: bat bien van duoc canh, chi la boi mot bai CO CHAY.
 
-def test_TIEM_LOI_thieu_import_o_routes_init_lam_do():
-    """TAI LIEU cach tai hien tiem loi (a) cua brief UI-12 — KHONG PHAI test
-    luoi: viec go mot dong import va cho no do KHONG THE lam tu ben trong
-    CHINH phien pytest dang chay (`apps.agent.routes` da nap vao
-    `sys.modules`, sua tep nguon khong lam module do bay khoi bo nho). Da xac
-    minh THAT bang tay trong phien viet tep nay:
 
-        1. xoa `trigger_v3` khoi dong import trong
-           `apps/agent/routes/__init__.py`
-        2. `python -m pytest tests/test_5606_moi_module_route_phai_duoc_import.py
-           ::test_moi_module_route_deu_duoc_init_import -q`  -> DO (bao thieu `trigger_v3`)
-        3. hoan lai dong import, chay lai -> XANH
-
-    Ket qua that (DO roi XANH) nam trong bao cao gui dieu phoi, khong trong
-    bai kiem nay.
-    """
-    pytest.skip(reason=(
-        "TAI LIEU tai hien tay, KHONG PHAI test luoi — da xac minh THAT "
-        "(DO khi thieu import, XANH khi hoan lai) trong phien viet tep nay; "
-        "phep do that su nay o test_5606_moi_module_route_phai_duoc_import.py"))
-
-
-def test_TIEM_LOI_lo_hash_trong_GET_lam_do():
-    """TAI LIEU cach tai hien tiem loi (b): sua `_trigger_json()` trong
-    `apps/agent/routes/trigger_v3.py` de KHONG `cfg.pop("token_hash", None)`
-    nua, roi chay lai `test_GET_danh_sach_KHONG_LO_token_LAN_hash` o tren —
-    no phai DO vi `token_hash` se xuat hien trong than JSON. Da xac minh THAT
-    bang tay: DO khi bo dong `pop`, XANH khi hoan lai. Ket qua that nam trong
-    bao cao gui dieu phoi."""
-    pytest.skip(reason=(
-        "TAI LIEU tai hien tay, KHONG PHAI test luoi — da xac minh THAT "
-        "(DO khi bo `cfg.pop(token_hash)`, XANH khi hoan lai) trong phien "
-        "viet tep nay; phep do that su la "
-        "test_GET_danh_sach_KHONG_LO_token_LAN_hash o tren"))
