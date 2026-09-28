@@ -84,6 +84,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cua_so_yen import KHONG_DUOC_CHEN, MAC_DINH, CuaSoYen  # noqa: E402  (can sys.path o tren)
+# `test_nhanh.argv_an_toan` la MOT nguon cho ca hai bien cua tran dong lenh
+# Windows (goi no cho tep nay, va `ke_hoach_pha` goi lai chinh no cho lenh
+# pytest ben trong no) — xem chu thich o `_steps_pham_vi` va `lenh_chay_lai`.
+import test_nhanh  # noqa: E402  (can sys.path o tren)
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi", "chatltt")
@@ -1095,8 +1099,17 @@ def _steps_pham_vi(tep_test: list[str]) -> list[Step]:
     #    Va `_ap_ngan_sach_thuc` tim buoc bang `-n` trong argv — khong co `-n` thi
     #    no bo qua buoc nay luon. Cung mot nguon so voi `bo test (song song)`.
     loi = loi_cho_bo_test()
-    return [Step("bo test (pham vi)",
-                 [sys.executable, "tools/test_nhanh.py", "-n", str(loi), *sorted(tep_test)],
+    # 🔴 SU CO 28/09 (B11 lan B): pham vi 972-1001 tep ghep thang vao argv lam
+    #    dong lenh vuot tran CreateProcess cua Windows (32.767 ky tu) ⇒
+    #    `subprocess.run` chet voi `[WinError 206]` trong 0,0 giay — buoc nay
+    #    KHONG chay nhung 32 buoc con lai van chay xong, nen `RESULT` trong
+    #    nhu da do. `argv_an_toan` giu argv nguyen ven khi con ngan, va chi
+    #    chuyen sang `@<tep trong .gate/>` khi vuot tran (boundary 1 — xem
+    #    `test_nhanh.argv_an_toan`, `_ap_ngan_sach_thuc` van tim duoc `-n` vi
+    #    no o phan `dau`, khong bi day vao tep).
+    dau = [sys.executable, "tools/test_nhanh.py", "-n", str(loi)]
+    argv, _ = test_nhanh.argv_an_toan(dau, sorted(tep_test), ten="pham_vi")
+    return [Step("bo test (pham vi)", argv,
                  ROOT, nhom="nang",
                  tai_nguyen=("cpu_nhieu", "postgres_test"), so_loi=loi,
                  giay_toi_thieu=3.0)]
@@ -2317,8 +2330,19 @@ def lenh_chay_lai(steps: list[Step]) -> list[str]:
                     pass
             tep = _tep_test_do(dau_ra)
             if tep:
-                n = f" -n {TRAN_N_GO_TAY}" if len(tep) >= 3 else ""
-                ra.append(f"python -m pytest{n} -q {' '.join(tep)}")
+                n = ["-n", str(TRAN_N_GO_TAY)] if len(tep) >= 3 else []
+                dau = ["python", "-m", "pytest", *n, "-q"]
+                # 🔴 SU CO 28/09 (B11 lan B): mot pham vi do vai tram/nghin tep
+                #    thi CHINH dong lenh goi y nay cung vuot tran — nguoi doc
+                #    dan lenh, no chet, ho di tim nguyen nhan o cho khac. Dung
+                #    lai `argv_an_toan`: con ngan thi in nguyen nhu truoc; dai
+                #    thi ghi danh sach vao `.gate/` va in `@<tep>` + noi ro cho.
+                argv, tep_argfile = test_nhanh.argv_an_toan(dau, tep, ten="chay_lai")
+                lenh = " ".join(argv)
+                if tep_argfile is not None:
+                    lenh += (f"   # {len(tep)} tep vuot tran dong lenh -> danh"
+                             f" sach nam o {tep_argfile.relative_to(ROOT).as_posix()}")
+                ra.append(lenh)
                 continue
         argv = ["python" if a == sys.executable else a for a in s.argv]
         lenh = " ".join(argv)

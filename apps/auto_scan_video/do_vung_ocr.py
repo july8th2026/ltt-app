@@ -64,9 +64,12 @@ bản, đó là lựa chọn của ta chứ ⛔ không phải bảo đảm của
 """
 from __future__ import annotations
 
+import logging
 from typing import NamedTuple
 
 from platform_core.i18n import _ as _t
+
+_log = logging.getLogger(__name__)
 
 #: Số khung lấy mẫu. Kho tham chiếu dùng ~2 fps cho che động; ở đây ta còn ở
 #: chặng ĐỀ XUẤT (một dải cho khách xác nhận) nên lấy thưa hơn nhiều.
@@ -156,18 +159,42 @@ def _may():
     return _MAY
 
 
-def _hop_cua_khung(may, anh, rong: int, cao: int, giay: float) -> list[Hop]:
-    """Các hộp chữ trên MỘT khung (mảng BGR của OpenCV). Lỗi ⇒ danh sách rỗng.
+def _hop_cua_khung(may, anh, rong: int, cao: int, giay: float
+                   ) -> list[Hop] | None:
+    """Các hộp chữ trên MỘT khung (mảng BGR của OpenCV).
+
+    Trả `None` = **máy OCR ném ở khung này**. Trả `[]` = **chạy được, ⛔ không
+    thấy hộp nào**. ⛔ Hai thứ khác nhau — xem bảng ba trạng thái ở đầu tệp; đây
+    là chính bảng ấy, thu nhỏ xuống cấp một khung.
 
     ⛔ **Một khung hỏng ⛔ không được giết cả lượt dò.** Một khung giải mã lỗi
        giữa 24 khung là chuyện thường; ném ở đây sẽ biến nó thành *"chưa quét
        được"* và đẩy cả lượt xuống tầng lùi — tức đổi một sự cố nhỏ thành một
        quyết định kiến trúc.
+
+    🔴 **Nhưng bản đầu trả `[]` cho CẢ HAI, và đó là một lỗ thật (sửa 28/09).**
+
+       Nếu máy OCR ném ở **mọi** khung thì mọi lượt trả `[]`, `doc_duoc` vẫn
+       đếm đủ 24 (khung **đọc** được, ⛔ không phải OCR chạy được), nên
+       `do_dai_chu_ocr` trả *"đã quét, ⛔ không thấy chữ"*. Người gọi **TIN** →
+       **⛔ không che** → **lộ chữ Hán**.
+
+       ⇒ Đúng cái gộp mà docstring đầu tệp này cấm, do **chính tệp này** phạm.
+       Và nó **gộp về phía IM LẶNG** — phía đắt hơn hàng bậc.
+
+    ⚠️ Bánh cóc `check_silent_except` bắt được, ⛔ không phải bộ test của tôi:
+       bài `test_mot_khung_HONG_khong_giet_ca_luot` chốt đúng hành vi một khung
+       và **⛔ không bao giờ hỏi** *"nếu MỌI khung hỏng thì sao"*.
     """
     try:
         kq, _ = may(anh, use_det=True, use_cls=False, use_rec=False)
-    except Exception:  # noqa: BLE001
-        return []
+    except Exception as exc:  # noqa: BLE001
+        # ⛔ `debug` chứ ⛔ không `warning`: một khung hỏng là chuyện thường và
+        #    24 dòng cảnh báo cho một lượt dò là nhiễu. Ca **đáng báo** — mọi
+        #    khung đều hỏng — do `do_dai_chu_ocr` phát hiện và NÉM.
+        _log.debug("do vung OCR: khung %.3f s nem (%s: %s)",
+                   giay, type(exc).__name__, exc)
+        return None
     ra: list[Hop] = []
     for muc in (kq or ()):
         # ⚠️ Đọc THẬT: `use_rec=False` VẪN trả `[hộp4điểm, văn_bản, điểm]`.
@@ -259,6 +286,11 @@ def do_dai_chu_ocr(duong: str, *, so_khung: int = SO_KHUNG_OCR, tranh=()):
 
     hop: list[Hop] = []
     doc_duoc = 0
+    # ⭐ Hai bộ đếm RIÊNG, và đó là cả điểm: `doc_duoc` đếm khung ĐỌC
+    #    được, `ocr_chay` đếm khung OCR CHẠY được. Gộp chúng là gộp
+    #    *"đã quét"* với *"lấy được khung"* — hai đại lượng khác nhau.
+    ocr_chay = 0
+    ocr_hong = 0
     for i in range(so_khung):
         t = dai * (i + 0.5) / so_khung
         cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000.0)
@@ -266,7 +298,27 @@ def do_dai_chu_ocr(duong: str, *, so_khung: int = SO_KHUNG_OCR, tranh=()):
         if not ok or khung is None:
             continue
         doc_duoc += 1
-        hop.extend(_hop_cua_khung(may, khung, rong, cao, t))
+        mot = _hop_cua_khung(may, khung, rong, cao, t)
+        if mot is None:
+            # ⛔ Máy OCR ném ở khung này — ⛔ KHÔNG tính là "đã quét".
+            ocr_hong += 1
+            continue
+        ocr_chay += 1
+        hop.extend(mot)
+
+    if doc_duoc and ocr_chay == 0:
+        # 🔴 **MỌI khung đều làm máy OCR ném = CHƯA QUÉT ĐƯỢC.**
+        #
+        #    Đây là chỗ bản đầu có một lỗ thật: nó đếm `doc_duoc` (khung **đọc**
+        #    được) rồi coi đó là bằng chứng *"đã quét"*. Hai đại lượng khác
+        #    nhau — đọc được khung ⛔ không có nghĩa OCR chạy được trên nó.
+        #
+        # ⇒ Ném để người gọi **LÙI TẦNG**, ⛔ không trả rỗng. Trả rỗng ở đây là
+        #   nói *"video này ⛔ không có phụ đề cứng"* trong khi sự thật là *"ta
+        #   ⛔ không đọc nổi"* — và hậu quả là ⛔ không che ⇒ **lộ chữ Hán**.
+        cap.release()
+        raise OcrLoiKyThuat(
+            _t('Bộ đọc chữ lỗi trên mọi khung hình đã thử.'))
 
     if doc_duoc == 0:
         # ⛔ ⛔ Không đọc được khung nào = **chưa quét**, ⛔ không phải "không có

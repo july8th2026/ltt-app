@@ -172,11 +172,67 @@ def test_doc_dung_hinh_dang_hop_du_dat_use_rec_False():
     assert hop[0].x0 == pytest.approx(0.1) and hop[0].x1 == pytest.approx(0.9)
 
 
-def test_mot_khung_HONG_khong_giet_ca_luot():
+def test_mot_khung_HONG_tra_None_chu_KHONG_tra_rong():
     """⛔ Ném ở một khung lỗi sẽ biến một sự cố nhỏ thành một quyết định kiến
-    trúc (*"chưa quét được"* ⇒ lùi tầng)."""
+    trúc (*"chưa quét được"* ⇒ lùi tầng).
+
+    🔴 **Nhưng `None` chứ ⛔ KHÔNG phải `[]`** (sửa 28/09). `[]` nghĩa là *chạy
+       được, ⛔ không thấy hộp nào*; `None` nghĩa là *máy OCR ném*. Bản đầu trả
+       `[]` cho cả hai và đó là một lỗ thật — xem bài dưới.
+    """
     class _May:
         def __call__(self, *a, **k):
             raise RuntimeError("khung hong")
 
+    assert ocr._hop_cua_khung(_May(), object(), 100, 100, 1.0) is None
+
+
+def test_khung_SACH_tra_RONG_chu_khong_None():
+    """⭐ Vế đối chứng: ⛔ không có nó thì `return None` vô điều kiện cũng qua."""
+    class _May:
+        def __call__(self, *a, **k):
+            return ([], None)
+
     assert ocr._hop_cua_khung(_May(), object(), 100, 100, 1.0) == []
+
+
+def test_MOI_khung_hong_thi_NEM_chu_khong_bao_KHONG_CO_CHU(monkeypatch):
+    """🔴 **Lỗ thật, do bánh cóc tìm ra chứ ⛔ không phải bộ test này.**
+
+    Bản đầu: máy OCR ném ở **mọi** khung ⇒ mọi lượt trả `[]` ⇒ `doc_duoc` vẫn
+    đếm đủ 24 (khung **đọc** được) ⇒ hàm trả *"đã quét, ⛔ không thấy chữ"* ⇒
+    người gọi **TIN** ⇒ **⛔ không che** ⇒ **lộ chữ Hán**.
+
+    ⇒ Đúng cái gộp mà docstring đầu `do_vung_ocr` **cấm**, do chính tệp ấy
+      phạm. Và nó gộp **về phía IM LẶNG** — phía đắt hơn hàng bậc.
+
+    ⚠️ Bài `test_mot_khung_HONG_*` ở trên chốt đúng hành vi **một** khung và
+       **⛔ không bao giờ hỏi** *"nếu MỌI khung hỏng thì sao"*. Một bài kiểm
+       đúng ở cấp phần tử ⛔ không nói gì về cấp tập hợp.
+    """
+    class _CapGia:
+        def set(self, *a):
+            return True
+
+        def read(self):
+            return True, object()
+
+        def release(self):
+            pass
+
+    class _Cv2Gia:
+        CAP_PROP_POS_MSEC = 0
+
+    monkeypatch.setattr(ocr, "_may", _MayNem)
+    monkeypatch.setattr(do_vung, "_cv2", lambda: (_Cv2Gia(), object()))
+    monkeypatch.setattr(do_vung, "_mo", lambda *a: (_CapGia(), 100, 100, 99, 10.0))
+    with pytest.raises(ocr.OcrLoiKyThuat):
+        ocr.do_dai_chu_ocr("x.mp4", so_khung=5)
+
+
+def _MayNem():
+    """Máy OCR ném ở MỌI khung."""
+    class _M:
+        def __call__(self, *a, **k):
+            raise RuntimeError("engine chet")
+    return _M()

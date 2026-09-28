@@ -22459,3 +22459,6 @@ msgstr "Could not start the text reader (OCR)."
 
 msgid "Không đọc được khung hình nào để dò vùng."
 msgstr "Could not read any frame to detect the region."
+
+msgid "Bộ đọc chữ lỗi trên mọi khung hình đã thử."
+msgstr "The text reader (OCR) failed on every frame that was tried."

@@ -91,6 +91,59 @@ TEP_NOI_TIEP = (
 BO_QUA = ("--ignore=tmp", "--ignore=test-results")
 
 
+#: Tran do dai dong lenh CreateProcess tren Windows: 32.767 ky tu CUNG (gom ca
+#: NUL). Chua bien cho duong dan `sys.executable` (co the dai, co dau cach) va
+#: cho cach `subprocess`/CreateProcess trich dan tung doi so — tran AN TOAN o
+#: day thap hon han con so cung do.
+#:
+#: 🔴 VI SAO CO HANG SO NAY (B11 lan B, 28/09/2026). `gate.py --pham-vi` /
+#:    `--doi` truyen TUNG duong dan tep test vao MOT dong lenh pytest; pham vi
+#:    972-1001 tep vuot tran nay va buoc `bo test` CHET trong 0,0 giay voi
+#:    `[WinError 206] The filename or extension is too long` — trong khi 32
+#:    buoc con lai van chay xong, nen dong `RESULT` in ra nhu da do ma bo test
+#:    CHUA HE chay. Xem `docs/auto_scan_video_final/B11_PLAN_TONG_DON_NO_TRUOC_GATE.md` §4.
+TRAN_DONG_LENH_KY_TU = 30_000
+
+
+def ghi_tep_doi_so(dong: list[str], ten: str) -> Path:
+    """Ghi `dong` (mot doi so pytest moi dong) vao `.gate/argv_<ten>.txt`, tra tep.
+
+    `.gate/` la thu muc SO PHAN QUYET cua `gate.py` (`gate.TEN_THU_MUC_SO`):
+    da nam trong `.gitignore` (`/.gate/`) va KHONG nam trong `THU_MUC_CHUP` cua
+    `gate._anh_chup_cay` — ghi mot tep tam vao day khong kich mot canh bao "CAY
+    DA DOI TRONG LUC CHAY" va khong lam ban cay (xem `tests/test_145_gate_covers_everything.py`
+    ::`test_ba_tep_ghi_vao_cay_deu_tra_lai_CA_DAU_THOI_GIAN`, cung mot bat bien).
+    """
+    thu_muc = GOC / ".gate"
+    thu_muc.mkdir(parents=True, exist_ok=True)
+    tep = thu_muc / f"argv_{ten}.txt"
+    tep.write_text("\n".join(dong) + ("\n" if dong else ""), encoding="utf-8")
+    return tep
+
+
+def argv_an_toan(dau: list[str], duong: list[str], *, ten: str
+                 ) -> tuple[list[str], Path | None]:
+    """`(dau + duong, None)`, hoac `(dau + ["@<tep>"], <tep>)` khi ghep lai VUOT
+    `TRAN_DONG_LENH_KY_TU`.
+
+    `pytest` doc san cu phap `@tep`: parser cua no la mot
+    `argparse.ArgumentParser` voi `fromfile_prefix_chars="@"`
+    (`_pytest/config/argparsing.py:463`, xac nhan bang doc ma nguon cai dat —
+    khong doan). MOI DONG cua tep la MOT doi so, y het go tay tung tep mot;
+    khong can cot hay ma rieng nao o phia pytest.
+
+    ⭐ Dung CHUNG cho ca hai bien: `gate.py` goi ham nay khi ghep lenh gui cho
+       `tools/test_nhanh.py` (Lan B, boundary 1), va `ke_hoach_pha` o duoi goi
+       lai chinh no khi ghep lenh gui cho `pytest` (boundary 2) — hai bien deu
+       co the vuot tran doc lap voi nhau.
+    """
+    day_du = [*dau, *duong]
+    if not duong or len(" ".join(day_du)) <= TRAN_DONG_LENH_KY_TU:
+        return day_du, None
+    tep = ghi_tep_doi_so(duong, ten)
+    return [*dau, f"@{tep}"], tep
+
+
 def _ep_utf8() -> None:
     """Cho phep tieng Viet trong nhan buoc ngay ca khi stdout bi HUNG.
 
@@ -541,7 +594,15 @@ def main() -> int:
        cham 25% (613,6s so voi 490s).
     """
     _ep_utf8()
-    p = argparse.ArgumentParser(description="Chay pytest song song, ket qua y het.")
+    # ⭐ `fromfile_prefix_chars="@"` — DUNG dung mot chu voi pytest (xem
+    #    `argv_an_toan`). Khi `gate.py` goi tep nay voi mot pham vi lon, no
+    #    truyen `@<tep>` thay vi hang tram/nghin duong dan tren dong lenh
+    #    (boundary 1); argparse tu doc tep do, MOI DONG la MOT doi so, TRUOC
+    #    khi phan tich — nen `con_lai` ben duoi nhan duoc danh sach da mo rong,
+    #    khong phai chuoi "@<tep>" tho. Tai lieu argparse chuan, khong phai co
+    #    che tu viet.
+    p = argparse.ArgumentParser(description="Chay pytest song song, ket qua y het.",
+                                fromfile_prefix_chars="@")
     p.add_argument("-n", default="auto",
                    help="so worker (mac dinh: auto = so nhan CPU)")
     p.add_argument("--lf", action="store_true",
@@ -645,7 +706,14 @@ def ke_hoach_pha(con_lai: list[str], n: str, *,
     loai = [f"--deselect={t}" for t in TEP_NOI_TIEP]
     if duong and all(ghi_cay(d) for d in duong):
         return None, [*goc, *co]
-    pha1 = [*goc, *pha1_duong, "-n", str(n), "--dist", "loadfile", *loai]
+    # ⭐ `pha1_duong` co the la 972-1001 tep (`gate.py --doi`/`--pham-vi` tren
+    #    mot pham vi lon) — ghep thang vao argv thi vuot tran dong lenh
+    #    Windows va `subprocess.run` chet voi `[WinError 206]` (B11 lan B,
+    #    28/09/2026, boundary 2 — xem `argv_an_toan`). `dau_pha1` giu nguyen
+    #    cac tuy chon (`-n`, `--dist`, `--deselect=...`) o dang chu, vi
+    #    `gate._ap_ngan_sach_thuc` tim va sua `-n` bang chinh vi tri cua no.
+    dau_pha1 = [*goc, "-n", str(n), "--dist", "loadfile", *loai]
+    pha1, _ = argv_an_toan(dau_pha1, pha1_duong, ten="pha1")
     return pha1, ([*goc, *co] if co else None)
 
 
