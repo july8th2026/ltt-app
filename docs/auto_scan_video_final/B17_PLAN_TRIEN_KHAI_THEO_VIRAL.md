@@ -53,7 +53,30 @@ Rút từ 150 câu lệnh cấp 1. Cột **ta có?** so với `pipeline.CHUOI` h
 tiếng **tự burn phụ đề bên trong nó**, ⛔ không đi qua một bước burn riêng.
 
 ⇒ Chuỗi của ta có `compose` **rồi** `render` **nối tiếp** là một **hình dạng khác**,
-⛔ không phải một thứ tự khác. Đây là gốc của *"vì sao ta encode hai lần"*.
+⛔ không phải một thứ tự khác.
+
+### 🔴 ĐÍNH CHÍNH LỚN NHẤT của tệp này — *"ta encode hai lần"* là SAI
+
+Vòng một tôi viết câu ấy và suy nó ra từ **hình dạng chuỗi**, ⛔ không đo. Đo (28/09):
+
+| Giai đoạn | Làm gì với ĐIỂM ẢNH | Bằng chứng |
+|---|---|---|
+| `compose` | ⛔ **không chạm** — dựng `ban_dung.json` + trộn `master.wav`, đo LUFS | `pipeline.py:365-384` |
+| `render` | ⛔ **không chạm** — **`-c:v copy`**, nguyên văn *"Hình ⛔ không bị chạm tới"* | `ket_xuat.py:8,30-33` |
+| `image_finish` | ✅ **lần encode hình DUY NHẤT** | `che_do_render.py:133-143` (một bộ codec, ⛔ không pass 2) |
+
+⇒ 🔑 **Ta ĐÃ chỉ có MỘT lần encode hình.** Và việc tách hai giai đoạn chính là **để**
+GĐ1 ⛔ không phải chạm điểm ảnh: `ket_xuat.py:30-33` ghi rõ hai hệ quả — **⛔ không dùng
+GPU** (nên `RENDER` nằm làn `asv_media`, ⛔ không khai `tai_nguyen`) và **⛔ không mất chất
+lượng** (*"hình của khách ra đúng bằng bit nó vào"*).
+
+🔴 ⇒ **Gộp `compose`+`render` vào lượt encode là một BƯỚC LÙI**, ⛔ không phải tối ưu: nó
+kéo một lượt CPU rẻ (`-c:v copy`, vài chục giây cho video 10 phút) vào bên trong một
+lượt **giữ lease GPU**, và bắt việc trộn tiếng phải chờ card.
+
+⇒ Việc thật của P2 **hẹp hơn nhiều**: ⛔ không phải *gộp ba giai đoạn*, mà là **sửa THỨ
+TỰ NODE và thêm node còn thiếu bên TRONG lượt encode đã có một mình**. Đối chiếu sẵn ở
+`W3_MOT_LAN_ENCODE.md` §2.5.
 
 ---
 
@@ -334,38 +357,52 @@ B16 khai 8. W2 §2.2 buộc tách `vung_che` làm hai ⇒ **9**.
 | 8 | `render_mot_lan` | `(5, 7)` | 🔑 **`compose`+`render`+`image_finish`** → MỘT encode | `6560-8425` (10 node §5) |
 | 9 | `qc` | `(8,)` | `qc`+`qc_do_luong`+`qc_ai` → **một bước + module gọi được** | — |
 
-🔴 **`edit_plan`: ⛔ KHÔNG bỏ khai — và đây là một lỗi của plan này, đã sửa 28/09.**
+### 🔑 `edit_plan` — W4 đã ĐO, và phép đo ĐỔI kết luận (chốt 28/09, lượt hai)
 
-Tôi viết *"bỏ khai `edit_plan`"* vì mang quyết định *"bỏ 5 giai đoạn"* của B16 sang mà
-⛔ **không đọc lại** `apps/auto_scan_video/giai_doan_ban_bien_tap.py:11-18`. Ở đó, cùng
-ngày 28/09, đã có phán quyết **ngược lại**, nguyên văn:
+Vòng một tôi viết *"bỏ khai `edit_plan`"* mà ⛔ không đọc
+`apps/auto_scan_video/giai_doan_ban_bien_tap.py:11-18`, nơi đã ghi ⛔ **KHÔNG rip giai
+đoạn khỏi `CHUOI`** vì *"rủi ro của việc BỎ lớn hơn rủi ro nó đang gây"*. Tôi chặn làn
+ấy và đổi nó thành **phép đo** (W4). Bốn chỗ nối, giờ là bốn con số:
 
-> ⛔ **KHÔNG rip giai đoạn khỏi `pipeline.CHUOI`** — đổi `CHUOI` là đổi hợp đồng cả dây
-> chuyền (`ha_nguon_cua`, vân tay, lineage, `giai_doan_lech_van_tay`), rủi ro của việc
-> BỎ lớn hơn rủi ro nó đang gây.
+| Chỗ nối | Đo được | Gãy? |
+|---|---|---|
+| `ha_nguon_cua` (`features.py:361`) | `ha_nguon_cua('render')` trả 5 phần tử; bỏ `edit_plan` mất **đúng** phần tử đó | ⛔ không |
+| **vân tay** (`thi_hanh.py:249-307`) | `_gom_dau_vao` duyệt `pipeline.THEO_TEN[ten].sau` **động** ⇒ đổi `sau=` đổi một khoá hash | ✅ **GÃY THẬT** |
+| lineage CSDL | 4 điểm đọc `pipeline.EDIT_PLAN` đều `if khoa_ep:` — job mồ côi **vô hại** | ⛔ không |
+| `giai_doan_lech_van_tay` (`jobs.py:419`) | báo **LỆCH** (⛔ không phải THIẾU) ⇒ tự reset + rerun 4 giai đoạn | tự lành |
 
-⭐ Và phán quyết ấy **khớp** tiêu chí của chủ dự án (*"bước nào rủi ro cao hỏng hệ thống
-thì loại bỏ"*) — chính **việc rip `CHUOI`** là cái rủi ro cao. Giai đoạn đã bị **vô hiệu
-hoá** (`lap_ban(hieu_canh=())` ⇒ `so_cat` **luôn 0**), tức cái giá nó đang gây là **một
-bước rỗng**, ⛔ không phải một quyết định sai.
+⇒ **Giá thật của việc bỏ** = một lượt render GPU lại cho run **đang dở lúc deploy**.
+Có biên, tự lành, ⛔ không giao sai hàng cho khách.
 
-⇒ Chuỗi 9 giai đoạn ở bảng trên là **hình dạng đích**. Số phần tử `CHUOI` **thật** còn
-`edit_plan` cho tới khi W4 trả lời được bốn chỗ nối trên bằng **số**.
+⭐ **Và đây là điều phép đo dạy, chứ ⛔ không phải plan nào dạy**: giá ấy là giá của
+**đổi `sau=`**, ⛔ không phải giá của *"bỏ `edit_plan`"*. Mà **cả ba** việc Pha 1 đều
+đổi `sau=`. ⇒ Trả giá ấy **một lần** cho cả ba thì việc bỏ `edit_plan` **đi kèm miễn
+phí**; chia ba làn thì trả **ba lần** cho cùng một khoản.
 
-⚠️ Bài học cho chính plan này: [[liet-ke-tu-tri-nho-thay-vi-dem.md]] — một dòng trong
-bảng việc là một **mệnh lệnh** cho agent, nên nó phải được đối chiếu với **quyết định
-đang sống trong mã**, ⛔ không chỉ với plan trước.
+🔴 **Hệ quả bắt buộc, và nó SỬA cách chia làn**: `pipeline.py` có **MỘT chủ duy nhất**
+(làn `P1-0`) làm cả ba lượt đổi `CHUOI` trong một commit. Ba làn thân module ⛔ **không
+được chạm** `pipeline.py` — nếu chạm, chúng vừa xung đột merge vừa trả giá vân tay thêm
+lần nữa. ⇒ Cùng họ [[so-dang-ky-dung-chung-la-cho-cac-lan-va-nhau]]: `CHUOI` là **sổ
+đăng ký dùng chung**, và đó đúng là chỗ các làn va nhau.
+
+⚠️ **`P1-0` còn hai nợ bắt buộc trả trong cùng commit:**
+1. `tests/test_402.py:267` ghim cứng `== 13` — số phần tử `CHUOI`. Mọi chỗ khác đọc
+   **động** (`jobs.py:100,127`, `quan_sat.py:561-562`) nên an toàn; chỉ chỗ này đỏ.
+2. **Viết lại docstring `giai_doan_ban_bien_tap.py:11-18`.** Nó đang mang một lệnh cấm
+   mà phép đo đã vượt. Để nguyên thì phiên sau đọc lệnh cấm ấy và tưởng ta làm sai —
+   cùng họ [[luat-thieu-ve-ngoai-le-nhan-theo-so-nguoi-doc]].
 
 ### Bảng việc — mỗi làn MỘT worktree, MỘT nhánh, ⛔ không hai làn sửa cùng tệp
 
 | Làn | Việc | Tệp (chủ duy nhất) | Model | Chặn bởi |
 |---|---|---|---|---|
 | **P0-a** | `settings` dẫn xuất `wps_giong` + bảng đã đo + `min()` một chiều | `apps/auto_scan_video/cai_dat.py`, `ho_so_dich.py` | sonnet | — |
-| **P0-b** | 🔴 **ĐỔI 28/09**: ⛔ KHÔNG rip `edit_plan` — chỉ **ĐO giá** của việc bỏ (→ `W4_GIA_CUA_VIEC_BO_MOT_GIAI_DOAN.md`) | tệp W4 (⛔ không sửa mã) | sonnet | — |
-| **P1-c** | Hợp nhất 3 QC thành GĐ9 | `apps/auto_scan_video/pipeline.py` | **opus** | P0-b |
-| **P0-c** | Dời **cắt đầu** vào `media_prepare` (trước ASR) | `apps/auto_scan_video/giai_doan_media.py`, `ke_cat.py` | sonnet | — |
-| **P1-a** | 🔑 Gộp demucs+whisper thành **một job GPU** `gpu_asr` | `apps/asv_gpu/jobs.py`, `manifest.py` | **opus** | P0-b |
-| **P1-b** | Tách `vung_che_tinh` / `vung_che_bam`, khai `sau=` | `apps/auto_scan_video/vung_che*.py` (mới) | **opus** | P0-b |
+| ~~P0-b~~ | ✅ **XONG** — đã ĐO, ⛔ không sửa mã → `W4_GIA_CUA_VIEC_BO_MOT_GIAI_DOAN.md` | — | sonnet | — |
+| **P0-c** | Dời **cắt đầu** vào `media_prepare` (trước ASR) | `apps/auto_scan_video/giai_doan_media.py`, `ke_cat.py` | **opus** | — |
+| 🔑 **P1-0** | **MỘT lượt đổi `CHUOI`**: bỏ `edit_plan` · khai `vung_che_tinh`/`vung_che_bam` · hợp nhất 3 QC · nối lại **mọi** `sau=` · sửa `test_402:267` | `apps/auto_scan_video/pipeline.py` (**chủ DUY NHẤT**) + `tests/test_402*` | **opus** | W4 ✅ |
+| **P1-a** | Gộp demucs+whisper thành **một job GPU** — chỉ phần **THÂN** | `apps/asv_gpu/jobs.py`, `manifest.py` (⛔ không chạm `pipeline.py`) | **opus** | P1-0 |
+| **P1-b** | **THÂN** hai module `vung_che_tinh` / `vung_che_bam` | `apps/auto_scan_video/vung_che_*.py` (mới, ⛔ không chạm `pipeline.py`) | **opus** | P1-0 |
+| **P1-c** | **THÂN** GĐ9 hợp nhất 3 QC | `apps/auto_scan_video/giai_doan_qc*.py` (⛔ không chạm `pipeline.py`) | **opus** | P1-0 |
 | **P2** | 🔑 **MỘT encode**: 10 node đúng thứ tự §5, cắt cuối bằng `-t` trong đó | `apps/auto_scan_video/che_do_render.py` | **opus** | P1-a, P1-b |
 | **P3** | `phu_de_canh_giong.srt` khoá riêng + `outputs["phu_de_da_dung"]` | `apps/auto_scan_video/giai_doan_thoi_gian.py` | sonnet | P0-a |
 | **P4** | Chế độ chạy lẻ `chi_asr`/`chi_dich`/`chi_dub` (cổng, ⛔ không chuỗi riêng) | `tools/asv_chay_tai_cho.py` | sonnet | P1-a |
