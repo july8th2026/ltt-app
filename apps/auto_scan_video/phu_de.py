@@ -814,6 +814,36 @@ CO_CHU_TOI_THIEU_PHAN = 0.020
 #: de chan: mot ban giao chu nho van la ban giao, con mot ngoai le thi ⛔ khong.
 CO_CHU_DE_DOC_PHAN = 0.040
 
+#: Khung THAM CHIEU cua co chu preset, theo CANH NGAN.
+#:
+#: 🔴 **Quy chieu theo `min(rong, cao)`, ⛔ KHONG theo chieu cao (B10-1, 28/09).**
+#:
+#:    Kho tham chieu `D:\Viral` do that (burn ffmpeg + dem pixel chu) tren khung
+#:    `1080x1920` voi co danh nghia `15`:
+#:
+#:        cu  `H/288`        -> 100 px  =>  khoi chu cao 165 px, **73,2 %** be
+#:                                          ngang; cau 30 ky tu da vo 2 dong
+#:        moi `min(W,H)/288` ->  56 px  =>  43 px, 57,2 %
+#:
+#: ⭐ Va khung ngang `1920x1080` cho `min = 1080 = H` ⇒ **y het cong thuc cu**,
+#:    nen ⛔ khong hoi quy cho khach 16:9. Mot bieu thuc, ⛔ khong nhanh `if H>W`.
+#:
+#: ⚠️ Bai hoc di kem con dat hon cong thuc: ban cu CO mot cai kep cho khung doc,
+#:    gac sau `if not _co_env_fz` — nhung giao dien **luon luon** gui `size` nen
+#:    cai kep **chua bao gio chay tu giao dien**. *"Cua thoat hiem cho power-user
+#:    tro thanh DUONG DI MAC DINH, ma comment giai thich van nam do nen doc qua
+#:    thay rat hop ly."* Cung ho voi *luat hep ru ngu* va *tham chieu chet*.
+CANH_NGAN_CHUAN = 576
+
+#: Chieu cao MOT dong chu = co chu x he so nay (ascent + descent cua Arial).
+_HE_SO_CAO_DONG = 1.15
+
+#: Chu duoc chiem toi da phan nay cua chieu cao DAI che.
+#:
+#: ⭐ 0,85 chu ⛔ khong 1,0: chu cham sat mep dai se **loi ra ngoai vet mo** va
+#:    nguoi xem thay vien chu tren nen chua che — dung thu dai che ton tai de xoa.
+_PHAN_DAI_CHO_CHU = 0.85
+
 #: Le AN TOAN moi canh — *title safe* 90 % cua SMPTE, cung la muc Netflix dung.
 #:
 #: 🔑 **Chu du an chot 28/09, va day la muc MOI chuan deu dong y.** BBC con chat
@@ -845,6 +875,56 @@ def _be_rong_dong(dong: str, co_chu: float) -> float:
                      or "︰" <= c <= "﹯" or "＀" <= c <= "｠"
                      or "￠" <= c <= "￦") else 1.0
     return o * co_chu * HE_SO_BE_RONG_CHU
+
+
+def tran_co_chu(co_chu_goc: int, *, rong: int, cao: int, dai=None) -> int:
+    """Tran TREN cua co chu tren khung nay. Xem `CANH_NGAN_CHUAN`.
+
+    Hai luat chong len nhau, ca hai deu chi HA:
+
+      1. **Canh NGAN** — `co_chu_goc x min(rong, cao) / CANH_NGAN_CHUAN`.
+         Khung `1024x576` cho he so `1,0` ⇒ tra dung `co_chu_goc`, nen khach
+         16:9 dang chay ⛔ khong doi mot pixel.
+
+      2. **Chieu cao DAI che** — mot dong chu cao `~1,15 x co_chu`; ep no vao
+         `85 %` chieu cao dai de chu **vua khu vuc da che**, ⛔ khong loi ra
+         ngoai vet mo.
+
+    🔴 Luat 2 la thu chu du an chi ra tren ban giao that (28/09): *"text moi
+       thi be ti, ⛔ khong dung theo dang tieu chuan text moi trong khu vuc che
+       mo"*. Truoc B10 co chu ⛔ khong he biet dai che cao bao nhieu — `margin_v`
+       biet (B8/B9-2b), co chu thi ⛔ khong.
+
+    ⛔ **Ca hai chi HA, ⛔ khong bao gio NANG.** Mot dai rong ⛔ khong phai ly do
+       de phong to chu qua muc preset: `co_chu_goc` la thu khach/kieu da chon.
+    """
+    # 🔴 **`min(co_chu_goc, ...)` — phep quy chieu chi duoc HA (sua 28/09).**
+    #
+    #    Ban dau toi viet thang `co_chu_goc x min(W,H)/576`, va `test_472` bat
+    #    duoc: tren khung `1920x1080` no cho `48 -> 90`, tuc **nang** co chu cua
+    #    MOI khach 16:9 o do phan giai khac `576`.
+    #
+    # ⚠️ Vi sao lap luan "⛔ khong hoi quy" cua kho tham chieu ⛔ KHONG chuyen
+    #    sang duoc: cong thuc CU cua ho la `H/288` — von da theo chieu cao. Cong
+    #    thuc cu cua TA la mot HANG SO (`font_size` cua preset), ⛔ khong theo
+    #    khung nao. Hai diem xuat phat khac nhau, nen cung mot phep doi cho ra
+    #    hai ket qua khac nhau ve hoi quy. ⭐ Muon mot lap luan phai kiem no o
+    #    **diem xuat phat cua minh**.
+    #
+    # ⇒ Nen o day phep quy chieu chi dung de **HA** khung HEP (ca that su hong),
+    #   ⛔ khong de nang khung LON. Viec "phu de tren video 1080p nho hon ti le
+    #   so voi 576p" la mot no CO TEN, ⛔ khong phai thu sua ke trong lan nay.
+    tran = max(1, min(int(co_chu_goc),
+                      int(round(co_chu_goc * min(int(rong), int(cao))
+                                / float(CANH_NGAN_CHUAN)))))
+    if dai:
+        cao_dai = (float(dai.get("y1") or 0.0) - float(dai.get("y0") or 0.0))
+        if cao_dai > 0:
+            theo_dai = int((cao_dai * int(cao) * _PHAN_DAI_CHO_CHU)
+                           / _HE_SO_CAO_DONG)
+            # ⛔ `max(1, ...)`: mot dai cuc hep ⛔ khong duoc cho ra co chu 0.
+            tran = min(tran, max(1, theo_dai))
+    return tran
 
 
 def co_chu_vua_khung(cac_cau, *, rong: int, cao: int, co_chu_goc: int,
@@ -1095,9 +1175,19 @@ def viet_tep_ass(ho_so, goi_su_kien, thu_muc, *,
     #    `wrap_lines`, ⛔ khong viet bo ngat thu hai.
     # ⭐ Le NGANG: san *title safe* 90 % (SMPTE/Netflix), preset rong hon thi
     #    giu preset. Xem `LE_AN_TOAN_PHAN`.
+    # 🔴 **Tran co chu di TRUOC phep vua-be-rong (B10-1, 28/09).** Hai luat
+    #    chong len nhau va **ca hai chi HA**: canh NGAN (khung doc ⛔ khong phai
+    #    khung ngang bi hong) va chieu cao DAI CHE (chu phai vua khu vuc da che,
+    #    ⛔ khong loi ra ngoai vet mo). Xem `tran_co_chu`.
+    #
+    # ⭐ `dai_phu_de_goc` o day DA o truc khung RA — `doi_truc_dai_phu_de` (B8)
+    #    chay TRUOC `viet_tep_ass` o `giai_doan_hinh_anh`. Doc thang phan so cua
+    #    no ma ⛔ khong doi truc lan nua.
     _co, _le, _ky_tu = co_chu_vua_khung(
         [str(getattr(e, "text", "") or "") for e in su_kien],
-        rong=rong_ass, cao=cao_ass, co_chu_goc=int(kieu.font_size),
+        rong=rong_ass, cao=cao_ass,
+        co_chu_goc=tran_co_chu(int(kieu.font_size), rong=rong_ass, cao=cao_ass,
+                               dai=(ho_so or {}).get("dai_phu_de_goc")),
         le_ngang=max(int(kieu.margin_h),
                      int(round(rong_ass * LE_AN_TOAN_PHAN))))
     # ⛔ `margin_v` ⛔ KHONG dung o day: B8 da dua no ve pixel cua khung RA roi
