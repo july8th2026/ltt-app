@@ -1223,7 +1223,18 @@ HO_SO: dict[str, dict] = {
                             "khong thanh phan nao so huu) no HA CAP xuong "
                             "`nhanh`: GIU moi buoc tinh, BO 4 buoc — `bo test "
                             "(song song)`, `migration tren postgres`, `M-1 tren "
-                            "postgres`, `bat bien da tien trinh`. ⛔ No KHONG tu "
+                            "postgres`, `bat bien da tien trinh`. No KHONG tu "
+                            # ⛔ KHONG dat ky tu ngoai cp1252 vao chuoi
+                            #    NAY: no di ra stdout, va stdout co the la
+                            #    mot console cp1252 (PowerShell 5.1). Mot
+                            #    `⛔` o day da lam mat MOT PHAN QUYET GATE
+                            #    ngay 28/09/2026 — `RESULT: PASS` in ra
+                            #    roi tien trinh chet truoc khi ghi `.gate/`.
+                            #    `test_5610::test_moi_chuoi_khong_chung_minh_
+                            #    IN_DUOC_tren_cp1252` ghim lai. Emoji trong
+                            #    CHU THICH thi vo hai — chi chuoi IN RA moi
+                            #    di qua bo ma hoa cua console.
+
                             "nang len `day-du` (chot 24/09), nen mot luot "
                             "`--doi` KHONG THE tu bien thanh mot luot toan kho.",
         "xep_hang": True,
@@ -1965,6 +1976,39 @@ def _thanh_phan_chon(args) -> list[str]:
 
 
 def main() -> int:
+    # ══════════════════════════════════════════════════════════════════════════
+    #  🔴 EP UTF-8 TRUOC MOI DONG IN. Do duoc 28/09/2026 — HAI lan trong mot ngay.
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    #    Ca 1 (phien `Prompt AI` bao lai): `RESULT: PASS` in ra, roi
+    #    `UnicodeEncodeError` tren `⛔` trong `HO_SO["doi"]["khong_chung_minh"]`,
+    #    va `.gate/` **khong co ban ghi nao**. Man hinh noi dat; bang chung khong
+    #    ton tai; `deploy` doc bang chung.
+    #
+    #    Ca 2 (chinh toi, cung ngay, trong khi DANG SUA ca 1): mot `⚠️` o dong
+    #    canh bao `[khoa]` — va lan nay no chet o dong ~2152, **truoc khi mot buoc
+    #    nao chay xong**, nen phep va "ghi so truoc khi in" cua toi ⛔ KHONG cuu
+    #    duoc: khoi ghi so nam sau phan chay.
+    #
+    # ⭐ ⇒ Ba tang, va moi tang bat mot ca tang khac KHONG bat duoc:
+    #      1. dong nay        — moi `print`, ke ca truoc khi co gi de ghi;
+    #      2. ghi so TRUOC in — cuu ca chet GIUA `RESULT` va khoi ghi;
+    #      3. `test_5610`     — chan mot chuoi ngoai cp1252 quay lai.
+    #
+    # ⚠️ Toi tung viet *"tang 2 go cai sung"*. Sai: no **thu hep** cua so, ⛔ khong
+    #    dong no. Cai sung la **bat ky `print` nao truoc khi gate ghi so**, va tep
+    #    nay co ~150 dong nhu the. Chi tang 1 phu duoc ca do.
+    #
+    # ⛔ `errors="replace"` chu khong de nem: mot dau nghieng in ra thanh `?` la
+    #    mot thiet hai co the doc qua; mot phan quyet gate bien mat thi khong.
+    for _luong in (sys.stdout, sys.stderr):
+        try:
+            _luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, OSError, ValueError):
+            # ⛔ KHONG nuot lang le: `stdout` da bi thay (pytest capture, mot lop
+            #    boc) thi `reconfigure` khong co o do — va do la BINH THUONG.
+            #    Noi ra o muc chan doan chu dung lam do ca luot gate.
+            pass
     parser = _parser()
     args = parser.parse_args()
 
@@ -2138,7 +2182,7 @@ def main() -> int:
         #    (do mot con so can it nhieu, hay may dang co viec ngoai khoa). Mot
         #    cong cu tu doi y dinh cua nguoi goi thi lan sau ho ⛔ khong tin no nua.
         if can and not tuan_tu and args.j * 2 <= ngan_sach_loi():
-            print(f"  [khoa] ⚠️ dang giu mutex CA MAY ({', '.join(sorted(can))}) "
+            print(f"  [khoa] CANH BAO: dang giu mutex CA MAY ({', '.join(sorted(can))}) "
                   f"ma chi cho {args.j} buoc cung luc / ngan sach "
                   f"{ngan_sach_loi()} loi. Luot nay se giu khoa LAU hon can, va "
                   f"nguoi xep hang sau tra gia do. Can `-j` nho that thi giu; "
@@ -2241,6 +2285,41 @@ def main() -> int:
     #    sach - va dong RESULT la thu duy nhat duoc doc khi nguoi ta voi.
     if cay_da_doi:
         ket += "  [CAY DA DOI GIUA CHUNG - KHONG DUNG LAM BANG CHUNG]"
+    # ══════════════════════════════════════════════════════════════════════
+    #  🔴 GHI SO TRUOC KHI IN. Do 28/09/2026, mot phien khac bao lai.
+    # ══════════════════════════════════════════════════════════════════════
+    #
+    #    Su co: `python tools/gate.py --doi --tu <sha> -j 2`
+    #
+    #        RESULT: PASS  [--ho-so doi: bo test THU HEP theo pham vi]   <- DA IN
+    #        UnicodeEncodeError: 'charmap' codec can't encode character '⛔'
+    #          File "tools\gate.py", line ~2274, in main
+    #        ls -t .gate/*.json  ->  ban ghi moi nhat la cua luot TRUOC
+    #
+    #    Man hinh noi `PASS`. `.gate/` **khong co ban ghi nao** cho luot ay. Va
+    #    ban ghi la thu `deploy` doc — nen ai tin man hinh se deploy tren mot
+    #    phan quyet KHONG TON TAI.
+    #
+    # ⭐ Ep UTF-8 (mot phien khac da va) go **cai co**. Dong nay go **cai sung**:
+    #    moi `print` giua dong RESULT va khoi ghi so deu la mot co tiem nang, va
+    #    tep nay co ~150 dong print phia duoi. Ghi so TRUOC thi ca lop loi ay
+    #    bien mat, **khong phu thuoc vao viec ai do co nho ep UTF-8 hay khong**.
+    #
+    # ⚠️ Cung ho `nha khoa ngay khi tinh xong`: thu tu giua mot viec KHONG THE
+    #    THAT LAC (ghi bang chung) va mot viec CO THE NEM (in cho nguoi doc) thi
+    #    viec khong the that lac phai di TRUOC.
+    #
+    # ⛔ `_ghi_ket_qua` nay TRA VE dong de in, khong tu in: dong `[ket qua] ...`
+    #    van phai xuat hien o CUOI man hinh (noi nguoi ta tim no), con TEP thi da
+    #    duoc ghi tu truoc do. Hai thu khac nhau, va truoc day chung bi buoc vao
+    #    nhau chi vi cung nam trong mot ham.
+    chay_lai = lenh_chay_lai(steps) if failed else []
+    _dong_ban_ghi = _ghi_ket_qua(
+        ho_so, steps, ket, tong_s, khoa, cay_da_doi,
+        chay_lai=chay_lai, ha_cap_tu=ha_cap_tu,
+        ly_do_ha_cap=ly_do_ha_cap, l3_lai=bool(args.l3_lai),
+        sha=sha_dau, thanh_phan=_thanh_phan_chon(args))
+
     if args.vong_lap:
         # 🔴 Cùng luật với `--quick`: một chế độ chạy ít hơn thì dòng kết quả
         #    của nó **phải trông khác**. Đọc "PASS" ở đây rồi báo xong là lặp
@@ -2291,7 +2370,6 @@ def main() -> int:
     # 🔴 DO THI IN SAN DUONG DI TIEP — xem khoi "NHIP MOT L3" o cuoi tep.
     #    Nguoi vua thay mot dong FAIL se lam thu de nhat trong tam tay; neu thu do
     #    la "chay lai gate" thi ta tra them ~15 phut moi vong.
-    chay_lai = lenh_chay_lai(steps) if failed else []
     if chay_lai:
         print("\nCHAY LAI DUNG PHEP DO (KHONG chay lai ca gate):")
         for lenh in chay_lai:
@@ -2300,10 +2378,9 @@ def main() -> int:
             print("Sua xong va cac phep tren xanh -> KHEP ban sua:")
             print(f"  python tools/gate.py --doi --tu {sha_dau}")
 
-    _ghi_ket_qua(ho_so, steps, ket, tong_s, khoa, cay_da_doi,
-                 chay_lai=chay_lai, ha_cap_tu=ha_cap_tu,
-                 ly_do_ha_cap=ly_do_ha_cap, l3_lai=bool(args.l3_lai),
-                 sha=sha_dau, thanh_phan=_thanh_phan_chon(args))
+    # ⭐ Tep DA duoc ghi o tren; day chi la dong CHO NGUOI DOC, dat o cuoi man
+    #    hinh noi ho tim no.
+    print(_dong_ban_ghi)
     return 0 if not failed else 1
 
 
@@ -2311,8 +2388,14 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
                  khoa, cay_da_doi: bool, *, chay_lai: list[str] | None = None,
                  ha_cap_tu: str = "", ly_do_ha_cap: str = "",
                  l3_lai: bool = False, sha: str = "",
-                 thanh_phan: list[str] | None = None) -> None:
-    """Ghi danh tinh cua luot chay nay vao `.gate/<id>.json`.
+                 thanh_phan: list[str] | None = None) -> str:
+    """Ghi danh tinh cua luot chay nay vao `.gate/<id>.json`. TRA VE dong de in.
+
+    ⛔ **Ham nay GHI, KHONG IN** (doi 28/09/2026). Nguoi goi in dong tra ve o
+       cuoi man hinh. Hai viec bi buoc vao nhau truoc day chi vi cung nam trong
+       mot ham — va he qua la: de dong `[ket qua]` nam dung cho nguoi doc tim no,
+       ca **viec ghi** phai doi toi cuoi, sau ~150 dong `print` bat ky dong nao
+       trong so do cung co the nem `UnicodeEncodeError` va lam mat ban ghi.
 
     ## Vi sao can
 
@@ -2371,12 +2454,12 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
         tep = thu_muc / f"{ban_ghi['id']}.json"
         tep.write_text(json.dumps(ban_ghi, ensure_ascii=False, indent=2),
                        encoding="utf-8", newline="\n")
-        print(f"        [ket qua] {tep.relative_to(ROOT).as_posix()}")
+        return f"        [ket qua] {tep.relative_to(ROOT).as_posix()}"
     except OSError as e:
         # ⚠️ Khong ghi duoc thi NOI RA roi di tiep. Mot kho ket qua hong khong
         #    duoc phep lam do mot luot gate da chay xong — nhung im lang o day
         #    thi phien sau se tuong no da duoc ghi.
-        print(f"        [ket qua] KHONG ghi duoc: {e}")
+        return f"        [ket qua] KHONG ghi duoc: {e}"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
