@@ -99,6 +99,61 @@ $p = Start-Process powershell `
 "EXITCODE=$($p.ExitCode)" | Add-Content $sum -Encoding utf8
 "KET THUC=$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" | Add-Content $sum -Encoding utf8
 
+# !! LUOI CUOI: DEPLOY HONG => DUA DICH VU TRO LAI (28/09/2026).
+#
+#    BA LAN cung mot hinh dang, va hai lan dau da duoc ghi ngay trong hai tep nay:
+#
+#      21/08  `$ErrorActionPreference='Stop'` quanh mot lenh native (alembic in
+#             INFO ra stderr) -> script thoat sau khi da dung dich vu -> 502.
+#             Bai hoc ghi HAI ve; chi ve MOT (`Invoke-Ngoai`) duoc viet vao ma.
+#      06/09  `PSModulePath` cua PS7 ro sang tien trinh 5.1 -> `Get-Acl` chet
+#             SAU KHI da dung bon dich vu -> 502 khoang bon phut (ghi o tren).
+#      28/09  `Move-Item C:\LTTPlatformpp` 'Access denied' -> EXITCODE=1, ba
+#             dich vu o lai Stopped -> 502 cho toi khi mot nguoi goi Start-Service.
+#
+#    Moi lan deu va dung NGUYEN NHAN cu the. Khong lan nao them mot luoi cho
+#    HAU QUA. Nen nguyen nhan thu tu se lai di qua dung cho nay.
+#
+# !! Vi sao luoi phai o LOP BOC chu khong chi o `2-cai-dat.ps1`:
+#
+#      `trap` trong script con bat duoc loi `throw`. No KHONG bat duoc:
+#        - Ctrl-C cua nguoi dung (PipelineStoppedException, khong tin duoc),
+#        - `Stop-Process` / kill tien trinh con,
+#        - mot loi trong chinh khoi `trap`.
+#
+#      Lop boc nay thi VAN SONG trong ca ba ca do, va no THAY `$p.ExitCode`. Nen
+#      day la cho duy nhat bat duoc CA LOP, khong chi cac ca biet truoc.
+#
+# !! Khong dung `Start-Service` vo dieu kien: neu deploy hong SAU khi da khoi
+#    dong lai thanh cong thi dich vu dang chay, va goi lai chi gay nhieu. Kiem
+#    trang thai truoc, chi bat cai nao dang Stopped.
+if ($p.ExitCode -ne 0) {
+    $canBat = @()
+    foreach ($svc in @('LTTStudioWeb', 'LTTStudioWorker', 'LTTStudioVoice',
+                       'LTTStudioCodex')) {
+        $s = Get-Service $svc -ErrorAction SilentlyContinue
+        if ($s -and $s.Status -ne 'Running') { $canBat += $svc }
+    }
+    if ($canBat.Count -gt 0) {
+        Write-Host ''
+        Write-Host "LUOI CUOI: deploy hong va $($canBat.Count) dich vu dang khong chay" -ForegroundColor Yellow
+        "LUOI_CUOI=dang bat lai: $($canBat -join ', ')" | Add-Content $sum -Encoding utf8
+        foreach ($svc in $canBat) {
+            try {
+                Start-Service $svc -ErrorAction Stop
+                Write-Host "   $svc -> Running" -ForegroundColor Green
+                "LUOI_CUOI_OK=$svc" | Add-Content $sum -Encoding utf8
+            } catch {
+                Write-Host "   $svc -> KHONG bat duoc: $($_.Exception.Message)" -ForegroundColor Red
+                "LUOI_CUOI_HONG=$svc : $($_.Exception.Message)" | Add-Content $sum -Encoding utf8
+            }
+        }
+        Write-Host '   Kiem /health/ready truoc khi lam gi khac.' -ForegroundColor Yellow
+    } else {
+        "LUOI_CUOI=khong can - moi dich vu dang chay" | Add-Content $sum -Encoding utf8
+    }
+}
+
 if ($p.ExitCode -eq 0) {
     Write-Host ''
     Write-Host 'DEPLOY XONG (EXITCODE=0).' -ForegroundColor Green
