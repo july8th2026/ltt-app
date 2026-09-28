@@ -12,6 +12,36 @@ Hai artifact ra:
 
 ⭐ Ban goc KHONG bi cham. `audio_full.wav` la mot dong lineage MOI tro ve no.
    Mat ban goc la mat kha nang tinh lai moi thu ha nguon (Prompt 08 muc 4).
+
+## 🔴 `media_prepare` KHONG cat gi — lan P0-c da DO va KHONG doi (28/09/2026)
+
+De xuat: ap cua so `cat_dau_cuoi` cua khach o day, de ASR khong phai nghe phan
+khach da bo. Do xong thi KHONG lam, va ba con so la ly do:
+
+1. **Cua so la PHAN SO, khong phai giay** (`cat_dau_cuoi.py:11-14`). Phep doi
+   sang giay o `cat_dau_cuoi.giao` nhan `thoi_luong` tu NGUOI GOI, va hom nay
+   DUNG hai nguoi goi — `giai_doan_hinh_anh.py:369` (cat that) va
+   `giai_doan_qc.py:271-275` (dung lai de biet do dai mong doi) — ca hai nhan do
+   dai GD1. Them mot lan ap o day thi khai `[0,05 ; 0,95]` thanh 0,81 thay vi
+   0,90, va **CA HAI cho van dong y voi nhau tren mot ban giao SAI** ⇒ QC T2
+   lech 0 giay, khong phep kiem nao do. Do o `test_4973`.
+2. **Nam module doc `run.source_key`** — ban goc, toan bo do dai. Nang nhat:
+   RENDER (`giai_doan_ket_xuat.py:130`, `-c:v copy` HINH cua ban goc) va
+   AUDIO_PREPARE (`giai_doan_am_thanh.py:67`, nhac nen tu ban goc). Cat mot dau
+   chi o ban tieng ASR ⇒ loi thoai tieng Viet dat len hinh va nen lech dung
+   `dau_cat` giay. Tap hop chot o `test_4975`.
+3. **`giai_doan_chep_loi.py:104-107` chon ban tieng theo DUOI `.wav`**, khong
+   theo truc. Nen ca phuong an nhe nhat (them mot artifact da cat, giu
+   `audio_full.wav` dung nghia *full*) cung la mot xo so ve TRUC neu lam mot
+   minh o tep nay. Do o `test_4976`.
+
+⭐ Cai duoc do duoc va NHO: vat lieu ASR giam dung `1 - (den - tu)` = **10 %**
+   tren bo moc that (`test_4977`). Co hoc cua phep cat thi tam thuong — cai chan
+   la DAY DIEN TRUC, va no nam o nam tep giai doan khac.
+
+⇒ Muon lam that thi mot lan duy nhat phai lam CA BA: bo mot trong hai cho ap cua
+  so, bu `dau_cat` o bien ASR, va cho `_khoa_tieng_asr` biet truc. Khong lam mot
+  minh o day.
 """
 from __future__ import annotations
 
