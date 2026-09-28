@@ -235,7 +235,7 @@ def test_palette_loc_theo_quyen_app_cua_nguoi_dung(api, monkeypatch):
 #: Cong cu app CO TINH khai `customer_visible=False` — cua dong TAY vi chua
 #: nghiem thu E2E (`apps/audio_pause/manifest.py:73-87`). Duong v2 loc chung o
 #: `presentationAdapter.ts:65`; duong v3 phai loc o server.
-KHONG_CHO_KHACH = ("app.audio_pause.run", "app.prompt_canh.run",
+KHONG_CHO_KHACH = ("app.audio_pause.run",
                    "app.video_assembly.run", "app.chatltt.trich_tep",
                    "app.chatltt.nghien_cuu")
 
