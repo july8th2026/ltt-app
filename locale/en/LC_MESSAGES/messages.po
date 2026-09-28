@@ -22445,3 +22445,17 @@ msgstr "Could not create a workflow from this template. Try again, or reload the
 
 msgid "Ước"
 msgstr "Est."
+
+# -- ASV: bo doc chu (OCR) — dieu phoi UI dich ho de go chan cong
+#    `pre-commit --all-files` tren `main` (28/09). ⚠️ Tu vung thuoc
+#    mien ASV: toi chon "text reader (OCR)" cho "bo doc chu" va
+#    "region" cho "vung". Phien ASV sua lai neu mien ho dung tu khac.
+
+msgid "Chưa cài bộ đọc chữ trên máy chủ."
+msgstr "The text reader (OCR) is not installed on this server."
+
+msgid "Không khởi động được bộ đọc chữ."
+msgstr "Could not start the text reader (OCR)."
+
+msgid "Không đọc được khung hình nào để dò vùng."
+msgstr "Could not read any frame to detect the region."
