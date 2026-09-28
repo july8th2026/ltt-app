@@ -81,9 +81,17 @@ BO_QUA_THU_MUC = ("__pycache__", "node_modules", "/core/", "\\core\\",
 #    vào ba thư mục ấy sẽ không được đếm. Nên đừng đặt — chúng là bản chuyển đã
 #    ĐÓNG BĂNG; mã mới thuộc `services/<domain>.py` và `routes.py` bên ngoài,
 #    nơi bộ đếm vẫn soi.
+#
+# 🔴 `apps/auto_scan_video/chuan_hoa_doc.py` (N7, 28/09) — CÙNG LOẠI với
+#    `text_pipeline.py`/`tu_dien.py` ở trên: bảng số đọc thành chữ ("không",
+#    "một", ... "nghìn") và bảng đọc từng chữ số cho số điện thoại. Đây là
+#    ĐẦU VÀO của TTS tiếng Việt (chưa nối vào đường sản phẩm — xem docstring
+#    đầu tệp đó), không phải chuỗi giao diện; bọc `_()` sẽ làm hỏng đúng cái
+#    giọng đọc mà hàm này sinh ra.
 BO_QUA_FILE = ("server/admin.py", "server/admin_api.py",
                "server/templates/admin", "server/routes/admin",
                "apps/ltt_voice/text_pipeline.py", "apps/ltt_voice/tu_dien.py",
+               "apps/auto_scan_video/chuan_hoa_doc.py",
                "apps/transcript/services/engine",
                "apps/audio_pause/services/engine",
                "apps/video_assembly/services/engine")
