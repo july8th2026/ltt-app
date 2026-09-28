@@ -662,3 +662,57 @@ hai* — và khuôn thứ hai của nó còn **ném thật** khi `stdout` đã b
 `index 32→31`): hạ mốc siết bánh cóc cho **cả kho**, trong khi phiên khác còn
 việc dở — một mốc chặt hơn làm việc của họ đỏ vì lý do ⛔ không liên quan. Để
 tới cuối plan.
+
+---
+
+## 10. Trạng thái — `main` = `f5c58466`, production = `1e34780f`
+
+| id | việc | trạng thái |
+|---|---|---|
+| A2 | `ket_luan` nhận `ngan_sach` làm mẫu số | ✅ `8a5696f7` · 4 phép chốt **hai chiều** xanh |
+| B1 | tín hiệu ảo giác thứ ba (prompt echo) | ✅ `9cf70bf3` · ngưỡng 4 ký tự, có đối chứng âm |
+| B2 | CỬA A (tổng) + CỬA B (hố đơn lẻ) | ✅ `9cf70bf3` · CỬA A đo **HỢP**, `outputs` giữ **TỔNG** |
+| B3 | bất biến chồng hệ số | ✅ thay bằng `doi_chieu_he_so_toc` — xem §9.1 |
+| B4 | tên đại lượng ⛔ không đọc như một | 🟡 một phần (đường lồng + docstring); đổi tên thật ⇒ **A5** |
+| C3 | fixture `gia_lap_ocr` | ✅ `56462bd8` · chặn ở `co_san()`, ⛔ không dựng tiền đề mới |
+| C4 | bánh cóc tĩnh trần CPU | ✅ `56462bd8` · `check_khai_tran_cpu.py`, AST 3 tầng, 915 tệp / 24 mốc / 1 miễn |
+| C5 | tham chiếu chết `dung_video.py:35` | ✅ `56462bd8` |
+| E1 | báo cáo cửa sổ khách xoá thoại | ✅ `ed425898` · chốt **6 mất hẳn + 1 một phần** |
+| E3 | ngân sách đo bằng **HỢP** | ✅ `ed425898` · có ca chồng lấn dựng ra |
+| F1 | `asv_chay_tai_cho.py` | ✅ `159da8da` + `2c031c63` |
+| — | hai bánh cóc hình dạng cả cây | ✅ `2c031c63` — xem §9.6 |
+| **A4** | bỏ `he_so_toc`, thôi chừa chỗ hẹp | 🔵 **đang chạy** (L1) — xem §9.1 |
+| **A5** | hai khoá `tom_tat`: đổi tên **hay BỎ HẲN** | 🔵 đang chạy (L1 quyết) · bản tham khảo `wip/c7-doi-ten` `81f3bfb9` |
+| **C6** | bánh cóc `test_2018` đo CÁCH GÕ | 🔵 đang chạy (L3) — xem §9.3 |
+| C7 | sổ khai `asv_doi_soat.py` | ⏸️ **hoãn tới sau A4/A5** |
+| A1 | `cat = None` cho lượt test | ⏳ chờ chủ dự án xong phân tích video |
+| A3 · B5 | tách (A)/(B) hố VAD rồi mới vặn | ⏳ cần 1 lượt GPU |
+| C1 · C2 | trần lõi cho `rec` · `cv2.setNumThreads` | ⏳ cần **đo** |
+| D1–D3 · E2 | OCR đọc chữ · đuôi cảnh xấu | ⏳ chặn bởi C1/C2 |
+| §9.4 | `dem_lech_cuoi` là cận TRÊN | ⏳ cần `ngan_sach` từng dòng `ban_ke` |
+| G1–G6 | nghiệm thu, **một** gate ở cuối | ⏳ cuối plan |
+
+### 10.1 ⛔ Khoảng lệch `main` ↔ production, ghi ra chứ ⛔ không im
+
+Mã sản phẩm lệch: `ban_ghi.py` · `giai_doan_chep_loi.py` · `giai_doan_hinh_anh.py`
+· `ke_cat.py` · `nan_cho_vua.py` · `giai_doan_giong.py` · `giai_doan_thoi_gian.py`
+· `thoi_gian.py` (+ `dung_video.py` chỉ chú thích, 2 công cụ mới).
+
+⇒ ⛔ **CHƯA tới khách, và đó là CÓ Ý**: plan chưa xong, và luật dự án ghi *deploy
+giữa plan phải HỎI chủ dự án*. ⛔ Không gì bị chặn vì chờ — mọi việc còn lại là mã
++ đo cục bộ; chỉ `G5` (`T1a-ter` trên worker thật) mới cần deploy.
+
+### 10.2 ⚠️ NỢ MỚI cho phiên sở hữu `gate.py`/`tai_may.py`
+
+`cpu_nhieu` là **mutex nhị phân** cho một tài nguyên **chia được**. Đo 28/09: một
+lượt `gate --pham-vi` (35 phạm vi, `-j 2`) giữ khoá **23,4 phút** trong khi
+`tai_may` báo `RANH` với **8,0/10 lõi vật lý rảnh** — hai lượt pytest vài giây
+phải xếp hàng sau một tiến trình để trống 8 lõi.
+
+⭐ Đây là dạng **khó thấy nhất** của *"giữ khoá trong lúc không tính"*: nó ⛔ không
+đang **CHỜ** (giây CPU vẫn tăng, nên phép phát hiện *"tường dài + CPU thấp"* ⛔
+không bắt được) — nó đang **tính CHẬM có chủ ý**. Cái giá của `-j 2` đổ lên
+**khoá**, ⛔ không đổ lên máy.
+
+⇒ Câu hỏi thiết kế: khoá nên biết *"tôi xin bao nhiêu lõi"* thay vì *"tôi xin cả
+máy"*. ⛔ Không phải việc của plan này; đã báo phiên sở hữu.
