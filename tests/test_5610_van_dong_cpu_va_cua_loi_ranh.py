@@ -275,3 +275,43 @@ def test_so_loi_mac_dinh_KHONG_nho_hon_tran_bo_test():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  LO 5 — giu mutex CA MAY ma tu han che (`-j` nho)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Ca that 28/09/2026, mot phien THU BA: `gate.py --pham-vi <35 pham vi> -j 2`
+#    giu `cpu_nhieu` + `postgres_test` **25 phut**, va giay CPU ca cay tien trinh
+#    do duoc **28 giay** = 0,02 loi. Hai lan cua mot phien khac dung sau no.
+#
+# ⭐ `cpu_nhieu` la mutex TOAN MAY (chu du an chot 23/09 sau mot su co do duoc).
+#    Nen khi mot luot DA giu no, no doc quyen may — va `-j 2` la **tu han che vo
+#    co**: cai gia ⛔ khong do len MAY, no do len **KHOA**, tuc len nguoi xep hang.
+#
+# ⛔ Ban va la mot CANH BAO, ⛔ khong phai tu ghi de `-j`. Doi mutex thanh semaphore
+#    co trong so se **dao** quyet dinh 23/09 cua chu du an — viec do chi chu du an
+#    quyet, va `cua_so_yen.py` phuc vu moi phien cua ca hai kho.
+
+def test_canh_bao_khi_giu_mutex_ca_may_ma_j_nho():
+    """⭐ Chot bang AST: dieu kien phai so `args.j` voi **ngan sach loi**, ⛔ khong
+    voi mot hang so go tay — mot nguong go tay se lech voi may khac.
+
+    ⚠️ Va no phai co ve `can` (dang giu tai nguyen): mot luot `--khong-khoa` ⛔
+       khong giu mutex nao, nen canh bao o do la bao dong gia.
+    """
+    src = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert "dang giu mutex CA MAY" in src, "mat canh bao"
+    cay = ast.parse(src)
+    dk = [n for n in ast.walk(cay) if isinstance(n, ast.If)
+          and "mutex CA MAY" in ast.dump(n)]
+    assert dk, "khong tim duoc khoi `if` cua canh bao"
+    ten = {x.id for x in ast.walk(dk[0].test) if isinstance(x, ast.Name)}
+    goi = {x.func.id for x in ast.walk(dk[0].test)
+           if isinstance(x, ast.Call) and isinstance(x.func, ast.Name)}
+    assert "can" in ten, (
+        "canh bao khong hoi `can` (co dang giu tai nguyen khong) ⇒ mot luot "
+        "`--khong-khoa` cung bi canh bao: bao dong gia")
+    assert "ngan_sach_loi" in goi, (
+        "canh bao so `-j` voi mot hang so go tay thay vi voi ngan sach loi — "
+        "nguong go tay se lech tren may khac")
