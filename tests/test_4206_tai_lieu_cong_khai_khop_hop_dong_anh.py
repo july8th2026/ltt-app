@@ -103,6 +103,10 @@ def test_bang_doi_chieu_trong_tai_lieu_khop_phep_tinh_THAT(van, rong, cao):
     # Tai lieu ghi dau cach nghin: 4082 -> "4 082".
     so = f"{that:,}".replace(",", " ").replace(" ", " ")
     o = f"| {rong}×{cao} | {so} |"
+    # Tai lieu duoc phep IN DAM con so (`**1 026**`) - do la trinh bay, khong phai
+    # noi dung. Bo `*` truoc khi so, chu ⛔ dung noi long phep so thanh mot `any`
+    # tren nhieu dong (bay da mac mot lan - xem chu thich tren).
+    van = van.replace("**", "")
     assert o in van, (
         f"khong thay DUNG o bang {o!r}. Tai lieu phai ghi {that} token cho anh "
         f"{rong}x{cao} (so DO tren production 28/09, ⛔ dung sua bang cho xanh).")
