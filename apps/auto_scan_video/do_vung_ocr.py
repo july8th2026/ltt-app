@@ -64,6 +64,7 @@ bản, đó là lựa chọn của ta chứ ⛔ không phải bảo đảm của
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import NamedTuple
 
@@ -127,6 +128,48 @@ HE_SO_HO = 1.5
 NHAY_Y = 0.03
 
 
+#: Trần LÕI cho một lượt dò OCR. 🔴 **Đây là một bản vá SỰ CỐ, ⛔ không phải
+#: một tinh chỉnh** — nó gỡ nguyên nhân làm treo máy HAI lần ngày 28/09.
+#:
+#: ## Sự cố, đo từ hộp đen
+#:
+#:     12:37:26 -> 12:59:43   TRỐNG 22,3 phút · cpu 99 % · 577 tiến trình
+#:     13:12:56 -> 13:21:19   TRỐNG  8,4 phút · cpu 91 % · 338 tiến trình
+#:     cả hai lần, tiến trình dẫn đầu:  `-c inline` **1075 %** và **1164 %**
+#:
+#: Một tiến trình Python ăn ~11 lõi trên 20. Đo lại trên chính máy này:
+#:
+#:     RapidOCR mặc định  ->  67 luồng · **1519 % = 15,2 lõi** · 1,2 giây
+#:
+#: 🔑 **`onnxruntime` đặt `intra_op_num_threads = 0`, tức TỰ CHỌN = số lõi vật
+#:    lý**, và `rapidocr_onnxruntime.utils.OrtInferSession` dựng `SessionOptions()`
+#:    mà ⛔ **không bao giờ** đặt lại — thư viện cũng ⛔ không nhận tham số đó.
+#:
+#: ## ⛔ `OMP_NUM_THREADS` KHÔNG ăn — đo rồi mới biết
+#:
+#:     mặc định              15,2 lõi · 1,2 giây
+#:     OMP_NUM_THREADS = 4   **12,9 lõi** · 1,4 giây   <- gần như KHÔNG đổi
+#:     cpu_affinity([0..3])   **4,2 lõi** · 7,3 giây   <- ăn thật
+#:
+#: Bản `onnxruntime` này ⛔ không dựng theo OpenMP, nên cần gạt hiển nhiên nhất
+#: lại là cần gạt ⛔ không nối vào đâu cả. ⭐ Chỉ phép chặn lõi ở tầng **hệ điều
+#: hành** mới cưỡng chế được — cùng lý lẽ với *"chỉ giết thứ mình khởi động"*:
+#: luật do OS thi hành, ⛔ không phải do ta nhớ.
+#:
+#: ## Vì sao 6
+#:
+#:     N=2   2,1 lõi · 13,1 giây
+#:     N=4   4,2 lõi ·  6,5 giây
+#:     N=6   6,3 lõi ·  4,9 giây   <- CHỌN
+#:     N=8   8,4 lõi ·  3,1 giây
+#:
+#: ⚠️ Trần phải **chừa biên cho Windows Defender** — nó ăn tới **5,45 lõi** và
+#:    nằm **ngoài mọi khoá của ta** (đo 25/09). `6 + 5,45 ≈ 11,5` trên 20 lõi,
+#:    còn dư cho gate chạy song song. `N=8` nhanh hơn 1,8 giây nhưng `8 + 5,45
+#:    ≈ 13,5` thì một lượt gate 8 bước song song lại chạm trần.
+CPU_TRAN_LOI = 6
+
+
 class OcrLoiKyThuat(RuntimeError):
     """Lỗi KỸ THUẬT — chưa cài, crash, ⛔ không mở được tệp.
 
@@ -143,6 +186,50 @@ class Hop(NamedTuple):
     y1: float
     x0: float
     x1: float
+
+
+@contextlib.contextmanager
+def chan_loi(tran: int = CPU_TRAN_LOI):
+    """Chặn tiến trình này xuống `tran` lõi trong lúc chạy OCR, rồi **trả lại**.
+
+    🔴 Xem `CPU_TRAN_LOI`: thiếu phép chặn này, một lượt dò ăn **15,2 lõi trên
+       20** và đã làm treo máy hai lần trong một ngày.
+
+    ⛔ **`finally` trả lại đúng tập lõi cũ**, ⛔ không phải `range(cpu_count())`:
+       tiến trình có thể ĐÃ bị chặn từ trước (worker chạy dưới một trần khác, hay
+       một lượt dò lồng nhau). Trả về *"toàn bộ lõi"* là **nới** một giới hạn của
+       người khác — đúng hình dạng *"chốt thay cho người vắng mặt"*.
+
+    ⚠️ Chặn lõi là **per-process**, nên nó cũng chạm mọi thứ khác trong tiến
+       trình này. Chấp nhận được vì khối bên trong chỉ có OCR; ⛔ đừng mở rộng
+       khối ra ngoài phần TÍNH.
+
+    ⭐ Thiếu `psutil`, hay hệ ⛔ không cho đặt: **đi tiếp mà ⛔ không chặn**, và
+       GHI LẠI. Một phép dò chậm còn hơn một phép dò ⛔ không chạy — nhưng im
+       lặng bỏ qua thì lần sau ⛔ không ai biết vì sao máy nghẹt lại.
+    """
+    cu = None
+    try:
+        import psutil
+
+        me = psutil.Process()
+        cu = me.cpu_affinity()
+        if cu and len(cu) > tran:
+            me.cpu_affinity(cu[:tran])
+        else:
+            cu = None          # ⛔ Không đặt gì thì ⛔ không phải trả lại gì.
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("do vung OCR: ⛔ khong chan duoc loi (%s) — luot do nay "
+                     "co the an toi ~15 loi", exc)
+    try:
+        yield
+    finally:
+        if cu is not None:
+            try:
+                psutil.Process().cpu_affinity(cu)
+            except Exception as exc:  # noqa: BLE001
+                _log.warning("do vung OCR: ⛔ khong tra lai duoc tap loi (%s)",
+                             exc)
 
 
 def co_san() -> bool:
@@ -290,6 +377,15 @@ def do_dai_chu_ocr(duong: str, *, so_khung: int = SO_KHUNG_OCR, tranh=()):
     ⛔ Ném `OcrLoiKyThuat` khi ⛔ không quét được — xem bảng ba trạng thái ở đầu
     tệp. `KetQua` rỗng nghĩa là **đã quét thật và ⛔ không thấy chữ**.
     """
+    # 🔴 Chặn lõi bao TRỌN phần TÍNH — xem `CPU_TRAN_LOI`. Đặt ở đây chứ
+    #    ⛔ không trong `_may()`: máy OCR tạo MỘT lần cho cả tiến trình,
+    #    còn trần lõi phải sống đúng bằng LƯỢT DÒ.
+    with chan_loi():
+        return _do_dai_chu_ocr(duong, so_khung=so_khung, tranh=tranh)
+
+
+def _do_dai_chu_ocr(duong: str, *, so_khung: int, tranh):
+    """Thân của `do_dai_chu_ocr`, chạy BÊN TRONG trần lõi."""
     from . import do_vung
 
     may = _may()
