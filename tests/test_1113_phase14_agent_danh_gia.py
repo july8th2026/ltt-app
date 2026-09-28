@@ -49,7 +49,7 @@ from platform_core.registry import discover
 
 # `transcript` ra khoi danh sach 22/09/2026: mo cho khach sau doi soat quy tac
 # legacy + E2E (chu du an chot). Ba App con lai van dong.
-BON = ("audio_pause", "prompt_canh", "video_assembly")
+BON = ("audio_pause", "video_assembly")
 TOOL = tuple(f"{s}.run" for s in BON)
 
 
@@ -214,8 +214,8 @@ def test_bo_kiem_BAT_duoc_lech_kieu_VA_cong_khong_khai() -> None:
     lech = validate_plan(_plan(
         [{"id": "s1", "tool": "transcript.run", "after": [],
           "params": {"audio": "$input.audio"}},
-         {"id": "s2", "tool": "prompt_canh.run", "after": ["s1"],
-          "params": {"kich_ban": "$s1.transcript", "so_canh": 3}}],
+         {"id": "s2", "tool": "story.storyboard", "after": ["s1"],
+          "params": {"story": "$s1.transcript", "scene_count": 3}}],
         inputs={"audio": "x"}), input_types={"audio": "audio"})
     assert not lech.valid
     assert any(i.code == "port_type" for i in lech.issues),         "noi json vao mot cong text ma khong bao lech kieu"
@@ -223,8 +223,8 @@ def test_bo_kiem_BAT_duoc_lech_kieu_VA_cong_khong_khai() -> None:
     thieu = validate_plan(_plan(
         [{"id": "s1", "tool": "transcript.run", "after": [],
           "params": {"audio": "$input.audio"}},
-         {"id": "s2", "tool": "prompt_canh.run", "after": ["s1"],
-          "params": {"kich_ban": "$s1.text", "so_canh": 3}}],
+         {"id": "s2", "tool": "story.storyboard", "after": ["s1"],
+          "params": {"story": "$s1.text", "scene_count": 3}}],
         inputs={"audio": "x"}), input_types={"audio": "audio"})
     assert not thieu.valid
     assert any(i.code == "reference" for i in thieu.issues),         "tham chieu mot cong KHONG khai ma khong bao"

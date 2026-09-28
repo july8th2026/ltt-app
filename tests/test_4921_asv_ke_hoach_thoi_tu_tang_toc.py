@@ -95,22 +95,23 @@ def test_4921_TRUOC_A4_ke_hoach_tu_tang_toc_va_ban_phoi_KHONG_ap():
     Đường LUI (`he_so_da_ap=None`) giữ NGUYÊN luật cũ, nên nó là cỗ máy thời gian
     dùng được: nó cho đúng hình dạng *"kế hoạch nén, bản phối ⛔ không nén"*.
     """
+    # 🔴 **Viết lại 28/09 (nấc 5): đường LUI đã bị BỎ HẲN.**
+    #    A4 giữ nó để `he_so_da_ap=None` vẫn tự tăng tốc trả nợ. Nấc 5 làm nó
+    #    thừa: khi tràn, `lap_ke_hoach` nén thêm ĐỀU cả bài tới mức nhỏ nhất vừa
+    #    đủ — một cỗ máy, ⛔ không phải hai. ⇒ `he_so_da_ap=None` nay nghĩa
+    #    *"nấc 2 ⛔ không nén gì"*, và chỉ nấc 5 mới nâng hệ số.
     muc = _muc_noi_don(MA_12_DOAN)
     dai = {m["ma"]: 1.5 for m in muc}
     ke_cu = tg.lap_ke_hoach(muc, dai, tong_giay=30.0)          # ⛔ không truyền
 
-    nhanh = [d["ma"] for d in ke_cu["doan"] if float(d["he_so_toc"]) > 1.0]
-    assert nhanh, "đường LUI phải vẫn tự tăng tốc — nếu không, bài này đã mù"
-    assert tg.tom_tat(ke_cu)["he_so_toc_lon_nhat"] == pytest.approx(
-        tg.TRAN_TANG_TOC, abs=1e-3), "luật cũ kẹp về trần THIẾT KẾ 1,15"
-
-    # Bản phối áp `1,0` cho MỌI `ma` (không đoạn nào tràn ngân sách nắn).
+    assert ke_cu["boi_nac5"] == 1.0, "còn chỗ ⇒ nấc 5 ⛔ không được bật"
+    assert all(float(d["he_so_toc"]) == 1.0 for d in ke_cu["doan"]), (
+        "⛔ không còn một máy tăng tốc thứ hai nào trong `lap_ke_hoach`")
     ap = {m["ma"]: 1.0 for m in muc}
     ra = tg.doi_chieu_he_so_toc(
         {str(d["ma"]): float(d["he_so_toc"]) for d in ke_cu["doan"]}, ap)
-    assert ra["so_doan_he_so_lech_ke_hoach"] == len(nhanh) > 0, (
-        "đây là con bọ: kế hoạch chừa chỗ theo 1,15 mà bản phối áp 1,0 ⇒ "
-        f"{len(nhanh)} đoạn tiếng dài hơn chỗ được chừa")
+    assert ra["so_doan_he_so_lech_ke_hoach"] == 0, (
+        "kế hoạch và bản phối nói cùng một hệ số — chỗ lệch B13-B3 đã hết")
 
 
 def test_4921_SAU_A4_doi_chieu_dem_DUNG_KHONG_doan_nao_lech():

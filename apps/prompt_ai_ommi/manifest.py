@@ -9,6 +9,7 @@ from platform_core.registry import AppManifest, NavEntry, ToolSpec
 # ⭐ Tran so canh doc TU HANG SO, khong go tay. `jobs.py` da doc no; mot ben
 #    go tay la cach hai ben lech nhau (bat bien B-6, spec §8).
 from apps.prompt_ai_ommi.project_schema import MAX_SCENES
+from apps.prompt_ai_ommi.services import chia_lo as _chia_lo
 
 
 def _director_cost(params: dict) -> int:
@@ -67,6 +68,24 @@ MANIFEST = AppManifest(
     nav=(NavEntry("Prompt AI", "/prompt-ai-ommi", "✦", "prompt_ai_ommi"),),
     job_types=("prompt_ai_ommi.generate", "prompt_ai_ommi.import_zip"),
     requires=("api",),
+    # 🔴 TRAN THOI GIAN, SUY tu `chia_lo` — ⛔ KHONG go lai con so.
+    #
+    #    Pha 6 chia mot luot sinh canh thanh nhieu LO, nen so luot goi LLM nhan
+    #    len: 20 canh di tu **1** luot thanh **ceil(20/5) = 4** luot. Mot tran von
+    #    vua du co the thanh khong du, va `prompt_canh` da ghi dung hau qua vao
+    #    manifest cua no: *"chet o tran nghia la khach DA TRA ma khong nhan gi"*.
+    #
+    # ⭐ Suy tu `chia_lo` chu khong go `240`: doi `LO_CANH` thi tran tu di theo.
+    #    Cung ly le voi `prompt_canh.manifest` **nhap** `TRAN_SO_CANH` thay vi go
+    #    `500`. `tests/test_5572` chot bat dang thuc de hai so khong troi khoi nhau.
+    #
+    # ⚠️ `NGAN_SACH_MOI_LUOT_S = 60` van la mot **GIA THIET** (suy tu `prompt_canh`:
+    #    3600/76 ≈ 47 s, cong bien vi lo cua ta lon hon). Ai do that tren may B thi
+    #    sua o `chia_lo` — MOT cho — va con so nay tu dung theo.
+    max_runtime_s={
+        "prompt_ai_ommi.generate":
+            _chia_lo.so_luot_goi(MAX_SCENES) * _chia_lo.NGAN_SACH_MOI_LUOT_S,
+    },
     credit_cost=_cost,
     tools=(
         ToolSpec(

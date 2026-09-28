@@ -49,6 +49,79 @@ khách **được hoàn cả khoản vừa thu** — mất doanh thu im lặng.
 
 ---
 
+## 0b. 🔴 NẮN 28/09 — Task 2/3 nhắm SAI MODULE (phát hiện trước khi viết dòng nào)
+
+Plan gốc bảo chia lô vào `services/breakdown.py` rồi nối vào `jobs.py`. **Sai.** Đo:
+
+```
+grep -rn "breakdown(" apps/prompt_ai_ommi/   ->  CHI MOT cho goi:
+    routes/storyboard.py:349   (mot ROUTE dong bo, framework nap tu CSDL)
+jobs.py::_handle_generate      ->  director_prompt(params) -> provider.generate_json
+```
+
+⇒ `breakdown()` ⛔ **không hề** nằm trên đường job. Đường khách đi — và đường Q-16 đo
+(`scene_count=20` → 19/20 cảnh) — là **director**:
+
+```
+jobs.py::_handle_generate
+  -> composer.director_prompt(params)          MOT loi nhac cho CA 20 canh
+  -> provider.generate_json(...)               MOT loi goi
+  -> _normalize_result(raw, params)            jobs.py:17 cat ve `scene_count`
+```
+
+`_director_cost` cũng tính theo `scene_count` của chính đường này. Nên chia lô phải
+vào **đây**, ⛔ không vào `breakdown.py`.
+
+### ⭐ Và đường đúng lại RẺ HƠN đường plan gốc
+
+`composer.director_prompt` (dòng 109-118) đã có sẵn **hai** ô cần thiết:
+
+| ô | plan gốc phải tự dựng | thực tế đã có |
+|---|---|---|
+| cỡ lô | tham số mới cho `breakdown` | `scenes=params["scene_count"]` |
+| lịch sử | ghép chuỗi tay vào lời nhắc | `existing=json.dumps(existing[:20])` — dựng cho đúng việc giữ liên mạch |
+
+⇒ Một lô = gọi lại `director_prompt` với `params` đã thay hai khoá ấy:
+
+```python
+for dau, cuoi in chia_lo.cac_lo(n):
+    p_lo = {**params, "scene_count": cuoi - dau + 1,
+            "existing_scenes": chia_lo.cua_so_lich_su(da_sinh)}
+    system, prompt = director_prompt(p_lo)
+    raw, tokens = provider.generate_json(system, prompt, model=model)
+    da_sinh += list(raw.get("scenes") or [])[:cuoi - dau + 1]
+    tong_tokens += tokens
+    bao_lo(len(da_sinh), n)
+```
+
+⛔ `breakdown.py` **KHÔNG đổi**. ⛔ Không tra `framework`. `_normalize_result` **không đổi**.
+
+### Ba giả định khác của plan cũng SAI, đã tra và sửa
+
+| plan gốc giả định | đo được |
+|---|---|
+| `library.khung_mac_dinh()` tồn tại | ⛔ **không có hàm nào tên vậy** — và nay không cần |
+| `tokens_used` trả `0` được | ⛔ `tests/test_130:73` **ghim** `result["tokens_used"] == 123` ⇒ phải **cộng dồn** qua các lô |
+| `ctx.user_id` có | ⛔ `JobContext.__init__(job_id, gpu_uuid)` — **không có** `user_id`. Lấy từ `db.get(Job, job_id).user_id` |
+
+⭐ Cả ba đều là chỗ plan **tự đánh dấu** *"người thi hành phải tra trước"*. Chúng lộ ra
+trong **một** lượt đo, trước khi viết dòng nào — đó là giá trị của việc ghi ⛔ ra thay vì
+viết một lời gọi trông hợp lý.
+
+### Task sau khi nắn
+
+| # | trước | sau |
+|---|---|---|
+| 1 | `chia_lo.py` số học thuần | **giữ nguyên** |
+| 2 | sửa `breakdown.py` | **`jobs.py::_sinh_theo_lo`** dùng `director_prompt` từng lô |
+| 3 | nối `bao_lo` ở `jobs.py` | **gộp vào Task 2** (cùng một hàm) |
+| 4 | `max_runtime_s` | **giữ nguyên** |
+| 5 | huỷ + quyết toán | **giữ nguyên**, `user_id` lấy từ `Job` |
+| 6 | đóng pha | **giữ nguyên** |
+
+⇒ 6 task → **5 task**. Các khối mã trong §6 (Task 2 cũ) ⛔ **không dùng nữa**; đọc §0b này.
+
+---
 ## 1. Global Constraints
 
 Mọi task đều phải thoả, ⛔ không nhắc lại trong từng task:

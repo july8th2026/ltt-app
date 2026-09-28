@@ -103,7 +103,6 @@ DISPOSITION = {
     # phut audio do tu tep (`duration_s` + `measured_from`), E2E qua worker.
     "transcript": (EXPOSE_V1, ("transcript.run",)),
     "audio_pause": (DEFER, ()),
-    "prompt_canh": (DEFER, ()),
     "video_assembly": (DEFER, ()),
     # An orchestrator, not a tool: publishing it publishes a runtime.
     "agent": (DEFER, ()),

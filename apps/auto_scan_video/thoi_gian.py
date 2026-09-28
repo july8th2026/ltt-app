@@ -121,7 +121,11 @@ TRAN_CHONG_LAN_MS = 200
 #:    `ke_hoach` đổi (hai khoá mới), nên một kế hoạch cũ đọc bằng mã mới sẽ báo
 #:    `0`/`0` cho hai khoá ấy — tức một lời khai SAI về nguyên nhân, ⛔ không
 #:    phải một trường thiếu. `kiem()` đọc `schema`, còn vân tay đọc số này.
-PHIEN_BAN_THOI_GIAN = 4
+#: 🔴 **4 → 5 (28/09): NẤC 5 thay CẢ HAI cỗ máy cắt.** `he_so_toc` của mọi đoạn
+#:    có thể bị nhân thêm `boi_nac5`, và `dat_tai_ms` đổi theo ⇒ kế hoạch khác
+#:    từng mili-giây. Thêm ba khoá mới (`boi_nac5`, `so_doan_nac5`,
+#:    `so_doan_vuot_tran_troi`) và hai cỗ máy cắt biến mất.
+PHIEN_BAN_THOI_GIAN = 5
 
 #: ⬆️ 1 → 2: bỏ trường `ban_do` (b4 hai giai đoạn). `kiem()` đọc số này, nên một
 #:    kế hoạch của lượt chạy cũ bị TỪ CHỐI thay vì được đọc thiếu một trường.
@@ -334,184 +338,154 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
     ket_ra = [max(b, _ms(float(m["ket"]))) for b, m in zip(bat_ra, muc, strict=True)]
 
     tong_ms = _ms(tong_giay)
-    ke: list[dict] = []
-    troi = 0                    # 🔑 nợ trôi, mang theo suốt bài
-    # ══ HAI cỗ máy cắt, HAI bộ đếm (đo 28/09, B15) ════════════════════════
-    #
-    # 🔴 **`so_doan_bi_cat` từng GỘP hai cỗ máy khác hẳn nhau vào một số**, và
-    #    điều đó làm một bản đối soát ⛔ không trả lời được *"khách mất câu vì
-    #    NỢ hay vì ĐUÔI?"*:
-    #
-    #      `so_doan_cat_vi_no`   nợ vượt `TRAN_TROI_SO_DOAN` ⇒ bỏ hẳn tiếng
-    #                            đoạn này để mua lại ngân sách của nó.
-    #      `so_doan_cat_vi_duoi` vòng `while` ở đuôi hàm `pop()` đoạn tràn quá
-    #                            `tong_ms` ⇒ **đây** là thứ cưỡng chế T2 /
-    #                            `D-ASV-03`, ⛔ không phải trần nợ.
-    #
-    # ⭐ Đo được 28/09: nâng `TRAN_TROI_SO_DOAN` lên vô cực (tắt cỗ máy thứ
-    #    nhất) mà `so_doan_bi_cat` **vẫn** là 1 ở `k = 1,15` — chính cỗ máy thứ
-    #    hai. Một số gộp đã che mất điều đó suốt.
-    so_cat_no = 0
-    so_cat_duoi = 0
-    con_tro = 0                 # mốc kết thúc của đoạn trước, sau khi đặt
     theo_cua = {str(k): str(v) for k, v in (nhom_gop or {}).items() if v}
-    he_so_nhom: dict[str, float] = {}   # ma đứng đầu -> hệ số của CẢ tệp
-    nhom_bi_cat: set[str] = set()       # ma đứng đầu đã bị bỏ ⇒ bỏ cả nhóm
 
-    for i, m in enumerate(muc):
-        ma = m["ma"]
-        dai = _ms(thoi_luong_tieng.get(ma, 0.0))
-        if dai <= 0:
-            raise ThoiGianError(
-                _t('Đoạn {ma} chưa có tiếng.').format(ma=ma))
-        dung_dau = theo_cua.get(str(ma), "")   # "" = đoạn này tự sở hữu tệp
+    def _dat(boi: float) -> tuple[list[dict], int, int, int]:
+        """Đặt TOÀN BỘ đoạn với hệ số nhân thêm `boi`. Hàm trong, thuần.
 
-        bat_goc = bat_ra[i]
-        ngan_sach = ngan_sach_doan(bat_ra, i, tong_ms)
-        noi_thoai = max(0, ket_ra[i] - bat_goc)
-        khoang_lang = max(0, ngan_sach - noi_thoai)
+        Trả `(ke, ket_cuoi_ms, troi_toi_da_ms, so_doan_vuot_tran_troi)`.
 
-        # ── Ngân sách dùng được: thoại + PHẦN khoảng lặng được mượn ────────
-        #    Chừa lại 30 % để bản lồng tiếng vẫn còn nhịp nghỉ.
-        dung_duoc = noi_thoai + int(khoang_lang * TY_LE_MUON_KHOANG_LANG)
+        🔑 **`boi` là NẤC 5.** `1.0` = bậc thang dừng ở nấc 4 (trôi). Lớn hơn =
+           mỗi đoạn bị nén thêm để **trả lại thời gian cho đuôi**, thay vì bỏ
+           một câu. Kẹp trên vẫn là `TRAN_KY_THUAT_ATEMPO` — qua đó là TIẾNG RÁC.
 
-        # ── Hệ số tốc độ: ĐỌC cái SẼ ĐƯỢC ÁP, ⛔ không tự bịa (B13-A4, 28/09) ─
-        #
-        # 🔴 **Bản trước tự tăng tốc tới `TRAN_TANG_TOC` để trả nợ, và ⛔ KHÔNG
-        #    MỘT AI thi hành con số ấy.** `ket_xuat.dung_lenh` chỉ nạp bản phối
-        #    (`-i duong_master`, `-map 1:a:0`); `duong_lop` chỉ bị đếm để đối
-        #    chiếu độ dài. Nên `he_so_toc` là một phép chia **chỉ có trong số
-        #    học của hàm này**: nó chừa cho đoạn một chỗ hẹp hơn thực tế, và
-        #    `am_master.tron_lo` rồi đặt vào đó một tệp DÀI HƠN. Đo trên
-        #    `asvr_47327a869a8f4597960048f09064740`: **12 đoạn** như vậy, và
-        #    `kiem()` ⛔ không bắt được vì nó kiểm chồng lấn trên `dai_ms` ĐÃ chia.
-        #
-        # ⭐ **Chủ dự án chốt 28/09: BỎ.** Thứ tự cứu là *"dùng khoảng lặng trước;
-        #    cho tiếng dàn trong đoạn; chỉ tăng tốc như phương án cuối"* — và nấc
-        #    cuối ấy ĐÃ có chủ: bậc thang nắn (`nan_cho_vua.co_gian_du_khong`,
-        #    mẫu số `ngan_sach` từ B13-A2). Giữ thêm một máy tăng tốc thứ hai ở
-        #    đây là nén 12 đoạn nữa, tức đi NGƯỢC lời chốt.
-        #
-        # 🔑 **Và vì thế nợ ⛔ không phình ra.** `ngan_sach_nan_s(khe, ngan_sach)`
-        #    = `khe + 0,7 × lặng` là **CÙNG một con số** với `dung_duoc` ngay
-        #    trên (`noi_thoai + 0,7 × khoang_lang`), nên một đoạn tràn `dung_duoc`
-        #    đã bị bậc thang nắn nén về ĐÚNG `dung_duoc` rồi ⇒ `troi = 0`. Máy
-        #    tăng tốc ở đây vốn giải **cùng một bài** bằng **sai mẫu số**.
-        #
-        # ⚠️ `he_so_da_ap is None` = *"người gọi ⛔ chưa có bản kê"* ⇒ đường LUI:
-        #    giữ NGUYÊN luật cũ (tự tăng tốc trả nợ, kẹp `TRAN_TANG_TOC`). Đường
-        #    sản phẩm (`giai_doan_thoi_gian.chay`) LUÔN truyền, nên nấc tự-tăng-
-        #    tốc ⛔ không còn nằm trên đường của khách; nó chỉ còn là hợp đồng cho
-        #    người gọi chưa biết hệ số nào sẽ được áp (`test_410` đi đường này).
-        #
-        # ⭐ Đoạn đi theo mượn hệ số của thành viên đứng đầu: MỘT tệp, `atempo`
-        #    MỘT lần (xem docstring, điểm 2).
-        if dung_dau:
-            he_so = he_so_nhom.get(dung_dau, 1.0)
-        else:
-            if he_so_da_ap is None:
-                he_so = 1.0
-                if troi > 0 and dai > 0:
-                    can = _tang_toc_can(dai + troi, dai)
-                    he_so = min(max(1.0, can), TRAN_TANG_TOC)
+        ⭐ **Đơn điệu**: `boi` tăng ⇒ mọi `dai_sau` giảm ⇒ `ket_cuoi` giảm. Nhờ
+           thế người gọi tìm được `boi` NHỎ NHẤT vừa đủ bằng chia đôi, ⛔ không
+           phải thử mò.
+        """
+        ke: list[dict] = []
+        troi = 0
+        con_tro = 0
+        troi_max = 0
+        vuot_tran_troi = 0
+        he_so_nhom: dict[str, float] = {}
+
+        for i2, m in enumerate(muc):
+            ma = m["ma"]
+            dai = _ms(thoi_luong_tieng.get(ma, 0.0))
+            if dai <= 0:
+                raise ThoiGianError(
+                    _t('Đoạn {ma} chưa có tiếng.').format(ma=ma))
+            dung_dau = theo_cua.get(str(ma), "")
+
+            bat_goc = bat_ra[i2]
+            ngan_sach = ngan_sach_doan(bat_ra, i2, tong_ms)
+            noi_thoai = max(0, ket_ra[i2] - bat_goc)
+            khoang_lang = max(0, ngan_sach - noi_thoai)
+            dung_duoc = noi_thoai + int(khoang_lang * TY_LE_MUON_KHOANG_LANG)
+
+            if dung_dau:
+                he_so = he_so_nhom.get(dung_dau, 1.0)
             else:
-                # ⛔ Kẹp TRÊN về trần KỸ THUẬT, ⛔ không về `TRAN_TANG_TOC`: chủ
-                #    dự án chốt 26/09 rằng trần thiết kế là CẢNH BÁO. Kẹp DƯỚI về
-                #    1,0 vì làm chậm lại ⛔ không nằm trong mô hình (ADR-003 D4).
-                he_so = min(TRAN_KY_THUAT_ATEMPO,
-                            max(1.0, float(he_so_da_ap.get(str(ma), 1.0))))
-            he_so_nhom[str(ma)] = he_so
-        dai_sau = int(dai / he_so) if he_so > 1.0 else dai
+                goc = float((he_so_da_ap or {}).get(str(ma), 1.0))
+                he_so = min(TRAN_KY_THUAT_ATEMPO, max(1.0, goc * boi))
+                he_so_nhom[str(ma)] = he_so
+            dai_sau = int(dai / he_so) if he_so > 1.0 else dai
 
-        # ── Đặt: sau mốc trước, không sớm hơn vị trí gốc quá nhiều ────────
-        #
-        # ⭐ Đoạn đi theo đặt ĐÚNG ở `con_tro`: tiếng của nó nằm ngay sau phần
-        #    trước TRONG CÙNG một tệp, nên mốc gốc của nó không còn nghĩa.
-        dat_tai = con_tro if dung_dau else max(bat_goc + troi,
-                                               con_tro - TRAN_CHONG_LAN_MS)
+            dat_tai = (con_tro if dung_dau
+                       else max(bat_goc + troi, con_tro - TRAN_CHONG_LAN_MS))
 
-        # ── Trần cứng cho nợ (ADR-003 D5) ─────────────────────────────────
-        tran = sum(ngan_sach_doan(bat_ra, j, tong_ms)
-                   for j in range(i, min(len(muc), i + TRAN_TROI_SO_DOAN)))
-        cat = 0
-        if dung_dau and dung_dau in nhom_bi_cat:
-            # ⭐ Thành viên đứng đầu đã bị bỏ ⇒ cả tệp bị bỏ. ⛔ Không cắt được
-            #    một phần của một tệp — xem docstring.
-            cat = dai_sau
-            dai_sau = 0
-            so_cat_no += 1
-            dat_tai = max(bat_goc, con_tro)
-            ket_thuc = dat_tai
-        elif not dung_dau and troi > tran:
-            # Nợ đã vượt ngân sách của ba đoạn kế tiếp. Dừng tích luỹ: **bỏ hẳn
-            # tiếng của đoạn này** — mất một câu, mua lại ngân sách của nó.
-            #
-            # 🔴 Bản đầu ở đây đặt lại `dat_tai = bat_goc` và `troi = 0`, và nó
-            #    SAI theo hai cách cùng lúc:
-            #
-            #      * lùi thời gian về sau mốc mà tiếng đoạn trước vẫn đang chạy
-            #        — phép kiểm chồng lấn bắt được ngay;
-            #      * xoá sạch nợ, tức giả vờ rằng bỏ **một** đoạn đủ trả **mọi**
-            #        khoản nợ. Không đúng: bỏ một đoạn chỉ mua lại đúng ngân
-            #        sách của đoạn đó.
-            #
-            # ⇒ Mô hình đúng: không lùi thời gian, và trừ nợ đúng phần mua được.
-            #    Nợ lớn thì cần nhiều lần cắt — điều đó tự giới hạn và trung thực.
-            #
-            # ⛔ QC phải ghi lại mỗi lần cắt (T12). Mất lời thoại là một khiếm
-            #    khuyết chất lượng, không phải một chi tiết kỹ thuật.
-            cat = dai_sau
-            dai_sau = 0
-            so_cat_no += 1
-            dat_tai = max(bat_goc, con_tro)
-            troi = max(0, troi - ngan_sach)
-            ket_thuc = dat_tai
-            # ⭐ Đoạn này có thể là thành viên ĐỨNG ĐẦU của một khe đã gộp: bỏ
-            #    nó là bỏ CẢ tệp, nên các `ma` đi theo phải bị bỏ cùng.
-            nhom_bi_cat.add(str(ma))
-        else:
+            # ── Trần nợ: CẢNH BÁO, ⛔ KHÔNG còn là cửa cắt (chốt 28/09) ────
+            tran = sum(ngan_sach_doan(bat_ra, j2, tong_ms)
+                       for j2 in range(i2, min(len(muc), i2 + TRAN_TROI_SO_DOAN)))
+            if not dung_dau and troi > tran:
+                vuot_tran_troi += 1
+
             ket_thuc = dat_tai + dai_sau
-
-            # ── Ghi/trả nợ ────────────────────────────────────────────────
             het_ngan_sach = bat_goc + dung_duoc
             if ket_thuc > het_ngan_sach:
                 troi = ket_thuc - het_ngan_sach
             else:
-                # Còn dư khoảng lặng: TRẢ NỢ trước, phần còn lại mới thành im lặng.
-                du = het_ngan_sach - ket_thuc
-                troi = max(0, troi - du)
+                troi = max(0, troi - (het_ngan_sach - ket_thuc))
+            troi_max = max(troi_max, troi)
 
-        ke.append({
-            "ma": ma,
-            "dat_tai_ms": dat_tai,
-            "dai_ms": dai_sau,
-            "he_so_toc": round(he_so, 4),
-            "cat_bot_ms": cat,
-            "troi_sau_ms": troi,
-            "ngan_sach_ms": ngan_sach,
-            "khoang_lang_ms": khoang_lang,
-        })
-        con_tro = ket_thuc
+            ke.append({
+                "ma": ma,
+                "dat_tai_ms": dat_tai,
+                "dai_ms": dai_sau,
+                "he_so_toc": round(he_so, 4),
+                "cat_bot_ms": 0,
+                "troi_sau_ms": troi,
+                "ngan_sach_ms": ngan_sach,
+                "khoang_lang_ms": khoang_lang,
+            })
+            con_tro = ket_thuc
 
-    # ── Đuôi: bản lồng tiếng không bao giờ dài hơn video ──────────────────
+        ket_cuoi = (ke[-1]["dat_tai_ms"] + ke[-1]["dai_ms"]) if ke else 0
+        return ke, ket_cuoi, troi_max, vuot_tran_troi
+
+    # ══ NẤC 5 (chủ dự án chốt 28/09): TRÀN thì NÉN THÊM, ⛔ KHÔNG bỏ câu ═════
     #
-    # 🔴 Áp dụng cho CẢ HAI chế độ, không riêng `natural`. Bản đầu chỉ cắt khi
-    #    `che_do == "natural"` — và đó là đọc nhầm hợp đồng: `MVP_CONTRACT.md` §6
-    #    nhắc `natural` vì đó là chế độ dễ tràn nhất, nhưng ràng buộc thật đến từ
-    #    **D-ASV-03**: luồng hình được **sao chép**, nên tổng thời lượng là một
-    #    con số cố định. `fit_original` tràn ít hơn, không có nghĩa là được phép.
+    # 🔴 **Hai bất biến từng là BẤT KHẢ cùng lúc**, và đo được 28/09:
+    #      · *"⛔ không bao giờ bỏ câu"*  (chủ dự án chốt 28/09)
+    #      · *"⛔ không bao giờ dài hơn nguồn"*  (T2 / `D-ASV-03`)
+    #    Bản trước giải bằng cách **nhường vế đầu**: `pop()` đoạn tràn ở đuôi hàm
+    #    (và một trần nợ cắt giữa bài). Đo được: ở `k = 1,15` trên phim thật,
+    #    `so_doan_bi_cat` vẫn là 1 dù trần nợ đã bị vô hiệu — popper đuôi mới là
+    #    thứ cưỡng chế T2.
     #
-    #    Lỗ này lộ ra ở `test_ban_long_tieng_KHONG_BAO_GIO_dai_hon_video` với
-    #    `fit_original` — đúng chỗ bản đầu không cắt.
-    ket_cuoi = ke[-1]["dat_tai_ms"] + ke[-1]["dai_ms"]
-    while ke and ke[-1]["dat_tai_ms"] + ke[-1]["dai_ms"] > tong_ms:
-        bo = ke.pop()
-        if bo["dai_ms"] > 0:
-            so_cat_duoi += 1
+    # ⭐ **Nay nhường vế thứ BA, cái ⛔ không ai khai là bất biến: tốc độ đọc.**
+    #    Một câu **đọc nhanh** thì khách NGHE ĐƯỢC nội dung và nghe thấy nó gấp;
+    #    một câu **bị bỏ** thì nội dung MẤT HẲN và khách ⛔ không biết mình mất
+    #    gì. Giữa hai khiếm khuyết, cái **nhìn thấy được** rẻ hơn cái **vô hình**.
+    #
+    # 🔑 **Vì sao nhân ĐỀU cả bài, ⛔ không dồn vào mấy câu cuối** (chọn có giá):
+    #      · người nghe nhận ra MỘT câu ở `2,0×` ngay lập tức; cả bài ở `1,05×`
+    #        thì gần như ⛔ không ai nghe ra — cùng một "món nợ" thời gian, trải
+    #        mỏng thì rẻ hơn dồn cục;
+    #      · dồn vào đuôi là làm hỏng đúng **phần kết**, chỗ thường mang câu
+    #        chốt;
+    #      · và nó giữ được tính ĐƠN ĐIỆU của `_dat`, nhờ đó `boi` nhỏ nhất tìm
+    #        được bằng chia đôi thay vì một phép dò cục bộ ⛔ không có gì bảo đảm.
+    #    ⚠️ **Cái giá:** một video chỉ tràn vì MỘT câu cuối vẫn bị nén **toàn
+    #       bài**. Đổi lại phần nén ấy rất nhỏ (`boi` là số nhỏ nhất vừa đủ), và
+    #       `boi_nac5` được ghi ra `outputs` nên cái giá ⛔ không vô hình.
+    ke, ket_cuoi, troi_toi_da, so_vuot_tran_troi = _dat(1.0)
+    boi_nac5 = 1.0
+    if tong_ms and ket_cuoi > tong_ms:
+        tran_boi = TRAN_KY_THUAT_ATEMPO      # `he_so` gốc >= 1,0 nên đây là trần
+        ke_h, ket_h, troi_h, vuot_h = _dat(tran_boi)
+        if ket_h > tong_ms:
+            # 🔴 **ĐIỂM VỠ THẬT của bậc thang này.** Mọi đoạn đã ở trần KỸ THUẬT
+            #    `2,0` mà bản lồng tiếng VẪN dài hơn nguồn. Qua `2,0` `atempo`
+            #    cho TIẾNG RÁC, nên ⛔ không còn nấc nào giữ được cả hai bất biến.
+            #
+            # ⛔ **NÉM, ⛔ không âm thầm bỏ câu.** Chủ dự án chốt 28/09 rằng bỏ
+            #    câu là điều ⛔ không được làm; một lượt chạy ĐỎ nói ra sự thật
+            #    ấy, còn một lượt chạy XANH thiếu ba câu thì ⛔ không.
+            # ⚠️ **Dùng LẠI `msgid` đã có trong catalog, số liệu đi RA NGOÀI
+            #    `_t()`.** Sửa một chữ trong `msgid` là tạo một mục MỚI, và
+            #    `pre-commit` (`ban-dich-thieu`) đỏ tới khi có bản EN —
+            #    `locale/` ⛔ không thuộc làn này. Phần chẩn đoán là SỐ, nên nó
+            #    ⛔ không cần dịch, và người vận hành cần nó hơn cần nó được dịch.
+            raise ThoiGianError(
+                _t('Bản lồng tiếng dài hơn video nguồn.')
+                + " (thua %d ms; moi doan da o tran ky thuat %.1f)"
+                % (ket_h - tong_ms, TRAN_KY_THUAT_ATEMPO))
+        lo, hi = 1.0, tran_boi
+        ke, ket_cuoi, troi_toi_da, so_vuot_tran_troi = ke_h, ket_h, troi_h, vuot_h
+        boi_nac5 = hi
+        for _ in range(24):
+            giua = (lo + hi) / 2.0
+            ke_g, ket_g, troi_g, vuot_g = _dat(giua)
+            if ket_g <= tong_ms:
+                hi, boi_nac5 = giua, giua
+                ke, ket_cuoi, troi_toi_da, so_vuot_tran_troi = (
+                    ke_g, ket_g, troi_g, vuot_g)
+            else:
+                lo = giua
+
     if not ke:
         raise ThoiGianError(
             _t('Bản lồng tiếng dài hơn video và không còn đoạn nào vừa.'))
-    ket_cuoi = ke[-1]["dat_tai_ms"] + ke[-1]["dai_ms"]
+    # ⚠️ **Dung sai `5e-4`, ⛔ không `1e-9`.** `he_so_toc` được `round(..., 4)`
+    #    khi ghi vào kế hoạch, nên so nó với đầu vào CHƯA làm tròn bằng một dung
+    #    sai nano sẽ đếm mọi đoạn có phần thập phân thứ năm là "nấc 5 đã nén" —
+    #    đo được: `boi_nac5 = 1,0` mà `so_doan_nac5 = 2` trên phim thật. Một bộ
+    #    đếm nói dối theo chiều PHÓNG ĐẠI cái giá ta đang trả.
+    so_nac5 = sum(1 for d in ke
+                  if float(d["he_so_toc"])
+                  > float((he_so_da_ap or {}).get(str(d["ma"]), 1.0)) + 5e-4)
 
     ke_hoach = {
         "schema": SCHEMA_KE_HOACH,
@@ -525,14 +499,28 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
         "thoi_luong_nguon_ms": _ms(tong_giay),
         "ket_cuoi_ms": ket_cuoi,
         "so_doan": len(ke),
-        # ⚠️ `so_doan_bi_cat` GIỮ NGUYÊN nghĩa "tổng số đoạn khách mất" — bốn
-        #    chỗ hạ nguồn đọc nó (`ban_dung`, `qc`, `tom_tat`, `test_411`) và
-        #    đổi nghĩa một khoá đang có là cách chắc chắn nhất để một trong bốn
-        #    chỗ ấy lệch. Hai khoá MỚI **thêm vào** để nói *vì sao*.
-        "so_doan_bi_cat": so_cat_no + so_cat_duoi,
-        "so_doan_cat_vi_no": so_cat_no,
-        "so_doan_cat_vi_duoi": so_cat_duoi,
-        "troi_toi_da_ms": max((d["troi_sau_ms"] for d in ke), default=0),
+        # 🔴 **`0` ở đây có NGHĨA MỚI từ 28/09: *"ta ⛔ KHÔNG BAO GIỜ bỏ câu"*,**
+        #    ⛔ không còn là *"lượt này may không phải bỏ"*. Chủ dự án chốt bỏ CẢ
+        #    HAI cỗ máy cắt — trần nợ và popper đuôi — và nấc 5 (nén thêm) thay
+        #    chỗ chúng. Một lượt ⛔ không vừa nữa thì `lap_ke_hoach` **NÉM**, chứ
+        #    ⛔ không giao một bản thiếu câu.
+        #
+        # ⛔ **GIỮ cả ba trường** dù chúng luôn `0`: bốn chỗ hạ nguồn đọc
+        #    `so_doan_bi_cat` (`ban_dung`, `qc`, `tom_tat`, `test_411`), và một
+        #    trường biến mất là một `KeyError` ở chỗ xa nhất. Chúng ⛔ không phải
+        #    trường CHẾT: chúng là lời KHAI *"⛔ không ai bị bỏ"*, và nếu một ngày
+        #    một cỗ máy cắt thứ ba xuất hiện thì đúng ba số này lớn lên.
+        "so_doan_bi_cat": 0,
+        "so_doan_cat_vi_no": 0,
+        "so_doan_cat_vi_duoi": 0,
+        # ⭐ NẤC 5 (28/09): `1,0` = ⛔ không phải nén thêm gì. > 1,0 = cái GIÁ đã
+        #    trả để ⛔ không bỏ câu nào, và nó phải NHÌN THẤY ĐƯỢC.
+        "boi_nac5": round(boi_nac5, 4),
+        "so_doan_nac5": so_nac5,
+        # ⭐ Trần nợ nay là CẢNH BÁO (khuôn `TRAN_TANG_TOC`, chốt 26/09): nó ⛔
+        #    không cắt gì nữa, nhưng nó vẫn nói được phim nào đang căng.
+        "so_doan_vuot_tran_troi": so_vuot_tran_troi,
+        "troi_toi_da_ms": troi_toi_da,
         "doan": ke,
     }
     kiem(ke_hoach)
@@ -661,6 +649,8 @@ def tom_tat(ke_hoach: dict) -> dict:
     nhanh = [d for d in doan if float(d["he_so_toc"]) > 1.0]
     return {
         "so_doan": len(doan),
+        # 🔴 Tu 28/09 con so nay LUON `0` — xem khoi `so_doan_bi_cat` o
+        #    `lap_ke_hoach`. `0` = *"ta KHONG BAO GIO bo cau"*.
         "so_doan_bi_cat": int(ke_hoach.get("so_doan_bi_cat") or 0),
         # ⛔ **`so_doan_cat_vi_{no,duoi}` CỐ Ý ⛔ KHÔNG ở đây.** Chúng nằm trong
         #    `ke_hoach` (artifact) và được `giai_doan_thoi_gian` xuất xuống

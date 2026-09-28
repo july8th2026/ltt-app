@@ -171,7 +171,7 @@ def test_4922_so_doan_bi_cat_la_TONG_cua_hai_co_may():
     assert tg.tom_tat(ke)["so_doan_bi_cat"] == ke["so_doan_bi_cat"]
 
 
-def test_4922_popper_DUOI_cat_KHI_tran_no_KHONG_cat():
+def test_4922_NAC5_nen_them_thay_vi_popper_duoi_cat():
     """🔴 **Phát hiện 28/09, và nó đảo ngược tiền đề của cả hạng mục.**
 
     Một đoạn ĐUÔI dài hơn phần video còn lại bị `pop()` bởi vòng `while` ở cuối
@@ -189,21 +189,51 @@ def test_4922_popper_DUOI_cat_KHI_tran_no_KHONG_cat():
        lại** và nhánh nợ vẫn nổ (đo được: 24 lần). Một phép "tắt" ⛔ không tắt là
        một tiền đề sai, và nó làm bài kiểm nói về một thứ khác.
     """
-    # Đoạn cuối bắt đầu ở 8 s, tiếng dài 5 s, video chỉ 10 s ⇒ tràn 3 s.
+    # Đoạn cuối bắt đầu ở 8 s, tiếng dài 2,5 s, video chỉ 10 s ⇒ tràn 0,5 s.
+    # ⭐ Nấc 5 cần hệ số ≥ 1,25 — TRONG trần kỹ thuật 2,0, nên nó cứu được.
     muc = [{"ma": "seg_0000", "bat": 0.0, "ket": 1.0, "chu": "a"},
            {"ma": "seg_0001", "bat": 8.0, "ket": 9.0, "chu": "b"}]
-    dai = {"seg_0000": 1.0, "seg_0001": 5.0}
+    dai = {"seg_0000": 1.0, "seg_0001": 2.5}
     ke = tg.lap_ke_hoach(muc, dai, tong_giay=10.0,
                          he_so_da_ap={"seg_0000": 1.0, "seg_0001": 1.0})
 
-    assert ke["so_doan_cat_vi_no"] == 0, (
-        "nợ khi bước vào đoạn cuối là 0 ⇒ nhánh cắt-vì-nợ ⛔ không thể chạy")
-    assert ke["so_doan_cat_vi_duoi"] == 1, (
-        "popper đuôi PHẢI cắt — nó là thứ cưỡng chế T2, và một bộ kiểm nói "
-        "ngược lại nghĩa là T2 đang do ai khác giữ")
-    assert ke["so_doan_bi_cat"] == 1
-    # ⭐ Và T2 vẫn đứng: `kiem()` đã chạy trong `lap_ke_hoach`.
+    # 🔴 **Viết lại 28/09 chiều: chủ dự án chốt bỏ CẢ HAI cỗ máy cắt.**
+    #    Ca dưới đây từng làm popper đuôi `pop()` đúng một đoạn. Nay NẤC 5 nén
+    #    thêm để nó vừa, và ⛔ KHÔNG đoạn nào biến mất.
+    assert ke["so_doan_cat_vi_no"] == 0
+    assert ke["so_doan_cat_vi_duoi"] == 0, (
+        "popper đuôi đã bị bỏ — nếu nó còn cắt thì nấc 5 ⛔ chưa thay được nó")
+    assert ke["so_doan_bi_cat"] == 0
+    assert len(ke["doan"]) == 2, "⛔ KHÔNG đoạn nào được biến mất khỏi kế hoạch"
+    assert all(d["dai_ms"] > 0 for d in ke["doan"])
+    # ⭐ Và nấc 5 phải THẬT SỰ đã trả giá: hệ số > 1 ở đoạn tràn.
+    assert ke["boi_nac5"] > 1.0, "nấc 5 phải nén thêm, ⛔ không im lặng bỏ qua"
+    # ⭐ T2 vẫn đứng: `kiem()` đã chạy trong `lap_ke_hoach`.
     assert ke["ket_cuoi_ms"] <= ke["tong_ms"]
+
+
+def test_4922_DIEM_VO_THAT_nem_chu_KHONG_am_tham_bo_cau():
+    """🔴 **Điểm vỡ THẬT của bậc thang: mọi đoạn đã ở trần KỸ THUẬT `2,0` mà bản
+       lồng tiếng VẪN dài hơn nguồn.**
+
+    Qua `2,0` `atempo` cho TIẾNG RÁC, nên ⛔ không còn nấc nào giữ được cả hai
+    bất biến (*"⛔ không bỏ câu"* + `D-ASV-03`).
+
+    ⭐ Khi đó `lap_ke_hoach` **NÉM**, ⛔ không âm thầm bỏ câu: một lượt chạy ĐỎ nói
+       ra sự thật ấy, còn một lượt XANH thiếu ba câu thì ⛔ không. Và câu ném phải
+       nói ĐƯỢC BAO NHIÊU ms — một thông điệp ⛔ không có số thì người vận hành
+       phải đi đo lại.
+    """
+    muc = [{"ma": "seg_0000", "bat": 0.0, "ket": 1.0, "chu": "a"},
+           {"ma": "seg_0001", "bat": 8.0, "ket": 9.0, "chu": "b"}]
+    dai = {"seg_0000": 1.0, "seg_0001": 5.0}      # 5 s / 2,0 = 2,5 s > 2 s còn lại
+    with pytest.raises(tg.ThoiGianError) as loi:
+        tg.lap_ke_hoach(muc, dai, tong_giay=10.0,
+                        he_so_da_ap={"seg_0000": 1.0, "seg_0001": 1.0})
+    cau = str(loi.value)
+    assert "dài hơn video" in cau
+    assert "500" in cau, f"phải nói THIẾU BAO NHIÊU ms, nhận: {cau}"
+    assert "2.0" in cau, "và nói đã ở trần nào"
 
 
 def test_4922_hai_khoa_moi_KHONG_vao_tom_tat_PHANG():
