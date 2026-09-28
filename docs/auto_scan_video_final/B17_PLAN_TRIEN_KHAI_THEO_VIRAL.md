@@ -341,7 +341,8 @@ B16 khai 8. W2 §2.2 buộc tách `vung_che` làm hai ⇒ **9**.
 | Làn | Việc | Tệp (chủ duy nhất) | Model | Chặn bởi |
 |---|---|---|---|---|
 | **P0-a** | `settings` dẫn xuất `wps_giong` + bảng đã đo + `min()` một chiều | `apps/auto_scan_video/cai_dat.py`, `ho_so_dich.py` | sonnet | — |
-| **P0-b** | Bỏ khai `edit_plan` khỏi `CHUOI`; hợp nhất 3 QC thành GĐ9 | `apps/auto_scan_video/pipeline.py` | sonnet | — |
+| **P0-b** | Bỏ khai `edit_plan` khỏi `CHUOI` (giữ module gọi được) | `apps/auto_scan_video/pipeline.py` | sonnet | — |
+| **P1-c** | Hợp nhất 3 QC thành GĐ9 | `apps/auto_scan_video/pipeline.py` | **opus** | P0-b |
 | **P0-c** | Dời **cắt đầu** vào `media_prepare` (trước ASR) | `apps/auto_scan_video/giai_doan_media.py`, `ke_cat.py` | sonnet | — |
 | **P1-a** | 🔑 Gộp demucs+whisper thành **một job GPU** `gpu_asr` | `apps/asv_gpu/jobs.py`, `manifest.py` | **opus** | P0-b |
 | **P1-b** | Tách `vung_che_tinh` / `vung_che_bam`, khai `sau=` | `apps/auto_scan_video/vung_che*.py` (mới) | **opus** | P0-b |
@@ -354,6 +355,11 @@ DÒNG LỆNH** (`am_master.py:537,752,1033,1081`), ⛔ không qua `-filter_compl
 ⇒ Gộp 10 node vào một lượt **làm dài chuỗi ấy**, và trần 32.767 ký tự của Windows là
 trần **thật**, ⛔ không phải trần giả thiết. Thuốc rẻ: `-filter_complex_script <tệp>`.
 ⛔ Đừng để P2 phát hiện điều này lúc ffmpeg đã báo lỗi khó đọc.
+
+🔑 **Vì sao hợp nhất 3 QC là P1-c, ⛔ không P0** (quyết 28/09): `QC_DO_LUONG` khai
+`job_type="asv_gpu"` ⇒ nó **xin lease GPU**. Gộp nó vào một bước ⛔ không-GPU là đúng lớp
+lỗi ở §3 — đổi nền đồng thời dưới chân một việc mà ⛔ không phép đo nào đỏ. Phải đi cùng
+P1-a (nơi ta đang sắp xếp lại ai giữ lease).
 
 ⚠️ **`[ĐỌC TRƯỚC]` cho P2**: W3 chỉ đọc **17%** thân `burn_phude`. Vùng
 `:6670-7263` (dựng dải che chi tiết) và thân `khung_filter_parts` / `text_wm_parts` /
