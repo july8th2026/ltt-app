@@ -1,5 +1,22 @@
 """Giai doan `edit_plan` — phan quyet "canh nao kem" cua GIAI DOAN 2.
 
+🔴 **28/09/2026 (B14) — QUYET DINH TAT, BO XUONG CON.** Chu du an chot BO
+   tinh nang "cat canh xau": *"Buoc nao Viral ⛔ khong co ma rui ro cao hong
+   he thong thi loai bo"*, va tin hieu canh xau la mot trong so do — Viral
+   ⛔ khong co gi tuong duong de doi chung (`xu_ly_chon.py` la tick hieu ung
+   cua khach, `cat_nho.py` chi do RANH GIOI, ⛔ khong khai niem xau/tot); va
+   `NGUONG_TI_LE_HINH_KEM` cua chinh module nay tu than la mot nguong TA TU
+   DAT, ⛔ khong co tien le.
+
+   ⛔ **KHONG rip giai doan khoi `pipeline.CHUOI`** — doi `CHUOI` la doi hop
+   dong ca day chuyen (`ha_nguon_cua`, van tay, lineage, `giai_doan_lech_
+   van_tay`), rui ro cua viec BO lon hon rui ro no dang gay. Thay vao do:
+   `chay()` VAN doc canh + do den/dung hinh (bo xuong song, `so_canh_hong`/
+   `do_phu_bang_chung` van bao dung), nhung goi `lap_ban(hieu_canh=())` —
+   MOI canh di qua nhanh "khong co bang chung — giu" da co san
+   (`ban_bien_tap._quyet_dinh_mot_canh`), nen `so_cat` LUON `0`. Xem chu
+   thich tai cho goi va truong `ly_do_khong_cat_canh_xau` trong `tom_tat`.
+
 ⭐ **26/09/2026: giai doan nay ⛔ KHONG goi model nao nua** (B1 §9b, nam can cu).
    Ba tieu chi cua no — *khong co loi thoai* · *toi den / chay sang* · *dung
    hinh* — deu do duoc **TAT DINH**, va ca ba bo do deu DA CO trong kho. Xem
@@ -151,8 +168,25 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    `NGUONG_TI_LE_HINH_KEM` cua module nay (xem `_do_cac_canh`) TRUOC khi
     #    toi day, nen `lap_ban` ⛔ khong can — va ⛔ khong duoc — nhan them
     #    tham so nguong (xem chu thich cua no ve `_cat_canh_le`).
+    #
+    # 🔴 **CHOT 28/09/2026 (B14) — chu du an BO tinh nang "cat canh xau".**
+    #    *"Bươc nao Viral ⛔ khong co ma rui ro cao hong he thong thi loai bo"*
+    #    — va V5 xac nhan Viral ⛔ khong co tin hieu canh xau nao de doi chieu
+    #    (`xu_ly_chon.py` la tick hieu ung cua khach, `cat_nho.py` chi do RANH
+    #    GIOI, ⛔ khong khai niem xau/tot). Nguong cua chinh module nay
+    #    (`NGUONG_TI_LE_HINH_KEM`) la nguong TA TU DAT, ⛔ khong doi chung duoc.
+    #
+    # ⭐ **⛔ KHONG rip bo giai doan** — xem docstring dau tep: doi `pipeline.
+    #    CHUOI` la doi hop dong ca day chuyen (`ha_nguon_cua`, van tay,
+    #    lineage, `giai_doan_lech_van_tay`). Thay vao do: TAT quyet dinh, GIU
+    #    bo xuong. `hieu_canh=()` (⛔ khong phai `hieu` that) buoc MOI canh di
+    #    qua nhanh `h is None` cua `_quyet_dinh_mot_canh` — "khong co bang
+    #    chung — giu", dung HOP DONG "mac dinh la GIU" da co san va da kiem,
+    #    ⛔ khong phai mot nhanh moi. `hieu`/`hong` VAN duoc tinh o tren (dong
+    #    146) va VAN vao `tom_tat` — bo xuong (doc canh, do den/dung hinh,
+    #    `so_canh_hong`) song, chi PHAN QUYET tat.
     ban = ban_bien_tap.lap_ban(preset=preset, chi_muc=ci,
-                               hieu_canh=hieu, ban_ghi=ban_ghi)
+                               hieu_canh=(), ban_ghi=ban_ghi)
     if hieu:
         # ⚠️ **Phien ban ffmpeg vao GHI CHU, tuc vao `ban.van_tay()`** —
         #    `sang_dict()` bam ca `ghi_chu`. Tu 26/09 quyet dinh cat LA ket qua
@@ -208,6 +242,16 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             "canh_hong": list(hong),
             "do_phu_bang_chung": (round(len(hieu) / len(ci.canh), 4)
                                   if ci.canh else 0.0),
+            # 🔴 CHOT 28/09/2026 (B14) — `so_cat` LUON 0: khong phai "lan nay
+            #    may khong thay canh xau" ma la "he thong khong con cat canh
+            #    xau nua". Xem chu thich tai `lap_ban(hieu_canh=())` o tren.
+            "cat_canh_xau_bi_tat": True,
+            "ly_do_khong_cat_canh_xau": (
+                "chu du an chot 28/09 (B14): bo tinh nang cat canh xau — "
+                "Viral khong co tin hieu tuong duong (xu_ly_chon.py la tick "
+                "hieu ung, cat_nho.py chi do ranh gioi), nguong cua module "
+                "nay la ta tu dat va rui ro cao. Giai doan van doc canh/do "
+                "den-dung-hinh (bo xuong song) nhung MOI quyet dinh la GIU."),
             **dict(ban.ghi_chu),
         },
     }

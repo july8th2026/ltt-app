@@ -1,6 +1,20 @@
 """DIEM DONG — tin hieu "duoi canh xau" cho `ke_cat` (B13 viec E2, 28/09).
 
-## Chu du an chot 28/09 — vi sao module nay ton tai
+🔴 **28/09/2026 (B14) — ⛔ KHONG NOI VAO DAY CHUYEN.** Chu du an chot BO tinh
+   nang cat canh xau ("Buoc nao Viral ⛔ khong co ma rui ro cao hong he thong
+   thi loai bo" — va Viral ⛔ khong co tin hieu canh xau nao de doi chung,
+   xem muc ngay duoi). `giai_doan_hinh_anh._ke_cat` **⛔ khong con goi**
+   `ung_vien_duoi_xau`/`doc_diem_dong` cua tep nay.
+
+   ⭐ **⛔ Dung xoa tep** — GIU vi hai thu van con gia tri du tinh nang tat:
+   (1) dinh nghia tin hieu diem dong (`mean(absdiff)`, 320x180, 5fps, dung
+   `motion.py` tham chieu) co the can lai neu sau nay chu du an doi y; (2)
+   phep do + bai hoc CPU (`TRAN_LUONG_FFMPEG` PHAI di kem CA `-filter_threads`
+   VA `-filter_complex_threads`, ⛔ khong chi `-threads` — xem "GIAI MA BANG
+   ffmpeg" duoi day) la mot bai hoc rieng, tach biet voi so phan cua E2, va
+   con dung cho BAT KY module nao khac trong kho goi `ffmpeg` voi bo loc.
+
+## Chu du an chot 28/09 — vi sao module nay ton tai (LICH SU, DA TAT — xem tren)
 
     "chi cat canh THAT SU xau; uu tien doan KHONG co tieng; thuong la hien
     tuong o DUOI canh (rung, chuyen canh loi, camera khong on dinh); tuyet

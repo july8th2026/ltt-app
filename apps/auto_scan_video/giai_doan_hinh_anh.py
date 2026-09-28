@@ -82,8 +82,8 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (assets, che_do_render as cdr, diem_dong, ke_cat as kc,
-               ket_xuat, lat_cat, nhap_media, pipeline)
+from . import (assets, che_do_render as cdr, ke_cat as kc, ket_xuat, lat_cat,
+               nhap_media, pipeline)
 from .giai_doan_media import ThieuNguon, _duong_doc_duoc
 
 log = logging.getLogger(__name__)
@@ -197,31 +197,8 @@ def ung_vien_tu_ban_bien_tap(ban, chi_muc) -> list[kc.UngVien]:
     return ra
 
 
-def _ung_vien_duoi_xau(chi_muc, duong_video: str, *, ffmpeg_bin: str
-                       ) -> list[kc.UngVien]:
-    """Ung vien "duoi canh xau" (E2, 28/09) — CANH BAO khi giai ma hong, ⛔
-    khong chan ca giai doan vi mot tin hieu THEM.
-
-    ⭐ Doc `diem_dong` tren CHINH `duong_video` (MP4 GD1) — cung mot tep se bi
-       cat, cung ly le voi `_ke_cat` doc do dai tu chinh tep chu khong tu ho
-       so. `diem_dong.doc_diem_dong` co the NEM (`ffmpeg` hong/qua han); day
-       la mot tin hieu BO SUNG cho quyet dinh cat, ⛔ khong phai mot buoc bat
-       buoc — mat no thi GD2 van chay tiep VOI cac ung vien tu ban bien tap.
-    """
-    if chi_muc is None or not getattr(chi_muc, "canh", ()):
-        return []
-    try:
-        diem = diem_dong.doc_diem_dong(duong_video, ffmpeg_bin=ffmpeg_bin)
-    except diem_dong.DiemDongLoi as exc:
-        log.warning("image_finish: khong doc duoc diem dong (%s) — bo qua "
-                    "tin hieu duoi canh xau, van dung ung vien tu ban bien "
-                    "tap", exc)
-        return []
-    return diem_dong.ung_vien_duoi_xau(chi_muc.canh, diem)
-
-
-def _ke_cat(db, kho: Storage, run, *, thoi_luong: float, duong_video: str,
-           ffmpeg_bin: str) -> tuple[kc.KeCat, tuple[tuple[float, float], ...]]:
+def _ke_cat(db, kho: Storage, run, *, thoi_luong: float
+            ) -> tuple[kc.KeCat, tuple[tuple[float, float], ...]]:
     """Ke cat cua lan chay + khe thoai da dung de dung no. ⭐ MOT noi tra loi cau
     *"ta bo gi"*.
 
@@ -235,11 +212,12 @@ def _ke_cat(db, kho: Storage, run, *, thoi_luong: float, duong_video: str,
        bao nhieu doan thoai (`kc.thoai_bi_xoa`) — tra thang tu day thay vi doc
        lai `TIMING_ALIGN` lan hai o `chay()`.
 
-    ⭐ **Gop ung vien "duoi canh xau" (E2, 28/09) VAO CUNG mot danh sach voi
-       ung vien tu ban bien tap, roi goi `kc.chon` MOT lan.** Hai nguon co the
-       CHONG LAN tren cung mot canh (ban bien tap muon bo CA canh, diem_dong
-       chi muon bo DUOI) — dung chinh ca CHONG LAN THAT ma E3 (ngan sach do
-       bang HOP) sinh ra de xu ly, ⛔ khong phai mot ca dung tay.
+    🔴 **⛔ KHONG con goi `diem_dong` nua (B14, 28/09).** Chu du an chot BO
+       tinh nang cat canh xau — xem `diem_dong.py` dau tep. `ung_vien_tu_ban_
+       bien_tap` mot minh la du: `EDIT_PLAN` nay LUON quyet GIU moi canh
+       (`giai_doan_ban_bien_tap.chay` goi `lap_ban(hieu_canh=())`), nen ham
+       nay tra ve mot danh sach RONG mot cach TU NHIEN — ⛔ khong can mot
+       nhanh `if` rieng o day de ep no rong.
     """
     from . import ban_bien_tap as bbt, canh as canh_mod
 
@@ -256,9 +234,8 @@ def _ke_cat(db, kho: Storage, run, *, thoi_luong: float, duong_video: str,
         ban = bbt.BanBienTap.tu_dict(goi.get("ban") or {})
         chi_muc = canh_mod.tu_dict(goi.get("chi_muc") or {})
 
-    ung_vien = (ung_vien_tu_ban_bien_tap(ban, chi_muc)
-               + _ung_vien_duoi_xau(chi_muc, duong_video, ffmpeg_bin=ffmpeg_bin))
-    ke = kc.chon(ung_vien, thoai=thoai, thoi_luong=thoi_luong)
+    ke = kc.chon(ung_vien_tu_ban_bien_tap(ban, chi_muc),
+                thoai=thoai, thoi_luong=thoi_luong)
     return ke, thoai
 
 
@@ -379,9 +356,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         if cach == cdr.CAT_MA_HOA_LAI:
             # ⭐ `ke_cat` ⛔ khong can biet `toc_do` nua (B6): khe thoai cua
             #    `timing_align`, ung vien cat va tep bi cat deu o truc NGUON.
-            ke, thoai = _ke_cat(db, kho, run, thoi_luong=thoi_luong,
-                               duong_video=duong_vao,
-                               ffmpeg_bin=nhap_media.media.ffmpeg_bin())
+            ke, thoai = _ke_cat(db, kho, run, thoi_luong=thoi_luong)
             # ⭐ MOT lan doc cua so, dung cho CA phep giao LAN bao cao: hai lan
             #    doc cung mot cai dat la hai cho co the lech (`cai_dat.doc` co the
             #    doc mot `run.settings` da bi ghi lai giua chuoi — xem

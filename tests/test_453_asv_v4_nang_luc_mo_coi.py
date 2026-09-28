@@ -288,6 +288,39 @@ MO_COI_DA_BIET = frozenset({
     #       de ep tran, giong `logo.py:179`) — hoac ham bi XOA neu V3 nhac nen
     #       bi huy.
     "tran_nhac_nen_byte",
+
+    # ── `doc_diem_dong`/`ung_vien_duoi_xau` (`diem_dong.py`, B13 viec E2,
+    #    28/09) — CO Y khong noi, va day la mot quyet dinh CHU DU AN da chot,
+    #    khong phai mot viec con do dang.
+    #
+    #    🔴 **28/09/2026 (B14): chu du an chot BO tinh nang "cat canh xau".**
+    #       *"Buoc nao Viral ⛔ khong co ma rui ro cao hong he thong thi loai
+    #       bo"* — va Viral ⛔ khong co tin hieu canh xau nao de doi chung
+    #       (xu_ly_chon.py la tick hieu ung, cat_nho.py chi do ranh gioi).
+    #       `giai_doan_hinh_anh._ke_cat` da THAO day noi (tung noi 28/09,
+    #       roi go trong cung ngay khi quyet dinh doi).
+    #
+    #    ⛔ **KHONG xoa tep** — dinh nghia tin hieu (`mean(absdiff)`, 320x180,
+    #       5fps, khop `motion.py` tham chieu) va bai hoc CPU (`ffmpeg` can
+    #       CA `-threads`/`-filter_threads`/`-filter_complex_threads`, ⛔
+    #       khong chi cai dau — do that tren video khach that) con gia tri
+    #       du tinh nang tat. Xem docstring dau `diem_dong.py`.
+    #
+    #    ⭐ DIEU KIEN GO RA: chu du an doi y mo lai tinh nang cat canh xau
+    #       (thi noi lai vao `_ke_cat`) — hoac ca module bi XOA neu vinh vien
+    #       khong dung nua.
+    "doc_diem_dong", "ung_vien_duoi_xau",
+
+    # ── `chuan_hoa_truoc_tts` (`chuan_hoa_doc.py`, N7, lan L7, 28/09) — CHUA
+    #    noi vao duong san pham. Docstring dau tep tu khai ro: "CHUA DUOC NOI
+    #    VAO DUONG SAN PHAM. `giai_doan_giong.py` thuoc lan L1 dang chay song
+    #    song — tep nay CHI la ham THUAN + test, se duoc noi sau khi L1 xong."
+    #    Ghi vao day boi L4 (28/09) chi de dong sach cong nay cho MOI lan —
+    #    ⛔ khong phai L4 quyet dinh so phan cua module nay.
+    #
+    #    ⭐ DIEU KIEN GO RA: L1 (hoac chu module) noi `chuan_hoa_truoc_tts`
+    #       vao `giai_doan_giong.py`.
+    "chuan_hoa_truoc_tts",
 })
 
 
