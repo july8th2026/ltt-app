@@ -72,28 +72,39 @@ async page => {
     return { status: r.status(), than };
   };
 
-  // ── 1. Lay mau 4 tu `/agent/templates` ───────────────────────────────────
-  const mau = await goi('/agent/api/v3/mau', undefined, 'GET');
-  so.mau_status = mau.status;
-  let m4 = null;
-  if (Array.isArray(mau.than?.items))
-    m4 = mau.than.items.find(x => x.id === 'ai-viet-mo-ta-roi-sinh-anh');
-  else if (Array.isArray(mau.than))
-    m4 = mau.than.find(x => x.id === 'ai-viet-mo-ta-roi-sinh-anh');
-  so.tim_thay_mau_4 = Boolean(m4);
-  check(Boolean(m4), `khong thay mau \`ai-viet-mo-ta-roi-sinh-anh\` `
-        + `(GET /agent/api/v3/mau -> ${mau.status}). Production da co mau 4 chua?`);
-  if (!m4) return { status: 'FAIL', loi, so };
-  so.bao_gia_mau = { toi_da: m4.toi_da, uoc_tinh: m4.uoc_tinh };
+  // ── 1-2. BAM NUT "Dung mau nay" — dung duong NGUOI DUNG di ───────────────
+  //
+  // 🔴 Ban dau toi goi `GET /agent/api/v3/mau` va nhan **404**: cua do ⛔ KHONG
+  //    TON TAI. Toi **doan** mot duong dan API tu ten mien nghiep vu.
+  //
+  //    Su that: mau ⛔ khong co cua API nao. Chung duoc **nhung vao HTML** qua
+  //    `mau_json` (`agent_templates.html`), va nut `[data-mau-dung]` goi
+  //    `POST /agent/api/v3/workflows` voi `document` lay tu bien `MAU` trong
+  //    module scope — tuc ⛔ khong doc duoc tu ngoai.
+  //
+  // ⭐ Nen phep do dung la **bam nut**, ⛔ khong phai goi mot cua ta tuong co.
+  //    Va no TOT HON ban cu ve mat do luong: no di dung duong khach di, nen no
+  //    kiem luon rang nut ay **con hoat dong** — thu mot loi goi API truc tiep
+  //    ⛔ khong bao gio noi duoc.
+  await page.goto(GOC + '/agent/templates',
+                  { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-  // ── 2. Tao workflow TU mau ───────────────────────────────────────────────
-  const tao = await goi('/agent/api/v3/workflows',
-                        { ten: 'DO run hoan tat 28-09', document: m4.document });
-  so.tao_status = tao.status;
-  check([200, 201].includes(tao.status), `tao workflow -> ${tao.status}`);
-  const wid = tao.than?.id;
+  const nut = page.locator('[data-mau-dung="ai-viet-mo-ta-roi-sinh-anh"]');
+  so.thay_nut_mau_4 = await nut.count() > 0;
+  check(so.thay_nut_mau_4,
+        'khong thay nut [data-mau-dung="ai-viet-mo-ta-roi-sinh-anh"] tren '
+        + '/agent/templates. Production da co mau 4 chua?');
+  if (!so.thay_nut_mau_4) return { status: 'FAIL', loi, so };
+
+  // Bam, roi doi dieu huong sang `/agent/workflows/<id>`.
+  await Promise.all([
+    page.waitForURL(/\/agent\/workflows\/[0-9a-f-]{8,}/, { timeout: 60000 }),
+    nut.click(),
+  ]);
+  const wid = (page.url().match(/\/agent\/workflows\/([0-9a-f-]+)/) || [])[1];
+  so.workflow_id = String(wid || '').slice(0, 8);
+  check(Boolean(wid), `khong lay duoc workflow id tu URL: ${page.url()}`);
   if (!wid) return { status: 'FAIL', loi, so };
-  so.workflow_id = String(wid).slice(0, 8);
 
   // ── 3. Publish ───────────────────────────────────────────────────────────
   const pub = await goi(`/agent/api/v3/workflows/${wid}/publish`, {});
