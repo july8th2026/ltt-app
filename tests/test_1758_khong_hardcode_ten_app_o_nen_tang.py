@@ -105,5 +105,14 @@ def test_danh_sach_mien_tru_khong_chua_thu_da_bien_mat(hardcode):
 
 def test_phep_kiem_nay_THUC_SU_doc_duoc_nguon():
     # 🔑 Đối chứng: đường dẫn sai ⇒ mọi bài trên xanh vì không đo gì.
-    assert len(_ten_tool_that()) >= 19
+    # ⚠️ **19 -> 18 va 17 -> 16 (28/09/2026).** `apps/prompt_canh` bi xoa
+    #    (`0c2aabab`) va no mang theo DUNG MOT tool `prompt_canh.run` — doc lai
+    #    tu `git show 0c2aabab^:apps/prompt_canh/manifest.py:61-64`.
+    #    ⭐ Ba diem chot da do de duoc HA moc, khong phai mot:
+    #      1. CA BON phep dem tut DUNG 1 (19->18 x3, 17->16), khong phai 2+;
+    #      2. `test_khong_app_nao_hong_luc_nap` XANH => khong app nao rung khoi
+    #         registry vi sai kieu, tuc so tut KHONG phai do lo hong nay canh;
+    #      3. ten tool mat di khop app bi xoa.
+    #    ⛔ Thieu bat ky diem nao thi ha moc la GIAU mot hoi quy that.
+    assert len(_ten_tool_that()) >= 18
     assert sum(1 for g in THU_MUC for _ in g.rglob("*.py")) >= 100

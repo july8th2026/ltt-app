@@ -45,7 +45,16 @@ def test_danh_sach_mien_tru_khong_chua_thu_da_xong():
 
 def test_phep_kiem_nay_thuc_su_doc_duoc_registry():
     # Doi chung: `tat_ca()` rong thi hai bai tren deu xanh ma khong do gi.
-    assert len(tat_ca()) >= 19
+    # ⚠️ **19 -> 18 va 17 -> 16 (28/09/2026).** `apps/prompt_canh` bi xoa
+    #    (`0c2aabab`) va no mang theo DUNG MOT tool `prompt_canh.run` — doc lai
+    #    tu `git show 0c2aabab^:apps/prompt_canh/manifest.py:61-64`.
+    #    ⭐ Ba diem chot da do de duoc HA moc, khong phai mot:
+    #      1. CA BON phep dem tut DUNG 1 (19->18 x3, 17->16), khong phai 2+;
+    #      2. `test_khong_app_nao_hong_luc_nap` XANH => khong app nao rung khoi
+    #         registry vi sai kieu, tuc so tut KHONG phai do lo hong nay canh;
+    #      3. ten tool mat di khop app bi xoa.
+    #    ⛔ Thieu bat ky diem nao thi ha moc la GIAU mot hoi quy that.
+    assert len(tat_ca()) >= 18
 
 
 def test_khong_app_nao_hong_luc_nap():
@@ -55,7 +64,7 @@ def test_khong_app_nao_hong_luc_nap():
     `_validate_hop_dong_v2` ném **bên trong** `discover()`, và `discover()` nuốt
     nó vào `item.error` (`registry.py:1642-1648`). Hậu quả: MỌI tool của app đó
     biến khỏi `tat_ca()` — nên mọi bài dạng "không tool nào thiếu" vẫn XANH,
-    chỉ hai phép ĐẾM (`>= 19`, `== 17`) bắt được. Bài này làm cái hỏng lộ ra
+    chỉ hai phép ĐẾM (`>= 18`, `== 16`) bắt được. Bài này làm cái hỏng lộ ra
     kèm TÊN APP và LỖI, thay vì để đọc một con số đếm lệch rồi đoán.
     """
     hong = [(it.manifest.slug, it.error) for it in registry.discover() if it.error]
@@ -63,12 +72,12 @@ def test_khong_app_nao_hong_luc_nap():
         f"{slug}: {loi}" for slug, loi in hong)
 
 
-def test_17_tool_len_duoc_palette_workflow():
+def test_16_tool_len_duoc_palette_workflow():
     # ⭐ Chốt SỐ ở đây là cố ý, ngược với docstring đầu tệp: đây là phép duy
     #    nhất bắt được một app rụng khỏi registry vì sai kiểu (xem
     #    `test_khong_app_nao_hong_luc_nap`). Hai bài cùng canh một lỗ.
     app = {t for t in nut.tat_ca() if t.startswith("app.")}
-    assert len(app) == 17, sorted(app)
+    assert len(app) == 16, sorted(app)
     assert "app.video.upscale" not in app and "app.image.upscale" not in app
 
 
@@ -122,7 +131,7 @@ def test_may_doc_AST_nay_thuc_su_phan_biet_duoc():
     người sửa phải chọn một tool KHÁC làm mẫu âm — không được xoá đối chứng.
     """
     khai = _khai_side_effect_trong_nguon()
-    assert len(khai) >= 19, f"chi doc duoc {len(khai)} ToolSpec trong nguon"
+    assert len(khai) >= 18, f"chi doc duoc {len(khai)} ToolSpec trong nguon"
     am = sorted(t for t in CHUA_DU if khai.get(t) is False)
     assert am == sorted(CHUA_DU), (
         "mau am mat: may doc AST khong con phan biet duoc khai/khong khai", khai)
