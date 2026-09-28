@@ -108,6 +108,77 @@ hạ `vad_onset` — thì bản chép ra **y hệt**, và tôi sẽ kết luận
 văn Hán), và ⛔ không dấu câu thì **mọi** phép chia đoạn hạ nguồn mất chỗ bám
 (11 → 78 đoạn). ⇒ Đó là **quyết định của chủ dự án**, ⛔ không phải của làn.
 
+### 1.4 🔴 BA cần gạt của `asr_options` là NO-OP trên đường ta đang chạy
+
+Chủ dự án dặn 28/09: *"gặp vấn đề khó thì check cốt từ `D:\Viral` để lấy lời
+giải."* Làm thế, và nó dẫn tới một phép kiểm trên **chính gói đã cài**.
+
+Đếm trong cả `C:\LTTPlatform\whisperx-venv\Lib\site-packages\whisperx\asr.py`:
+
+```
+temperatures                 1 lan / ca tep
+compression_ratio_threshold  1
+log_prob_threshold           1
+no_speech_threshold          1
+prompt_reset_on_temperature  1
+```
+
+**Đúng một lần** = chỉ ở `default_asr_options` (dòng 371-398). ⛔ **Không ai đọc
+lại.** Và `generate_segment_batched` — đường `FasterWhisperPipeline.transcribe`
+thật sự đi — chỉ đọc `initial_prompt` · `without_timestamps` · `prefix` ·
+`hotwords` · `beam_size` · `patience` · `length_penalty` · `suppress_*` ·
+`no_repeat_ngram_size` · `repetition_penalty`.
+
+⇒ ⛔ **Không nấc lui theo temperature · ⛔ không kiểm `no_speech` · ⛔ không kiểm
+tỉ lệ nén.** Một khối giải mã tệ thì **MẤT, ⛔ không có lượt thử lại nào**.
+
+| cần gạt | phán quyết |
+|---|---|
+| `no_speech_threshold` · `compression_ratio_threshold` · `hallucination_silence_threshold` | 🔴 **NO-OP** trên đường batched |
+| `initial_prompt` | ✅ **CÓ ăn** |
+
+⭐ **Đây là lý do việc TÁCH (A)/(B) ở §1.3 chưa đủ.** Tách xong ta biết thủ phạm ở
+tầng giải mã — rồi suýt vặn **ba cần gạt ⛔ không nối vào đâu cả**, và kết quả sẽ
+là *"⛔ không đổi một ký tự"*, đọc y hệt *"giả thuyết sai"*. Cùng bẫy
+`OMP_NUM_THREADS` ở B12 §3: **một cần gạt mang đúng TÊN việc ta muốn vẫn có thể
+⛔ không nối vào đâu.** ⇒ 🔑 *Sau khi biết TẦNG nào hỏng, còn phải hỏi **cần gạt
+của tầng đó có được ĐỌC không** — và câu ấy chỉ có trong mã gói.*
+
+### 1.5 Lời giải của `D:\Viral` — HAI cơ chế, ⛔ không phải một ngưỡng
+
+**(1) `localize.py:598-616` — nấc lui theo ĐỘ PHỦ.** Đo thật của họ: *"video rap
+65 s ra **2 câu** với VAD, **24 câu** khi tắt VAD; hạ `WHISPER_VAD_THR` **VÔ TÁC
+DỤNG** với nhạc."*
+```
+_phu_kem = _vdur > 30 and (len(segs) <= 2 or _phu_cuoi < _vdur * 0.6)
+   -> chay LAI 1 lan voi vad_filter=False, GIU ban phu tot hon
+```
+⭐ **Đó chính là CỬA A/B của B2, nhưng biến thành HÀNH ĐỘNG.** Ta đo `phu_song`
+rồi **cảnh báo**; họ đo rồi **chạy lại và chọn bản tốt hơn**. Cùng phép đo, khác
+kết cục — và ngưỡng của ta (`76,9 %` vs VAD `89,9 %`) **nhạy hơn** trigger 60 %
+của họ.
+
+**(2) Họ ⛔ KHÔNG dùng whisperx batched.** Họ gọi faster-whisper **thường**, nơi
+các cần gạt ấy **CÓ** ăn: `temperature=[0,0.2..1.0]` (họ ghi rõ `temperature=0.0`
+cố định **TẮT** cơ chế tự-giải-mã-lại), `compression_ratio_threshold=2.4`,
+`no_speech_threshold=0.4`, `hallucination_silence_threshold=2.0`.
+
+🔑 **Và kho TA ĐÃ CÓ đúng đường đó**: `transcription._transcribe_faster`. Nay nó
+chỉ chạy khi sidecar chết ⇒ nó là **ứng viên cho lượt SỬA CHỮA**.
+⚠️ Nhưng nó là nhánh `fallback_unaligned`: mốc từ **có** mà ⛔ không qua căn cưỡng
+bức ⇒ kém chính xác hơn, và `timing_align` bám vào mốc đó. Kho đã có khuôn khai
+suy giảm (`_khai_suy_giam_can_chinh()`) — ⭐ dùng lại, ⛔ đừng để một bản ghi trộn
+hai chất lượng mốc mà ⛔ không khai.
+
+**(3) ⭐ Quà thêm cho B1** (`localize.py:620-622`): họ lọc ảo giác theo chiều
+**NGƯỢC** với ta —
+```
+_dur >= 6.0 and _nchar <= 10 and _nchar / max(_dur, 0.1) < 0.6   -> BO
+```
+tức **quá ÍT** ký tự mỗi giây trên một đoạn DÀI. Ta chỉ có
+`NGUONG_KY_TU_MOI_GIAY = 30` (quá NHIỀU). **Hai đầu của cùng một trục, và ta đang
+mù một đầu.**
+
 ### 1.4 🔑 Và ta ĐÃ ĐO đại lượng đúng rồi — ⛔ không ai đọc nó
 
 `phu_song = 211,56` nằm trong `transcribe.outputs` của **mọi** lượt chạy.
