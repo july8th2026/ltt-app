@@ -226,7 +226,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                #    dinh san pham la BO QUA (khoang lang dung do dai khe), va
                #    ca giao uoc cua quyet dinh ay la **dem duoc**: mot khach
                #    mat mot cau thoai ⛔ khong duoc phep lang le. Xem `[F0]`.
-               "so_doan_im_lang": 0}
+               "so_doan_im_lang": 0,
+               # ⭐ NẤC 0: tổng giây lặng đã xén khỏi audio TTS. Đứng riêng một
+               #    khoá vì nó là thứ DUY NHẤT nói được *"nấc 0 có ăn không"* —
+               #    một lượt báo `0,0` là một lượt nấc 0 ⛔ không chạy (hoặc mọi
+               #    tệp đều không phải PCM 16-bit), ⛔ không phải "không có lặng".
+               "giay_xen_lang": 0.0}
     #: `ma` cua tung doan im lang — ⛔ khong chi mot con so. Mot bao cao noi
     #: "1 doan im lang" buoc nguoi doc di tim; mot bao cao noi `seg_0002` thi
     #: khong. Cung ly do voi `vi_sao_hong` (Task 25, Bug 2).
@@ -703,6 +708,13 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    khong tin header cua may sinh tieng — cung ly do
             #    `apps/ltt_voice` doi chieu hai phia va ghi log khi lech.
             tep = thu_muc / f"{m['ma']}.wav"
+            # ══ NẤC 0 (28/09): xén lặng TRƯỚC khi ĐO ═══════════════════════
+            #
+            # 🔑 Thứ tự là toàn bộ giá trị: `kiem_tep_tieng` đo con số đi vào
+            #    `ban_ke.giay`, rồi vào MẪU SỐ của `he_so_co_gian`. Xén SAU khi
+            #    đo là đo một đại lượng khách ⛔ không nghe.
+            wav, _xen = xen_lang_hai_dau(wav)
+            dong_ho["giay_xen_lang"] += _xen
             tep.write_bytes(wav)
             # ── Mot tep khong dung duoc phai GOI TEN doan da sinh ra no ────
             #
@@ -727,7 +739,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    thay vi chi do "doc ra vuot khe bao nhieu" (`lech`).
             _bg = nan_cho_vua.ban_ghi_luot_doc(
                 m["ma"], vong=so_vong, giay=giay, khe=khe,
-                giay_doan=giay_uoc_theo_ma.get(str(m["ma"])))
+                giay_doan=giay_uoc_theo_ma.get(str(m["ma"])),
+                # ⭐ NẤC 0 đi theo TỪNG LƯỢT ĐỌC, ⛔ không thành một khoá PHẲNG:
+                #    mỗi khoá phẳng mới của `tom_tat` phải được khai ở
+                #    `asv_doi_soat.KHOA_{CAN,BO_QUA_CO_Y}` (`test_408` chốt hai
+                #    chiều) và `tools/` ⛔ không thuộc làn này. Đi đường này còn
+                #    ĐÚNG HƠN: nó nói xén được bao nhiêu ở ĐOẠN NÀO, thay vì một
+                #    con số gộp bắt người đọc đi tìm.
+                giay_xen=_xen)
             luot_doc.append(_bg)
             luot_cua_doan.append(_bg)
 
@@ -1030,6 +1049,105 @@ def _lan_doc_lai(db, run) -> dict[str, int]:
           for d in su_dung.cac_dong(db, run, stage=pipeline.QC, item_key=DON_VI_SUA)
           if d.nang_luc == NANG_LUC_VONG_SUA]
     return sua_chua.lan_doc_lai(ke)
+
+
+#: NẤC 0 của bậc thang (chủ dự án chốt 28/09) — `DUB_TRIM_SIL` của Viral.
+#:
+#: Ngưỡng lặng, tính bằng biên độ tuyệt đối trên mẫu `int16`.
+#: `-50 dBFS` × 32768 = **103,6** ⇒ lấy 104. Cùng ngưỡng Viral dùng.
+_NGUONG_LANG_INT16 = 104
+#: Cửa sổ 10 ms. ⛔ **Không xét từng mẫu**: một mẫu lẻ vượt ngưỡng ⛔ không phải
+#: tiếng, và xét từng mẫu sẽ giữ lại gần như toàn bộ khoảng lặng.
+_CUA_LANG_MS = 10
+#: SÀN tuyệt đối: ⛔ **không bao giờ** xén xuống dưới con số này.
+#:
+#: 🔴 `giong_noi.kiem_tep_tieng` NÉM *"Tệp tiếng sinh ra quá ngắn"*, và một khe
+#:    **CỐ Ý im lặng** (Task 25) là một tệp lặng từ đầu đến cuối — xén nó "đúng"
+#:    là xén về **0 giây** và làm chết cả lượt chạy.
+_SAN_XEN_S = 0.20
+
+
+def xen_lang_hai_dau(wav: bytes) -> tuple[bytes, float]:
+    """NẤC 0: xén lặng đầu/cuối **TRONG audio TTS**, trước khi ĐO độ dài.
+
+    Trả `(wav mới, số giây đã xén)`. Hàm **THUẦN**: ⛔ không đọc tệp, ⛔ không gọi
+    ffmpeg, ⛔ không chạm kho.
+
+    🔑 **Vì sao nó là NẤC 0, tức chạy TRƯỚC mọi phép tăng tốc.** Máy sinh tiếng
+       thêm lặng ở hai đầu, và phần lặng ấy đi thẳng vào con số mà
+       `kiem_tep_tieng` đo ⇒ vào `ban_ke.giay` ⇒ vào MẪU SỐ của `he_so_co_gian`.
+       Tức ta đang **nén giọng người để nhét vừa một khoảng im lặng**.
+
+    ⭐ **Đo trên lượt thật `asvr_47327a869a8f4597960048f09064740`** (69 tệp sở
+       hữu, 122,56 s tổng): lặng đầu **4,98 s** + lặng cuối **8,67 s** =
+       **13,65 s** = **11,1 %** tổng độ dài, ~198 ms mỗi đoạn. Đủ để đưa số đoạn
+       vượt trần `1,15` từ **2 → 0** và đẩy điểm vỡ của popper đuôi từ
+       `k = 1,15` lên `k = 1,35`.
+
+    ⚠️ **Chỉ nhận PCM 16-bit.** Mọi định dạng khác trả về **nguyên vẹn** kèm
+       `0.0` — ⛔ không đoán, ⛔ không ném. Một phép xén sai trên định dạng lạ là
+       một tệp tiếng hỏng giao cho khách; trả nguyên vẹn chỉ là mất một tối ưu.
+
+    ⛔ **Tệp lặng HOÀN TOÀN trả về nguyên vẹn** — xem `_SAN_XEN_S`.
+    """
+    import array
+    import wave
+
+    # ⛔ **Bắt ĐÚNG hai lỗi `wave` ném, ⛔ không `except Exception`.** Một phép
+    #    nuốt lỗi rộng ở đây sẽ biến một con bọ THẬT (mã tôi viết sai) thành
+    #    "định dạng lạ" và trả về nguyên vẹn — tức nấc 0 im lặng thôi chạy trên
+    #    MỌI đoạn mà ⛔ không ai biết. Và nó phải NÓI: `log.warning`, vì một tệp
+    #    tiếng ⛔ không phải PCM 16-bit là tin đáng biết về máy sinh tiếng.
+    try:
+        with wave.open(io.BytesIO(wav), "rb") as w:
+            n, sr, sw, ch = (w.getnframes(), w.getframerate(),
+                             w.getsampwidth(), w.getnchannels())
+            if sw != 2 or n <= 0 or sr <= 0 or ch <= 0:
+                log.warning(
+                    "asv nac0: bo qua xen lang - wav %d kenh, %d byte/mau, "
+                    "%d Hz, %d khung (chi nhan PCM 16-bit)", ch, sw, sr, n)
+                return wav, 0.0
+            raw = w.readframes(n)
+    except (wave.Error, EOFError) as exc:
+        log.warning("asv nac0: bo qua xen lang - khong doc duoc wav: %s", exc)
+        return wav, 0.0
+
+    mau = array.array("h")
+    try:
+        mau.frombytes(raw)
+    except ValueError as exc:
+        log.warning("asv nac0: bo qua xen lang - so byte le: %s", exc)
+        return wav, 0.0
+    mot_kenh = array.array("h", mau[::ch]) if ch > 1 else mau
+    if not mot_kenh:
+        return wav, 0.0
+
+    buoc = max(1, int(sr * _CUA_LANG_MS / 1000))
+    dinh = [max((abs(x) for x in mot_kenh[i:i + buoc]), default=0)
+            for i in range(0, len(mot_kenh), buoc)]
+    dau = 0
+    while dau < len(dinh) and dinh[dau] < _NGUONG_LANG_INT16:
+        dau += 1
+    if dau >= len(dinh):
+        # Ca tep lang — mot khe CO Y im lang. Tra nguyen ven.
+        return wav, 0.0
+    cuoi = len(dinh) - 1
+    while cuoi > dau and dinh[cuoi] < _NGUONG_LANG_INT16:
+        cuoi -= 1
+
+    f0 = dau * buoc
+    f1 = min(len(mot_kenh), (cuoi + 1) * buoc)
+    if (f1 - f0) / sr < _SAN_XEN_S:
+        return wav, 0.0
+
+    moi = mau[f0 * ch:f1 * ch] if ch > 1 else mau[f0:f1]
+    ra = io.BytesIO()
+    with wave.open(ra, "wb") as w2:
+        w2.setnchannels(ch)
+        w2.setsampwidth(2)
+        w2.setframerate(sr)
+        w2.writeframes(moi.tobytes())
+    return ra.getvalue(), max(0.0, (len(mot_kenh) - (f1 - f0)) / sr)
 
 
 def _van_tay(ma: str, chu: str, ma_giong: str, preset: str, *,

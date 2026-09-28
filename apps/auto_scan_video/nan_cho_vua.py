@@ -523,7 +523,8 @@ def ket_luan(ma: str, *, chu: str, giay: float, khe: float,
 
 
 def ban_ghi_luot_doc(ma: str, *, vong: int, giay: float, khe: float,
-                     giay_doan: float | None = None) -> dict:
+                     giay_doan: float | None = None,
+                     giay_xen: float | None = None) -> dict:
     """MOT ban ghi cho MOT LUOT DOC — ⛔ khong phai cho mot doan.
 
     🔴 **Vi sao phai co (do duoc 25/09).** Luot `asvr_9fc9cc89` (275 s, 106 doan)
@@ -559,6 +560,16 @@ def ban_ghi_luot_doc(ma: str, *, vong: int, giay: float, khe: float,
           "nen_viet_lai": bool(nen_viet_lai(giay, khe))}
     if giay_doan is not None:
         ra["giay_doan"] = round(float(giay_doan), 3)
+    # ⭐ NAC 0 (B15, 28/09): so giay LANG da xen khoi audio TTS TRUOC khi do
+    #    `giay`. Thieu no thi `giay` doc nhu do dai cua tieng, trong khi no la
+    #    do dai SAU mot phep bien doi — va ⛔ khong ai biet phep do da chay.
+    #
+    # ⛔ Vang mat (`None`) hoac `0.0` la HAI dieu khac nhau, va cho nay giu dung
+    #    khuon `giay_doan` o tren: `None` = luot doc nay ⛔ KHONG di qua nac 0
+    #    (mot luot chay cu, hoac mot tep ⛔ khong phai PCM 16-bit); `0.0` = da di
+    #    qua va ⛔ khong co gi de xen.
+    if giay_xen is not None:
+        ra["giay_xen"] = round(float(giay_xen), 3)
     return ra
 
 
