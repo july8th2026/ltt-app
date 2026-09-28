@@ -28,7 +28,35 @@ from platform_core.models import WorkflowTrigger
 #: đây chứ không một bảng cấu hình: spec nói nó **đổi được không cần deploy mã**
 #: nhưng kho này chưa có kho settings chạy-được, và một bảng giả vờ đổi được
 #: tệ hơn một hằng nói thật.
-WEBHOOK_MOI_PHUT_MOI_TRIGGER = 60
+#:
+#: 📈 **60 → 300 ngày 28/09/2026, chủ dự án chốt:** *"hạn mức theo khuyến nghị,
+#:    nên để cao chút tránh nghẽn"*. 300/phút = **5 lượt/giây cho MỖI trigger**.
+#:
+#: ⭐ Vì sao nâng được mà ⛔ không mở toang, và vì sao con số này ⛔ **không** phải
+#:    trần bảo vệ thật của hệ:
+#:
+#:      `tao_run.tao_run`   trần credit · khoản giữ chỗ · hạn mức run đồng thời
+#:      hàng đợi job        worker có bấy nhiêu, việc xếp hàng chứ ⛔ không mất
+#:      sổ credit           **trần cuối cùng** — hết credit là dừng, ⛔ không nợ
+#:
+#:    Ba thứ trên là nơi hệ thật sự tự bảo vệ, và cửa webhook đi qua **đúng**
+#:    `tao_run` ấy (xem `ban_trigger` docstring: *"một hàm, ba cửa gọi"*). Nên
+#:    hằng số này ⛔ không canh "quá tải" — nó canh một thứ HẸP hơn nhiều:
+#:
+#: 🔴 **Nó canh một VÒNG LẶP LỖI PHÍA KHÁCH.** Ca thật của cả ngành: một
+#:    integration bên khách gọi webhook trong `while` không có backoff, hoặc hai
+#:    hệ gọi lẫn nhau. Khi đó ⛔ không phải "khách dùng nhiều" — là *"một con bọ
+#:    đang nhân bản"*, và cái nó tiêu là **tiền của chính khách**.
+#:
+#: ⚠️ Cái giá nếu 300 vẫn quá thấp: một khách dùng thật bị `429` và mất event.
+#:    Cái giá nếu quá cao: một vòng lặp lỗi tiêu credit nhanh gấp 5 trước khi ai
+#:    kịp thấy. Chọn 300 vì vế thứ nhất **khách thấy ngay và báo**, còn vế thứ
+#:    hai thì khách chỉ thấy khi đã mất tiền — nghiêng về phía **nói ra sớm**.
+#:
+#: ⛔ Và một lượt gửi TRÙNG (khớp khoá khử trùng) ⛔ không tốn hạn mức — xem
+#:    `han_muc.py`. Nên 300 là 300 lượt **tạo việc thật**, ⛔ không phải 300 cú
+#:    HTTP: một client thử lại 5 lần cho cùng một event tiêu **một** suất.
+WEBHOOK_MOI_PHUT_MOI_TRIGGER = 300
 
 
 def _bay_gio() -> datetime:
