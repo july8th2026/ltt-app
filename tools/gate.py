@@ -281,6 +281,35 @@ def loi_dang_ban(mau_s: float = 1.0) -> float:
 #:       `thua = 3,7 - 2 = 1,7 -> 2`, va ngan sach tu tut ve `min(8, 10-2-2) = 6`.
 #:       Tuc con so nay la DIEM XUAT PHAT khi may ranh, khong phai mot loi hua.
 #:       Bo `loi_dang_ban()` di thi con so 2 nay moi thanh nguy hiem.
+#:
+#: 🔴 **GIOI HAN CUA VAN DONG, do duoc 28/09/2026 sau mot lan TREO MAY.**
+#:
+#:    `loi_dang_ban()` duoc lay mau o **DUNG HAI CHO, ca hai luc KHOI DONG**:
+#:      · `loi_cho_bo_test()` (dong ~391) - chot so worker cho `bo test`
+#:      · vong chay (dong ~2030)         - in `[tai may]` roi canh bao QUA TAI
+#:
+#:    ⇒ Van nay chan duoc tai **DA CO SAN**. No ⛔ KHONG chan duoc tai **DEN SAU**
+#:      khi gate da bat dau, vi ⛔ khong ai lay mau lai nua.
+#:
+#: ⚠️ Va thu hay den sau thi da co ten trong `CLAUDE.md`: **Windows Defender an
+#:    toi 5,45 loi va nam NGOAI moi khoa**. Do 28/09 luc khoi dong:
+#:    `loi_dang_ban() = 0,49` — tuc ngan sach xuat phat o muc "may ranh", roi
+#:    Defender vao giua luot.
+#:
+#: 📐 So hoc cua lan treo: `--ho-so day-du` tren may nay
+#:      10 loi vat ly
+#:    -  7 `bo test (song song)`  (`loi_cho_bo_test()` do duoc)
+#:    -  cac buoc tinh chay cung  (`-j` mac dinh **8**)
+#:    -  ~5,4 Defender (ngoai khoa, den sau, khong ai tru)
+#:    ⇒ vuot tran, may dung.
+#:
+#: ⭐ Nen KHONG sua hang so nay (no dung cho cai no mo ta, va chu du an chot
+#:    12/09). Ba duong re hon, theo thu tu:
+#:      1. `--ho-so doi` (L1): khi ha cap no BO `bo test (song song)` — tuc bo
+#:         dung buoc chiem ~85% thoi gian va 7 worker. **Day la luot nhe nhat.**
+#:      2. `-j 2..3` thay vi 8: giam so buoc tinh chay cung.
+#:      3. `--noi-tiep`: mot buoc mot luc, MOT tien trinh pytest. Cham (~25-30
+#:         phut) nhung theo docstring cua no *"khong the bi nhieu boi tai may"*.
 LOI_DE_DANH_VAT_LY = 2
 
 #: Tran `-n` cho pytest GO TAY (khong phai bo test trong gate). Chu du an doi
@@ -1165,9 +1194,25 @@ HO_SO: dict[str, dict] = {
         "mo_ta": "suy pham vi TU cay hien tai (moc mac dinh HEAD; `--tu <ref>` "
                  "doi moc sang mot baseline SHA)",
         "chung_minh": "moi test cham toi phan da doi SO VOI MOC deu xanh",
-        "khong_chung_minh": "KHONG phai bang chung phat hanh. Va no TU HA CAP "
-                            "xuong day du khi khong chac (cham tep dung chung, "
-                            "hoac mot duong dan khong thanh phan nao so huu).",
+        # 🔴 SUA 28/09: cau cu ghi *"no TU HA CAP xuong DAY DU"* — **SAI**, va sai
+        #    theo huong nguy hiem nhat. Ma (dong ~1921) ha xuong **`nhanh`**, va
+        #    chu du an da chot 24/09: **L1/L2 KHONG BAO GIO tu nang len L3.**
+        #
+        #    Cau sai ay lam nguoi doc tin rang mot lan `--doi` co the **tu bung
+        #    thanh mot luot toan kho** — nen ho ne L1 vi so treo may, dung luc L1
+        #    la thu **NHE NHAT**: khi ha cap no bo `bo test (song song)`, tuc bo
+        #    dung buoc chiem ~85% thoi gian va 7 worker.
+        #
+        # ⚠️ Mot cau sai trong tep LUAT thi NAM CHO, va ban kinh cua no = so agent
+        #    doc `gate.py`. Do la ly do sua mot dong chu cung dang mot commit.
+        "khong_chung_minh": "KHONG phai bang chung phat hanh. Va khi khong thu "
+                            "hep duoc (cham tep dung chung, hoac mot duong dan "
+                            "khong thanh phan nao so huu) no HA CAP xuong "
+                            "`nhanh`: GIU moi buoc tinh, BO 4 buoc — `bo test "
+                            "(song song)`, `migration tren postgres`, `M-1 tren "
+                            "postgres`, `bat bien da tien trinh`. ⛔ No KHONG tu "
+                            "nang len `day-du` (chot 24/09), nen mot luot "
+                            "`--doi` KHONG THE tu bien thanh mot luot toan kho.",
         "xep_hang": True,
     },
     "day-du": {
