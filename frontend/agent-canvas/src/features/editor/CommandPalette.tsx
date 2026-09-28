@@ -1,5 +1,7 @@
+import { useRef } from 'react'
 import type { EditorAction } from '../../editorState'
 import type { CanvasEdge } from '../../workflowApi'
+import { useFocusTrap } from './hooks/useFocusTrap'
 
 type Props = {
   truyVan: string
@@ -41,6 +43,8 @@ type Props = {
  *     gõ "nhân" và thấy trống rỗng mà không biết vì sao.
  */
 export function CommandPalette(p: Props) {
+  const hopThoai = useRef<HTMLElement>(null)
+  useFocusTrap(hopThoai)
   const coNode = !!p.selected.length
   const coCanh = !!p.selectedEdges.length
   const lenh: { name: string; run: () => void; disabled?: boolean }[] = [
@@ -59,7 +63,7 @@ export function CommandPalette(p: Props) {
       run:p.toggleErrorBranch,disabled:p.readOnly||p.selectedEdges.length!==1},
   ]
   return <div className="command-backdrop" role="presentation" onMouseDown={event=>event.target===event.currentTarget&&p.dong()}>
-    <section className="command-palette" role="dialog" aria-modal="true" aria-label="Bảng lệnh Canvas">
+    <section ref={hopThoai} className="command-palette" role="dialog" aria-modal="true" aria-label="Bảng lệnh Canvas">
       <header><strong>Bảng lệnh</strong><kbd>Esc</kbd></header><input autoFocus aria-label="Tìm lệnh" value={p.truyVan}
         onChange={event=>p.datTruyVan(event.target.value)} placeholder="Tìm thao tác…"/>
       <div>{lenh.filter(item=>item.name.toLocaleLowerCase('vi').includes(p.truyVan.toLocaleLowerCase('vi')))

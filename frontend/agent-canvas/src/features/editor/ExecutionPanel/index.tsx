@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { RunDiff } from '../../../RunDiff'
 import { RunInspector } from '../../../RunInspector'
 import { RunV3Panel } from '../../../RunV3Panel'
 import '../../../styles/run.css'
 import type { CanvasPage, RunV3, SoSanhRunV3, Workflow } from '../../../workflowApi'
 import { nhanNode, type BangDinhNghia } from '../graph'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import type { PhaLuu, NganDesktop } from '../kieu'
 import { BaoGiaTruocKhiChay } from './BaoGiaTruocKhiChay'
 import { DuyetNguoi } from './DuyetNguoi'
@@ -57,6 +58,10 @@ type Props = {
  *     Plan v1. May chu chot `credit_max` ngay luc publish.
  */
 export function ExecutionPanel(p: Props) {
+  // Ngan nay LUON gan trong DOM (an/hien bang CSS `is-open`, xem canvas.css) —
+  // bay focus chi BAT khi dang mo, keo khong thi no khoa Tab ca luc an.
+  const ngan = useRef<HTMLElement>(null)
+  useFocusTrap(ngan, p.dangMo)
   // TÊN BƯỚC cho dòng thời gian và nhật ký. `nhanNode` là CÙNG hàm mà bảng
   // "Lớp" và menu ngữ cảnh dùng ⇒ một bước có MỘT tên trên khắp giao diện.
   const tenBuoc = useMemo(() => {
@@ -76,7 +81,7 @@ export function ExecutionPanel(p: Props) {
     return (nodeId: string) => bang.get(nodeId)
   }, [p.soSanh])
 
-  return <nav className={`operation-drawer${p.dangMo?' is-open':''}`} aria-label="Chạy workflow"><header><strong>Chạy workflow</strong><button aria-label="Đóng bảng chạy" onClick={()=>p.moNgan(null)}>×</button></header>
+  return <nav ref={ngan} className={`operation-drawer${p.dangMo?' is-open':''}`} aria-label="Chạy workflow"><header><strong>Chạy workflow</strong><button aria-label="Đóng bảng chạy" onClick={()=>p.moNgan(null)}>×</button></header>
     {/* ⭐ Bao gia TRUOC nut, khong sau: nguoi ta doc tu tren xuong, va quyet
         dinh tieu tien duoc dua o dong ngay tren cai nut. */}
     {!p.run&&<BaoGiaTruocKhiChay liveQuotes={p.liveQuotes}
