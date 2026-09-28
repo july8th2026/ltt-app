@@ -97,8 +97,17 @@ import threading
 import time
 import traceback
 
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+# ⭐ **Cung khuon `asv_chay_worker_that.py:59-63`, ⛔ khong viet khuon thu hai.**
+#    Goi TRAN (`sys.stdout.reconfigure(...)`) hong hai duong: mypy bao
+#    `union-attr` (`TextIO` khong khai `reconfigure`), va no NEM that khi
+#    `stdout` da bi thay bang mot doi tuong khong co ham do — pytest capture,
+#    mot so wrapper. Ten phim tieng Trung la ly do cho nay ton tai (console
+#    cp1252 nem `UnicodeEncodeError`), nen no ⛔ khong duoc tu lam sap cong cu.
+for _luong in (sys.stdout, sys.stderr):
+    try:
+        _luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except (AttributeError, OSError):
+        pass
 
 GOC = pathlib.Path(__file__).resolve().parent.parent
 if str(GOC) not in sys.path:
@@ -282,11 +291,20 @@ def lenh_chay(args) -> int:
                         lease = gl.acquire(
                             db_gpu, worker_id=f"tai-cho:{os.getpid()}",
                             need_mb=can_mb)
-                    except Exception:                       # noqa: BLE001
+                    except Exception as exc:                # noqa: BLE001
+                        # ⛔ Bat `exc` va NOI RA nguyen nhan: mot traceback tran
+                        #    khong phan biet duoc "khong co card" voi "cot
+                        #    tran"/"CSDL khong noi duoc", ma ba ca do doi ba
+                        #    hanh dong khac nhau cua nguoi dang gõ lenh.
+                        print(f"GPU: THUE LEASE HONG ({type(exc).__name__}: "
+                              f"{exc}) — xem traceback duoi.")
                         traceback.print_exc()
                     if lease is None:
+                        # 🔴 Suy giam DAT: mot luot 13 giai doan khong GPU cham
+                        #    hon HANG CHUC lan. In that ro de nguoi chay quyet
+                        #    dinh, ⛔ dung de ho phat hien sau 40 phut.
                         print(f"GPU: khong gianh duoc lease ({can_mb} MB) — "
-                              f"chay tiep KHONG GPU.")
+                              f"chay tiep KHONG GPU (CHAM hon rat nhieu).")
                     else:
                         print(f"GPU   : {lease.gpu_uuid[:20]} "
                               f"(index {lease.gpu_index}), xin {can_mb} MB")
@@ -296,7 +314,13 @@ def lenh_chay(args) -> int:
                             while not dung_nhip.wait(GPU_HEARTBEAT_S):
                                 try:
                                     gl.heartbeat(db_gpu, lease)
-                                except Exception:            # noqa: BLE001
+                                except Exception as exc:     # noqa: BLE001
+                                    # ⚠️ Nhip HONG nghia la lease se HET HAN
+                                    #    giua luot — noi ro thay vi de nguoi
+                                    #    chay thay mot traceback la giua log.
+                                    print(f"GPU: nhip lease HONG "
+                                          f"({type(exc).__name__}: {exc}) — "
+                                          f"lease co the het han giua luot.")
                                     traceback.print_exc()
 
                         luong_nhip = threading.Thread(target=_nhip, daemon=True)
@@ -310,7 +334,12 @@ def lenh_chay(args) -> int:
                 try:
                     ra = thi_hanh.chay_giai_doan(
                         g.ten, tham_so_giai_doan(run_id, owner_id), ctx=ctx)
-                except Exception:                            # noqa: BLE001
+                except Exception as exc:                     # noqa: BLE001
+                    # 🔑 Ten GIAI DOAN + ten NGOAI LE tren MOT dong: cong cu nay
+                    #    ton tai de TIM CHO VO, va dong dau tien phai tra loi
+                    #    "vo o dau" ⛔ khong bat nguoi doc cuon traceback.
+                    print(f"  -> HONG o giai doan {g.ten}: "
+                          f"{type(exc).__name__}: {exc}")
                     traceback.print_exc()
                     ma_loi_thoat = 2
                     break
@@ -326,7 +355,12 @@ def lenh_chay(args) -> int:
             try:
                 gl.release(db_gpu, lease)
                 db_gpu.commit()
-            except Exception:                                # noqa: BLE001
+            except Exception as exc:                         # noqa: BLE001
+                # 🔴 Nha lease HONG la loi DE LAI RAC: card bi giu cho mot
+                #    tien trinh da chet, va phien sau ⛔ khong hieu vi sao
+                #    khong thue duoc. Phai noi ten card ra.
+                print(f"GPU: NHA LEASE HONG ({type(exc).__name__}: {exc}) — "
+                      f"lease {lease.gpu_uuid[:20]} co the con bi giu.")
                 traceback.print_exc()
         if db_gpu is not None:
             db_gpu.close()
