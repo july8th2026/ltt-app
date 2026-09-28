@@ -217,17 +217,33 @@ async page => {
   // ── 6. Doc TUNG node: chinh day la cau hoi thu hai ───────────────────────
   const nodes = Array.isArray(run.nodes) ? run.nodes : [];
   so.so_node = nodes.length;
+  // ⚠️ Cua tra `output_ref`, ⛔ KHONG `outputs` — doc tu `runs_v3.py:683`.
+  //
+  // 🔴 Lan thu BA toi doan ten mot truong/duong dan trong kich ban nay:
+  //      `GET /agent/api/v3/mau`   -> khong ton tai
+  //      `POST .../run`            -> that la `/runs`
+  //      `n.outputs`               -> that la `n.output_ref`
+  //
+  //    Va lan nay no ⛔ khong bao 404: no cho ra `co_output: false` va
+  //    `ai_llm_co_text: false` cho MOI node — **mot ket qua doc duoc nhu mot phat
+  //    hien ve san pham**. Toi suyt bao *"`doi_dau_ra` khong chay tren production"*
+  //    trong khi node do SUCCEEDED va phep do chi doc sai ten truong.
+  //
+  // ⚠️ Hai lan truoc that bai VE PHIA AN TOAN (404 — khong the doc thanh cai gi
+  //    khac). Lan nay that bai ve phia **NGUY HIEM**: mot `false` im lang.
+  //    ⇒ Doan ten mot CUA thi ta biet ngay; doan ten mot TRUONG thi ta nhan mot
+  //      gia tri mac dinh, va gia tri mac dinh **tron giong mot cau tra loi**.
   so.node = nodes.map(n => ({
     id: String(n.node_id || n.id || '').slice(0, 12),
     status: String(n.status || ''),
-    co_output: Boolean(n.outputs || n.output_ref),
+    output_ref: JSON.stringify(n.output_ref ?? null).slice(0, 220),
   }));
 
   // `ai.llm` phai co output `text` KHONG RONG — do la ve chung minh
   // `doi_dau_ra` chay that, thu ⛔ khong phep kiem cuc bo nao lam duoc.
   const ai = nodes.find(n => String(n.node_id || n.id || '').includes('y_tuong'));
   if (ai) {
-    const out = ai.outputs || {};
+    const out = ai.output_ref || {};
     so.ai_llm_status = String(ai.status || '');
     so.ai_llm_co_text = typeof out.text === 'string' && out.text.trim().length > 0;
     so.ai_llm_do_dai_text = typeof out.text === 'string' ? out.text.length : null;
