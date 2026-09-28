@@ -21,6 +21,50 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-28 — ảnh: bỏ trần đếm, trần thân 256 KiB → 32 MiB, bốn tham số mới
+
+- **Cái gì đổi:**
+  - **BREAKING (theo nghĩa hẹp)** — `constraints.max_images` **đã bị gỡ** khỏi
+    `GET /api/v1/models`. Client nào *đọc* trường đó sẽ thấy nó vắng.
+    ⭐ Nhưng **không** có tích hợp nào hỏng vì lý do nó bị gỡ: trần ấy chỉ **nới
+    ra**, không thắt lại. Một client tiếp tục tự giới hạn 4 ảnh vẫn chạy đúng như
+    hôm qua — nó chỉ dùng ít hơn mức được phép.
+  - **ADDED** bốn trường cho phép **tự tính trước** chi phí ngữ cảnh của một ảnh:
+    `image_pixels_per_token` (1024), `min_image_tokens` (**1024**),
+    `max_image_tokens` (4096), `image_token_markers` (2). Công thức và bảng đối
+    chiếu bảy cỡ ảnh ở `DEVELOPER_GUIDE.md` §7b.
+  - **FIXED** chất lượng đọc ảnh nhỏ. `min_image_tokens` nâng từ `8` (mặc định của
+    engine) lên **`1024`**. Đo trên chính hệ này, cùng một bộ ảnh: ở sàn `8` chỉ
+    **9/20** ảnh nhỏ được đọc đúng (tỉ lệ ký tự sai 0,82); ở sàn `1024` là
+    **19/20** (0,05). ⇒ Hơn một nửa ảnh nhỏ **đang bị đọc sai** trước bản này.
+    ⚠️ Hệ quả về **giá**: mọi ảnh dưới ~1 Mpx nay tính **1 026 token** — một ảnh
+    320×240 tốn bằng một ảnh 1024×768. Ảnh từ 1080p trở lên **không đổi**.
+    ⛔ Nên đừng cắt ảnh nhỏ hơn mức cần: bốn ô cắt nhỏ tốn 4 104 token, còn một
+    ảnh 1920×1080 gộp cả bốn chỉ tốn 2 042.
+  - **FIXED** trần thân request. Con số **đang cưỡng chế** là **32 MiB**
+    (33 554 432 byte). Tài liệu trước đây ghi **256 KiB** — sai **128 lần**, và
+    đã sai suốt bốn lần nâng trần. Ai thiết kế theo `256 KiB` đang tự giới hạn
+    xuống 1/128.
+  - **ADDED** WebP vào danh sách định dạng ảnh đọc được (trước đó một ảnh WebP
+    trả 400 từ thượng nguồn, không có chỉ dẫn nào).
+
+- **Có phá vỡ tương thích không:** thực tế **không**. Mọi thay đổi đều theo chiều
+  **nới**: nhiều ảnh hơn, thân request lớn hơn, thêm một định dạng. Trường bị gỡ
+  là một trần, và ⛔ gỡ một trần không làm hỏng một client tuân thủ nó.
+
+- **Phải làm gì:**
+  - ⛔ **Đừng chép `32 MiB` vào mã.** Đọc header `X-LTT-Max-Body-Bytes` — có trên
+    **mọi** phản hồi `/api/v1/*`, kể cả `2xx`. Trần đổi thì header đổi ngay ở
+    lượt sau; tài liệu thì không (xem chính mục **FIXED** ở trên).
+  - Nếu bạn đang kẹp số ảnh theo `max_images`: bỏ phép kẹp ấy và **tính ngân sách
+    token** thay vào đó. Thứ giới hạn một request là **ngữ cảnh**, không phải số
+    lượng: 30 ảnh 320×240 tốn 2 460 token, còn **một** ảnh 2048×2048 tốn 4 098.
+  - ⚠️ Làm tròn: dùng `floor(x + 0.5)` (**nửa lên**). `round()` của Python làm
+    tròn **về số chẵn** và sẽ lệch ở đúng các cỡ chia hết nửa, ví dụ `1280×720`
+    (922 token, không phải 882).
+  - ⚠️ Vượt `max_image_tokens` thì ảnh **bị thu nhỏ giữ tỉ lệ**, ⛔ không bị kẹp
+    về trần: `3840×2160` cho **4 082**, không phải 4 098.
+
 ## 2026-09-23 — `/workflows/{id}/quotes` và `/workflows/{id}/runs` tạm khoá (501)
 
 - **Cái gì đổi:** **ADDED** mã lỗi `workflow_runs_unavailable` (501, `retry:

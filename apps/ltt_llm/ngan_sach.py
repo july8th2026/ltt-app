@@ -111,12 +111,25 @@ TOKEN_GIU_MOI_ANH = 2_048
 #:    `tests/test_4205_ngan_sach_anh_thay_tran_dem.py` đọc NGƯỢC tệp yaml và đỏ
 #:    khi lệch — không phải tin vào lời hứa của chú thích này.
 #:
-#: 🔴 SÀN 8 LÀ MỘT NỢ CHẤT LƯỢNG ĐÃ BIẾT, chưa trả. `clip.cpp:1662-1667` ở đúng
-#:    build đang chạy in cảnh báo rằng Qwen-VL cần **≥ 1.024** token ảnh để làm
-#:    đúng tác vụ định vị (dẫn issue #16842). Nâng sàn là đánh đổi **sản phẩm**
-#:    (độ chính xác đổi lấy KV + credit khách trả) ⇒ chủ dự án chốt 28/09 là
-#:    **hoãn tới khi có phép đo Đ-5**. ⛔ Đừng nâng ở đây cho "tốt hơn".
-TOKEN_ANH_TOI_THIEU = 8
+#: ⭐ SÀN 1024 — NỢ CHẤT LƯỢNG ĐÃ TRẢ (Đ-5, 28/09/2026), không phải một con số
+#:    "cho tốt hơn". Đo thật trên production, **cùng một bộ ảnh** cho cả ba lần:
+#:
+#:        sàn    8  →   9/20 đọc đúng   CER 0,817
+#:        sàn  512  →  19/20            CER 0,050
+#:        sàn 1024  →  19/20            CER 0,050
+#:
+#:    Ở sàn 8, **hơn một nửa** ảnh nhỏ bị đọc SAI. Cảnh báo của thượng nguồn
+#:    (`clip.cpp:1662-1667`, issue #16842) đúng. `tools/do_chat_luong_doc_anh.py`.
+#:
+#: ⛔ VÌ SAO 1024 CHỨ KHÔNG 512, khi hai bên đo BẰNG NHAU: 20 mẫu mỗi cấu hình
+#:    không phân giải được hai mức ấy, và bài đo của ta đo **đọc chữ** còn con số
+#:    1024 của thượng nguồn được nêu cho tác vụ **định vị** — thứ ta KHÔNG đo, và
+#:    thứ nằm trên đường đi chính (một agent hỏi *"bấm vào nút ở đâu"* là định vị).
+#:
+#: ⚠️ CÁI GIÁ, nói cho đúng: ⛔ KHÔNG phải "ảnh nhỏ đắt lên 12,5×". Ảnh dưới 1.024
+#:    token **hiện đang không dùng được**. Ta làm thứ đang HỎNG chạy được, không
+#:    làm thứ đang chạy đắt lên. Ảnh từ ~1 Mpx trở lên (1080p và lớn hơn) GIỮ NGUYÊN.
+TOKEN_ANH_TOI_THIEU = 1024
 TOKEN_ANH_TOI_DA = 4096
 
 #: Biên bể KV (token) A không cho đặt chỗ — `token_budget = -c − BIEN_POOL_TOKEN`.

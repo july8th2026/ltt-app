@@ -41,10 +41,10 @@ import pytest
 
 from llm_gateway import vat_ly
 
-#: Mac dinh llama.cpp dat cho ho `qwen3vl_merger` (ca hai mmproj cua ta deu la
-#: ho nay - doc sieu du lieu GGUF 28/09). Khai tuong minh trong yaml ⇒ hai so
-#: nay KHONG doi hanh vi; chung chi lam con so ngam thanh con so doc duoc.
-SAN_MONG_DOI = 8
+#: ⭐ SAN nay KHONG con la mac dinh cua llama.cpp (8) - no la so DA DO (D-5,
+#: 28/09): san 8 doc dung 9/20 anh nho, san 1024 doc dung 19/20. TRAN thi van la
+#: mac dinh cua ho `qwen3vl_merger`.
+SAN_MONG_DOI = 1024
 TRAN_MONG_DOI = 4096
 
 

@@ -295,11 +295,28 @@ macros:
   #    khong doc chung cho ho Qwen (clip.cpp:1416 khong co get_u32 nao trong
   #    khoi ay). Hai co CLI nay la can gat DUY NHAT.
   #
-  # !! SAN 8 LA MOT NO CHAT LUONG DA BIET, chua tra. clip.cpp:1662-1667 in canh
-  #    bao rang Qwen-VL can toi thieu 1024 token anh de lam dung tac vu dinh vi
-  #    (dan issue #16842). Nang san len la mot DANH DOI SAN PHAM (do chinh xac
-  #    doi lay KV + credit khach tra), nen no cho phep do D-5 va mot quyet dinh
-  #    rieng cua chu du an. Xem docs/superpowers/specs/2026-09-28-vision-plan-lock.md
+  # !! SAN 1024 LA MOT NO CHAT LUONG DA TRA (D-5, 28/09/2026), khong phai mot so
+  #    "cho tot hon". Do that tren production, CUNG mot bo anh cho ca ba lan:
+  #
+  #        san    8  ->   9/20 doc dung   CER 0,817
+  #        san  512  ->  19/20            CER 0,050
+  #        san 1024  ->  19/20            CER 0,050
+  #
+  #    Tuc o san 8, HON MOT NUA anh nho bi doc SAI. Canh bao cua thuong nguon
+  #    (clip.cpp:1662-1667, issue #16842) dung, va cai gia cua viec bo qua no lon.
+  #    Cong cu: tools/do_chat_luong_doc_anh.py
+  #
+  # !! VI SAO 1024 CHU KHONG 512, khi hai ben do BANG NHAU. 20 mau moi cau hinh
+  #    KHONG phan giai duoc hai muc ay. Va bai do cua ta do DOC CHU, con con so
+  #    1024 cua thuong nguon duoc neu cho tac vu DINH VI - thu ta KHONG do, va
+  #    thu nam tren duong di chinh (mot agent hoi "bam vao nut o dau" la dinh vi).
+  #    !! Neu sau nay co phep do DINH VI cho thay 512 du, do la mot lan ha chi phi
+  #    2x CO BANG CHUNG - khong phai mot lan doan.
+  #
+  # !! CAI GIA, noi cho dung: KHONG phai "anh nho dat len 12,5x". Anh duoi 1024
+  #    token HIEN DANG KHONG DUNG DUOC (9/20). Ta khong lam thu dang chay dat len
+  #    - ta lam thu dang HONG chay duoc. Anh tu ~1 Mpx tro len (anh chup man hinh
+  #    1080p va lon hon) GIU NGUYEN chi phi.
   #
   # !! Ai doi hai so nay phai doi luon hang o `llm_gateway/anh_token.py`, va
   #    `tests/test_4204_co_anh_khai_tuong_minh.py` doc nguoc chinh tep nay de bat
@@ -309,7 +326,7 @@ macros:
     --reasoning-format deepseek
     -fa 1 -ngl 999 -kvu
     --top-p 0.95 --top-k 20 --min-p 0
-    --image-min-tokens 8 --image-max-tokens 4096
+    --image-min-tokens 1024 --image-max-tokens 4096
     --video-ffmpeg-dir ${FFMPEG}
     --metrics
 
