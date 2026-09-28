@@ -1,5 +1,7 @@
+import { useRef } from 'react'
 import type { EditorAction } from '../../editorState'
 import type { CanvasDocument, CanvasPage } from '../../workflowApi'
+import { useFocusTrap } from './hooks/useFocusTrap'
 import type { MenuNguCanh, NganDesktop } from './kieu'
 
 type Props = {
@@ -22,7 +24,9 @@ type Props = {
  */
 export function ContextMenu(p: Props) {
   const { menu } = p
-  return <aside className={`canvas-context-menu ${menu.kind}`} aria-label={menu.kind==='pane'?'Menu khoảng trống Canvas':'Menu thao tác node'}
+  const ngan = useRef<HTMLElement>(null)
+  useFocusTrap(ngan)
+  return <aside ref={ngan} className={`canvas-context-menu ${menu.kind}`} aria-label={menu.kind==='pane'?'Menu khoảng trống Canvas':'Menu thao tác node'}
     style={{left:Math.min(menu.x,window.innerWidth-310),top:Math.min(menu.y,window.innerHeight-520)}}>
     <header><strong>{menu.kind==='pane'?'Thêm vào Canvas':'Thao tác node'}</strong><button aria-label="Đóng menu ngữ cảnh" onClick={p.dong}>×</button></header>
     {menu.kind==='pane'?<><button onClick={()=>{p.moNgan('tools');p.dong()}}>Mở bảng node</button>

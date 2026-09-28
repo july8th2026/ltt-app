@@ -149,7 +149,7 @@ function MotO({ ten, luat, bat_buoc, gia, readOnly, goiY, onChange }: {
         onChange={v => onChange(v)} />
       {so && <button type="button" className="o-cong-tac-bieu-thuc"
         aria-label={`Dùng biểu thức cho ${ten}`} disabled={khoa}
-        aria-pressed={true}
+        aria-pressed={bieuThuc}
         onClick={() => setMoBieuThuc(m => !m)}>{'{{ }}'}</button>}
     </>)
   }
