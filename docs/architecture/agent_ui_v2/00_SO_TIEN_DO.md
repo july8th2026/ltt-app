@@ -24,7 +24,7 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-8a Human approval ⭐ | `ui8a` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui8a` | `routes/phe_duyet_v3.py` (mới) · `ExecutionPanel/**` · `cho_doi.py` (nếu buộc) | — | dải **6500-6599** · cổng **8206** · 🔴 `core.human` đã ĐỦ (`NHANH_HUMAN`, waitpoint, hết hạn ⇒ `reject`) nhưng ⛔ KHÔNG cửa nào BẤM duyệt được ⇒ mở cửa là TRONG phạm vi phase |
 | UI-6 Data picker | `ui6` | ✅ **ĐÃ GỘP** 🔴 *(bị chặn bởi lỗi id gạch ngang)* | `phien/agent-ui-v2-ui6` | `src/inspector/FormTuLuocDo.tsx` · `inspector.css` · tệp mới trong `src/inspector/` | — | dải **6400-6499** · cổng **8205** · dùng lại `/bieu-thuc/goi-y` ⇒ ⛔ không cửa mới |
 | UI-9 Mẫu / Templates | `ui9` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui9` | `routes/trang.py` (⭐ giữ) · `templates/agent_templates.html` (mới) · `platform_core/workflow/mau.py` (mới) | — | dải **6600-6699** · cổng **8207** · dùng lại `POST /api/v3/workflows` với `document` ⇒ ⛔ không cửa mới · mỗi mẫu PHẢI publish được thật |
-| UI-8b Agent Designer diff | — | ⛔ **CHƯA MỞ** | — | — | — | hạng mục DUY NHẤT của plan chưa làm. ⛔ Không chặn bởi gì nữa (UI-3 xong) — nó là **phạm vi bị hoãn có chủ đích**, ⛔ không phải việc bị bỏ quên |
+| UI-8b Agent Designer diff | `ui8b` | ✅ **ĐÃ GỘP** (`e67489d5`) | `worktree-agent-ab0f18d5b5d962cea` | `DesignerDiff/**` · `useWorkflowRun.ts` | ✅ | dải **5613+** · 302 vitest xanh · tiêm lỗi: `huySoan` ghi đè ⇒ 2 bài đỏ · `DesignerDiff` tách chunk 1,60 KB · nghiệm thu cổng **8211** (⛔ không phải production — mã chưa deploy) |
 | UI-10a Hiệu năng bundle | `ui10a` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui10a` | `EditorShell.tsx` · `vite.config.ts` · `test_95` | — | dải **6700** · cổng **8208** · nạp trễ 3 panel ⇒ entry **517.837 → 500.640** thô, zstd-3 **164.335 → ~156.000**; trần hạ 520k→510k, 170k→165k |
 | UI-10b Trợ năng + mobile | `ui10b` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui10b` | `canvas.css` · `styles/**` · `features/editor/**` (trừ `EditorShell`) · `inspector/**` · `nodes/**` | — | dải **6800** · cổng **8209** · tiêu chí 89-94: bẫy focus 4 nơi · bảng phím tắt 14 dòng · `aria-pressed` đổi thật · viền Controls/MiniMap **6,20:1** tối / **5,22:1** sáng · cổng 24px 6/6 · mobile 3 tab |
 | ⛔ UI-10 (gộp một làn) | — | **ĐÃ TÁCH** | — | — | — | audit ghi *"không song song hoá được"*; đo lại thì **tách được**: hiệu năng chạm `EditorShell.tsx` + `vite.config.ts`, trợ năng chạm CSS + component — hai tập **rời nhau** |
@@ -64,20 +64,35 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 ## Bảng độ phủ nghiệm thu
 
 Mốc nền đo 27/09/2026 trên trình duyệt thật: **0/5 luồng dựng được**.
+**Đo lại 28/09 cuối ngày (đếm registry, ⛔ không nhớ lại): `74/74` node publish
+được · `5/5` luồng ĐỦ NODE.**
 
-| Luồng | Dựng được? | Kịch bản Playwright | Pha mở khoá |
+🔴 **`ĐỦ NODE` ⛔ KHÔNG phải `đã nghiệm thu`.** Hai đại lượng khác nhau, và gộp
+chúng là cách nhanh nhất để tuyên bố xong một thứ chưa ai chạy:
+
+| đại lượng | trả lời câu | đo bằng |
+|---|---|---|
+| **đủ node** | *mọi bước của luồng có tồn tại và publish được?* | `nut.tat_ca()` — rẻ, tất định |
+| **dựng được E2E** | *một người thật kéo được từ đầu tới cuối và nó CHẠY?* | Playwright trên web thật + một run hoàn tất |
+
+⚠️ Và một cái bẫy tôi vừa rơi vào khi lập bảng này: bản đếm ĐẦU của tôi báo UX-1 ·
+UX-2 · UX-4 · UX-5 **thiếu node**, vì tôi **đoán tên** (`app.sheets.read`,
+`core.subworkflow`). Tên thật là `piece.google_sheets.find_rows` và
+`core.call_workflow` — cả hai đã có từ trước. ⇒ Một phép đếm dựa trên tên tự bịa
+đo **trí nhớ của tôi**, ⛔ không đo sản phẩm. Cùng họ `liet-ke-tu-tri-nho-thay-vi-dem`.
+
+| Luồng | Đủ node? | Nghiệm thu E2E? | Còn thiếu gì để nghiệm thu |
 |---|---|---|---|
-| UX-1 Schedule → Sheets → … → YouTube | ❌ | — | UI-5 + backend trigger (**Q11**) |
-| UX-2 Webhook → Phân tích → Clip → Phụ đề | ❌ | — | backend — **registry chưa có node webhook** |
-| UX-3 Manual → Ảnh → Video → Giọng → Render | ⚠️ **một phần** | `agent_ui_v2_ui0_nghiem_thu.js` | **UI-0 xong**: node `app.*` nối được và chạy được (đo: 1 cạnh thật, run QUEUED). Còn thiếu trigger thủ công (**Q11**) |
-| UX-4 Sheets → AI Router → nhánh → gộp | ❌ | — | UI-5 + **Q11** (`ai.router` đang `publish_duoc=False`) |
-| UX-5 Parent → Subworkflow → Wait → Human | ❌ | — | **UI-0** + UI-8a |
-| UX-0 Quản lý workflow: xem · tìm · tạo · mở · nhân bản | ✅ **dựng được** | `agent_ui_v2_ui1_nghiem_thu.js` | **UI-1 xong** (28/09). Đo trên 8198: danh sách 0 → 9 mục; `items[0]`=`075714aa` mà mở `4e918dba` ⇒ nạp đúng `4e918dba` bằng **một** lời gọi; nhân bản giữ nguyên tài liệu. ⛔ Còn thiếu **lưu trữ** (cần cửa mới) |
+| UX-1 Schedule → Sheets → … → YouTube | ✅ | ❌ | cửa UI đặt `cron` + tạo `WorkflowTrigger`; OAuth Google Sheets + YouTube của khách |
+| UX-2 Webhook → Phân tích → Clip → Phụ đề | ✅ | ❌ | cửa UI cấp URL + token webhook |
+| UX-3 Manual → Ảnh → Video → Giọng → Render | ✅ | ⚠️ **một phần** | đã chạy tới `QUEUED` trên web thật; **một run HOÀN TẤT** chưa ai đo |
+| UX-4 Sheets → AI Router → nhánh → gộp | ✅ | ❌ | OAuth Google Sheets; `ai.router` cần một lượt gọi model thật |
+| UX-5 Parent → Subworkflow → Wait → Human | ✅ | ❌ | cửa duyệt `core.human` đã **sống trên production** (`POST …/duyet` trả 400 chứ ⛔ không 404); còn thiếu một lượt E2E xuyên hai workflow |
+| UX-0 Quản lý workflow: xem · tìm · tạo · mở · nhân bản · lưu trữ | ✅ | ✅ **đã nghiệm thu** | — (lưu trữ đã làm, `97884407`) |
 
-⚠️ UX-0 **không có trong bảng gốc** vì audit chỉ đếm năm luồng *dựng một
-automation*. Nhưng `01 §1.1` đo rằng giao diện ⛔ không có đường nào tới
-workflow **thứ hai** — tức luồng bị thiếu nằm **trước** cả năm luồng kia. Thêm
-nó vào đây để bảng độ phủ đo đúng thứ đang chặn, không chỉ thứ đã liệt kê sẵn.
+⭐ ⇒ Thứ chặn nay **⛔ không còn là node**. Ba thứ chặn còn lại, theo bán kính:
+**(1)** hai cửa UI cho trigger (đặt lịch · cấp URL webhook) · **(2)** OAuth của
+khách cho Google/YouTube · **(3)** một lượt đo *run hoàn tất* trên production.
 
 ## Quyết định đã chốt
 
