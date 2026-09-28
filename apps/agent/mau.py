@@ -39,9 +39,13 @@ gì thêm.
 - UX-2 (Webhook → Phân tích → Clip → Phụ đề): `trigger.webhook` **không tồn
   tại** — `app.video.short_clips`/`app.video.subtitle` có thật, nhưng không
   điểm bắt đầu nào ngoài `trigger.manual`.
-- UX-4 (Sheets → AI Router → nhánh → gộp): `ai.router` có đăng ký nhưng
-  `publish_duoc=False` — biên dịch ném `loai_node_chua_ho_tro` ngay ở node
-  đầu tiên của nhánh AI.
+- UX-4 (Sheets → AI Router → nhánh → gộp): `ai.router` **nay publish được**
+  (28/09, xem `nut_loi/ai_router.py`) — nhưng `app.sheets.*` vẫn không tồn tại,
+  nên UX-4 **vẫn** chưa dựng được **vì một lý do KHÁC** với hai mục trên.
+
+  ⚠️ Ghi rõ lý do đã đổi, ⛔ không chỉ sửa trạng thái: một dòng *"chưa dựng
+  được"* giữ nguyên qua hai nguyên nhân khác nhau làm người đọc sau tưởng
+  ⛔ không có gì tiến triển, và đi vá lại đúng thứ vừa được vá.
 
 UX-3 (Manual → Ảnh → Video → Giọng → Render) **dựng được đầy đủ** từ 28/09
 (Q11 mở `trigger.manual`) — `MAU_Y_TUONG_THANH_VIDEO` dưới đây là chính luồng
@@ -240,10 +244,53 @@ def _mau_van_va_giong() -> Mau:
         nodes, edges)
 
 
+# ── Mẫu 4 — AI viết mô tả rồi sinh ảnh (mẫu ĐẦU TIÊN dùng node `ai.*`) ──────
+#
+# 🔴 Mẫu này là **bằng chứng chạy được** cho `ai.llm`, ⛔ không phải một minh hoạ.
+#    Ba node `ai.*` mở ngày 28/09 sau khi thêm `NodeDefinition.doi_dau_ra` — và
+#    thứ hỏng trước đó **⛔ không** phải cái cờ `publish_duoc`, mà là: job trả
+#    `content`, node khai cổng `text`, nên `{{ nodes.x.output.text }}` đọc ra
+#    **rỗng** sau khi credit đã bị trừ.
+#
+# ⭐ Nên cạnh `ai.llm` mẫu này đặt một node ĐỌC đầu ra ấy thật
+#    (`app.image.generate` nhận `prompt` từ `nodes.y_tuong.output.text`). Một mẫu
+#    chỉ có `ai.llm` rồi `core.output` sẽ **⛔ không** phân biệt được bản đã vá
+#    với bản chưa: cả hai đều publish được, và ô rỗng chỉ lộ ra ở node SAU.
+def _mau_ai_viet_mo_ta_roi_sinh_anh() -> Mau:
+    nodes = [
+        _nut("bat_dau", "trigger.manual", x=0, y=0),
+        _nut("y_tuong", "ai.llm", {
+            "prompt": N_("Viết một câu mô tả ảnh thật chi tiết cho ý tưởng "
+                        "sau, chỉ trả về câu mô tả: một quán cà phê Hà Nội "
+                        "buổi sáng sớm."),
+            "model": "ltt-3.8",
+        }, x=240, y=0),
+        _nut("anh", "app.image.generate", {
+            "prompt": "{{ nodes.y_tuong.output.text }}",
+            "aspect_ratio": "16:9", "count": 1,
+        }, x=480, y=0),
+        _nut("ra", "core.output", {
+            "ten": "anh", "gia_tri": "nodes.anh.output.image_keys",
+        }, x=720, y=0),
+    ]
+    edges = [
+        _canh("e1", "bat_dau", "y_tuong", "event", "prompt"),
+        _canh("e2", "y_tuong", "anh", "text", "prompt"),
+        _canh("e3", "anh", "ra", "image_keys", "in"),
+    ]
+    return _dung(
+        "ai-viet-mo-ta-roi-sinh-anh", N_("AI viết mô tả rồi sinh ảnh"),
+        N_("Bạn cho một ý tưởng ngắn; AI viết thành câu mô tả chi tiết, rồi "
+           "câu đó đi thẳng sang bước sinh ảnh. Mẫu để thấy hai bước AI nối "
+           "vào nhau."),
+        nodes, edges)
+
+
 #: ⭐ Tính MỘT LẦN lúc nạp module — mọi request `/agent/templates` đọc lại
 #: đúng tuple này, không biên dịch lại mỗi lần một khách mở trang.
 _TAT_CA: tuple[Mau, ...] = (
     _mau_sinh_anh(), _mau_y_tuong_thanh_video(), _mau_van_va_giong(),
+    _mau_ai_viet_mo_ta_roi_sinh_anh(),
 )
 
 
