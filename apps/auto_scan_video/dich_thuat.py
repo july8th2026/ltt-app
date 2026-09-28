@@ -341,7 +341,8 @@ def _dem_don_vi_nguon(nguon: str) -> int:
     return max(1, len(s.split()))
 
 
-def tran_do_dai_theo_nguon(giay: float, nguon: str, *, dich) -> int:
+def tran_do_dai_theo_nguon(giay: float, nguon: str, *, dich,
+                           toc_doc_giong: float | None = None) -> int:
     """N5 — tran DO DAI THEO MAT DO NGUON, cong THEM tran vat ly da co.
 
     ⚠️ **Khac PHA voi `nan_cho_vua`**: cua cua no chay SAU TTS (do giay tieng
@@ -368,17 +369,37 @@ def tran_do_dai_theo_nguon(giay: float, nguon: str, *, dich) -> int:
 
     `ngon_ngu.ngan_sach_do_dai` da la tran VAT LY (`giay * NHIP * 0,92`) — ham
     nay lay `min` voi tran THEO NGUON de duoc CA HAI, dung nhu cong thuc goc.
+
+    ## `toc_doc_giong` — B17 §4.1, lan P0-a3 NOI DAY (tra no P0-a2)
+
+    🔴 **Cho GOI THU HAI cua `ngon_ngu.ngan_sach_do_dai`.** Lan P0-a2 da noi
+       `long_tieng.loi_nhac` (tran GHI vao loi nhac gui model); cho nay la
+       tran DO DAI dung o cua PHAT HIEN N5 — `tran_vat_ly` truoc lan nay LUON
+       la hang so ca-ngon-ngu `NHIP[dich]`, ⛔ khong biet giong nao dang doc.
+
+    ⚠️ **⛔ Khong tu them mot nhanh `min` moi o day** — `ngon_ngu.ngan_sach_do_dai`
+       da tu SIET MOT CHIEU (`nhip = min(NHIP[dich], toc_doc_giong)` khi so do
+       hop le), nen chuyen tiep tham so nay xuong la DU: `tran_vat_ly` chi co
+       the nho di hoac giu nguyen so voi khi `toc_doc_giong=None`, ⛔ khong bao
+       gio lon hon — va vi `min(tran_vat_ly, tran_theo_nguon)` o cuoi ham la
+       don dieu KHONG GIAM theo `tran_vat_ly`, tran CUOI CUNG cung ⛔ khong bao
+       gio noi ra. `test_4964` tiem nghich xac nhan dieu nay.
+
+    ⚠️ `None` (mac dinh) = ben goi khong biet giong ⇒ `ngan_sach_do_dai` roi ve
+       hang so ca-ngon-ngu, dung HANH VI TRUOC lan nay — xem `test_4963`.
     """
     from . import ngon_ngu
 
-    tran_vat_ly = ngon_ngu.ngan_sach_do_dai(giay, dich)
+    tran_vat_ly = ngon_ngu.ngan_sach_do_dai(giay, dich,
+                                            toc_doc_giong=toc_doc_giong)
     n_nguon = _dem_don_vi_nguon(nguon)
     tran_theo_nguon = max(1, int(n_nguon * TI_LE_DICH_TREN_NGUON))
     return min(tran_vat_ly, tran_theo_nguon)
 
 
-def vuot_tran_theo_nguon(*, giay: float, nguon: str, dich_ra: str,
-                         dich) -> tuple[bool, int, int]:
+def vuot_tran_theo_nguon(*, giay: float, nguon: str, dich_ra: str, dich,
+                         toc_doc_giong: float | None = None
+                         ) -> tuple[bool, int, int]:
     """N5 — co PHAT HIEN cho MOT doan. Tra `(vuot, do_dai_dich, tran)`.
 
     ⛔ Cua PHAT HIEN thuan tuy: chi danh dau + dem, KHONG cat/sua ban dich —
@@ -388,8 +409,17 @@ def vuot_tran_theo_nguon(*, giay: float, nguon: str, dich_ra: str,
     Doi chung AM (bat buoc — xem test): mot doan noi NHANH THAT (giay ngan so
     voi nguon nhieu ky tu, tuc `n_nguon` lon) co tran RONG hon tuong ung, nen
     mot ban dich TUONG XUNG voi nhip noi that van KHONG bi gan co.
+
+    ⚠️ `toc_doc_giong` (lan P0-a3, xem `tran_do_dai_theo_nguon`) chi CHUYEN
+       TIEP xuong — ⛔ **chua co ben goi that nao truyen gia tri khac `None`**:
+       `giai_doan_noi_dung.chay:435` (cho GOI THAT DUY NHAT cua ham nay, xem
+       `test_4965`) chua mang tham so nay, du no da co san `ho_so` trong pham
+       vi (dung `ho_so["toc_doc_giong"]` nhu `long_tieng.loi_nhac` da lam o
+       P0-a2). Day la NO CON LAI cua chuoi nay — ngoai pham vi so huu tep cua
+       lan P0-a3 (chi `dich_thuat.py`), de lan ke noi.
     """
-    tran = tran_do_dai_theo_nguon(giay, nguon, dich=dich)
+    tran = tran_do_dai_theo_nguon(giay, nguon, dich=dich,
+                                  toc_doc_giong=toc_doc_giong)
     do_dai = len(str(dich_ra or "").split())
     return do_dai > tran, do_dai, tran
 
