@@ -196,24 +196,28 @@ def test_KHONG_module_nao_trong_apps_dung_OCR_de_LAY_LOI_THOAI():
                          + "\n  ".join(vi_pham))
 
 
-def test_CHI_MOT_module_duoc_nhap_rapidocr_va_no_KHONG_doc_chu():
-    """🔑 Bất biến 3b (MỚI, B10-4) — cái giá của việc thu hẹp bất biến 3.
+def test_CHI_MOT_module_duoc_nhap_rapidocr_va_van_ban_KHONG_ro_ra_ngoai():
+    """🔑 Bất biến 3b — cập nhật B13 D1 (28/09): chủ dự án ĐẢO LẠI lệnh 27/09.
 
     ⛔ Thu hẹp một lệnh cấm mà ⛔ không đặt lại hàng rào ở chỗ mới thì là **gỡ**
-       lệnh cấm. Hai vế, và cả hai đều cần:
+       lệnh cấm — nhưng CHÍNH SÁCH đã đổi, nên hàng rào cũng phải đổi CHỖ:
 
        1. **Đúng MỘT module** được nhập `rapidocr`. Một lệnh cấm đổi thành
-          "được phép ở khắp nơi" là ⛔ không còn lệnh cấm.
-       2. Module ấy **⛔ không đọc trường văn bản**. Chủ dự án chốt 28/09:
-          *"⛔ không sử dụng text để đối chiếu"*.
+          "được phép ở khắp nơi" là ⛔ không còn lệnh cấm. (KHÔNG đổi.)
+       2. **Cũ (27/09 → 28/09 sáng)**: *"⛔ không sử dụng text để đối chiếu"*
+          — module ⛔ không được đọc `muc[1]`.
+          **Mới (B13 D1, 28/09 chiều)**: *"nên bật lại OCR đọc text tham
+          chiếu"* — module NAY ĐƯỢC ĐỌC `muc[1]`, nhưng văn bản đó CHỈ được
+          dùng nội bộ để hỏi *"đổi hay không"* (`_van_ban_giong`), ⛔ không
+          bao giờ được đi ra ngoài tệp: `_bao()` — hàm DUY NHẤT dựng dict trả
+          về của `do_dai_chu_ocr`/`_theo_doan` — ⛔ không được đọc trường
+          `van_ban`.
 
-    ⚠️ Vế 2 đo bằng **AST**: tìm mọi phép chỉ mục `muc[i]` trên kết quả OCR và
-       đòi chỉ có `[0]` (hộp toạ độ). `[1]` là văn bản, `[2]` là điểm tin cậy.
-
-       ⭐ Đo CHUỖI ở đây sẽ đo sai thứ: tệp ấy **nói về** văn bản trong nhiều
-          chú thích (*"`use_rec=False` VẪN trả `[hộp, văn_bản, điểm]`"*) — đó
-          là bằng chứng, ⛔ không phải một phép đọc. Đúng bài học
-          `banh-coc-do-CACH-GO-thay-vi-tinh-chat`.
+    ⚠️ Vế 2 đo bằng **AST**, ⛔ không phải chuỗi: đọc thân hàm `_bao` và đòi nó
+       ⛔ không chứa bất kỳ `Name`/`Attribute`/khoá dict nào tên `van_ban`.
+       Đo CHUỖI ở đây sẽ đo sai thứ: tệp ấy **nói về** văn bản trong nhiều chú
+       thích — đó là bằng chứng, ⛔ không phải một phép đọc. Đúng bài học
+       `banh-coc-do-CACH-GO-thay-vi-tinh-chat`.
     """
     import ast as _ast
 
@@ -224,17 +228,23 @@ def test_CHI_MOT_module_duoc_nhap_rapidocr_va_no_KHONG_doc_chu():
         % [p.relative_to(GOC).as_posix() for p in nhap])
 
     cay = _ast.parse(nhap[0].read_text(encoding="utf-8"))
-    chi_muc = set()
-    for n in _ast.walk(cay):
-        if (isinstance(n, _ast.Subscript) and isinstance(n.value, _ast.Name)
-                and n.value.id in ("muc", "kq", "kq2", "box")
-                and isinstance(n.slice, _ast.Constant)
-                and isinstance(n.slice.value, int)):
-            chi_muc.add(n.slice.value)
-    assert chi_muc <= {0}, (
-        "module do vung dang doc chi muc %s cua ket qua OCR; chi `[0]` (hop "
-        "toa do) duoc phep — `[1]` la VAN BAN va chu du an da chot khong dung"
-        % sorted(chi_muc))
+    ham_bao = next((n for n in _ast.walk(cay)
+                    if isinstance(n, _ast.FunctionDef) and n.name == "_bao"),
+                   None)
+    assert ham_bao is not None, "khong thay ham `_bao` — hinh dang tep da doi"
+
+    ro_ra: list[int] = []
+    for n in _ast.walk(ham_bao):
+        if isinstance(n, _ast.Name) and n.id == "van_ban":
+            ro_ra.append(n.lineno)
+        if isinstance(n, _ast.Attribute) and n.attr == "van_ban":
+            ro_ra.append(n.lineno)
+        if isinstance(n, _ast.Constant) and n.value == "van_ban":
+            # Khoa dict "van_ban" go tay (`_bao` tra ve mot dict-literal).
+            ro_ra.append(n.lineno)
+    assert not ro_ra, (
+        "`_bao()` cham vao `van_ban` o dong %s — van ban OCR dang RO RA khoi "
+        "ket qua tra ve, trai voi rang buoc D1 'chu CHI dung noi bo'" % ro_ra)
 
 
 def test_hai_module_cua_duong_OCR_da_bi_XOA():
