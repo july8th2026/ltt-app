@@ -13,6 +13,18 @@ lúc và nói ra lý do:
 xanh — **⛔ không một cổng nào trong kho nói gì** về việc có ai đang dùng máy chủ.
 Một lượt deploy là thao tác trên **HỆ ĐANG PHỤC VỤ**, ⛔ không chỉ trên cây mã.
 
+🔴 **VÀ HỌ BIẾT ĐƯỢC CHỈ VÌ JOB ẤY LÀ CỦA CHÍNH HỌ** — họ tự đính chính điều đó:
+
+> *"Tôi ⛔ không hề kiểm 'có ai đang chạy job không' trước khi định deploy. Tôi
+>   biết vì chính job đó là của tôi và tôi vừa khởi động nó. Nếu job ấy của bạn,
+>   tôi đã giết nó và ⛔ không có gì trên máy nói cho tôi biết."*
+
+⇒ Nên tệp này ⛔ **không** phải "cơ học hoá một thói quen tốt" — ⛔ không ai có thói
+  quen ấy, vì ⛔ không ai có cách. Nó cấp một thông tin mà **⛔ không ai từng có**.
+  Đó cũng là lý do ⛔ đừng đọc lần thoát hiểm kia như một bằng chứng rằng sự cẩn
+  thận là đủ: nó là **một sự trùng hợp về quyền sở hữu**, và trùng hợp ⛔ không
+  lặp lại theo yêu cầu.
+
 ⇒ *"Ai đang chạy job"* là trạng thái **⛔ KHÔNG nằm trong git**, nên ⛔ không bánh
   cóc nào trong kho có thể bắt nó. Nó chỉ bắt được bằng một **cửa hỏi CSDL**.
 
