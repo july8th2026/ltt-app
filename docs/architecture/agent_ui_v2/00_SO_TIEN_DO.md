@@ -24,10 +24,11 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-8a Human approval ⭐ | `ui8a` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui8a` | `routes/phe_duyet_v3.py` (mới) · `ExecutionPanel/**` · `cho_doi.py` (nếu buộc) | — | dải **6500-6599** · cổng **8206** · 🔴 `core.human` đã ĐỦ (`NHANH_HUMAN`, waitpoint, hết hạn ⇒ `reject`) nhưng ⛔ KHÔNG cửa nào BẤM duyệt được ⇒ mở cửa là TRONG phạm vi phase |
 | UI-6 Data picker | `ui6` | ✅ **ĐÃ GỘP** 🔴 *(bị chặn bởi lỗi id gạch ngang)* | `phien/agent-ui-v2-ui6` | `src/inspector/FormTuLuocDo.tsx` · `inspector.css` · tệp mới trong `src/inspector/` | — | dải **6400-6499** · cổng **8205** · dùng lại `/bieu-thuc/goi-y` ⇒ ⛔ không cửa mới |
 | UI-9 Mẫu / Templates | `ui9` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui9` | `routes/trang.py` (⭐ giữ) · `templates/agent_templates.html` (mới) · `platform_core/workflow/mau.py` (mới) | — | dải **6600-6699** · cổng **8207** · dùng lại `POST /api/v3/workflows` với `document` ⇒ ⛔ không cửa mới · mỗi mẫu PHẢI publish được thật |
-| UI-8b Agent Designer diff | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
-| UI-9 Templates | — | CHƯA MỞ | — | — | — | chặn bởi UI-1 |
-| UI-10 i18n + trợ năng + mobile | — | CHƯA MỞ | — | — | — | ⛔ **không song song hoá được** — chạm mọi tệp |
-| UI-11 Nghiệm thu + hồi quy | — | CHƯA MỞ | — | — | — | cuối cùng, rồi mới **gate một lần** |
+| UI-8b Agent Designer diff | — | ⛔ **CHƯA MỞ** | — | — | — | hạng mục DUY NHẤT của plan chưa làm. ⛔ Không chặn bởi gì nữa (UI-3 xong) — nó là **phạm vi bị hoãn có chủ đích**, ⛔ không phải việc bị bỏ quên |
+| UI-10a Hiệu năng bundle | `ui10a` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui10a` | `EditorShell.tsx` · `vite.config.ts` · `test_95` | — | dải **6700** · cổng **8208** · nạp trễ 3 panel ⇒ entry **517.837 → 500.640** thô, zstd-3 **164.335 → ~156.000**; trần hạ 520k→510k, 170k→165k |
+| UI-10b Trợ năng + mobile | `ui10b` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui10b` | `canvas.css` · `styles/**` · `features/editor/**` (trừ `EditorShell`) · `inspector/**` · `nodes/**` | — | dải **6800** · cổng **8209** · tiêu chí 89-94: bẫy focus 4 nơi · bảng phím tắt 14 dòng · `aria-pressed` đổi thật · viền Controls/MiniMap **6,20:1** tối / **5,22:1** sáng · cổng 24px 6/6 · mobile 3 tab |
+| ⛔ UI-10 (gộp một làn) | — | **ĐÃ TÁCH** | — | — | — | audit ghi *"không song song hoá được"*; đo lại thì **tách được**: hiệu năng chạm `EditorShell.tsx` + `vite.config.ts`, trợ năng chạm CSS + component — hai tập **rời nhau** |
+| UI-11 Nghiệm thu + hồi quy | `ui11` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui11` | chỉ máy chủ thử 8210 (⛔ không sửa sản phẩm) | — | dải **6900** · cổng **8210** · **6/7 bước E2E đi được**; bước 3 lộ lỗi CHẶN (id gạch ngang) đã vá ở `ed204316` |
 
 ## Phiếu tệp đang giữ
 
