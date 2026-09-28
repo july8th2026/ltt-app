@@ -82,6 +82,31 @@ import time
 from collections.abc import Iterable
 from pathlib import Path
 
+# 🔴 EP UTF-8 NGAY DAY, TRUOC moi `print`. Su co 28/09/2026:
+#
+#      RESULT: PASS  [--ho-so doi: ...]          <- da in
+#      UnicodeEncodeError: 'charmap' codec can't encode '\u26d4'
+#
+#    Cu chet o dong `print(HO_SO[ho_so]['khong_chung_minh'])` (~2280) xay ra
+#    **TRUOC** khoi ghi so (~2422) ⇒ man hinh noi `PASS` ma `.gate/` **khong
+#    co ban ghi nao**, va ban ghi moi la thu `deploy` doc. Mot cong chat luong
+#    chet trong luc BAO CAO thi te hon mot cong khong chay: no vua tuyen bo dat
+#    vua khong de lai bang chung nao.
+#
+# ⭐ Va day la LOP loi, khong phai mot ca: cung ngay 28/09 no xay ra 4 lan o 4
+#    cho khac nhau (`do_migration_tren_postgres.py`, hai script tam, va day).
+#    `tools/test_nhanh.py::_ep_utf8` da co khuon nay tu truoc.
+#
+# ⚠️ Dat o DAU tep: mot dong `print` co dau nam o bat ky dau trong 2.700 dong
+#    duoi day cung du lam mat mot phan quyet.
+for _luong in (sys.stdout, sys.stderr):
+    try:
+        _luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    except (AttributeError, ValueError):
+        # `reconfigure` chi co tren `io.TextIOWrapper`; duoi mot trinh hung khac
+        # stdout co the la thu khac va phuong thuc nay vang mat khong bao gi.
+        pass
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cua_so_yen import KHONG_DUOC_CHEN, MAC_DINH, CuaSoYen  # noqa: E402  (can sys.path o tren)
 # `test_nhanh.argv_an_toan` la MOT nguon cho ca hai bien cua tran dong lenh
