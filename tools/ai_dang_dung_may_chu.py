@@ -112,10 +112,19 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:  # noqa: BLE001
         return _ket_qua(KHONG_BIET, f"⛔ khong truy van duoc bang `jobs`: {exc!r}")
     finally:
-        try:
-            db.close()
-        except Exception:  # noqa: BLE001
-            pass
+        # ⛔ KHONG boc `try/except: pass` quanh `db.close()`.
+        #
+        # 🔴 Banh coc `check_silent_except` bat dung dong nay (54 > moc 53), va no
+        #    dung: mot `except: pass` lam loi **bien mat han**, ⛔ khong chi mat
+        #    thong diep. Neu dong ket noi that bai thi trang thai ket noi dang
+        #    hong, va do la thu nguoi sap deploy **can biet**.
+        #
+        # ⭐ De no nem: luc ay cong cu thoat khac `0`, va nguoi deploy doc do la
+        #    *"co gi khong on — dung deploy"*. Dung theo luat toi vua chot cung
+        #    phien `Auto Scan Video`: **neu buoc phai chon, nga ve phia TON KEM
+        #    chu ⛔ dung nga ve phia IM LANG.** Mot lan deploy bi hoan oan ton mot
+        #    lan chay lai; mot loi bi nuot o day ton mot job cua khach.
+        db.close()
 
     dang_chay = [h for h in hang if h.status == JOB_RUNNING]
     xep_hang = [h for h in hang if h.status == JOB_QUEUED]
