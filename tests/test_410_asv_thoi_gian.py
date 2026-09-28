@@ -128,18 +128,31 @@ def test_tang_toc_CHI_de_tra_no_chu_khong_de_ep_vua():
         "đã tăng tốc dù không có nợ nào để trả")
 
 
-def test_tang_toc_KHONG_BAO_GIO_vuot_tran():
-    """⛔ Cố ý không lấy `2.1` của SoniTranslate: nhanh gấp đôi thì không còn là
-    giọng người. 1,15 là mặc định của Subdub."""
+def test_tang_toc_KHONG_BAO_GIO_vuot_tran_KY_THUAT():
+    """🔴 **Viết lại 28/09 — bản cũ ghim trần THIẾT KẾ `1,15` làm cổng.**
+
+    Hai quyết định đã dời cột mốc này:
+      · 26/09 chủ dự án chốt `TRAN_TANG_TOC` là **CẢNH BÁO**, ⛔ không phải cổng;
+      · 28/09 chốt **⛔ không bao giờ bỏ câu**, nên NẤC 5 được phép nén thêm tới
+        `TRAN_KY_THUAT_ATEMPO` để giữ đủ nội dung.
+
+    ⇒ Cổng duy nhất còn cưỡng chế là trần **KỸ THUẬT** — qua nó `atempo` cho
+      TIẾNG RÁC. Bài này chốt đúng cổng ấy, ⛔ không chốt một cổng đã bị bỏ.
+    """
     from apps.auto_scan_video import thoi_gian as tg
 
     muc = _muc(8, cach_giay=1.0, noi_giay=1.0)      # nói dồn, không nghỉ
     ke = tg.lap_ke_hoach(muc, _dai(muc, 1.5), tong_giay=20.0)
 
-    assert all(d["he_so_toc"] <= tg.TRAN_TANG_TOC + 1e-9 for d in ke["doan"])
-    assert ke["he_so_toc_lon_nhat"] if False else True
-    assert tg.tom_tat(ke)["he_so_toc_lon_nhat"] == pytest.approx(
-        tg.TRAN_TANG_TOC, abs=0.001)
+    assert all(d["he_so_toc"] <= tg.TRAN_KY_THUAT_ATEMPO + 1e-9
+               for d in ke["doan"])
+    assert tg.tom_tat(ke)["he_so_toc_lon_nhat"] <= tg.TRAN_KY_THUAT_ATEMPO
+
+    # ⭐ Và ĐỐI CHỨNG: còn chỗ thì ⛔ KHÔNG nén gì cả (nấc 5 ⛔ không tự bật).
+    thua = tg.lap_ke_hoach(_muc(4, cach_giay=3.0, noi_giay=1.0),
+                           _dai(_muc(4, cach_giay=3.0), 1.2), tong_giay=20.0)
+    assert thua["boi_nac5"] == 1.0
+    assert all(d["he_so_toc"] == 1.0 for d in thua["doan"])
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -157,10 +170,14 @@ def test_no_bi_CHAN_boi_tran_ba_doan():
     muc = _muc(10, cach_giay=1.0, noi_giay=1.0)     # nói dồn
     ke = tg.lap_ke_hoach(muc, _dai(muc, 2.2), tong_giay=30.0)
 
-    assert ke["so_doan_bi_cat"] > 0, "trần không kích hoạt"
-    # Nợ bị chặn quanh ngân sách ba đoạn (3 x 1000 ms), có dư cho một đoạn đang chạy.
-    assert ke["troi_toi_da_ms"] < 6000, (
-        f"nợ vượt xa trần: {ke['troi_toi_da_ms']} ms")
+    # 🔴 **Viết lại 28/09.** Trần nợ ⛔ KHÔNG còn cắt câu — nó là **CẢNH BÁO**
+    #    (khuôn `TRAN_TANG_TOC`, chốt 26/09). Cái giữ `D-ASV-03` nay là NẤC 5.
+    assert ke["so_doan_bi_cat"] == 0, (
+        "⛔ KHÔNG BAO GIỜ bỏ câu (chủ dự án chốt 28/09)")
+    assert ke["so_doan_vuot_tran_troi"] > 0, (
+        "trần nợ phải vẫn ĐẾM được — một cảnh báo ⛔ không đếm được thì ⛔ không "
+        "ai biết phim nào đang căng")
+    assert ke["ket_cuoi_ms"] <= ke["tong_ms"], "T2 / D-ASV-03"
 
 
 def test_cat_MOT_doan_chi_mua_lai_ngan_sach_cua_DOAN_DO():
@@ -180,12 +197,13 @@ def test_cat_MOT_doan_chi_mua_lai_ngan_sach_cua_DOAN_DO():
     muc = _muc(10, cach_giay=1.0, noi_giay=1.0)
     ke = tg.lap_ke_hoach(muc, _dai(muc, 2.2), tong_giay=30.0)
 
-    bi_cat = [d for d in ke["doan"] if d["cat_bot_ms"] > 0]
-    assert bi_cat, "không đoạn nào bị cắt"
-    for d in bi_cat:
-        assert d["dai_ms"] == 0, "đoạn bị cắt vẫn chiếm thời gian"
-        assert d["troi_sau_ms"] > 0 or len(bi_cat) == 1, (
-            "một lần cắt đã xoá sạch nợ — mô hình sai")
+    # 🔴 **Viết lại 28/09: ⛔ KHÔNG đoạn nào bị cắt, nên ⛔ không còn "một lần
+    #    cắt" nào để mà đúng hay sai.** Bất biến MỚI mạnh hơn bất biến cũ.
+    assert all(d["cat_bot_ms"] == 0 for d in ke["doan"]), (
+        "⛔ KHÔNG BAO GIỜ bỏ câu — nấc 5 nén thêm thay vì cắt")
+    assert all(d["dai_ms"] > 0 for d in ke["doan"]), (
+        "mọi đoạn phải còn tiếng: một `dai_ms == 0` là một câu khách đã mất")
+    assert len(ke["doan"]) == len(muc), "⛔ không đoạn nào được biến mất"
 
 
 def test_doan_bi_cat_duoc_DEM_de_QC_bao_cao():
@@ -195,7 +213,10 @@ def test_doan_bi_cat_duoc_DEM_de_QC_bao_cao():
 
     muc = _muc(10, cach_giay=1.0, noi_giay=1.0)
     ke = tg.lap_ke_hoach(muc, _dai(muc, 2.2), tong_giay=30.0)
-    assert tg.tom_tat(ke)["so_doan_bi_cat"] == ke["so_doan_bi_cat"] > 0
+    # 🔴 **Viết lại 28/09**: con số vẫn phải TỚI được QC, nhưng nay nó luôn `0`
+    #    và `0` có nghĩa *"ta ⛔ không bao giờ bỏ câu"*. Giữ đường dẫn của nó là
+    #    giữ khả năng phát hiện một cỗ máy cắt thứ ba xuất hiện sau này.
+    assert tg.tom_tat(ke)["so_doan_bi_cat"] == ke["so_doan_bi_cat"] == 0
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -207,9 +228,19 @@ def test_ban_long_tieng_KHONG_BAO_GIO_dai_hon_video():
     con số cố định, không co giãn."""
     from apps.auto_scan_video import thoi_gian as tg
 
+    # 🔑 **Hai hình dạng, và CẢ HAI đều giữ T2** (viết lại 28/09):
+    #      · vừa được ⇒ `ket_cuoi_ms <= tong_ms`;
+    #      · ⛔ không vừa kể cả khi mọi đoạn đã ở trần KỸ THUẬT ⇒ **NÉM**.
+    #    ⛔ Cái ⛔ KHÔNG còn là một lựa chọn: giao một bản thiếu câu.
     muc = _muc(6, cach_giay=1.0, noi_giay=1.0)
-    ke = tg.lap_ke_hoach(muc, _dai(muc, 3.0), tong_giay=8.0)
-    assert ke["ket_cuoi_ms"] <= ke["tong_ms"]
+    try:
+        ke = tg.lap_ke_hoach(muc, _dai(muc, 3.0), tong_giay=8.0)
+    except tg.ThoiGianError as exc:
+        assert "dài hơn video" in str(exc), (
+            f"phải nói rõ vì sao ⛔ không vừa, nhận: {exc}")
+    else:
+        assert ke["ket_cuoi_ms"] <= ke["tong_ms"]
+        assert ke["so_doan_bi_cat"] == 0
 
 
 def test_che_do_natural_KHONG_duoc_keo_dai_video():
@@ -217,9 +248,15 @@ def test_che_do_natural_KHONG_duoc_keo_dai_video():
     from apps.auto_scan_video import thoi_gian as tg
 
     muc = _muc(5, cach_giay=1.0, noi_giay=1.0)
-    ke = tg.lap_ke_hoach(muc, _dai(muc, 2.5), tong_giay=6.0, che_do="natural")
-    assert ke["ket_cuoi_ms"] <= ke["tong_ms"]
-    assert ke["so_doan_bi_cat"] > 0
+    try:
+        ke = tg.lap_ke_hoach(muc, _dai(muc, 2.5), tong_giay=6.0,
+                             che_do="natural")
+    except tg.ThoiGianError as exc:
+        # ⭐ Viết lại 28/09: ⛔ không còn cắt đuôi, nên ca ⛔ không vừa thì NÉM.
+        assert "dài hơn video" in str(exc)
+    else:
+        assert ke["ket_cuoi_ms"] <= ke["tong_ms"]
+        assert ke["so_doan_bi_cat"] == 0
 
 
 def test_chong_lan_KHONG_vuot_tran():

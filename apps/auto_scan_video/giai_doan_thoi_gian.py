@@ -360,9 +360,22 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if ctx is not None and getattr(ctx, "progress", None):
         ctx.progress(50, _t('Đang trộn bản phối'))
 
+    # 🔴 **Ban phoi ap he so cua KE HOACH, ⛔ khong cua `ban_ke` (28/09, nac 5).**
+    #    `he_so_da_ap` la DAU VAO cua ke hoach (nac 2, tu bac thang nan); nac 5
+    #    co the nhan them `boi_nac5` de tra lai thoi gian cho duoi. Neu ban phoi
+    #    van doc `ban_ke` thi phep nen ay ⛔ KHONG BAO GIO chay, va ta quay ve
+    #    dung cho lech ma B13-B3 da do: ke hoach noi mot dang, tron ap mot dang.
+    # ⭐ Va day la thiet ke GOC: `docs/auto_scan_video/reports/13_REPORT.md:190`
+    #    khai *"he_so_toc > 1.0 means the renderer must apply atempo"*.
+    he_so_thi_hanh = {
+        str(d["ma"]): he_so_ap(float(d.get("he_so_toc") or 1.0),
+                               tran_ky_thuat=TRAN_KY_THUAT_ATEMPO)
+        for d in (ke_hoach.get("doan") or [])
+        if str(d["ma"]) in he_so_da_ap}
     khoa_master, do_duoc, vt_master = _dung_ban_phoi(
         db, kho, run, ke_hoach=ke_hoach, ban_ke=ban_ke, tong_giay=tong_giay,
-        van_tay_ke_hoach=vt, he_so_theo_ma=he_so_da_ap, ctx=ctx)
+        van_tay_ke_hoach=vt, he_so_theo_ma=he_so_thi_hanh,
+        he_so_nac2=he_so_da_ap, ctx=ctx)
     phan.append({"staging_key": khoa_master, "kind": "audio", "duoi": "wav",
                  "van_tay": vt_master})
 
@@ -379,7 +392,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
 def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
                    tong_giay: float, van_tay_ke_hoach: str,
-                   he_so_theo_ma: dict[str, float], ctx=None):
+                   he_so_theo_ma: dict[str, float],
+                   he_so_nac2: dict[str, float], ctx=None):
     """Tron nen + cac doan tieng theo ke hoach.
 
     Tra `(khoa, do_duoc, van_tay)` — `do_duoc["he_so_toc_da_ap"]` liet ke moi
@@ -446,10 +460,14 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     #    **cách gõ** — nó đỏ khi module này gọi cả `min` lẫn `max`, kể cả khi
     #    phép `max` ấy ⛔ không kẹp gì cả. Giữ số học ra ngoài đây là cách giữ
     #    bánh cóc ấy CÒN NGHĨA thay vì nới nó (`banh-coc-do-CACH-GO-...`).
-    doi_chieu = thoi_gian.doi_chieu_he_so_toc(
-        {str(d["ma"]): float(d.get("he_so_toc") or 1.0)
-         for d in (ke_hoach.get("doan") or [])},
-        he_so_theo_ma)
+    # ⭐ **Doi chieu doi NGHIA tu 28/09 (nac 5), va no van SONG.**
+    #    Truoc: "ke hoach noi gi" so "tron ap gi" — mot bo bat lech, va B13-A4 da
+    #    dua no ve 0. Nay ban phoi ap DUNG con so ke hoach, nen phep so ay se la
+    #    mot dong thuc hien (tautology) — tuc mot bo do CHET.
+    #    ⇒ Doi ve so sanh **DAU VAO** (nac 2, tu `ban_ke`) voi **DA AP** (sau nac
+    #    5): so doan lech = so doan nac 5 da nen THEM. Mot dai luong co that, va
+    #    la cai gia cua viec ⛔ khong bo cau nao.
+    doi_chieu = thoi_gian.doi_chieu_he_so_toc(he_so_nac2, he_so_theo_ma)
     for ma, h_ke, h_ap in doi_chieu["lech"]:
         log.warning(
             "asv timing_align: doan %s — ke hoach dat cho no theo he_so_toc="
@@ -552,6 +570,14 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
         do_duoc["so_doan_cat_vi_no"] = int(ke_hoach.get("so_doan_cat_vi_no") or 0)
         do_duoc["so_doan_cat_vi_duoi"] = int(
             ke_hoach.get("so_doan_cat_vi_duoi") or 0)
+        # ⭐ NẤC 5 (28/09) — CÁI GIÁ đã trả để ⛔ không bỏ một câu nào. `1,0` /
+        #    `0` nghĩa là ⛔ không phải trả gì; lớn hơn là *"cả bài đọc nhanh hơn
+        #    bằng này để giữ đủ nội dung"*, và nó ⛔ không được vô hình.
+        do_duoc["boi_nac5"] = float(ke_hoach.get("boi_nac5") or 1.0)
+        do_duoc["so_doan_nac5"] = int(ke_hoach.get("so_doan_nac5") or 0)
+        # ⭐ Trần nợ nay là CẢNH BÁO: nó ⛔ không cắt nữa, nhưng nó nói phim nào căng.
+        do_duoc["so_doan_vuot_tran_troi"] = int(
+            ke_hoach.get("so_doan_vuot_tran_troi") or 0)
         do_duoc["so_doan_lech_cuoi"] = int(so_doan_lech_cuoi)
         do_duoc["giay_lech_cuoi"] = round(float(giay_lech_cuoi), 3)
         # ══ B13-B4 (28/09): HAI đại lượng ⛔ KHÔNG còn đứng cạnh nhau dưới hai
