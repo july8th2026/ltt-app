@@ -467,11 +467,82 @@ Mặc định (quản trị viên có thể đổi; xem `/developers`):
 | Tạo job/phút mỗi khóa | 20 |
 | Job đang chạy mỗi tài khoản | 5 |
 | Trần credit/ngày | tắt |
-| Body JSON | 256 KiB |
+| Thân request (JSON) | **32 MiB** = 33 554 432 byte |
 
 429 luôn kèm `retry_after` (giây). Ngân sách theo **khóa**, nên một tích hợp ồn
 ào không ảnh hưởng khóa khác của bạn; còn trần job/credit tính theo **tài khoản**
 nên đổi khóa không lách được.
+
+⭐ **Đừng chép con số thân request vào mã của bạn — đọc nó từ phản hồi.** Mọi phản
+hồi `/api/v1/*`, kể cả `2xx`, mang header:
+
+```
+X-LTT-Max-Body-Bytes: 33554432
+```
+
+Đó là con số **đang cưỡng chế**, không phải con số trong tài liệu này. Nếu quản
+trị viên đổi trần, header đổi ngay ở lượt tiếp theo còn tài liệu thì không.
+
+> 🔴 Vì sao ghi câu trên: dòng bảng này **từng ghi `256 KiB` suốt bốn lần nâng
+> trần** (256 KiB → 1 → 2 → 4 → 32 MiB) và không ai bắt khớp. Một khách thiết kế
+> theo `256 KiB` đã tự giới hạn mình xuống **1/128** thứ thật sự được phép. Nay
+> `tests/test_4206_*` đối chiếu số trong tài liệu với hằng đang chạy.
+
+## 7b. Gửi ảnh
+
+`ltt-3.8` và `ltt-3.5` đều đọc ảnh. Ảnh đi **trong thân request** dưới dạng
+`data:` URL base64 — ⛔ **không** nhận URL từ xa (`http://…`), ở cả ba giao thức.
+
+⛔ **Không có trần số ảnh.** Thứ giới hạn một request là **ngữ cảnh**, và mỗi ảnh
+tiêu một số token tính được **trước khi gửi**. `GET /api/v1/models` công bố đủ
+tham số để bạn tự tính:
+
+| Trường | Giá trị hiện tại | Nghĩa |
+|---|---|---|
+| `image_pixels_per_token` | `1024` | một token ảnh = 32×32 điểm ảnh |
+| `min_image_tokens` | `8` | sàn: ảnh nhỏ hơn vẫn tính bằng sàn |
+| `max_image_tokens` | `4096` | trần **mỗi ảnh**; vượt thì ảnh bị **thu nhỏ giữ tỉ lệ** |
+| `image_token_markers` | `2` | dấu mở/đóng khối ảnh, tính như token chữ |
+| `max_image_bytes` | `12582912` | 12 MiB **sau khi giải base64**, cho một ảnh |
+| `accepted_image_schemes` | `["data"]` | chỉ `data:` URL |
+
+Phép tính, với `c = sqrt(image_pixels_per_token)` (= 32):
+
+```
+o = round_nua_len(rong/c) * round_nua_len(cao/c)
+nếu o > max_image_tokens:                       # KHÔNG kẹp — thu nhỏ giữ tỉ lệ
+    beta = sqrt(rong*cao / (max_image_tokens * c * c))
+    o    = floor(rong/beta/c) * floor(cao/beta/c)
+token_ảnh = max(min_image_tokens, o) + image_token_markers
+```
+
+`round_nua_len(x)` là `floor(x + 0.5)` — làm tròn **nửa lên**. ⚠️ Nhiều ngôn ngữ
+làm tròn **về số chẵn** (`round()` của Python, `Math.round` cho số âm); dùng phép
+đó sẽ lệch ở đúng các cỡ chia hết nửa, ví dụ `1280×720`.
+
+Đối chiếu (số **đo thật** trên cả hai model, gồm `image_token_markers`):
+
+| Ảnh | Token | | Ảnh | Token |
+|---|---|---|---|---|
+| 320×240 | 82 | | 1920×1080 | 2 042 |
+| 512×512 | 258 | | 2048×2048 | 4 098 |
+| 1024×768 | 770 | | 3840×2160 | 4 082 |
+| 1280×720 | 922 | | | |
+
+⚠️ `3840×2160` cho **4 082**, không phải 4 098: vượt `max_image_tokens` thì ảnh
+được **thu nhỏ giữ tỉ lệ** rồi làm tròn xuống, chứ không bị kẹp về trần.
+
+**Hai trần cùng áp, cái nào chật hơn thắng:**
+
+1. `Σ token_ảnh + token chữ + max_tokens` phải vừa `context_window` của model —
+   vượt thì `400 context_window_exceeded` (hoặc `input_tokens_exceeded`);
+2. tổng thân request phải vừa `X-LTT-Max-Body-Bytes`. Base64 nở **4/3**, nên một
+   ảnh 3 MiB chiếm 4 MiB trên dây.
+
+⭐ Hai trần này độc lập: một request **ít ảnh nhưng ảnh lớn** thường chạm trần
+**byte** trước, còn **nhiều ảnh nhỏ** chạm trần **ngữ cảnh** trước.
+
+**Định dạng:** PNG, JPEG, WebP, GIF, BMP. ⚠️ Ảnh động chỉ lấy khung đầu.
 
 ## 8. Upload
 
