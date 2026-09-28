@@ -22523,3 +22523,24 @@ msgstr "You give a short idea; AI turns it into a detailed description, and that
 
 msgid "Viết một câu mô tả ảnh thật chi tiết cho ý tưởng sau, chỉ trả về câu mô tả: một quán cà phê Hà Nội buổi sáng sớm."
 msgstr "Write one very detailed image description for the following idea, and return only that description: a Hanoi coffee shop in the early morning."
+
+msgid "Chạy theo lịch"
+msgstr "Run on a schedule"
+
+msgid "Tự chạy theo lịch bạn đặt, kể cả khi bạn không mở máy. Mỗi lượt tiêu credit như một lần chạy tay."
+msgstr "Runs itself on the schedule you set, even while your machine is off. Each run costs credits just like a manual run."
+
+msgid "Biểu thức lịch, ví dụ `0 8 * * *` là 8 giờ sáng mỗi ngày."
+msgstr "A schedule expression; `0 8 * * *` means 8 AM every day."
+
+msgid "Múi giờ tính lịch."
+msgstr "The time zone the schedule is computed in."
+
+msgid "Nếu máy chủ ngừng và lịch bị lỡ: chạy một lần bù, hay bỏ qua."
+msgstr "If the server was down and a scheduled time was missed: run once to catch up, or skip it."
+
+msgid "Nhận webhook"
+msgstr "Receive a webhook"
+
+msgid "Một hệ thống khác gọi vào địa chỉ riêng của workflow này để chạy nó. Địa chỉ và khoá lấy ở phần cấu hình trigger."
+msgstr "Another system calls this workflow's own address to run it. The address and key live in the trigger settings."

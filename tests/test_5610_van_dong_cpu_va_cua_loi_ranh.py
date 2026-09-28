@@ -315,3 +315,191 @@ def test_canh_bao_khi_giu_mutex_ca_may_ma_j_nho():
     assert "ngan_sach_loi" in goi, (
         "canh bao so `-j` voi mot hang so go tay thay vi voi ngan sach loi — "
         "nguong go tay se lech tren may khac")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  LO 6 — `gate.py` in `PASS` roi CHET truoc khi ghi so
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Ca that 28/09/2026, mot phien khac do va bao lai:
+#
+#      RESULT: PASS  [--ho-so doi: bo test THU HEP theo pham vi]   <- DA IN
+#      UnicodeEncodeError: 'charmap' codec can't encode character '⛔'
+#      ls -t .gate/*.json  ->  ban ghi moi nhat la cua luot TRUOC
+#
+#    Man hinh noi `PASS`; `.gate/` khong co ban ghi nao cho luot ay. Ban ghi la
+#    thu `deploy` doc ⇒ ai tin man hinh se deploy tren mot phan quyet KHONG TON TAI.
+#
+# ⚠️ **Cai co la cua toi**: chinh toi them `⛔` vao `HO_SO["doi"]
+#    ["khong_chung_minh"]` sang cung ngay (ban va noi dung ay DUNG — no sua mot
+#    cau that su sai — no chi mang mot emoji vao mot duong in chua bao gio duoc
+#    bao ve).
+#
+# ⭐ Hai tang phong thu, va chung KHAC nhau:
+#    · ep UTF-8 dau tep (phien khac da va)  -> go CAI CO
+#    · ghi so TRUOC khi in (bai duoi day)    -> go CAI SUNG
+#   Tang hai khong phu thuoc vao viec ai do co nho ep UTF-8 hay khong.
+
+def test_ghi_so_dat_TRUOC_moi_dong_in_giai_thich():
+    """⭐ Chot **THU TU** bang AST — cung ky thuat `test_5611` dung cho
+    `credit_cost`, va cung ly le: day la mot quan he VI TRI, thu de bi mot ban
+    refactor "don dep" dao lai ma khong ai thay gi khac la.
+
+    🔴 Ve phan biet duoc: mot bai chi kiem *"co ep UTF-8 khong"* van XANH khi thu
+       tu bi dao lai — va luc ay mot `print` co dau o bat ky dong nao trong ~150
+       dong con lai se lam mat ban ghi. Nen bai nay do THU TU, khong do ep UTF-8.
+    """
+    src = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    cay = ast.parse(src)
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "main"]
+    assert ham, "mat moc `main`"
+
+    dong_ghi = None
+    for n in ast.walk(ham[0]):
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) \
+                and n.func.id == "_ghi_ket_qua":
+            dong_ghi = n.lineno if dong_ghi is None else min(dong_ghi, n.lineno)
+    assert dong_ghi is not None, "`main` khong con goi `_ghi_ket_qua`"
+
+    # Moi `print` co mot chuoi f/literal chua `RESULT:` — day la moc dau cua
+    # phan in ket qua.
+    dong_result = None
+    for n in ast.walk(ham[0]):
+        if not (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                and n.func.id == "print"):
+            continue
+        if "RESULT:" in ast.dump(n):
+            dong_result = n.lineno if dong_result is None \
+                else min(dong_result, n.lineno)
+    assert dong_result is not None, "khong tim duoc dong in `RESULT:`"
+
+    assert dong_ghi < dong_result, (
+        f"`_ghi_ket_qua` o dong {dong_ghi}, dong in `RESULT:` dau tien o "
+        f"{dong_result}: ghi so phai di TRUOC. Neu khong, mot `UnicodeEncodeError` "
+        "o bat ky `print` nao giua hai diem se cho ra `PASS` tren man hinh ma "
+        "`.gate/` rong — va `deploy` doc `.gate/`, khong doc man hinh.")
+
+
+def test_ghi_ket_qua_TRA_VE_chu_khong_IN():
+    """⛔ Ve con lai cua cung ban va: neu `_ghi_ket_qua` **tu in**, thi de dong
+    `[ket qua]` nam dung cho nguoi doc tim no, ca viec GHI phai doi toi cuoi.
+
+    ⇒ Hai viec phai roi nhau: ghi (khong the that lac) di truoc, in (co the nem)
+      di sau. Bai nay chot rang ham ay ⛔ khong con `print` nao.
+    """
+    src = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    cay = ast.parse(src)
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "_ghi_ket_qua"]
+    assert ham, "mat moc `_ghi_ket_qua`"
+    in_ra = [n for n in ast.walk(ham[0])
+             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+             and n.func.id == "print"]
+    assert not in_ra, (
+        f"`_ghi_ket_qua` con {len(in_ra)} loi goi `print` — ghi va in lai bi buoc "
+        "vao nhau, va do la ly do goc cua su co 28/09")
+
+
+def test_moi_chuoi_khong_chung_minh_IN_DUOC_tren_cp1252():
+    """⭐ Hinh dang phien khac de nghi, va no do mot thu KHAC hai bai tren: noi
+    dung cac chuoi, ⛔ khong phai thu tu cac buoc.
+
+    ⚠️ `cp1252` la ma trang PowerShell 5.1 thuong dung. Mot chuoi co `⛔`/`⭐` in
+       tren do se nem — va o duong `khong_chung_minh` thi cai nem ay tung lam mat
+       ca mot phan quyet.
+    """
+    import io as _io
+
+    hong = []
+    for ten, ho in gate.HO_SO.items():
+        cau = str(ho.get("khong_chung_minh") or "")
+        try:
+            _io.StringIO().write(cau.encode("cp1252").decode("cp1252"))
+        except (UnicodeEncodeError, UnicodeDecodeError) as loi:
+            hong.append(f"{ten}: {loi}")
+    assert not hong, (
+        "chuoi `khong_chung_minh` KHONG in duoc tren cp1252: " + " | ".join(hong)
+        + ". Hoac bo ky tu ngoai cp1252, hoac dam bao gate ep UTF-8 TRUOC moi "
+          "duong in nay — va nho rang ghi so da di truoc (xem bai tren).")
+
+
+def test_MOI_chuoi_di_vao_print_deu_IN_DUOC_tren_cp1252():
+    """🔴 Bai nay thay mot LUAT bang mot CO CHE, va ly do rat cu the: toi vi pham
+    chinh luat ay **hai lan trong mot ngay**, lan thu hai ngay trong khi dang sua
+    lan thu nhat.
+
+        ca 1  `⛔` trong `HO_SO["doi"]["khong_chung_minh"]`   (sang 28/09)
+        ca 2  `⚠️` trong dong canh bao `[khoa]` mutex          (chieu 28/09)
+
+    ⚠️ Ca 2 quan trong hon ca 1, vi no o dong ~2152 — **truoc khi mot buoc nao
+       chay xong** — nen phep va *"ghi so TRUOC khi in"* ⛔ KHONG cuu duoc no:
+       khoi ghi so nam sau phan chay. Toi tung viet rang phep va do "go cai sung";
+       sai, no **thu hep cua so** chu khong dong.
+
+    ⭐ Nen bai nay quet **MOI** chuoi di vao `print(...)` trong ca tep, ⛔ khong chi
+       cac chuoi `khong_chung_minh`. Mot luat ma nguoi viet no vi pham hai lan
+       trong mot ngay thi ⛔ khong phai mot luat — no la mot loi nhac.
+
+    ⛔ Va bai nay ⛔ KHONG thay the viec ep UTF-8 trong `main()`: no chan mot chuoi
+       MOI di vao, con ep UTF-8 phu ca nhung gi doi thu vien in ra (`subprocess`
+       chuyen tiep, thong diep loi cua pytest) — thu bai nay ⛔ khong nhin thay.
+    """
+    src = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    cay = ast.parse(src)
+    hong = []
+    for n in ast.walk(cay):
+        if not (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                and n.func.id == "print"):
+            continue
+        for x in ast.walk(n):
+            if not (isinstance(x, ast.Constant) and isinstance(x.value, str)):
+                continue
+            try:
+                x.value.encode("cp1252")
+            except UnicodeEncodeError:
+                la = []
+                for c in x.value:
+                    try:
+                        c.encode("cp1252")
+                    except UnicodeEncodeError:
+                        if c not in la:
+                            la.append(c)
+                hong.append(f"dong {n.lineno}: {''.join(la)!r} trong "
+                            f"{x.value.strip()[:40]!r}")
+    assert not hong, (
+        "chuoi di vao `print` co ky tu NGOAI cp1252 — mot console PowerShell 5.1 "
+        "se nem `UnicodeEncodeError` tai dung dong do:\n  " + "\n  ".join(hong)
+        + "\n⇒ Thay ky tu ay bang chu (`CANH BAO:`, `KHONG`, `->`). Emoji trong "
+          "CHU THICH thi vo hai — chi chuoi IN RA moi di qua bo ma hoa console.")
+
+
+def test_main_EP_UTF8_truoc_khi_in():
+    """⛔ Ve con lai: bai tren chan chuoi cua CHINH ta, ⛔ khong chan thu thu vien
+    khac in ra qua duong nay. Ep UTF-8 la tang phu duoc ca do.
+
+    ⭐ Chot rang `reconfigure` duoc goi TRONG `main`, va truoc `_parser()` — dong
+       dau tien co the in bat cu gi la `parser.parse_args()` (thong diep loi cua
+       argparse, co the chua duong dan tieng Viet).
+    """
+    src = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    cay = ast.parse(src)
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "main"]
+    assert ham, "mat moc `main`"
+    dong_ep = dong_parser = None
+    for n in ast.walk(ham[0]):
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) \
+                and n.func.attr == "reconfigure":
+            dong_ep = n.lineno if dong_ep is None else min(dong_ep, n.lineno)
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) \
+                and n.func.id == "_parser":
+            dong_parser = n.lineno if dong_parser is None \
+                else min(dong_parser, n.lineno)
+    assert dong_ep is not None, (
+        "`main` khong ep UTF-8 ⇒ mot dong in co dau se giet ca luot gate tren "
+        "console cp1252, va lam mat phan quyet neu no chet truoc khoi ghi so")
+    if dong_parser is not None:
+        assert dong_ep < dong_parser, (
+            f"ep UTF-8 o dong {dong_ep} SAU `_parser()` o {dong_parser}: thong "
+            "diep loi cua argparse in ra truoc khi stdout duoc ep")

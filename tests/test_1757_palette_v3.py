@@ -103,8 +103,13 @@ def test_node_loi_chua_publish_duoc_thi_bao_ra_chu_khong_giau(api):
     theo_ten = {x["type"]: x for x in trig}
     # ⭐ 25/09 (vong P-C): them 3 piece POLLING that (google-drive, gmail,
     #    notion) canh google-sheets — xem allowlist.json `palette`.
+    # ⭐ 28/09/2026: thêm `trigger.schedule` + `trigger.webhook` (làn `ui8b`/UX-1,
+    #    UX-2). Cả hai đường thực thi ĐÃ sống từ trước (`ban_trigger` +
+    #    `POST /hooks/wf/{id}`); lần này chỉ thêm NODE để người soạn kéo được.
     assert set(theo_ten) == {
         "trigger.manual",
+        "trigger.schedule",
+        "trigger.webhook",
         "trigger.piece.google_sheets.new_spreadsheet",
         "trigger.piece.google_drive.new_file",
         "trigger.piece.google_drive.new_folder",

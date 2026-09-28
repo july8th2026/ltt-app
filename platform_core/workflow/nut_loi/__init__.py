@@ -158,5 +158,15 @@ from platform_core.workflow.nut_loi import connector as _connector  # noqa: E402
 #    module đó: *"CHƯA đăng ký"*) — dòng import dưới đây là chỗ nối duy nhất.
 from platform_core.workflow.nut_loi import code as _code  # noqa: E402,F401
 
+# ⭐ `trigger.schedule` + `trigger.webhook` (28/09/2026). CA HAI duong thuc thi DA
+#    SONG tu truoc (`ban_trigger` + `POST /hooks/wf/{id}`, deu co test); thieu duy
+#    nhat NODE de nguoi soan thay va keo len Canvas. Dong import nay la cho noi.
+#
+# ⚠️ Cung hinh dang `code_sandbox.py` o tren, va la lan thu TU trong mot ngay:
+#    ha tang xong, co test, KHONG ai noi. Mot module khong duoc import thi moi
+#    phep kiem cua no van xanh va tinh nang van khong ton tai.
+from platform_core.workflow.nut_loi import (  # noqa: E402,F401
+    trigger_lich_hook as _trigger_lich_hook)
+
 
 __all__ = ["THI_HANH_TRONG_DONG_CO", "bo_thi_hanh", "dang_ky", "tat_ca"]
