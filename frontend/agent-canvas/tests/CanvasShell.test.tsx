@@ -916,7 +916,12 @@ describe('Chạy workflow trên v3', () => {
   })
 
   // -- P-A task A3: Agent Designer "Soạn bằng AI" ---------------------------
-  it('A3: "Soạn bằng AI" gọi /soan và NẠP THẲNG document trả về vào Canvas', async () => {
+  //
+  // ⭐ UI-8b (vá B7, `02_SCORECARD.md`): từ đây "Soạn bằng AI" KHÔNG còn nạp
+  //    thẳng — nó mở lớp XEM TRƯỚC (`DesignerDiff`), và chỉ bấm "Áp dụng" mới
+  //    ghi đè `document`. Hai bài dưới cập nhật ĐÚNG bước bấm thêm đó; hành vi
+  //    cốt lõi chúng canh (nạp document trả về / Ctrl+Z cứu được) không đổi.
+  it('A3: "Soạn bằng AI" mở XEM TRƯỚC — Áp dụng mới nạp document trả về vào Canvas', async () => {
     mockRunV3(url => url.endsWith('/soan')
       ? new Response(JSON.stringify({ workflow_id: 'w1', revision: 5,
           document: { version: 3, goal: 'tạo video', budget_max_credit: 0,
@@ -933,6 +938,10 @@ describe('Chạy workflow trên v3', () => {
     fireEvent.change(screen.getByLabelText('Mục tiêu workflow'),
       { target: { value: 'tạo video' } })
     fireEvent.click(screen.getByRole('button', { name: 'Soạn bằng AI' }))
+    // Lớp xem trước hiện ra ⇒ canvas CHƯA đổi.
+    await screen.findByRole('dialog', { name: 'Xem trước thay đổi từ AI' })
+    expect(soNode()).toBe(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Áp dụng' }))
     await waitFor(() => expect(soNode()).toBe(1))
     expect((screen.getByLabelText('Mục tiêu workflow') as HTMLTextAreaElement).value)
       .toBe('tạo video')
@@ -964,6 +973,10 @@ describe('Chạy workflow trên v3', () => {
     fireEvent.change(screen.getByLabelText('Mục tiêu workflow'),
       { target: { value: 'tạo video' } })
     fireEvent.click(screen.getByRole('button', { name: 'Soạn bằng AI' }))
+    // Lớp xem trước hiện — CHƯA áp dụng ⇒ hai node của người dùng còn nguyên.
+    await screen.findByRole('dialog', { name: 'Xem trước thay đổi từ AI' })
+    expect(soNode()).toBe(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Áp dụng' }))
     // Bản AI soạn có đúng MỘT node ⇒ hai node kia đã bị ghi đè.
     await waitFor(() => expect(soNode()).toBe(1))
 
@@ -972,6 +985,40 @@ describe('Chạy workflow trên v3', () => {
     expect(hoanTac).toBeEnabled()
     fireEvent.click(hoanTac)
     await waitFor(() => expect(soNode()).toBe(2))
+  })
+
+  // ⭐ UI-8b — vế "Huỷ": ⛔ không một dispatch nào được chạm `document`. Đây là
+  //  phép tiêm-lỗi-đối-chứng ở TẦNG TÍCH HỢP (bổ sung cho bài đơn vị trong
+  //  `UseWorkflowRunSoanXemTruoc.test.tsx`): dựng cả `CanvasShell` thật, bấm
+  //  Huỷ, và đồ thị NGƯỜI DÙNG phải còn nguyên — không có Undo nào cần tới.
+  it('A3: bấm "Huỷ" ở lớp xem trước ⇒ đồ thị đang dựng Y NGUYÊN, không cần Undo', async () => {
+    mockRunV3(url => url.endsWith('/soan')
+      ? new Response(JSON.stringify({ workflow_id: 'w1', revision: 5,
+          document: { version: 3, goal: 'tạo video', budget_max_credit: 0,
+            active_page_id: 'page-1',
+            pages: [{ id: 'page-1', name: 'Page 1',
+              nodes: [{ id: 'n_soan', type: 'tool', position: { x: 0, y: 0 },
+                data: { tool: 'app.text.chat' } }], edges: [],
+              viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] },
+          hop_le: true, loi: [], bao_gia: { credit_max: 10, credit_estimate: 5 } }),
+        { status: 200 })
+      : undefined)
+    render(<CanvasShell />)
+    await themVanBan()
+    fireEvent.click(screen.getByRole('button', { name: 'Mở công cụ' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Sinh ảnh/ }))
+    await waitFor(() => expect(soNode()).toBe(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở mẫu và thiết lập' }))
+    fireEvent.change(screen.getByLabelText('Mục tiêu workflow'),
+      { target: { value: 'tạo video' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Soạn bằng AI' }))
+    await screen.findByRole('dialog', { name: 'Xem trước thay đổi từ AI' })
+    fireEvent.click(screen.getByRole('button', { name: 'Huỷ' }))
+    await waitFor(() => expect(screen.queryByRole('dialog',
+      { name: 'Xem trước thay đổi từ AI' })).toBeNull())
+    // ⛔ Vẫn hai node CỦA NGƯỜI DÙNG — không phải một node do Undo lôi lại.
+    expect(soNode()).toBe(2)
   })
 
   it('A3: thiếu mục tiêu thì KHÔNG gọi /soan, hiện lỗi tại chỗ', async () => {
