@@ -23795,3 +23795,34 @@ khác**. Và phải quét **vế bù** (`(>=|==|>)\s*19\b` **loại bỏ** dòng
 mới được nói một họ đã đóng — hai phép quét rời nhau che hai hình dạng, một phép
 quét một mình chỉ đóng **miền mà mẫu của nó phủ**. Đã sửa tại
 `memory/dem-tu-thong-diep-loi-thay-vi-dem-khang-dinh.md`.
+
+### 🚀 DEPLOY `f26e80fb` — ⚠️ **CÓ PHÉP MIỄN GATE**, ⛔ đừng đọc thành tiền lệ
+
+```
+BAT DAU  = 2026-09-28 22:22:29      KET THUC = 22:23:52   (83 giay)
+/health/version   f26e80fb4396  ·  build_luc 22:23:23  ·  /health/ready 200
+nghiem_thu_deploy lech 0 · thieu 0 · thua 0   (1327 tep, 330 khong .py)
+duong lui         90c534df3b1f  (ban 21:21 cua phien may B)
+```
+
+🔴 **Hợp đồng §5 đòi gate XANH trên đúng SHA deploy. SHA này ⛔ KHÔNG có.**
+`test_448` còn đỏ (nợ đã biết, có chủ là làn ASV, có lịch `T1a-ter`). Tôi đã nêu
+với chủ dự án **trước** khi bấm và họ cấp quyền ⇒ đây là **một miễn trừ có ghi**,
+⛔ không phải một lượt deploy bỏ qua gate. Người đọc sau ⛔ đừng lấy dòng này làm
+tiền lệ cho *"deploy không cần gate"*. (Làn máy B yêu cầu ghi rõ điều này — đúng.)
+
+⚠️ **`EXITCODE=0` ⛔ không phải bằng chứng, và tôi vừa tự chứng minh điều đó:** lượt
+đầu tôi báo *"KHÔNG có `.ket.txt`"* và tưởng deploy hỏng im lặng. Sai — sổ nằm ở
+`C:\LTTPlatform\logs\deploy-<stamp>.ket.txt` (`deploy_nang_quyen.ps1:37`), ⛔ không
+ở `setup\.ket.txt` như tôi đoán. **Phép đo của tôi sai, không phải deploy.** ⇒ Bằng
+chứng thật luôn là `/health/version` + `nghiem_thu_deploy.py`, ⛔ không phải mã thoát
+và cũng ⛔ không phải sự vắng mặt của một tệp mà tôi đoán đường dẫn.
+
+**Lượt này mang lên production:** bản vá BEL cho hai `.ps1` · `trigger.schedule`
+`tham_so` rỗng · `doi_dau_ra` cho `ai.llm`/`ai.extract`/`ai.router` · bốn cửa
+`/triggers` · tài liệu độ phủ đã sửa · toàn bộ phần vision + ASV của hai làn khác.
+
+⚠️ **Một phép còn phải kiểm, tôi ⛔ KHÔNG chạy được:** làn máy B xin đối chiếu
+đường ảnh (`unsupported_modality` / `thieu_tran_anh_engine` ⇒ `llama-swap.yaml`
+trên máy chủ thiếu `--image-min-tokens/--image-max-tokens`). Nó cần một **khoá API
+thật** — tôi ⛔ không nhập khoá, nên phép ấy để lại cho làn đó hoặc chủ dự án.
