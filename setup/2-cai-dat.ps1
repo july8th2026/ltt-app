@@ -808,10 +808,45 @@ Ok "Da copy $n file vao $appDir"
 #    BOM, json.load() vo, va /health/ready tra 503 trong khi dich vu van chay.
 #    Loi do da that su lam production sap o du an nay.
 $vanTay = Join-Path $appDir "dau_van_tay.json"
-$sha = ""
-try { $sha = (& git -C $src rev-parse HEAD 2>$null) } catch { $sha = "" }
-if ($LASTEXITCODE -ne 0) { $sha = "" }
-$global:LASTEXITCODE = 0
+
+# ==========================================================================
+#  MARKER PHAI LA SHA DA XUAT, KHONG PHAI HEAD LUC NAY. Do duoc 28/09/2026.
+# ==========================================================================
+#
+#  Ban cu goi `git rev-parse HEAD` **LAN THU HAI** o day. Giua dong 292 (noi
+#  `git archive` chup `$shaXuat`) va dong nay co ~520 dong va **90 giay** thuc
+#  te. Tren may nay `main` la cay DUNG CHUNG cua nhieu phien, nen no dich duoc
+#  trong khoang do.
+#
+#  Ca that, luot deploy 18:04:32 hom nay:
+#
+#      [OK] Xuat commit 4ab49b267bb0: 6318 tep      <- thu THAT SU duoc giao
+#      dau_van_tay.commit = 979130b09b47            <- thu marker KHAI
+#      /health/version    = 979130b09b47            <- va khach/ta doc cai nay
+#
+#  `979130b0` **chua bao gio duoc xuat**. Production tu khai mot commit khong
+#  phai thu no dang chay.
+#
+# !! Vi sao no te hon mot con so sai thuong: `dau_van_tay.json` va
+#    `/health/version` la **nguon chan ly** cho cau *"dang chay ban nao"*
+#    (docs/16 bang tra cuu chi thang vao chung, va `api_prod_canary.py` doc
+#    chung thay cho mot bang chep tay). Mot nguon chan ly noi sai thi moi phep
+#    do dung tren no deu sai theo -- va hom nay no lam chinh toi ket luan rang
+#    da deploy mot SHA chua qua gate, trong khi khong he.
+#
+# !! Va day la "hai cho khai mot dieu, khong ai bat khop" o dang re nhat de
+#    tranh: MOT bien da ton tai san. `$shaXuat` duoc tinh o dong ~292 va la
+#    chinh cai `git archive` dung. Dung lai no.
+#
+#  Roi ve `rev-parse` chi khi `$shaXuat` rong (duong lui chep cay song, khong
+#  co ban xuat) -- va luc ay marker mo ta dung thu duoc chep: cay luc nay.
+$sha = $shaXuat
+if (-not $sha) {
+    try { $sha = (& git -C $src rev-parse HEAD 2>$null) } catch { $sha = "" }
+    if ($LASTEXITCODE -ne 0) { $sha = "" }
+    $global:LASTEXITCODE = 0
+    if ($sha) { Canh "marker dung HEAD hien tai (khong co ban xuat commit)" }
+}
 if ($sha) {
     # !! GHI CA NOI DUNG DA GIAO, KHONG CHI COMMIT DINH GIAO.
     #

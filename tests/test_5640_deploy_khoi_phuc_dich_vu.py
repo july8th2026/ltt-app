@@ -219,3 +219,108 @@ def test_moi_ps1_trong_setup_thuan_ASCII_va_khong_BOM(tep):
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  4. MARKER phai la SHA DA XUAT, khong phai HEAD doc lai
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Ca that, luot deploy 28/09 18:04:32:
+#
+#     [OK] Xuat commit 4ab49b267bb0: 6318 tep     <- thu THAT SU duoc giao
+#     dau_van_tay.commit = 979130b09b47           <- thu marker KHAI
+#     /health/version    = 979130b09b47           <- va nguoi ta doc cai nay
+#
+#   `979130b0` **chua bao gio duoc xuat**. `git rev-parse HEAD` duoc goi HAI LAN
+#   o hai thoi diem cach nhau ~520 dong va ~90 giay, va `main` la cay DUNG CHUNG
+#   cua nhieu phien nen no dich duoc trong khoang do.
+#
+# ⚠️ Vi sao te hon mot con so sai thuong: `dau_van_tay.json` + `/health/version`
+#    la **nguon chan ly** cho cau *"dang chay ban nao"* (docs/16 tro thang vao
+#    chung; `api_prod_canary.py` doc chung thay cho mot bang chep tay). Mot nguon
+#    chan ly noi sai thi moi phep do dung tren no sai theo — va hom nay no lam
+#    chinh toi ket luan rang **da deploy mot SHA chua qua gate**, trong khi
+#    `archive` chup dung SHA gate. Ket luan sai theo huong BI QUAN, va lan sau
+#    no co the sai theo huong nguoc lai.
+#
+# ⭐ Mot phien khac bat duoc dieu nay bang cach doc **nhat ky deploy** thay vi tin
+#    marker. Do la phep do dung: nhat ky ghi cai `archive` LAM, marker ghi cai ai
+#    do NOI.
+
+def _bo_chu_thich_ps1(noi_dung: str) -> str:
+    """Bo chu thich PowerShell (`#` toi het dong), giu nguyen SO DONG.
+
+    🔴 **Vi sao ham nay phai ton tai — hai bai duoi day DO oan khi thieu no.**
+
+    Ban va cua toi co mot chu thich **trich dan** ban cu:
+    *"Ban cu goi `git rev-parse HEAD` LAN THU HAI o day"*. Hai bai duoi grep
+    chuoi `rev-parse HEAD` va **dem ca dong chu thich ay** ⇒ chung bao san pham
+    con doc lai HEAD, trong khi ma da dung.
+
+    ⚠️ Do dung loi toi van canh nguoi khac: **do mot lan NHAC thay vi do thu
+       THAT**. Va no dac biet de xay ra o mot ban va tot — mot ban va tot thi
+       chu thich CUA no nhac lai chinh cai sai no vua go bo.
+
+    ⭐ Giu nguyen so dong (thay bang khoang trang, khong xoa dong) de moi so dong
+       trong thong diep loi con tro dung cho.
+    """
+    ra = []
+    for dong in noi_dung.splitlines():
+        # ⛔ KHONG dung `dong.split("#")[0]`: mot `#` trong chuoi (`"#$sha"`) se
+        #    cat sai. Chi bo khi `#` la ky tu dau tien khong-trang, hoac dung sau
+        #    mot khoang trang — du cho muc dich nay, va noi ro pham vi.
+        cat = re.sub(r"(^|\s)#.*$", r"\1", dong)
+        ra.append(cat)
+    return "\n".join(ra)
+
+
+def test_marker_dung_LAI_sha_da_xuat_chu_khong_doc_lai_HEAD(src):
+    """⭐ Chot rang khoi ghi marker gan `$sha = $shaXuat`, ⛔ khong goi
+    `rev-parse` **truoc** khi thu bien da co."""
+    ma = _bo_chu_thich_ps1(src)
+    mo = re.search(r"\$vanTay\s*=\s*Join-Path", ma)
+    assert mo, "khong tim thay khoi ghi `dau_van_tay.json`"
+    vung = ma[mo.start():mo.start() + 1800]
+    assert re.search(r"\$sha\s*=\s*\$shaXuat", vung), (
+        "khoi marker KHONG dung lai `$shaXuat` (bien ma `git archive` da dung) ⇒ "
+        "no doc lai HEAD o mot thoi diem KHAC, va tren mot `main` dung chung thi "
+        "hai thoi diem cho hai SHA. Ca that 28/09: marker khai `979130b0` trong "
+        "khi ban giao la `4ab49b26`.")
+    # `rev-parse` van duoc phep — nhung CHI trong nhanh du phong, tuc SAU khi da
+    # thu `$shaXuat`. Chot bang vi tri.
+    i_gan = vung.index("$sha = $shaXuat")
+    i_rev = vung.find("rev-parse HEAD")
+    if i_rev != -1:
+        assert i_rev > i_gan, (
+            "`rev-parse HEAD` nam TRUOC phep gan `$sha = $shaXuat` ⇒ duong chinh "
+            "van doc lai HEAD")
+
+
+def test_chi_MOT_cho_quyet_dinh_sha_giao_hang(src):
+    """🔴 Day la ve phan biet duoc, va no do **tinh chat** chu khong do cach viet.
+
+    Bai tren xanh neu ai do them mot `rev-parse` thu ba o mot khoi khac roi dung
+    no cho mot thu khac (vd mot dong log). Bai nay dem: **dung MOT** lan
+    `rev-parse HEAD` duoc phep nam tren duong CHINH (dong ~292, sinh `$shaXuat`);
+    moi lan khac phai o trong mot nhanh du phong `if (-not ...)`.
+
+    ⚠️ ⛔ Khong chot "tong so lan `rev-parse` == 1": mot nhanh du phong hop le
+       **can** goi no. Chot thu dung: moi lan goi phai hoac sinh `$shaXuat`, hoac
+       nam sau mot phep thu `$shaXuat` rong.
+    """
+    dong = _bo_chu_thich_ps1(src).splitlines()
+    goi = [(i + 1, l) for i, l in enumerate(dong) if "rev-parse HEAD" in l]
+    assert goi, "khong con cho nao doc SHA - deploy lay commit o dau?"
+    hong = []
+    for so, l in goi:
+        # Nhin 6 dong truoc: hoac gan `$shaXuat`, hoac trong nhanh `-not $sha`.
+        truoc = "\n".join(dong[max(0, so - 7):so])
+        if "$shaXuat =" in l or "$shaXuat=" in l:
+            continue
+        if re.search(r"if\s*\(\s*-not\s+\$sha", truoc):
+            continue
+        hong.append(f"dong {so}: {l.strip()[:70]}")
+    assert not hong, (
+        "co loi goi `rev-parse HEAD` tren duong CHINH ma khong sinh `$shaXuat` "
+        "va khong nam trong nhanh du phong:\n  " + "\n  ".join(hong)
+        + "\n⇒ Hai cho quyet dinh 'SHA giao hang' la hai cho se troi khoi nhau.")
