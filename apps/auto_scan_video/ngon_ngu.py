@@ -147,7 +147,8 @@ def _dung_cum() -> None:
 _dung_cum()
 
 
-def ngan_sach_do_dai(giay: float, dich) -> int:
+def ngan_sach_do_dai(giay: float, dich, *,
+                     toc_doc_giong: float | None = None) -> int:
     """So `DON_VI_DO_DAI[dich]` toi da cho mot cau doc vua `giay`.
 
     🔑 **Mot so NGUYEN, dem duoc.** Loi nhac cu dua cho model mot nhip
@@ -157,11 +158,53 @@ def ngan_sach_do_dai(giay: float, dich) -> int:
     ⭐ Mot tran DEM DUOC thi model tu kiem duoc truoc khi tra loi, va nguoi doc
        bao cao cung kiem duoc sau do. Do la khac biet giua mot goi y va mot rang
        buoc.
+
+    ## `toc_doc_giong` — B17 §4.1, lan P0-a2 NOI DAY
+
+    🔴 **Day la cho DUY NHAT nhip doc cua GIONG di vao mot con so khach nhan
+       duoc.** `cai_dat.toc_doc_giong()` (lan P0-a) tinh gia tri ay — ham THUAN
+       cua `giong_id` + `ngon_ngu_dich` — va `ho_so_dich.dung()` ghi no vao
+       `run.settings` + dict tra ve. Truoc P0-a2 ⛔ **khong ai doc no**: moi
+       giong dung chung mot hang so ca-ngon-ngu `NHIP[dich]`, tuc mot can gat
+       vat duoc ma khong noi vao dau.
+
+    ⚠️ **`min()` MOT CHIEU — CHI SIET, KHONG NOI** (Viral `localize.py:15112-
+       15117`, nguyen van *"CHI SIET, KHONG NOI"*):
+
+           giong CHAM hon `NHIP[dich]`  ⇒ ngan sach SIET theo giong cham
+           giong NHANH hon `NHIP[dich]` ⇒ ngan sach GIU NGUYEN `NHIP[dich]`
+
+       ⛔ Cai hai chieu ⇒ giong nhanh NOI ngan sach ⇒ ban dich DAI hon ⇒ TTS
+       phai nen (atempo) NANG hon de doc kip khe cu — dung NGUOC muc dich cua
+       viec neo do dai.
+
+    🔑 **Va `min()` o day KHONG phai ma phong thu du thua** du `cai_dat.
+       toc_doc_giong()` da siet mot lan roi: day la BAT BIEN O BIEN, va no cho
+       mot ben goi bat ky (bo do, mot bang moi, mot luot `--tiem-nghich`) mot
+       cho chac chan de ⛔ khong bao gio noi ngan sach. `test_4964` tiem
+       `2 x NHIP` vao dung tham so nay va do rang so ra ⛔ khong tang — tuc
+       nhanh nay CO chay, ⛔ khong phai mot nhanh mua su yen tam.
+
+    ⚠️ `None` = **ben goi khong biet giong nao** (mot bo do, mot pha ⛔ chua noi
+       day) ⇒ hang so ca-ngon-ngu, dung hanh vi truoc P0-a2. ⛔ Khong gop no
+       voi `0`: `0` la mot so do HONG, va no cung roi ve hang so nhung vi mot
+       ly do KHAC (xem [[hai-trang-thai-gop-thanh-mot-gia-tri]]).
     """
     d = chuan_dich(dich)
     if d not in NHIP:
         raise NgonNguError(f"dich {d!r} khong nam trong hop dong")
-    return max(1, int(round(max(0.0, float(giay)) * NHIP[d] * HE_SO_MUC_TIEU)))
+    nhip = NHIP[d]
+    if toc_doc_giong is not None:
+        try:
+            do = float(toc_doc_giong)
+        except (TypeError, ValueError):
+            do = 0.0
+        # ⛔ `> 0` chu khong `is not None`: mot so do hong (`0`, so am) phai roi
+        #    ve hang so, ⛔ khong duoc keo ngan sach ve `max(1, ...)` — mot cau
+        #    mot am tiet la mot ban dich bi cat, khong phai mot ngan sach.
+        if do > 0:
+            nhip = min(nhip, do)
+    return max(1, int(round(max(0.0, float(giay)) * nhip * HE_SO_MUC_TIEU)))
 
 
 #: Ten NGUON trong loi nhac (ASCII).
