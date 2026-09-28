@@ -334,14 +334,34 @@ B16 khai 8. W2 §2.2 buộc tách `vung_che` làm hai ⇒ **9**.
 | 8 | `render_mot_lan` | `(5, 7)` | 🔑 **`compose`+`render`+`image_finish`** → MỘT encode | `6560-8425` (10 node §5) |
 | 9 | `qc` | `(8,)` | `qc`+`qc_do_luong`+`qc_ai` → **một bước + module gọi được** | — |
 
-**Bỏ hẳn**: `edit_plan` (đã luôn trả kế hoạch rỗng từ 28/09 — bỏ khai, ⛔ không bỏ mã).
+🔴 **`edit_plan`: ⛔ KHÔNG bỏ khai — và đây là một lỗi của plan này, đã sửa 28/09.**
+
+Tôi viết *"bỏ khai `edit_plan`"* vì mang quyết định *"bỏ 5 giai đoạn"* của B16 sang mà
+⛔ **không đọc lại** `apps/auto_scan_video/giai_doan_ban_bien_tap.py:11-18`. Ở đó, cùng
+ngày 28/09, đã có phán quyết **ngược lại**, nguyên văn:
+
+> ⛔ **KHÔNG rip giai đoạn khỏi `pipeline.CHUOI`** — đổi `CHUOI` là đổi hợp đồng cả dây
+> chuyền (`ha_nguon_cua`, vân tay, lineage, `giai_doan_lech_van_tay`), rủi ro của việc
+> BỎ lớn hơn rủi ro nó đang gây.
+
+⭐ Và phán quyết ấy **khớp** tiêu chí của chủ dự án (*"bước nào rủi ro cao hỏng hệ thống
+thì loại bỏ"*) — chính **việc rip `CHUOI`** là cái rủi ro cao. Giai đoạn đã bị **vô hiệu
+hoá** (`lap_ban(hieu_canh=())` ⇒ `so_cat` **luôn 0**), tức cái giá nó đang gây là **một
+bước rỗng**, ⛔ không phải một quyết định sai.
+
+⇒ Chuỗi 9 giai đoạn ở bảng trên là **hình dạng đích**. Số phần tử `CHUOI` **thật** còn
+`edit_plan` cho tới khi W4 trả lời được bốn chỗ nối trên bằng **số**.
+
+⚠️ Bài học cho chính plan này: [[liet-ke-tu-tri-nho-thay-vi-dem.md]] — một dòng trong
+bảng việc là một **mệnh lệnh** cho agent, nên nó phải được đối chiếu với **quyết định
+đang sống trong mã**, ⛔ không chỉ với plan trước.
 
 ### Bảng việc — mỗi làn MỘT worktree, MỘT nhánh, ⛔ không hai làn sửa cùng tệp
 
 | Làn | Việc | Tệp (chủ duy nhất) | Model | Chặn bởi |
 |---|---|---|---|---|
 | **P0-a** | `settings` dẫn xuất `wps_giong` + bảng đã đo + `min()` một chiều | `apps/auto_scan_video/cai_dat.py`, `ho_so_dich.py` | sonnet | — |
-| **P0-b** | Bỏ khai `edit_plan` khỏi `CHUOI` (giữ module gọi được) | `apps/auto_scan_video/pipeline.py` | sonnet | — |
+| **P0-b** | 🔴 **ĐỔI 28/09**: ⛔ KHÔNG rip `edit_plan` — chỉ **ĐO giá** của việc bỏ (→ `W4_GIA_CUA_VIEC_BO_MOT_GIAI_DOAN.md`) | tệp W4 (⛔ không sửa mã) | sonnet | — |
 | **P1-c** | Hợp nhất 3 QC thành GĐ9 | `apps/auto_scan_video/pipeline.py` | **opus** | P0-b |
 | **P0-c** | Dời **cắt đầu** vào `media_prepare` (trước ASR) | `apps/auto_scan_video/giai_doan_media.py`, `ke_cat.py` | sonnet | — |
 | **P1-a** | 🔑 Gộp demucs+whisper thành **một job GPU** `gpu_asr` | `apps/asv_gpu/jobs.py`, `manifest.py` | **opus** | P0-b |
@@ -378,6 +398,7 @@ P1-a (nơi ta đang sắp xếp lại ai giữ lease).
 | Ba nhánh song song có vượt `tai_nguyen_suat` máy A? | `tai_may.py` trước/sau một lượt thật | P1-b |
 | `gop_khe` có lệch phụ đề thật ⛔ không, lệch bao nhiêu ms? | so `.vi.srt` với `.dubsync.vi.srt` theo từng cue | P3 |
 | Đại lượng onset trong `_ghep_track_khop` là gì? | đọc `localize.py:9600-9790` nguyên văn | P3 |
+| Bỏ một phần tử khỏi `CHUOI` làm gãy gì (`ha_nguon_cua` · vân tay · lineage · `giai_doan_lech_van_tay`)? | làn W4 — **đếm**, ⛔ không suy | mọi việc đổi `CHUOI` |
 
 ⭐ **Phép đo cuối cùng, MỘT lượt** (theo đúng chốt của chủ dự án: *"những gì viral đã
 đo rồi thì ta dùng, ⛔ không đo lại; về cuối đo một lượt luôn"*): `T1a-ter` trên worker
