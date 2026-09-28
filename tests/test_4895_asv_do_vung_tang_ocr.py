@@ -172,11 +172,159 @@ def test_doc_dung_hinh_dang_hop_du_dat_use_rec_False():
     assert hop[0].x0 == pytest.approx(0.1) and hop[0].x1 == pytest.approx(0.9)
 
 
-def test_mot_khung_HONG_khong_giet_ca_luot():
+def test_mot_khung_HONG_tra_None_chu_KHONG_tra_rong():
     """⛔ Ném ở một khung lỗi sẽ biến một sự cố nhỏ thành một quyết định kiến
-    trúc (*"chưa quét được"* ⇒ lùi tầng)."""
+    trúc (*"chưa quét được"* ⇒ lùi tầng).
+
+    🔴 **Nhưng `None` chứ ⛔ KHÔNG phải `[]`** (sửa 28/09). `[]` nghĩa là *chạy
+       được, ⛔ không thấy hộp nào*; `None` nghĩa là *máy OCR ném*. Bản đầu trả
+       `[]` cho cả hai và đó là một lỗ thật — xem bài dưới.
+    """
     class _May:
         def __call__(self, *a, **k):
             raise RuntimeError("khung hong")
 
+    assert ocr._hop_cua_khung(_May(), object(), 100, 100, 1.0) is None
+
+
+def test_khung_SACH_tra_RONG_chu_khong_None():
+    """⭐ Vế đối chứng: ⛔ không có nó thì `return None` vô điều kiện cũng qua."""
+    class _May:
+        def __call__(self, *a, **k):
+            return ([], None)
+
     assert ocr._hop_cua_khung(_May(), object(), 100, 100, 1.0) == []
+
+
+def test_MOI_khung_hong_thi_NEM_chu_khong_bao_KHONG_CO_CHU(monkeypatch):
+    """🔴 **Lỗ thật, do bánh cóc tìm ra chứ ⛔ không phải bộ test này.**
+
+    Bản đầu: máy OCR ném ở **mọi** khung ⇒ mọi lượt trả `[]` ⇒ `doc_duoc` vẫn
+    đếm đủ 24 (khung **đọc** được) ⇒ hàm trả *"đã quét, ⛔ không thấy chữ"* ⇒
+    người gọi **TIN** ⇒ **⛔ không che** ⇒ **lộ chữ Hán**.
+
+    ⇒ Đúng cái gộp mà docstring đầu `do_vung_ocr` **cấm**, do chính tệp ấy
+      phạm. Và nó gộp **về phía IM LẶNG** — phía đắt hơn hàng bậc.
+
+    ⚠️ Bài `test_mot_khung_HONG_*` ở trên chốt đúng hành vi **một** khung và
+       **⛔ không bao giờ hỏi** *"nếu MỌI khung hỏng thì sao"*. Một bài kiểm
+       đúng ở cấp phần tử ⛔ không nói gì về cấp tập hợp.
+    """
+    class _CapGia:
+        def set(self, *a):
+            return True
+
+        def read(self):
+            return True, object()
+
+        def release(self):
+            pass
+
+    class _Cv2Gia:
+        CAP_PROP_POS_MSEC = 0
+
+    monkeypatch.setattr(ocr, "_may", _MayNem)
+    monkeypatch.setattr(do_vung, "_cv2", lambda: (_Cv2Gia(), object()))
+    monkeypatch.setattr(do_vung, "_mo", lambda *a: (_CapGia(), 100, 100, 99, 10.0))
+    with pytest.raises(ocr.OcrLoiKyThuat):
+        ocr.do_dai_chu_ocr("x.mp4", so_khung=5)
+
+
+def _MayNem():
+    """Máy OCR ném ở MỌI khung."""
+    class _M:
+        def __call__(self, *a, **k):
+            raise RuntimeError("engine chet")
+    return _M()
+
+
+# ── B10-3: che ĐỘNG theo từng đoạn ──────────────────────────────────────────
+
+def _chuoi(cac: list[tuple[float, float, float]]) -> list[ocr.Hop]:
+    """`(giây, y0, y1)` → hộp, bề ngang cố định cho gọn."""
+    return [_h(t, y0, y1, 0.2, 0.8) for t, y0, y1 in cac]
+
+
+def test_BB2_doan_KHONG_co_chu_thi_KHONG_co_o_mo_nao():
+    """🔴 Câu của chủ dự án: *"nó che đoạn timeline có text thôi hay che full
+    timeline?"* Trước B10-3 câu trả lời là **full**.
+
+    Chữ ở `0–10 s` rồi `40–50 s`; khoảng `10–40 s` phải **⛔ không** bị che.
+    """
+    hop = _chuoi([(t, 0.90, 0.94) for t in (0, 5, 10)]
+                 + [(t, 0.90, 0.94) for t in (40, 45, 50)])
+    ra = ocr._theo_doan(hop, dai=60.0, nhip=5.0)
+    assert len(ra) == 2, [(_["tu_giay"], _["den_giay"]) for _ in ra]
+    # Đoạn 1 kết thúc TRƯỚC khi đoạn 2 bắt đầu ⇒ có một quãng trống thật.
+    assert ra[0]["den_giay"] < ra[1]["tu_giay"]
+
+
+def test_BB1_hai_doan_KHAC_chieu_cao_thi_ra_HAI_hop_khac_nhau():
+    """🔴 Câu của chủ dự án: *"trên video mẫu nó che 2 dòng từ đầu đến cuối,
+    trong khi có cảnh text 1 dòng."*
+
+    ⭐ Một phép kiểm chỉ chốt **một** đoạn sẽ xanh cả khi dải vẫn là hợp-trên-
+       thời-gian. Phải chốt rằng **hai** đoạn cho **hai** chiều cao.
+    """
+    hop = (_chuoi([(t, 0.90, 0.94) for t in (0, 5, 10)])          # 1 dòng
+           + _chuoi([(t, 0.86, 0.94) for t in (40, 45, 50)]))     # 2 dòng
+    ra = ocr._theo_doan(hop, dai=60.0, nhip=5.0)
+    assert len(ra) == 2
+    cao = [round(v["y1"] - v["y0"], 3) for v in ra]
+    assert cao[0] < cao[1], cao
+
+
+def test_BB3_hop_NGANG_theo_doan_chu_khong_phai_0_1():
+    """Bộ dò cũ luôn trả `x 0..1`. Hộp phải bám bề ngang chữ thật."""
+    hop = [_h(t, 0.90, 0.94, 0.30, 0.70) for t in (0, 5, 10)]
+    ra = ocr._theo_doan(hop, dai=20.0, nhip=5.0)
+    assert len(ra) == 1
+    assert ra[0]["x0"] > 0.0 and ra[0]["x1"] < 1.0
+    assert (ra[0]["x1"] - ra[0]["x0"]) < 0.6
+
+
+def test_KEP_DIEM_GIUA_hai_doan_ke_KHONG_chong_thoi_gian():
+    """⛔ **Vế dễ bỏ sót nhất.**
+
+    Nới biên mỗi đoạn để ⛔ không hở ở mép là đúng; nhưng thiếu phép kẹp ở
+    **điểm giữa** thì hai đoạn kề **chồng thời gian**, và ở chỗ chồng có **hai**
+    ô mờ đè nhau ⇒ vệt mờ **phình ra đúng lúc chuyển câu**, tức đúng lúc người
+    xem đang nhìn.
+
+    ⭐ Hai đoạn ĐẶT SÁT nhau (hở đúng bằng một nhịp) là ca ép phép kẹp phải
+       chạy — hở rộng thì nới biên ⛔ không chạm tới nhau và bài sẽ xanh giả.
+    """
+    hop = _chuoi([(0, 0.90, 0.94), (5, 0.90, 0.94),
+                  (30, 0.70, 0.74), (35, 0.70, 0.74)])
+    ra = ocr._theo_doan(hop, dai=60.0, nhip=5.0)
+    assert len(ra) == 2
+    assert ra[0]["den_giay"] <= ra[1]["tu_giay"], (
+        "hai doan CHONG thoi gian: %.3f > %.3f"
+        % (ra[0]["den_giay"], ra[1]["tu_giay"]))
+
+
+def test_doan_CUOI_phu_toi_HET_video():
+    """⭐ Một câu sát cuối mà cắt đúng mốc mẫu cuối sẽ **hở đuôi**, và cái hở
+    ấy nằm ở chỗ người xem dừng lại lâu nhất."""
+    hop = _chuoi([(t, 0.90, 0.94) for t in (50, 55, 58)])
+    ra = ocr._theo_doan(hop, dai=60.0, nhip=5.0)
+    assert ra[-1]["den_giay"] == 60.0
+
+
+def test_MOT_khung_truot_giua_cau_KHONG_cat_cau_lam_doi():
+    """⛔ `HE_SO_HO = 1,5` chứ ⛔ không `1,0`: OCR trượt đúng một khung giữa câu
+    là chuyện thường, và nó ⛔ không được biến một câu thành hai đoạn."""
+    # Mốc 10 s bị thiếu (OCR không đọc được) ⇒ hở đúng 2 nhịp... nhưng
+    # `1,5 × 5 = 7,5 s` > hở 10 s? Không — hở là 10 s nên PHẢI tách.
+    # Ca trượt MỘT khung: hở = 2 nhịp = 10 s với nhịp 5 ⇒ tách. Dùng nhịp 8:
+    hop = _chuoi([(0, 0.90, 0.94), (8, 0.90, 0.94), (24, 0.90, 0.94)])
+    ra = ocr._theo_doan(hop, dai=40.0, nhip=12.0)   # hở 16 s <= 1,5 × 12 = 18
+    assert len(ra) == 1, "mot khung truot da cat cau lam doi"
+
+
+def test_hai_cau_CACH_XA_thi_van_tach():
+    """⭐ Vế đối chứng cho bài trên: ⛔ không có nó thì `HE_SO_HO = 1000` cũng
+    qua, và khi đó **⛔ không bao giờ** tách đoạn — tức quay về hành vi cũ."""
+    hop = _chuoi([(0, 0.90, 0.94), (5, 0.90, 0.94),
+                  (50, 0.90, 0.94), (55, 0.90, 0.94)])
+    assert len(ocr._theo_doan(hop, dai=60.0, nhip=5.0)) == 2
