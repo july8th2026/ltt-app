@@ -87,3 +87,63 @@ max_tokens=1024)` rồi đọc `kq.finish_reason` và `len(kq.noi_dung)`.
 ⚠️ ⛔ Đừng đo qua `dich_llm.goi_llm`: nó đọc **đúng một** trường (`kq.noi_dung`)
 rồi ném — nên nó ⛔ không cho biết `finish_reason`, tức ⛔ không cho biết **vì sao**
 rỗng. Tôi mất một lượt đo vì đứng ở tầng đó.
+
+---
+
+## 🔴 SỬA HÌNH DẠNG BẢN VÁ — lớp lỗi có **hai** nạn nhân, và cần gạt cơ học ĐÃ CÓ
+
+Phiên *"Phân tích lỗi hiển thị máy B"* đối chiếu tài liệu này và đưa mảnh tôi
+thiếu (28/09). Tôi đã **kiểm lại từng lời khai bằng mã**, cả ba đúng khít.
+
+⚠️ **Nên mục khuyến nghị `reasoning_effort='low'` ở trên là chưa đủ**: nó chữa
+**một nơi gọi**, còn lớp lỗi có hai nạn nhân đã biết và ⛔ không có gì chặn nạn
+nhân thứ ba.
+
+### Sàn đã tồn tại, và chỉ được cưỡng chế ở CỬA CÔNG KHAI
+
+```
+apps/ltt_llm/ngan_sach.san_token_ra("ltt-3.5")          = 2560   (= 2048 budget + 512 chỗ trả lời)
+apps/ltt_llm/ngan_sach.san_token_ra_dong_bo("ltt-3.5")  = 1024
+```
+
+Cưỡng chế ở `apps/ltt_llm/executor.py:62` → `features.kiem_san_token_ra`. Ba nơi
+gọi **nội bộ** đi cửa khác nên ⛔ không qua sàn:
+
+| Nơi gọi | `max_tokens` | model | vs sàn 2560 |
+|---|---|---|---|
+| `platform_core/image_gen/dich_llm.py:39` | 1024 | `ltt-3.5` | 🔴 dưới sàn — ca đo ở trên |
+| `apps/taovideo/translate.py:29` | **2048** | `ltt-3.5` | 🔴 **dưới sàn — nơi thứ hai, chưa ai báo** |
+| `apps/prompt_ai_ommi/provider.py:67` | 8192 | `ltt-3.5` | ✅ trên sàn |
+
+`taovideo/translate.py` cũng ⛔ không đặt `reasoning_effort` (`grep`: chỉ
+`max_tokens=_MAX_TOKENS` ở dòng 88) ⇒ trùng khít hình dạng đã đo.
+
+⇒ **Thuốc đúng: mọi nơi gọi nội bộ đọc `san_token_ra(model, muc_nghi)` thay vì gõ
+một hằng số.** `budget_suy_nghi_dong_bo` đã ghi sẵn lý do từ trước: *"để suy nghĩ
+tiêu hết `max_tokens` là trả `content` rỗng"*. Giữ `reasoning_effort='low'` **thêm**
+(số đo ở trên: nhanh gấp 3 và giữ chi tiết), ⛔ không thay.
+
+### ⚠️ Nhưng một phép kiểm cơ học lấy `san_token_ra` làm sàn sẽ ⛔ KHÔNG chặn được `ltt-3.8`
+
+```
+san_token_ra("ltt-3.8") = 64     (mọi mức — SAN_TOKEN_RA_THEO_NGHI dùng _SAN_NHE)
+```
+
+`64` là **cố ý**, có số đo kèm tại chỗ: *"Đo 13/09: 63 token ở MỌI mức, đúng ngay
+ở max_tokens=100 — chưa từng thấy trả rỗng, nên lấy sàn đo được, không nhân biên."*
+
+🔴 **Nhưng số đo ấy có ngày 13/09, còn thứ nó làm sàn cho đã đổi ngày 19/09.**
+L-32/L-33 thêm **trần suy nghĩ theo mức** cho riêng 3.8
+(`BUDGET_SUY_NGHI_THEO_MUC["ltt-3.8"] = {low: 1024, medium: 2048, xhigh: 4096}`),
+và mức mặc định là `medium` = **2048**. Một sàn `64` đứng trước một budget suy nghĩ
+`2048` thì ⛔ không chặn được gì: đúng cơ chế đã làm `ltt-3.5` trả rỗng.
+
+⛔ **Tôi CHƯA đo `ltt-3.8` trả rỗng** — đây là một **lệch ngày giữa số đo và thứ
+nó đo**, ⛔ không phải một lỗi đã tái hiện. Phép đo khép lại nó: gọi `ltt-3.8`,
+`reasoning_effort` để trống, `max_tokens` = 64…256, xem `finish_reason` và độ dài
+`content`. Nếu rỗng thì sàn 3.8 phải tính lại theo `BUDGET_SUY_NGHI_THEO_MUC` +
+`TOKEN_CHO_TRA_LOI`, đúng cách `_SAN_35` đã tính.
+
+⭐ Cùng họ với `memory/con-so-cong-phai-kem-sha-va-moi-truong.md`: một con số cổng
+**đúng lúc đo** có thể sai sau khi thứ nó đo đổi hình dạng — nên một sàn cần ghi
+**ngày đo** và **cái nó giả định**, không chỉ giá trị.
