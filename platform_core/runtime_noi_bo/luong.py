@@ -26,6 +26,8 @@ ra khỏi phần cần HTTP, để một client nội bộ (ChatLTT) và cửa `
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import logging
 import re
@@ -224,7 +226,12 @@ class ChuanBi:
 # ── Bước 0 (multijob D-06): tiền kiểm TRƯỚC 200, chờ + nhận + giữ tiền SAU 200 ──
 
 def dem_anh(than: dict) -> int:
-    """Số ảnh trong đầu vào (mọi giao thức) — mỗi ảnh chiếm thêm ô KV."""
+    """Số ảnh trong đầu vào (mọi giao thức).
+
+    ⚠️ CHỈ ĐỂ ĐẾM — quan trắc, log, phân loại. ⛔ KHÔNG dùng để đặt chỗ KV:
+       chi phí ngữ cảnh của một ảnh là `f(rộng, cao)`, không phải một hằng nhân
+       với con số này. Dùng `do_anh()` cho việc đó.
+    """
     n = 0
     for khoa in ("messages", "input"):
         ds = than.get(khoa)
@@ -236,6 +243,90 @@ def dem_anh(than: dict) -> int:
                 n += sum(1 for p in noi if isinstance(p, dict) and p.get("type") in (
                     "image", "image_url", "input_image"))
     return n
+
+
+class ThieuTranAnhEngine(RuntimeError):
+    """Không biết trần token ảnh của engine ⇒ không tính được ngân sách KV của ảnh.
+
+    ⭐ FAIL-CLOSED CÓ PHẠM VI, cùng hình dạng với `llm_gateway.ngan_sach`: chỉ
+       lượt CÓ ẢNH bị từ chối; đường chữ chạy nguyên.
+    """
+
+
+def do_anh(than: dict, suc=None) -> tuple:
+    """`(số ảnh, Σ token ảnh)` — phép ĐO, thay cho `số ảnh × một hằng`.
+
+    ⭐ Dùng CHÍNH hàm máy B đếm (`platform_core/llm/anh_token.py` ≡
+       `llm_gateway/anh_token.py`, giống nhau từng byte, `tests/test_4203` canh).
+       A giữ chỗ bằng đúng phép B tính ⇒ "A nhận ⇒ B nhận" (A ⊆ B) — cùng bất
+       biến mà `uoc_token.py` đã giữ cho phần chữ.
+
+    🔴 VÌ SAO KHÔNG PHẢI MỘT HẰNG. Đo 28/09/2026, 14/14 ô, cả hai model:
+       320×240 → 82 · 1024×768 → 770 · 1920×1080 → 2.042 · 2048×2048 → **4.098**.
+       Hằng cũ 2.048 thừa 25× ở đáy và **THIẾU 2×** ở đỉnh — và đỉnh ấy đúng bằng
+       cỡ tối đa client LTTCODE gửi (`IMAGE_BUDGET.maxPixels = 2048²`).
+
+    ⛔ Ảnh KHÔNG đọc được kích thước ⇒ tính bằng `token_anh_toi_da` của engine,
+       KHÔNG bằng một hằng "an toàn": 2.048 không phải cận trên, `toi_da` thì có.
+    """
+    from platform_core.llm import anh_token as AT
+
+    toi_thieu = int(getattr(suc, "token_anh_toi_thieu", 0) or 0)
+    toi_da = int(getattr(suc, "token_anh_toi_da", 0) or 0)
+    urls = _gom_url_anh(than)
+    if not urls:
+        return (0, 0)
+    if toi_thieu <= 0 or toi_da <= 0:
+        raise ThieuTranAnhEngine(
+            "model khong khai token_anh_toi_thieu/token_anh_toi_da nen khong "
+            "tinh duoc ngan sach KV cua anh")
+    tong = 0
+    for u in urls:
+        kt = _kich_thuoc_tu_data_url(u)
+        tong += (toi_da if kt is None
+                 else AT.token_anh(kt[0], kt[1], toi_thieu=toi_thieu, toi_da=toi_da))
+        tong += AT.TOKEN_DAU_VISION
+    return (len(urls), tong)
+
+
+def _gom_url_anh(than: dict) -> list:
+    """Mọi chuỗi ảnh của mọi giao thức — dùng lại bộ gom của `uoc_token`.
+
+    ⛔ Không viết lại phép đi cây ở đây: `uoc_token.gom_than` là bản giống hệt
+       từng byte của bản máy B, nên gom bằng nó là điều kiện để hai bên thấy
+       CÙNG một tập ảnh. Một bộ gom thứ hai là một chỗ để hai bên lệch nhau.
+    """
+    from platform_core.llm import uoc_token as UT
+
+    anh: list = []
+    UT.gom_than(than, [], anh)
+    return [u for u in anh if u]
+
+
+_DAU_DATA_URL = re.compile(r"^data:(?P<mime>[\w.+-]+/[\w.+-]+)?;base64,", re.I)
+#: 64 KiB đầu phủ mọi khối EXIF thực tế (APP1 tối đa 65.533 byte) mà vẫn chỉ là
+#: một phần nghìn của một ảnh 12 MiB. ⛔ Không giải cả ảnh trên đường nóng.
+_KY_TU_HEADER_ANH = ((64 * 1024) // 3 + 1) * 4
+
+
+def _kich_thuoc_tu_data_url(url: str):
+    """`(rộng, cao)` đọc từ HEADER của một `data:` URL. `None` = không đọc được."""
+    from platform_core.llm import anh_token as AT
+
+    if not _DAU_DATA_URL.match(url or ""):
+        return None
+    phan = (url or "").split(",", 1)
+    if len(phan) != 2:
+        return None
+    dau = phan[1][:_KY_TU_HEADER_ANH]
+    dau = dau[:len(dau) - len(dau) % 4]
+    if not dau:
+        return None
+    try:
+        du_lieu = base64.b64decode(dau, validate=False)
+    except (ValueError, binascii.Error):
+        return None
+    return AT.kich_thuoc(du_lieu)
 
 
 def _phien_moi():
@@ -698,7 +789,7 @@ def _bo_ba(suc) -> tuple[str, int, int]:
     return (str(suc.resource or ""), int(suc.slots or 0), int(suc.token_pool or 0))
 
 
-def _dat_cho(suc, *, lop: str, token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
+def _dat_cho(suc, *, lop: str, token_vao_uoc: int, xin_ra: int, token_anh: int = 0,
              token_prefill_moi: int | None = None) -> dict:
     """`tham_so_da_luot.luat_cho` + dịch `DatChoVuotPool` sang lỗi "quá dài".
 
@@ -713,7 +804,7 @@ def _dat_cho(suc, *, lop: str, token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
     try:
         return tham_so_da_luot.luat_cho(
             suc, lop=lop, token_vao_uoc=token_vao_uoc, xin_ra=xin_ra,
-            so_anh=so_anh, token_prefill_moi=token_prefill_moi)
+            token_anh=token_anh, token_prefill_moi=token_prefill_moi)
     except tham_so_da_luot.DatChoVuotPool as e:
         raise _qua_dai(f"dau vao + dau ra + anh {e.dat} token vuot ngan sach "
                        f"KV {e.pool} cua model",
@@ -795,7 +886,8 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     moi = uoc_moi.uoc_token_moi(user_id, tin, executor.estimate_input)
     # MỘT phép tính đặt chỗ + MỘT chỗ gắn cờ whale (ngưỡng THEO MODEL) cho mọi cửa.
     luat = _dat_cho(suc, lop=luat_nhan.TUONG_TAC, token_vao_uoc=vao_uoc,
-                    xin_ra=xin_ra, so_anh=dem_anh(than), token_prefill_moi=int(moi))
+                    xin_ra=xin_ra, token_anh=do_anh(than, suc)[1],
+                    token_prefill_moi=int(moi))
 
     if not thanh_toan.du_so_du(db, user_id=user_id, token_vao_uoc=vao_uoc,
                                max_tokens=xin_ra, model=ten):
@@ -986,7 +1078,7 @@ class SuatDongBo:
 
 
 def cho_suat_dong_bo(*, suc, user_id: str, request_id: str, cua: str,
-                     token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
+                     token_vao_uoc: int, xin_ra: int, token_anh: int = 0,
                      han_s: float, ngat_chua=None, model: str = "") -> SuatDongBo:
     """Vào phòng chờ → chờ chặn ≤ `han_s` → trả suất. **Không** chạm sổ tiền.
 
@@ -1006,7 +1098,7 @@ def cho_suat_dong_bo(*, suc, user_id: str, request_id: str, cua: str,
     # ⭐ Không truyền `token_prefill_moi`: cửa đồng bộ không có lịch sử tiền tố,
     #    `luat_cho` gắn cờ whale theo `token_vao_uoc` (ước CAO — hướng an toàn).
     luat = _dat_cho(suc, lop=luat_nhan.TUONG_TAC, token_vao_uoc=token_vao_uoc,
-                    xin_ra=xin_ra, so_anh=so_anh)
+                    xin_ra=xin_ra, token_anh=token_anh)
 
     if not luat:
         # Tool KHÔNG khai ngân sách KV ⇒ đường cũ nguyên vẹn: một lần thử, không
@@ -1451,7 +1543,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     if tai_nguyen and so_suat > 0:
         from platform_core.llm import luat_nhan
         luat = _dat_cho(suc, lop=luat_nhan.TUONG_TAC, token_vao_uoc=vao_uoc,
-                        xin_ra=xin_ra, so_anh=dem_anh(than))
+                        token_anh=do_anh(than, suc)[1], xin_ra=xin_ra)
         token_dat_truoc = int(luat.get("token_dat_truoc", 0))
         la_whale = bool(luat.get("la_whale", False))
         ticket = admission.acquire(

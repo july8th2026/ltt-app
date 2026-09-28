@@ -510,15 +510,18 @@ def _luat_cho_job(job_type: str, params: dict, suc=None) -> dict:
         # sổ hẹp nhất; và đếm ảnh vào đặt chỗ như mọi cửa khác.
         alias = str((params or {}).get("model") or "") or None
         ra = min(ra, int(ex.context_output_cap(vao, alias)))
-        from platform_core.runtime_noi_bo.luong import dem_anh
-        so_anh = dem_anh(params or {})
+        # 28/09: ĐO ảnh, không ĐẾM ảnh. `do_anh` trả `(số ảnh, Σ token)`; chi
+        # phí ngữ cảnh của một ảnh là `f(rộng, cao)`, và hằng phẳng 2.048 cũ
+        # THIẾU 2× ở ảnh 2048×2048 — xem `luong.do_anh`.
+        from platform_core.runtime_noi_bo.luong import do_anh
+        token_anh = do_anh(params or {}, suc)[1]
     except Exception:  # noqa: BLE001 - đặt chỗ cả pool là đường an toàn
         log.exception("khong uoc duoc token cua job %s — dat cho CA POOL", job_type)
         return dict(lop=luat_nhan.NEN, token_pool=pool, token_dat_truoc=pool)
     # Ngoài `try`: `DatChoVuotPool` (và bản khai thiếu đệm ước) là LỖI THẬT, không
     # phải "ước hỏng" — đặt chỗ cả pool ở đây là kẹp im lặng (phương án C).
     return tham_so_da_luot.luat_cho(suc, lop=luat_nhan.NEN, token_vao_uoc=vao,
-                                    xin_ra=ra, so_anh=so_anh)
+                                    xin_ra=ra, token_anh=token_anh)
 
 
 def _vram_can(job_type: str) -> int:

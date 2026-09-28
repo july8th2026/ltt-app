@@ -123,8 +123,10 @@ def test_6_ban_khai_mang_nguong_whale_CHU_DU_AN_CHON():
         am = tool.admission_cho(alias)
         assert am.nguong_whale == ngan_sach.NGUONG_WHALE[id_nb], alias
         assert am.nguong_whale == ngan_sach.HO_SO[id_nb].nguong_whale, alias
-        assert (am.dem_uoc, am.token_giu_moi_anh) == (
-            ngan_sach.HO_SO[id_nb].dem_uoc, ngan_sach.HO_SO[id_nb].token_giu_moi_anh)
+        assert (am.dem_uoc, am.token_anh_toi_thieu, am.token_anh_toi_da) == (
+            ngan_sach.HO_SO[id_nb].dem_uoc,
+            ngan_sach.HO_SO[id_nb].token_anh_toi_thieu,
+            ngan_sach.HO_SO[id_nb].token_anh_toi_da)
 
 
 @pytest.mark.parametrize("alias", ["ltt-3.8", "ltt-3.5"])
@@ -165,12 +167,12 @@ def test_6_env_cu_DA_GO_khong_con_hieu_luc(monkeypatch):
 
     suc = MANIFEST.tools[0].admission_cho("ltt-3.8")
     truoc = tham_so_da_luot.luat_cho(suc, lop=luat_nhan.NEN, token_vao_uoc=20_000,
-                                     xin_ra=100, so_anh=2)
+                                     xin_ra=100, token_anh=8_196)
     monkeypatch.setenv("LTT_LLM_NGUONG_WHALE", "1")
     monkeypatch.setenv("LTT_LLM_DEM_DAT_TRUOC", "99999")
     monkeypatch.setenv("LTT_LLM_TOKEN_MOI_ANH", "99999")
     sau = tham_so_da_luot.luat_cho(suc, lop=luat_nhan.NEN, token_vao_uoc=20_000,
-                                   xin_ra=100, so_anh=2)
+                                   xin_ra=100, token_anh=8_196)
     assert sau == truoc
 
 
@@ -432,7 +434,7 @@ def test_O05_cua_JOB_mang_dung_so_dat_cho_cua_lease(db_c, monkeypatch, app_thu):
             params_schema={"text": {"type": "string"}}, returns={"output": "text"},
             admission_theo_model={"*": AdmissionModel(
                 "tn_dat_cho_thu", 1, 100_000, nguong_whale=50_000, dem_uoc=2_048,
-                token_giu_moi_anh=2_048)})
+                token_anh_toi_thieu=8, token_anh_toi_da=4_096)})
 
     monkeypatch.setattr(jr, "_tool_cua_job", _tool)
     thay: dict = {}

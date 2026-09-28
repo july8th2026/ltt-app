@@ -46,21 +46,44 @@ def test_manifest_doc_tu_nguon():
         assert suc is not None, f"{model} khong co trong admission_theo_model"
         assert suc.slots == h.seq_cap
         assert suc.token_pool == h.token_budget
-        assert (suc.nguong_whale, suc.dem_uoc, suc.token_giu_moi_anh) == (
-            h.nguong_whale, h.dem_uoc, h.token_giu_moi_anh), model
+        assert (suc.nguong_whale, suc.dem_uoc, suc.token_anh_toi_thieu,
+                suc.token_anh_toi_da) == (
+            h.nguong_whale, h.dem_uoc, h.token_anh_toi_thieu,
+            h.token_anh_toi_da), model
 
 
-def test_gateway_TOKEN_GIU_MOI_ANH_khop_ho_so():
-    """Task 11 (18/09): bản sao ở máy B mang tên `TOKEN_GIU_MOI_ANH` và bằng
-    `HO_SO[m].token_giu_moi_anh` của MỌI hồ sơ. Tên cũ `TOKEN_MOI_ANH` (2.048)
-    trùng tên với `apps/ltt_llm/ngan_sach.TOKEN_MOI_ANH = 770` (số đo cho hoá
-    đơn) — hai số khác nghĩa, một tên ⇒ đã gỡ ở gateway."""
-    from llm_gateway import ngan_sach as ns_b
+def test_hai_may_dung_CUNG_MOT_phep_tinh_token_anh():
+    """⭐ THAY `test_gateway_TOKEN_GIU_MOI_ANH_khop_ho_so` (28/09/2026).
 
-    assert not hasattr(ns_b, "TOKEN_MOI_ANH"), "gateway con ten cu TOKEN_MOI_ANH"
-    for m, h in ngan_sach.HO_SO.items():
-        assert ns_b.TOKEN_GIU_MOI_ANH == h.token_giu_moi_anh, m
-    assert ngan_sach.TOKEN_MOI_ANH != ns_b.TOKEN_GIU_MOI_ANH  # hai nghĩa, hai số
+    Phép cũ đối chiếu HAI HẰNG PHẲNG bằng nhau. Nay chi phí ngữ cảnh của một ảnh
+    là một HÀM của kích thước, nên điều phải khớp không còn là một con số mà là
+    **cả phép tính**: `platform_core/llm/anh_token.py` ≡ `llm_gateway/anh_token.py`
+    (giống hệt từng byte — `tests/test_4203` canh), cộng hai tham số của nó
+    (`--image-min-tokens`/`--image-max-tokens`) khớp giữa `HO_SO` và yaml
+    (`tests/test_4205` canh).
+
+    ⭐ Đây là bất biến "A nhận ⇒ B nhận" (A ⊆ B), cùng khuôn `uoc_token.py` đã
+       giữ cho phần chữ: A giữ chỗ bằng ĐÚNG phép B đếm.
+
+    ⛔ Hằng cũ `TOKEN_GIU_MOI_ANH` vẫn còn ở gateway làm đường lui khi KHÔNG đọc
+       được trần engine — nó không còn nằm trên đường tính bình thường, nên phép
+       này không đối chiếu nó nữa.
+    """
+    from llm_gateway import anh_token as at_b
+    from platform_core.llm import anh_token as at_a
+
+    assert not hasattr(ngan_sach, "TOKEN_GIU_MOI_ANH_DA_GO"), "canh ten"
+    # Cùng phép tính, chứng minh bằng KẾT QUẢ trên đúng bảng đã đo 28/09.
+    for rong, cao, mong in ((320, 240, 82), (1024, 768, 770), (1280, 720, 922),
+                            (2048, 2048, 4098), (3840, 2160, 4082)):
+        for m, h in ngan_sach.HO_SO.items():
+            a = at_a.token_anh(rong, cao, toi_thieu=h.token_anh_toi_thieu,
+                               toi_da=h.token_anh_toi_da) + at_a.TOKEN_DAU_VISION
+            b = at_b.token_anh(rong, cao, toi_thieu=h.token_anh_toi_thieu,
+                               toi_da=h.token_anh_toi_da) + at_b.TOKEN_DAU_VISION
+            assert a == b == mong, (m, rong, cao, a, b, mong)
+    # 770 chỉ đúng cho 1024x768 — KHÔNG phải "chi phí một ảnh".
+    assert ngan_sach.TOKEN_MOI_ANH == 770
 
 
 def test_tools_KHONG_con_khuyen_DONG_THOI_MAY_B():

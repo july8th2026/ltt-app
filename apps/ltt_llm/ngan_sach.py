@@ -99,6 +99,26 @@ DEM_UOC = 2_048
 #: ══════════════════════════════════════════════════════════════════════════
 TOKEN_GIU_MOI_ANH = 2_048
 
+#: ⭐ TRẦN TOKEN ẢNH CỦA ENGINE — `--image-min-tokens` / `--image-max-tokens`.
+#:
+#: Đây là **tham số** của `platform_core/llm/anh_token.token_anh(rộng, cao, …)`,
+#: không phải "chi phí một ảnh". Chi phí một ảnh là hàm của kích thước; hai số
+#: này chỉ nói hàm ấy bị kẹp ở đâu.
+#:
+#: ⛔ HAI SỐ NÀY LÀ **BẢN SAO** CỦA `llm_gateway/deploy/llama-swap.yaml`, đúng
+#:    cùng một hình dạng với `engine_ctx`/`np` ở `HO_SO`. Chép sang mà không ai
+#:    đối chiếu chính là cơ chế đã làm bảng ở kho này nói sai **năm lần**, nên
+#:    `tests/test_4205_ngan_sach_anh_thay_tran_dem.py` đọc NGƯỢC tệp yaml và đỏ
+#:    khi lệch — không phải tin vào lời hứa của chú thích này.
+#:
+#: 🔴 SÀN 8 LÀ MỘT NỢ CHẤT LƯỢNG ĐÃ BIẾT, chưa trả. `clip.cpp:1662-1667` ở đúng
+#:    build đang chạy in cảnh báo rằng Qwen-VL cần **≥ 1.024** token ảnh để làm
+#:    đúng tác vụ định vị (dẫn issue #16842). Nâng sàn là đánh đổi **sản phẩm**
+#:    (độ chính xác đổi lấy KV + credit khách trả) ⇒ chủ dự án chốt 28/09 là
+#:    **hoãn tới khi có phép đo Đ-5**. ⛔ Đừng nâng ở đây cho "tốt hơn".
+TOKEN_ANH_TOI_THIEU = 8
+TOKEN_ANH_TOI_DA = 4096
+
 #: Biên bể KV (token) A không cho đặt chỗ — `token_budget = -c − BIEN_POOL_TOKEN`.
 #:
 #: 🔴 17/09/2026 `KET_QUA_DO_17_09.md` (`da153d40`): trên b10883 tràn `-kvu` giết
@@ -307,8 +327,16 @@ class HoSoModel:
     bien_pool_token: int
     #: Đệm ước mỗi lượt — xem `DEM_UOC`.
     dem_uoc: int
-    #: Token đặt chỗ mỗi ảnh — xem `TOKEN_GIU_MOI_ANH`.
-    token_giu_moi_anh: int
+    #: `--image-min-tokens` / `--image-max-tokens` của hồ sơ engine.
+    #:
+    #: ⭐ THAY `token_giu_moi_anh` (hằng phẳng 2.048) — 28/09/2026. Chi phí ngữ
+    #:    cảnh của một ảnh là `f(rộng, cao)` (`platform_core/llm/anh_token.py`,
+    #:    khớp 14/14 ô đo), không phải một hằng; hai số này là **tham số** của
+    #:    hàm đó, và chúng là số của **engine** nên phải khớp `llama-swap.yaml`.
+    #:    `tests/test_4205_*` đối chiếu cặp này với yaml — cùng khuôn `engine_ctx`
+    #:    đã làm cho `-c`.
+    token_anh_toi_thieu: int
+    token_anh_toi_da: int
     #: Token prefill MỚI từ mức này lượt là whale — `NGUONG_WHALE[model_id]`
     #: (số chủ dự án chọn 17/09, L-23).
     nguong_whale: int
@@ -320,7 +348,8 @@ class HoSoModel:
 
     def __post_init__(self) -> None:
         if min(self.engine_ctx, self.np, self.seq_cap, self.dem_uoc,
-               self.token_giu_moi_anh, self.nguong_whale) <= 0:
+               self.token_anh_toi_thieu, self.token_anh_toi_da,
+               self.nguong_whale) <= 0:
             raise ValueError(f"ho so {self.model_id}: moi so phai > 0: {self}")
         if self.seq_cap > self.np:
             raise ValueError(f"ho so {self.model_id}: seq_cap {self.seq_cap} > "
@@ -377,13 +406,15 @@ HO_SO = {
     "qwen38-api": HoSoModel(
         "qwen38-api", engine_ctx=221_184, np=3, seq_cap=3,
         bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
-        token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
+        token_anh_toi_thieu=TOKEN_ANH_TOI_THIEU,
+        token_anh_toi_da=TOKEN_ANH_TOI_DA,
         nguong_whale=NGUONG_WHALE["qwen38-api"],
         toc_prefill_uoc_tok_s=toc_prefill_uoc("qwen38-api")),
     "qwen35-api": HoSoModel(
         "qwen35-api", engine_ctx=262_144, np=4, seq_cap=4,
         bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
-        token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
+        token_anh_toi_thieu=TOKEN_ANH_TOI_THIEU,
+        token_anh_toi_da=TOKEN_ANH_TOI_DA,
         nguong_whale=NGUONG_WHALE["qwen35-api"],
         toc_prefill_uoc_tok_s=toc_prefill_uoc("qwen35-api")),
 }

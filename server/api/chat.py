@@ -408,6 +408,13 @@ def register_chat_routes(api, config, tag: str) -> None:
                 suc=suc,
                 user_id=principal.user_id, request_id=request_id, cua="sync",
                 token_vao_uoc=int(token_vao_uoc), xin_ra=int(sach["max_tokens"]),
+                # 🔴 28/09: cửa này TRƯỚC NAY KHÔNG đặt chỗ cho ảnh — `so_anh`
+                #    không bao giờ được truyền, nên một lượt sync mang ảnh giữ
+                #    thiếu đúng toàn bộ phần ảnh. Lỗ hổng thật, và đúng chiều
+                #    nguy hiểm (`-kvu` tràn giết mọi slot). Sửa cùng lúc chuyển
+                #    sang ngân sách vì nếu chỉ sửa cửa stream thì hai cửa cùng
+                #    một model lại đặt chỗ bằng hai công thức khác nhau.
+                token_anh=cua_luong.do_anh(sach, suc)[1],
                 han_s=cua_luong.han_cho_dong_bo(
                     ngan_sach_s=float(SYNC_BILLED_MAX_SECONDS),
                     da_tieu_s=time.monotonic() - t0),

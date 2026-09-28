@@ -291,11 +291,17 @@ def do_yeu_cau(body: dict[str, Any], *,
     #    ở 2048×2048 (4.098 token thật) — vốn đúng bằng cỡ tối đa client gửi.
     #    Thiếu là chiều `DatChoVuotPool` sinh ra để chặn, và chiều mà một lần
     #    tràn `-kvu` giết MỌI slot (llama.cpp b10689).
-    do_duoc = token_anh_toi_thieu is not None and token_anh_toi_da is not None
-    if do_duoc:
-        tong_anh = sum(_token_mot_anh(u, toi_thieu=int(token_anh_toi_thieu),
-                                      toi_da=int(token_anh_toi_da)) for u in anh)
+    # ⭐ Gán ra biến cục bộ để phép thu hẹp kiểu đi được qua `sum(...)` — `mypy`
+    #    không theo được `None`-check qua một cờ bool.
+    san, tran_anh = token_anh_toi_thieu, token_anh_toi_da
+    do_duoc = san is not None and tran_anh is not None
+    if san is not None and tran_anh is not None:
+        tong_anh = sum(_token_mot_anh(u, toi_thieu=int(san), toi_da=int(tran_anh))
+                       for u in anh)
     else:
+        # Đường lui CHỈ chạy trên một lượt sắp bị `kiem_tra` TỪ CHỐI
+        # (`ThieuTranAnhEngine`), nên con số này chỉ đi vào log/header, không vào
+        # một phép đặt chỗ nào. ⛔ Đừng đọc nó như một ước lượng dùng được.
         tong_anh = len(anh) * TOKEN_GIU_MOI_ANH
 
     return KetQuaDo(

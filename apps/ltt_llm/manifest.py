@@ -90,6 +90,8 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
 from __future__ import annotations
 
 from platform_core.i18n import N_
+from platform_core.llm.anh_token import (DIEM_ANH_MOI_TOKEN_CANH,
+                                          TOKEN_DAU_VISION)
 from platform_core.registry import AdmissionModel, AppManifest, ToolSpec
 
 from apps.ltt_llm import features as _features
@@ -105,7 +107,8 @@ from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
                                     NHOM_CU_TRU_38,
                                     TAI_NGUYEN_35, TAI_NGUYEN_38,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
-                                    ANH_BYTE_TOI_DA, SO_ANH_TOI_DA,
+                                    ANH_BYTE_TOI_DA,
+                                    TOKEN_ANH_TOI_DA, TOKEN_ANH_TOI_THIEU,
                                     cong_bo_cua, mac_dinh_cho,
                                     tran_theo_ngu_canh)
 
@@ -121,7 +124,8 @@ def _khai_admission(model_id: str, tai_nguyen: str, nhom_cu_tru: str = "",
     return AdmissionModel(tai_nguyen, h.seq_cap, h.token_budget, nhom_cu_tru,
                           vai_tro, nguong_whale=h.nguong_whale,
                           dem_uoc=h.dem_uoc,
-                          token_giu_moi_anh=h.token_giu_moi_anh,
+                          token_anh_toi_thieu=h.token_anh_toi_thieu,
+                          token_anh_toi_da=h.token_anh_toi_da,
                           mot_prefill_dai=h.mot_prefill_dai,
                           toc_prefill_tok_s=h.toc_prefill_uoc_tok_s)
 
@@ -434,11 +438,21 @@ MANIFEST = AppManifest(
                         "context_window": cong_bo_cua("qwen38-api"),
                         "max_output_tokens": MAX_TOKENS_TRAN,
                         "reads_images": True,
-                        # 🔴 Cong bo 14/09/2026. Truoc do tran nay CO THAT va
-                        #    dang cuong che (do: 4 anh -> 200, 5 anh -> 400)
-                        #    nhung khong cho nao noi cho khach biet.
-                        "max_images": SO_ANH_TOI_DA,
+                        # 🔴 GO `max_images` (28/09/2026, quyet dinh C4). Con so 4
+                        #    cong bo tu 14/09 khong co phep do nao dung sau, va
+                        #    llama.cpp KHONG co tran so anh. Chi phi thuc cua mot
+                        #    anh la f(rong, cao) — nay CONG BO ba so de client tu
+                        #    tinh duoc, thay vi mot con so dem khong noi len dieu gi.
                         "max_image_bytes": ANH_BYTE_TOI_DA,
+                        "image_pixels_per_token": DIEM_ANH_MOI_TOKEN_CANH ** 2,
+                        "min_image_tokens": TOKEN_ANH_TOI_THIEU,
+                        "max_image_tokens": TOKEN_ANH_TOI_DA,
+                        "image_token_markers": TOKEN_DAU_VISION,
+                        # Khach doc duoc gi tu day: token_anh(w, h) =
+                        #   clamp(round_nua_len(w/32) * round_nua_len(h/32),
+                        #         min_image_tokens, ...) + image_token_markers
+                        # Vuot `max_image_tokens` thi anh bi THU NHO giu ti le
+                        # (`smart_resize`), khong bi kep.
                     },
                 },
                 "ltt-3.5": {
@@ -453,11 +467,21 @@ MANIFEST = AppManifest(
                         "context_window": cong_bo_cua("qwen35-api"),
                         "max_output_tokens": MAX_TOKENS_TRAN,
                         "reads_images": True,
-                        # 🔴 Cong bo 14/09/2026. Truoc do tran nay CO THAT va
-                        #    dang cuong che (do: 4 anh -> 200, 5 anh -> 400)
-                        #    nhung khong cho nao noi cho khach biet.
-                        "max_images": SO_ANH_TOI_DA,
+                        # 🔴 GO `max_images` (28/09/2026, quyet dinh C4). Con so 4
+                        #    cong bo tu 14/09 khong co phep do nao dung sau, va
+                        #    llama.cpp KHONG co tran so anh. Chi phi thuc cua mot
+                        #    anh la f(rong, cao) — nay CONG BO ba so de client tu
+                        #    tinh duoc, thay vi mot con so dem khong noi len dieu gi.
                         "max_image_bytes": ANH_BYTE_TOI_DA,
+                        "image_pixels_per_token": DIEM_ANH_MOI_TOKEN_CANH ** 2,
+                        "min_image_tokens": TOKEN_ANH_TOI_THIEU,
+                        "max_image_tokens": TOKEN_ANH_TOI_DA,
+                        "image_token_markers": TOKEN_DAU_VISION,
+                        # Khach doc duoc gi tu day: token_anh(w, h) =
+                        #   clamp(round_nua_len(w/32) * round_nua_len(h/32),
+                        #         min_image_tokens, ...) + image_token_markers
+                        # Vuot `max_image_tokens` thi anh bi THU NHO giu ti le
+                        # (`smart_resize`), khong bi kep.
                     },
                 },
             },
