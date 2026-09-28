@@ -112,6 +112,129 @@ canh rằng không ai lặng lẽ mở một cửa ghi ở tầng trang.
 
 _(mới nhất ở trên)_
 
+- `2026-09-28` `điều phối` — **ĐÃ DEPLOY `8907b4dd`. Nghiệm thu web thật: 3/4 ĐẠT,
+  1 hỏng — và cái hỏng là lỗi của TÔI.** Mở wave 4: UI-10a + UI-10b.
+
+  ### Nghiệm thu trên `https://app.lttstudios.com`
+
+  ```
+  UI-5  4 cua /ket-noi   GET 200 · GET 200 · POST 400(CSRF) · DELETE 400   DAT
+        + than KHONG chua khoa nghi la bi mat                              DAT
+  UI-9  /agent/templates 200 · 3 nut dung mau · 0 badge "Dang xay"         DAT
+  Canvas                 tai xong 434 ms                                   DAT
+  UI-8a POST .../duyet   404 tu ROUTER                                      ❌
+  ```
+
+  ### 🔴 Một tính năng đi qua MỌI cổng rồi chết im lặng
+
+  `phe_duyet_v3` ⛔ không được `routes/__init__.py` import. Làn UI-8a **báo tôi
+  đúng việc đó** trong báo cáo cuối và tôi bỏ sót. Nó có **9 test xanh** +
+  nghiệm thu trình duyệt **PASS**.
+
+  ⚠️ Vì sao ⛔ không phép kiểm nào của làn đó bắt được: `_shared.router` là đối
+  tượng **dùng chung**, và fixture của họ `import` module **tường minh** (đúng
+  theo hướng dẫn của chính tôi). Import ấy gắn route **trong tiến trình test**;
+  `create_app()` ngoài đời chỉ nạp thứ `__init__.py` import.
+
+  ⇒ Đây là một **họ RIÊNG**, ⛔ không phải *"đo thứ đại diện"*: mọi phép đo đều
+  đúng, đều chạy, đều xanh. Cái sai là **bộ test tự dựng một tiền đề mà sản phẩm
+  ⛔ không có** — nó đo trong **một thế giới do chính nó tạo ra**. Và ⛔ không mức
+  độ phủ nào chỉ ra được, vì dòng mã ấy **CÓ chạy**.
+
+  ⭐ Cơ học hoá: `test_5606` hỏi *"có tệp `.py` nào trong `apps/agent/routes/` mà
+  `__init__.py` ⛔ không import không?"*, đọc **AST** — ⛔ **không** soi
+  `sys.modules`, vì một module có thể đã ở đó do **một tệp test khác** vừa import
+  nó, và khi ấy phép kiểm xanh vì lý do ⛔ không liên quan. *Một phép kiểm mà tiền
+  đề của nó bị ô nhiễm bởi chính thứ nó đang kiểm thì ⛔ không kiểm gì cả.*
+  Tiêm lỗi: gỡ tên khỏi tuple ⇒ **2 đỏ**. Route v3: 23 → **24**.
+
+  ### 🔴 Bộ đo nghiệm thu của tôi tự sai BA lần — hai báo động giả
+
+  Lượt đầu báo **ba** hỏng; chỉ **một** thật:
+
+  | | vì sao |
+  |---|---|
+  | ✅ thật | `POST .../duyet` 404 từ ROUTER |
+  | ❌ giả | `data-mau-slug` = 0 — tôi **tự bịa** tên thuộc tính; thật là `data-mau-dung` |
+  | ❌ giả | `/đang xây/` khớp — tôi quét **cả body**, mà thanh điều hướng hiện badge đó cho **bốn mục KHÁC** |
+  | ❌ giả | "3 lỗi trang" — console error do **chính các phép thăm dò của tôi** sinh ra (`POST` thiếu CSRF ⇒ 400 có ý) |
+
+  ⇒ Nếu báo cáo ngay lượt đầu, tôi sẽ báo **ba** lỗi sản phẩm trong khi có **một**,
+  và hai cái sẽ đẩy người khác đi sửa thứ ⛔ không hỏng. **Một báo động giả đắt
+  hơn một phép đo ⛔ không chạy.**
+  ⭐ Hai luật rút ra: *một phép đo trả `0` phải trả lời thêm "nếu thứ tôi tìm CÓ ở
+  đây, nó có trả khác 0 không?"*, và *một bộ đo phải **trừ dấu vết của chính nó**
+  ra khỏi số liệu*.
+
+  ### ⚠️ Trần bundle đo GZIP trong khi Cloudflare phục vụ ZSTD
+
+  ```
+  byte tho          517.837
+  gzip -9           158.681   <- tran CU do cai nay  ⇒  DUOI tran 160.000, XANH
+  zstd -3 (o nha)   164.335
+  THAT TREN DAY     164.252   ⇒  VUOT tran 2,7 %
+  ```
+
+  🔴 Bánh cóc **xanh** trong khi thứ khách tải **vượt trần**. Và tôi đã dùng chính
+  con số gzip để **biện minh việc NÂNG trần** sáng nay.
+
+  ⛔ Hy vọng *"gzip là cận trên an toàn cho zstd"* thì **SAI**: `zstd -3` **lớn
+  hơn** `gzip -9`, còn `-9`/`-19` thì nhỏ hơn — zstd ⛔ không đơn điệu, nó phụ
+  thuộc **mức nén**, và ⛔ không ai ngoài CDN biết mức họ dùng.
+
+  ⭐ Dụng cụ đúng: `PerformanceResourceTiming.encodedBodySize`. Hai dụng cụ hiển
+  nhiên đều trả lời câu khác — `content-length` **vắng mặt** ở phản hồi zstd
+  streaming; `response.body()` trả **thân đã giải nén**.
+  ⚠️ `encodedBodySize = 0` là **KHÔNG ĐO ĐƯỢC** (cache / thiếu
+  `Timing-Allow-Origin`), ⛔ không phải *"0 byte"*.
+
+  Sửa: `test_95` nén bằng `zstd -3`, trần `170.000` trên **số THẬT**. Và vì
+  `test_95` chạy offline nên nó **tin** mức 3 ≈ CDN — niềm tin ấy được đo lại ở
+  `tests/browser/agent_ui_v2_byte_tren_day.js` (lệch **0,11 %**).
+  ⚠️ **MỘT** nguồn chân lý: trần ở `test_95`; kịch bản trình duyệt **báo số + kiểm
+  mô hình**, ⛔ không phán quyết trần.
+
+  ### 🔴 Tôi vi phạm luật "dựng lại bundle" BA lần, kể cả sau khi tự nới rộng nó
+
+  Lần đầu: sau một lần gộp. Lần hai: `13717fea` đổi `workflowApi.ts` trong một
+  commit **thường** — luật cũ nói *"sau mọi lần GỘP"* nên ⛔ không kích hoạt.
+  Lần ba: `d85a044a` đổi hai tệp `.ts`, ngay sau khi tôi đã nới thành *"sau mọi
+  thay đổi NGUỒN frontend"*.
+
+  ⇒ **Một luật phát biểu đúng ⛔ KHÔNG thay thế được một phép kiểm cưỡng chế nó.**
+  Cả ba lần thứ bắt được là `test_95::..._is_fresh`, ⛔ không phải câu văn.
+  ⭐ Và *"luật hẹp"* = *"tham chiếu chết"* ở hai vật liệu khác nhau: cả hai sản
+  xuất **niềm tin rằng có lưới**, và niềm tin ấy **đắt hơn** việc ⛔ không có lưới.
+
+  ### ⚠️ Deploy KHỞI ĐỘNG LẠI WORKER — trạng thái ⛔ không nằm trong git
+
+  Phiên kia chặn tôi deploy vì họ có job ASV chạy dở (giai đoạn 8/13, 11 phút,
+  50 credit); khởi động lại giữa chừng **giết** nó. `git status` sạch + gate xanh
+  ⛔ không nói gì về việc **có ai đang dùng máy chủ không**.
+  ⇒ `tools/ai_dang_dung_may_chu.py` (mới): `0 RANH` · `3 DANG DUNG` ·
+  **`4 KHONG BIET`**. Mã `4` ⛔ **không** được gộp vào `0` — gộp lại thì một CSDL
+  ⛔ không đọc được sẽ trông y hệt một máy rảnh, và cái lẫn ấy nghiêng về phía
+  **giết job của khách**. ⛔ **CHƯA** đấu vào `2-cai-dat.ps1`: đó là thay đổi
+  đường deploy ⇒ chủ dự án chốt.
+
+  ### ⚠️ `main` từng dời BỐN lần trong một cửa sổ deploy
+
+  `708fdf3d → 13717fea → c1e09dfd → 8907b4dd`, mỗi lần phiên kia đo lại thì nó
+  dời tiếp. ⇒ **Một bằng chứng có hạn dùng ngắn hơn thời gian thu thập nó thì ⛔
+  không bao giờ hợp lệ.** Thuốc ⛔ không phải đo nhanh hơn — là **đóng băng cây**.
+  Tôi đã đóng băng `main` cho tới khi họ deploy xong.
+  ⭐ Và `--ff-only` là hình dạng đúng: **nó TỪ CHỐI thay vì đo lại**.
+
+  ### Wave 4 — hai làn, tệp rời nhau
+
+  | Làn | Dải test | Cổng | Tệp giữ |
+  |---|---|---|---|
+  | UI-10a hiệu năng | 6700-6799 | 8208 | `EditorShell.tsx` ⭐ · `vite.config.ts` · `test_95` |
+  | UI-10b trợ năng | 6800-6899 | 8209 | `canvas.css` · `styles/**` · `features/editor/**` **trừ** `EditorShell.tsx` · `inspector/**` · `nodes/**` |
+
+  UI-10b được bảo **ĐO LẠI** tiêu chí 93 (vùng bấm) và 94 (mobile) thay vì tin
+  điểm audit cũ — cả hai đã được UI-0 và điều phối sửa từ lúc audit chấm điểm.
+
 - `2026-09-28` `điều phối` — **MỞ WAVE 3: UI-6 · UI-8a · UI-9 chạy song song.**
 
   Cấp tài nguyên **TRƯỚC** khi giao việc, vì đợt trước tôi quên cấp **cổng** và
@@ -404,6 +527,8 @@ _(mới nhất ở trên)_
   | UI-6 | 8205 |
   | UI-8a | 8206 |
   | UI-9 | 8207 |
+  | UI-10a | 8208 |
+  | UI-10b | 8209 |
 
   🔴 **Còn treo, và UI-1 dừng ĐÚNG chỗ:** *lưu trữ workflow* chưa làm —
   `archived_at` có trong lược đồ và danh sách **đã lọc** theo nó, nhưng ⛔ không
