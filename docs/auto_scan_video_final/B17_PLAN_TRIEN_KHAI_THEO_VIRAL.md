@@ -280,8 +280,8 @@ chứng AST (`:15808-15812`).
 
 | Giai đoạn | `sau=` | Đọc | Song song với `transcribe`? |
 |---|---|---|---|
-| `vung_che_tinh` | `(MEDIA_PREPARE,)` | chỉ **video** | ✅ có |
-| `vung_che_bam` | `(TRANSCRIBE, VUNG_CHE_TINH)` | `hop_ocr.json` | ⛔ không |
+| `do_vung_tinh` | `(MEDIA_PREPARE,)` | chỉ **video** | ✅ có |
+| `do_vung_bam` | `(TRANSCRIBE, DO_VUNG_TINH)` | `hop_ocr.json` | ⛔ không |
 
 🔴 **Vì sao đây là lỗi nguy nhất trong cả plan nếu làm sai**: gộp một giai đoạn rồi
 khai `🔀 || transcribe` thì nhánh bám-hộp chạy với `_ocr_boxes = []`, và ca ấy
@@ -322,7 +322,7 @@ chạy**. `_wps_giong_that:1946` **tra bảng đã đo trước** (`:15109` —
 vào **bản dịch** (GĐ5), ⛔ không chỉ vào bậc thang nắn (GĐ7). Nắn là **cứu chữa**;
 neo đúng ở GĐ5 là **phòng bệnh**.
 
-### 4.2 🔴🔴 `_ocr_boxes` — đã xử ở §3, tách `vung_che_tinh` / `vung_che_bam`
+### 4.2 🔴🔴 `_ocr_boxes` — đã xử ở §3, tách `do_vung_tinh` / `do_vung_bam`
 
 Bằng chứng cơ học W2 đưa thêm: `:18216` dùng `locals().get("_ocr_boxes")` — tức chính
 Viral cũng ⛔ không bảo đảm tên ấy tồn tại. Ca thiếu **im lặng**.
@@ -427,7 +427,7 @@ Nó **⛔ không thuộc `burn_phude`**. Nó sống trong `_ghep_track_khop` (`:
 | Đổi | Δ | Vì sao được / ⛔ không được |
 |---|---|---|
 | `audio_prepare` + `transcribe` → `gpu_asr` | **−1** | một lease GPU, hai luồng trong một tiến trình (§3) |
-| + `vung_che_tinh`, `vung_che_bam` | **+2** | W2 §2.2 buộc tách, ⛔ không gộp được |
+| + `do_vung_tinh`, `do_vung_bam` | **+2** | W2 §2.2 buộc tách, ⛔ không gộp được |
 | − `edit_plan` | **−1** | W4 đo: giá có biên, tự lành — và **đi kèm miễn phí** với lượt đổi `sau=` |
 | ~~gộp `compose`+`render`+`image_finish`~~ | **0** | 🔴 **⛔ KHÔNG** — `render` đã `-c:v copy`, xem đính chính §1 |
 | ~~gộp 3 QC~~ | **0** | 🔴 **⛔ KHÔNG** — xem 🔴 dưới |
@@ -454,7 +454,7 @@ Và `qc_do_luong` (`:258-260`) thiếu venv đo thì **vẫn `succeeded`** với
 ```
 1 media_prepare ─┬─> 2 gpu_asr ───────┬─> 4 content_process ─> 6 voice_synthesis ─> 7 timing_align
                  │                    │                                                 │
-                 └─> 3 vung_che_tinh ──┴─> 5 vung_che_bam ──┐                            v
+                 └─> 3 do_vung_tinh ──┴─> 5 do_vung_bam ──┐                            v
                      (🔀 song song 2)                        │                  8 compose (audio)
                                                              │                            v
                                                              └────────────> 10 image_finish <── 9 render (-c:v copy)
@@ -467,9 +467,9 @@ Và `qc_do_luong` (`:258-260`) thiếu venv đo thì **vẫn `succeeded`** với
 |---|---|---|---|---|
 | 1 | `media_prepare` | — | + `toc_doc_giong` ✅, + **cắt đầu**, + 4 khoá cache | ⛔ |
 | 2 | `gpu_asr` | `(1,)` | **gộp** `audio_prepare`+`transcribe` | ⛔ |
-| 3 | `vung_che_tinh` | `(1,)` | **mới** — chỉ đọc video | ⛔ |
+| 3 | `do_vung_tinh` | `(1,)` | **mới** — chỉ đọc video | ⛔ |
 | 4 | `content_process` | `(2,)` | neo bằng `toc_doc_giong` của GĐ1 | ⛔ |
-| 5 | `vung_che_bam` | `(2, 3)` | **mới** — đọc `hop_ocr.json` | ⛔ |
+| 5 | `do_vung_bam` | `(2, 3)` | **mới** — đọc `hop_ocr.json` | ⛔ |
 | 6 | `voice_synthesis` | `(4,)` | **giữ nguyên** (TTS của ta) | ⛔ |
 | 7 | `timing_align` | `(6, 2)` | bậc thang nắn + `phu_de_canh_giong.srt` | ⛔ |
 | 8 | `compose` | `(7,)` | giữ — dựng bản dựng + `master.wav` | ⛔ |
@@ -489,7 +489,7 @@ Và `qc_do_luong` (`:258-260`) thiếu venv đo thì **vẫn `succeeded`** với
 | ~~P0-c~~ | 🔴 **⛔ KHÔNG LÀM** — đo ra một bản giao SAI mà QC **đồng thuận**; 28 phép đo giữ lại làm bẫy | `tests/test_4973..4977` | opus | — |
 | 🔑 **P1-0** | **MỘT lượt đổi `CHUOI`**: gộp `audio_prepare`+`transcribe` · khai `vung_che_*` · bỏ `edit_plan` · nối lại **mọi** `sau=` | `pipeline.py` (**chủ DUY NHẤT**) + `tests/test_402*` | **opus** | W4 ✅ |
 | **P1-a** | **THÂN** job `gpu_asr` (một lease, hai luồng) | `apps/asv_gpu/jobs.py`, `manifest.py` — ⛔ không chạm `pipeline.py` | **opus** | P1-0 |
-| **P1-b** | **THÂN** hai module `vung_che_tinh` / `vung_che_bam` | `apps/auto_scan_video/vung_che_*.py` (mới) — ⛔ không chạm `pipeline.py` | **opus** | P1-0 |
+| **P1-b** | **THÂN** hai module `do_vung_tinh` / `do_vung_bam` | `apps/auto_scan_video/vung_che_*.py` (mới) — ⛔ không chạm `pipeline.py` | **opus** | P1-0 |
 | ~~P1-c~~ | 🔴 **BỎ LÀN** — `test_402:247-251` cấm gộp QC tất định với QC chủ quan trả tiền | — | — | — |
 | **P2** | 🔑 Sửa **THỨ TỰ NODE** + thêm node thiếu **bên trong** lượt encode đã có một mình | `che_do_render.py` | **opus** | P1-0, P1-b |
 | **P3** | `phu_de_canh_giong.srt` khoá riêng + `outputs["phu_de_da_dung"]` | `giai_doan_thoi_gian.py` | sonnet | P0-a ✅ |
@@ -571,6 +571,25 @@ trần **thật**, ⛔ không phải trần giả thiết. Thuốc rẻ: `-filte
 lỗi ở §3 — đổi nền đồng thời dưới chân một việc mà ⛔ không phép đo nào đỏ. Phải đi cùng
 P1-a (nơi ta đang sắp xếp lại ai giữ lease).
 
+🔴 **Đổi tên giai đoạn (28/09) — `vung_che_*` → `do_vung_*`.** `apps/auto_scan_video/vung_che.py`
+**đã tồn tại** và là **hợp đồng HÌNH HỌC** cho hộp toạ độ **khách tự vẽ** (phân số 0..1,
+*"sai thì TỪ CHỐI, ⛔ không ĐOÁN"*), dùng ở **ba** nơi: giao diện · `ban_dung.py:230` ·
+`che_do_render.py:84,480`. Việc ta khai là **dò vùng**, thuộc họ `do_vung.py` (OpenCV) +
+`do_vung_ocr.py` (RapidOCR, *"tầng CHÍNH của `do_vung`"*). Trùng tên ở một **hằng số**
+`CHUOI` là một khoản nợ khó rút, nên sửa trước khi khai.
+
+🔴 **`gpu_asr` ⛔ TUYỆT ĐỐI KHÔNG tự chọn card** — `apps/asv_gpu/jobs.py:5-20` là lệnh cấm
+cứng: card đến qua **`ctx.gpu_env(base=os.environ)`**, nền tảng giữ chỗ bằng `gpu_lease`.
+Handler tự đọc biến CUDA **hay gọi công cụ đo GPU** là đua với chính cái lease ⇒ **OOM giữa
+một lô dài**. `tests/test_401...py:160` quét thư mục ấy bằng **AST**, và docstring của nó kể
+**năm** chỗ tự chọn card trong cây di sản *"sẽ theo sang trong một lượt di trú copy-paste"*.
+
+⚠️ ⭐ **Đây là cái bẫy THẬT của việc học theo Viral, và nó nằm đúng chỗ ta định copy**:
+Viral quyết định demucs chạy GPU hay CPU bằng `phu_de._whisper_device_nhe()` — *"hỏi
+nvidia-smi, ⛔ KHÔNG import torch"*. Đó **đúng là hình dạng bị cấm** ở ta. ⇒ §3 nói ta
+copy **hình dạng một-job-hai-luồng** của Viral; nó ⛔ **không** nói copy cách họ **chọn
+card**. Hai thứ đi liền nhau trong mã họ, và chỉ một thứ được mang sang.
+
 ⚠️ **`[ĐỌC TRƯỚC]` cho P2**: W3 chỉ đọc **17%** thân `burn_phude`. Vùng
 `:6670-7263` (dựng dải che chi tiết) và thân `khung_filter_parts` / `text_wm_parts` /
 `_srt_to_ass_pos` **chưa ai đọc nguyên văn**. Agent làm P2 phải đọc vùng đó **trước**,
@@ -584,7 +603,7 @@ P1-a (nơi ta đang sắp xếp lại ai giữ lease).
 |---|---|---|
 | demucs + whisper cùng card: VRAM đỉnh và **RSS đỉnh**? | một lượt `gpu_asr` thử, ghi cả hai cột | P1-a |
 | Một encode 10 node có vượt **trần dòng lệnh Windows** (32.767 ký tự)? | dựng `fc` **khô**, đếm ký tự, ⛔ chưa chạy ffmpeg | P2 |
-| Có vượt trần **N=99 `if()` lồng** của ffmpeg (⇒ chunk ≤60)? | đếm số dải che động sau `vung_che_bam` | P2 |
+| Có vượt trần **N=99 `if()` lồng** của ffmpeg (⇒ chunk ≤60)? | đếm số dải che động sau `do_vung_bam` | P2 |
 | Ba nhánh song song có vượt `tai_nguyen_suat` máy A? | `tai_may.py` trước/sau một lượt thật | P1-b |
 | `gop_khe` có lệch phụ đề thật ⛔ không, lệch bao nhiêu ms? | so `.vi.srt` với `.dubsync.vi.srt` theo từng cue | P3 |
 | Đại lượng onset trong `_ghep_track_khop` là gì? | đọc `localize.py:9600-9790` nguyên văn | P3 |
