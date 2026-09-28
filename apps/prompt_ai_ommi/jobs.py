@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
+from platform_core.job_runner import JobCancelled
 import io
 import uuid
 from datetime import datetime, timezone
@@ -58,7 +59,66 @@ def handle(params: dict, ctx=None) -> dict:
     return _handle_generate(params, ctx=ctx)
 
 
-def _sinh_theo_lo(params: dict, model: str, ctx) -> tuple[dict, int, str]:
+def _quyet_toan_phan_da_giao(params: dict, ctx, so_canh: int) -> None:
+    """Khach bam Huy: thu DUNG phan da giao, roi de nguoi goi NEM LAI.
+
+    ## 🔴 Vi sao ham nay ton tai
+
+    App nay tinh tien o **tang job**: credit GIU luc nop, quyet toan luc xong. Va
+    nen tang **mac dinh hoan TOAN BO** khi job bi huy (`job_runner._hoan_credit`).
+
+    ⇒ Khong co ham nay thi khach huy giua chung se duoc hoan het **va** giu phan
+      da sinh — tuc lay viec MIEN PHI, va **lap duoc**: nop 20 canh, huy sau lo 1,
+      nhan 5 canh, lam lai.
+
+    ## ⭐ Vi sao no du de chan, ma ⛔ KHONG cham `credit.py` hay `job_runner.py`
+
+    `credit.hoan()` tu `return` ngay khi `_da_ket_so(job_id)` la True. Nen mot lan
+    `quyet_toan` o day lam lan hoan cua runner thanh **vo tac dung**.
+
+    ⚠️ Chot ay nam o `hoan()`, ⛔ KHONG o `so_da_giu()`: `so_da_giu` chi cong but
+       toan `CREDIT_HOLD` nen no **van > 0** sau quyet toan, va `_hoan_credit` **van
+       goi** `hoan()`. `tests/test_5573` ghim chinh cai guard do, o ma NEN TANG.
+
+    ## ⛔ Va no KHONG duoc nem
+
+    Nguoi goi dang tren duong nem `JobCancelled`. Mot ngoai le tu day se **thay**
+    ngoai le do, va job se bi ghi la THAT BAI thay vi DA HUY — mot trang thai sai
+    bao cho khach, cho mot viec khach chu dong lam.
+    """
+    import logging
+
+    job_id = str(getattr(ctx, "job_id", "") or "")
+    if not job_id:
+        return                                  # goi tay / test: khong co so sach
+    try:
+        from platform_core import credit
+        from platform_core.db import get_session
+        from platform_core.models import Job
+
+        from apps.prompt_ai_ommi.services import chia_lo
+        gia = chia_lo.gia_phan_da_giao(so_canh, params)
+        for db in get_session():
+            try:
+                job = db.get(Job, job_id)
+                # ⛔ `user_id` lay tu JOB, khong tu `ctx`: `JobContext.__init__` chi
+                #    co `(job_id, gpu_uuid)` — ⛔ khong co `user_id`.
+                if job is not None and job.user_id:
+                    credit.quyet_toan(db, job.user_id, job_id, actual=gia)
+                    db.commit()
+            finally:
+                db.close()
+            break
+    except Exception:                            # noqa: BLE001
+        # ⛔ KHONG nem (xem docstring), nhung ⛔ cung KHONG im lang: khong quyet
+        #    toan duoc nghia la khach se duoc hoan TOAN BO cho mot luot DA giao
+        #    hang. Do la mat doanh thu, va no phai co mot dong de doi soat.
+        logging.getLogger(__name__).exception(
+            "ommi huy: KHONG quyet toan duoc job %s (da giao %s canh) - "
+            "khach se duoc hoan toan bo", job_id[:8], so_canh)
+
+def _sinh_theo_lo(params: dict, model: str, ctx,
+                  da_giao: dict | None = None) -> tuple[dict, int, str]:
     """Sinh canh theo LO. Tra `(raw, tong_tokens, loi_nhac_lo_dau)`.
 
     ## 🔴 Vi sao chia lo (Q-16, do that 27/09/2026)
@@ -117,6 +177,10 @@ def _sinh_theo_lo(params: dict, model: str, ctx) -> tuple[dict, int, str]:
             goi_y = {"summary": raw_lo.get("summary"),
                      "anchors": raw_lo.get("anchors")}
         da_sinh += list((raw_lo or {}).get("scenes") or [])[:cuoi - dau + 1]
+        if da_giao is not None:
+            # ⭐ Ghi TRUOC khi bao tien do: `progress_counter` co the NEM, va luc
+            #    do nhanh `except` phai biet lo nay DA giao xong.
+            da_giao["n"] = min(len(da_sinh), tong)
         if ctx is not None:
             # ⛔ KHONG boc try/except: xem docstring.
             ctx.progress_counter(min(len(da_sinh), tong), tong, don_vi="canh",
@@ -151,7 +215,12 @@ def _handle_generate(params: dict, ctx=None) -> dict:
         ctx.progress(30, "AI Director đang phân cảnh")
     # D09: không khai model ⇒ `provider` tự hỏi bản khai của app (`model_mac_dinh`).
     model = str(params.get("model") or provider.model_mac_dinh())
-    raw, tokens, prompt = _sinh_theo_lo(params, model, ctx)
+    da_giao = {"n": 0}          # o nho, nhanh `except` doc de biet thu bao nhieu
+    try:
+        raw, tokens, prompt = _sinh_theo_lo(params, model, ctx, da_giao)
+    except JobCancelled:
+        _quyet_toan_phan_da_giao(params, ctx, da_giao["n"])
+        raise
     if ctx is not None:
         ctx.progress(85, "đang chuẩn hóa prompt package")
     package = _normalize_result(raw, params)
