@@ -734,19 +734,44 @@ mã lặp**, không phải "không thấy điểm ảnh" — cùng hình dạng 
 đúng **hình** và chọn sai **bảng chữ**. Phép chấm của tôi đếm đó là sai. ⇒ Độ chính
 xác thật ở 512 và 1024 là **20/20**, không phải 19/20.
 
-### Vì sao chọn **1024** chứ không 512, khi hai bên đo BẰNG NHAU
+### 🔴 CHỌN **512** — và đây là chỗ tôi đã TỰ SUY một lần rồi phải sửa
 
-512 đạt cùng điểm với **một nửa** chi phí, nên nó trông là điểm vận hành tốt hơn.
-⛔ Nhưng phép đo của tôi **không phân giải được hai mức đó**: 20 mẫu mỗi cấu hình,
-cả hai 19/20, và khác biệt giữa chúng cần nhiều mẫu hơn hẳn.
+Bản đầu của mục này chọn **1024**, lý do: *"thượng nguồn khuyên thế cho tác vụ
+định vị, mà bài đo của ta chỉ đo đọc chữ"*. Chủ dự án bảo **tra nguồn thay vì
+suy**. Tra xong (28/09), lý do ấy **không đứng được**:
 
-🔑 **Và quan trọng hơn: bài của tôi đo ĐỌC CHỮ, còn con số 1024 của thượng nguồn
-được nêu cho tác vụ ĐỊNH VỊ** (issue #16842) — thứ tôi **không** đo. Định vị nằm
-**trên đường đi chính của ta**: một agent hỏi *"bấm vào nút ở đâu"* là định vị.
+| Điều tôi tin | Nguồn nói |
+|---|---|
+| "1024 là khuyến nghị của upstream" | Một **câu** của một người Qwen trong comment #16842 (*"in grounding tasks we recommend around 1024–2048"*), **không kèm số nào**. PR #16921 thêm cảnh báo có body gồm **đúng một link Ref**, **0 review comment**. |
+| "1024 vì định vị" | Chính **ggerganov** trong cùng issue kết luận nguyên nhân thật là **prompt**: *"I think I found the issue — it's all about the prompt and the output formatting."* |
+| — | **Tài liệu chính thức Qwen**: dải khuyến nghị **256–1280** token/ảnh, mục đích ghi rõ *"to balance performance and cost"* (model card 2.5-VL + README 3-VL). |
+| — | **`cookbooks/ocr.ipynb` chính thức** đặt `min_pixels = 512×32×32` ⇒ **sàn 512** — nguồn gần bài của ta nhất (đọc chữ, không xuất toạ độ). |
+| — | Mặc định chính thức trong `preprocessor_config`: **4** (2.5-VL) / **64** (3-VL). ⛔ Không phải 1024. |
 
-⇒ Rủi ro chưa đo nằm đúng trên đường dùng nhiều nhất, nên lấy số của thượng nguồn.
-  Ghi rõ ở đây rằng **512 đo bằng nhau trên ĐỌC CHỮ** — nếu sau này có phép đo
-  định vị cho thấy 512 đủ, đó là một lần hạ chi phí 2× có bằng chứng.
+⚠️ **Và một nhiễu chưa ai tính:** mọi bằng chứng dẫn tới 1024 thu thập **10–11/2025**
+trên một bản llama.cpp **đang có lỗi toạ độ grounding** (#16880), vá bởi PR #25781
+(07/2026). Build của ta (`91f6a6cf3`, 09/2026) **đã có bản vá**. ⛔ Chưa ai đo lại
+khuyến nghị ấy sau khi lỗi được sửa.
+
+⇒ **512** có nguồn chính thức, có số đo của chính ta (19/20, **bằng** 1024), và rẻ
+  bằng **một nửa**. ⛔ Không tồn tại phép đo nào — của ai — so 512 với 1024 trên
+  tác vụ đọc chữ.
+
+> 🔑 Bài học, và nó đắt hơn con số: **"thượng nguồn khuyên thế" không phải một
+> nguồn.** Tôi dừng ở chỗ `clip.cpp` in cảnh báo và coi đó là bằng chứng. Đi thêm
+> một bước thì thấy cảnh báo ấy dẫn về một câu không có số, trong một issue mà
+> người viết engine đã kết luận nguyên nhân là thứ khác. ⇒ Một cảnh báo trong mã
+> là **con trỏ tới nguồn**, ⛔ không phải nguồn.
+
+### ⬜ Một việc phát sinh từ lượt tra: `--image-max-tokens` = 4096 CAO hơn tài liệu 3,2×
+
+Tài liệu Qwen khuyến nghị dải **256–1280** cho **cả** `min` lẫn `max`. Ta đang để
+`max = 4096` (hard-code trong `clip.cpp:1660`, ⛔ không đọc từ GGUF), và
+`cookbooks/ocr.ipynb` đặt `max = 2048`.
+
+⛔ **Chưa đổi**, vì ⛔ chưa đo: hạ trần ảnh hưởng **ảnh lớn** (2048×2048 sẽ từ 4 098
+   rơi xuống 2 050), mà bài đo của ta chỉ đo **ảnh nhỏ**. Một lần hạ trần không có
+   phép đo cho ảnh lớn là đúng lỗi tôi vừa sửa ở trên, chỉ đổi chiều.
 
 ### Và cái giá phải nói cho đúng
 

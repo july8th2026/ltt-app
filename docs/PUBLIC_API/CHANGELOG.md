@@ -30,16 +30,19 @@ lần ghi lại đó hiện ra trong diff.
     ra**, không thắt lại. Một client tiếp tục tự giới hạn 4 ảnh vẫn chạy đúng như
     hôm qua — nó chỉ dùng ít hơn mức được phép.
   - **ADDED** bốn trường cho phép **tự tính trước** chi phí ngữ cảnh của một ảnh:
-    `image_pixels_per_token` (1024), `min_image_tokens` (**1024**),
+    `image_pixels_per_token` (1024), `min_image_tokens` (**512**),
     `max_image_tokens` (4096), `image_token_markers` (2). Công thức và bảng đối
     chiếu bảy cỡ ảnh ở `DEVELOPER_GUIDE.md` §7b.
   - **FIXED** chất lượng đọc ảnh nhỏ. `min_image_tokens` nâng từ `8` (mặc định của
-    engine) lên **`1024`**. Đo trên chính hệ này, cùng một bộ ảnh: ở sàn `8` chỉ
-    **9/20** ảnh nhỏ được đọc đúng (tỉ lệ ký tự sai 0,82); ở sàn `1024` là
-    **19/20** (0,05). ⇒ Hơn một nửa ảnh nhỏ **đang bị đọc sai** trước bản này.
-    ⚠️ Hệ quả về **giá**: mọi ảnh dưới ~1 Mpx nay tính **1 026 token** — một ảnh
-    320×240 tốn bằng một ảnh 1024×768. Ảnh từ 1080p trở lên **không đổi**.
-    ⛔ Nên đừng cắt ảnh nhỏ hơn mức cần: bốn ô cắt nhỏ tốn 4 104 token, còn một
+    engine) lên **`512`** — sàn mà **cookbook OCR chính thức của Qwen** đặt
+    (`min_pixels = 512×32×32`), trong dải **256–1280** token/ảnh mà tài liệu Qwen
+    khuyến nghị *"để cân bằng hiệu năng và chi phí"*. Đo trên chính hệ này, cùng
+    một bộ ảnh: sàn `8` → **9/20** đọc đúng (tỉ lệ ký tự sai 0,82); sàn `512` →
+    **19/20** (0,05); sàn `1024` → cũng 19/20, ⛔ không hơn.
+    ⇒ Hơn một nửa ảnh nhỏ **đang bị đọc sai** trước bản này.
+    ⚠️ Hệ quả về **giá**: mọi ảnh dưới ~0,5 Mpx nay tính **514 token** — một ảnh
+    320×240 tốn bằng một ảnh 512×512. Ảnh từ 1024×768 trở lên **không đổi**.
+    ⛔ Nên đừng cắt ảnh nhỏ hơn mức cần: bốn ô cắt nhỏ tốn 2 056 token, còn một
     ảnh 1920×1080 gộp cả bốn chỉ tốn 2 042.
   - **FIXED** trần thân request. Con số **đang cưỡng chế** là **32 MiB**
     (33 554 432 byte). Tài liệu trước đây ghi **256 KiB** — sai **128 lần**, và

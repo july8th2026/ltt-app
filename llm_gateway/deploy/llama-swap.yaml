@@ -306,12 +306,29 @@ macros:
   #    (clip.cpp:1662-1667, issue #16842) dung, va cai gia cua viec bo qua no lon.
   #    Cong cu: tools/do_chat_luong_doc_anh.py
   #
-  # !! VI SAO 1024 CHU KHONG 512, khi hai ben do BANG NHAU. 20 mau moi cau hinh
-  #    KHONG phan giai duoc hai muc ay. Va bai do cua ta do DOC CHU, con con so
-  #    1024 cua thuong nguon duoc neu cho tac vu DINH VI - thu ta KHONG do, va
-  #    thu nam tren duong di chinh (mot agent hoi "bam vao nut o dau" la dinh vi).
-  #    !! Neu sau nay co phep do DINH VI cho thay 512 du, do la mot lan ha chi phi
-  #    2x CO BANG CHUNG - khong phai mot lan doan.
+  # !! VI SAO 512 CHU KHONG 1024. Tra nguon 28/09 (chu du an yeu cau: khong tu
+  #    suy). Con so 1024 ma clip.cpp khuyen KHONG phai mot phep do:
+  #
+  #      * no den tu MOT CAU cua mot nguoi Qwen trong comment #16842 ("in
+  #        grounding tasks we recommend around 1024-2048 image tokens"), khong
+  #        kem so nao. PR #16921 them canh bao co body gom DUNG MOT link Ref va
+  #        0 review comment;
+  #      * chinh ggerganov trong cung issue ket luan nguyen nhan that la PROMPT:
+  #        "I think I found the issue - it's all about the prompt and the output
+  #        formatting";
+  #      * va moi bang chung dan toi 1024 thu thap 10-11/2025 tren mot ban
+  #        llama.cpp DANG CO LOI toa do grounding (#16880), va bap boi PR #25781
+  #        (07/2026). Build cua ta DA CO ban va. Chua ai do lai khuyen nghi ay.
+  #
+  #    Con TAI LIEU CHINH THUC cua Qwen thi noi khac:
+  #      * model card Qwen2.5-VL + README Qwen3-VL: dai khuyen nghi "256-1280"
+  #        token cho MOT anh, muc dich ghi ro la "to balance performance and cost";
+  #      * cookbooks/ocr.ipynb (chinh thuc, va gan tac vu cua ta nhat) dat
+  #        min_pixels = 512*32*32, tuc SAN 512 TOKEN;
+  #      * mac dinh chinh thuc trong preprocessor_config la 4 (2.5-VL) / 64 (3-VL).
+  #
+  #    Va phep do cua CHINH TA cho 512 va 1024 BANG NHAU (19/20, CER 0,050).
+  #    => 512 co nguon chinh thuc, co so do cua ta, va re bang mot nua.
   #
   # !! CAI GIA, noi cho dung: KHONG phai "anh nho dat len 12,5x". Anh duoi 1024
   #    token HIEN DANG KHONG DUNG DUOC (9/20). Ta khong lam thu dang chay dat len
@@ -326,7 +343,7 @@ macros:
     --reasoning-format deepseek
     -fa 1 -ngl 999 -kvu
     --top-p 0.95 --top-k 20 --min-p 0
-    --image-min-tokens 1024 --image-max-tokens 4096
+    --image-min-tokens 512 --image-max-tokens 4096
     --video-ffmpeg-dir ${FFMPEG}
     --metrics
 
