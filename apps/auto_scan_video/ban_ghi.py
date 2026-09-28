@@ -542,6 +542,22 @@ def do_phu_song(ban: dict, *, thoi_luong: float) -> dict:
        CUA A mot minh se keu oan cho ca hai truong hop nhu nhau. Ham nay tra
        ve con so cho CA HAI cua, ⛔ khong rut gon thanh mot co bool.
 
+    🔴 **B13 B5 (29/09) — BANG CHUNG THAT, khong con la ly le suong.** Va
+       ban chep `asvr_47327a869a8f4597960048f09064740` bang `chunk_size=10`
+       (xem `whisperx_runner.CHUNK_SIZE`) thay `30`:
+
+           ty_le_phu_song (CUA A):  0,7692 -> 0,7651   (GAN NHU KHONG DOI)
+           lo_hong_lon_nhat (CUA B): 32,49 -> 11,20 s   (giam **~3 LAN**)
+
+       Ban va nay CHUA duoc mot loi thoai that dai 29,99 giay (12 cau co dau
+       cau) — mot ban vien sua ro rang. Nhung `ty_le_phu_song` GAN NHU KHONG
+       DICH CHUYEN, vi 20+ giay cuu duoc chi la mot phan nho cua 275 giay
+       toan phim ⇒ **CUA A se KHONG BAO GIO phat hien duoc ban va nay**. Chi
+       CUA B (do TUNG lo hong rieng le, khong pha loang vao tong) thay duoc.
+       ⇒ do phu TONG la SAI dai luong cho cau hoi "co mat loi thoai khong" —
+       no chi la thu DE DO cho cai ta muon (bao nhieu loi thoai THAT duoc
+       chep), va hai dai luong RE nhau dung o truong hop nay.
+
     🔴 **CUA A dung HOP, ⛔ khong dung TONG — hai dai luong KHAC nghia:**
 
             tong_giay_doan()       TONG do dai doan, dem HAI LAN neu CHONG LAN
