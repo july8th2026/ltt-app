@@ -22514,3 +22514,12 @@ msgstr "Could not read any frame to detect the region."
 
 msgid "Bộ đọc chữ lỗi trên mọi khung hình đã thử."
 msgstr "The text reader (OCR) failed on every frame that was tried."
+
+msgid "AI viết mô tả rồi sinh ảnh"
+msgstr "AI writes the description, then generates the image"
+
+msgid "Bạn cho một ý tưởng ngắn; AI viết thành câu mô tả chi tiết, rồi câu đó đi thẳng sang bước sinh ảnh. Mẫu để thấy hai bước AI nối vào nhau."
+msgstr "You give a short idea; AI turns it into a detailed description, and that description feeds straight into the image step. A template for seeing two AI steps wired together."
+
+msgid "Viết một câu mô tả ảnh thật chi tiết cho ý tưởng sau, chỉ trả về câu mô tả: một quán cà phê Hà Nội buổi sáng sớm."
+msgstr "Write one very detailed image description for the following idea, and return only that description: a Hanoi coffee shop in the early morning."

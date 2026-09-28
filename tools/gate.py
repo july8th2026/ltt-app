@@ -2174,6 +2174,27 @@ def main() -> int:
         else:
             dong += (f", toi da {args.j} buoc cung luc"
                      f", ngan sach {ngan_sach_loi()}/{os.cpu_count()} loi")
+        # ── ⚠️ Giu mutex CA MAY ma tu han che ───────────────────────────────
+        #
+        # 🔴 Ca that 28/09/2026: mot luot `--pham-vi` (35 pham vi) chay `-j 2`,
+        #    giu `cpu_nhieu` + `postgres_test` **25 phut**, va do giay CPU cua ca
+        #    cay tien trinh duoc **28 giay** — tuc 0,02 loi. Hai lan cua mot phien
+        #    khac dung sau no, moi lan vai giay.
+        #
+        # ⭐ `cpu_nhieu` la mutex **toan may** (chu du an chot 23/09 sau mot su co
+        #    do duoc). Nen khi mot luot DA giu no, no da doc quyen may — va mot `-j`
+        #    nho la **tu han che vo co**: cai gia ⛔ khong do len may, no do len
+        #    **KHOA**, tuc len nguoi xep hang sau.
+        #
+        # ⛔ CHI canh bao, ⛔ KHONG tu ghi de `-j`. Nguoi goi co the co ly do that
+        #    (do mot con so can it nhieu, hay may dang co viec ngoai khoa). Mot
+        #    cong cu tu doi y dinh cua nguoi goi thi lan sau ho ⛔ khong tin no nua.
+        if can and not tuan_tu and args.j * 2 <= ngan_sach_loi():
+            print(f"  [khoa] ⚠️ dang giu mutex CA MAY ({', '.join(sorted(can))}) "
+                  f"ma chi cho {args.j} buoc cung luc / ngan sach "
+                  f"{ngan_sach_loi()} loi. Luot nay se giu khoa LAU hon can, va "
+                  f"nguoi xep hang sau tra gia do. Can `-j` nho that thi giu; "
+                  f"neu khong, bo `-j` di de gate tu chon.")
         if can:
             dong += f", tai nguyen: {', '.join(sorted(can))}"
         print(dong)

@@ -31,6 +31,19 @@ from platform_core.workflow.cong_cu import CongCu
 
 GIOI_HAN_DAU_RA = 256 * 1024
 
+#: Khoá HỆ THỐNG mà `nd.doi_dau_ra` ⛔ không được làm mất.
+#:
+#: 🔴 `credit_cost` là **bút toán**, ⛔ không phải dữ liệu hiển thị: handler báo
+#:    giá thật theo token đặt nó vào `result`, và `ap_ket_qua` đọc nó để ghi
+#:    `cost_credit`. Một hàm dịch trả `{"text": ...}` sạch sẽ sẽ **xoá** nó, và
+#:    lượt ấy âm thầm bị tính theo `gia_that` ước lượng.
+#:
+#: ⚠️ Danh sách này ⛔ KHÔNG phải "mọi khoá hệ thống ta có" — nó là *"khoá mà một
+#:    hàm dịch có thể vô tình bỏ"*. `_tran` ⛔ không nằm đây vì nó được đặt SAU
+#:    phép dịch (xem thứ tự trong `ap_ket_qua`), nên thêm nó vào sẽ là một dòng
+#:    ⛔ không bao giờ chạy — đúng thứ `ma-phong-thu-cho-ca-khong-the-xay-ra` cảnh.
+KHOA_HE_THONG_GIU_QUA_PHEP_DICH = ("credit_cost",)
+
 #: Tiền tố của node APP trong đồ thị đã biên dịch (`bien_dich._node`).
 #: Đây là KHÔNG GIAN TÊN DUY NHẤT mà cầu nối job suy được tên ToolSpec từ
 #: `type`, vì `app.<tool>` **theo định nghĩa** mang tên tool ở phần đuôi.
@@ -591,6 +604,36 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
                         error=f"{ma_hk}: {chi_tiet_hk}"[:2000],
                         attempt_number=lan, job_id=sig.ref_id, vong=vong)
                     return sang_hk
+            # ── Dịch sang từ vựng CỔNG RA của node (`nd.doi_dau_ra`) ────────
+            #
+            # 🔴 Thiếu bước này thì `{{ nodes.n2.output.text }}` của một `ai.llm`
+            #    đọc ra **rỗng**: job trả `content`, node khai cổng `text`. ⛔ Không
+            #    lỗi, ⛔ không cảnh báo — chỉ rỗng, sau khi đã trừ credit.
+            #
+            # ⚠️ **ĐẶT TRƯỚC dòng đọc `credit_cost`, và BẢO TOÀN khoá ấy.**
+            #    `credit_cost` là handler báo giá THẬT (vd theo token); mất nó thì
+            #    dòng dưới rơi về `gia_that` — tức **ghi sai sổ**, ⛔ không phải
+            #    một lỗi hiển thị. `test_5611::test_credit_cost_SONG_SOT...` ghim
+            #    lại, và nó tiêm lỗi để chứng minh mình bắt được.
+            #
+            # ⭐ Hàm dịch nhận `(ket_qua, params)` — CÙNG chữ ký `hau_kiem`, vì
+            #    chúng trả lời hai câu hỏi về cùng một dữ liệu (*"dùng được
+            #    không"* và *"gọi tên nó thế nào"*). Một chữ ký thì ⛔ không ai
+            #    phải nhớ hai thứ tự tham số.
+            doi = getattr(nd, "doi_dau_ra", None) if nd is not None else None
+            if doi is not None:
+                # ⚠️ Tên `du_lieu_moi`, ⛔ KHÔNG `moi`: hàm này đã có một `moi`
+                #    (`NodeRunSnapshot`, ~40 dòng dưới, cho LINEAGE). Bản đầu của
+                #    tôi trùng tên — runtime vẫn đúng vì hai phép gán tuần tự, và
+                #    **215 phép kiểm nhắm đều xanh**. `check_mypy` bắt được:
+                #    `assignment` + `attr-defined`, hai lỗi MỚI so với mốc.
+                # ⭐ Đúng loại lỗi mà test nhắm ⛔ không thể bắt — mã đúng hành vi,
+                #    sai bất biến về kiểu trong phạm vi một hàm.
+                du_lieu_moi = dict(doi(du_lieu, node.get("params") or {}))
+                for khoa_he_thong in KHOA_HE_THONG_GIU_QUA_PHEP_DICH:
+                    if khoa_he_thong in du_lieu                             and khoa_he_thong not in du_lieu_moi:
+                        du_lieu_moi[khoa_he_thong] = du_lieu[khoa_he_thong]
+                du_lieu = du_lieu_moi
             bao = du_lieu.get("credit_cost")      # handler báo giá thật (vd theo token)
             chi_phi = int(bao) if bao is not None else gia_that
             do_dai = len(json.dumps(du_lieu, default=str))

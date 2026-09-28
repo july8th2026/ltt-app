@@ -73,13 +73,111 @@ vad_onset = 0,500   vad_offset = 0,363   no_speech_threshold = 0,6
 | khả năng | ai bỏ đoạn | phân biệt bằng |
 |---|---|---|
 | (A) pyannote VAD coi 65–98 s là **không tiếng** | tầng VAD | dump khoảng VAD, ⛔ không giải mã whisper |
-| (B) VAD cho qua, `no_speech_threshold=0,6` loại khối | tầng whisper | cùng lượt dump đó |
+| (B) VAD cho qua, whisper loại khối | tầng whisper | cùng lượt dump đó |
 
-⛔ **Chưa đo được cái nào — và tôi ⛔ không đoán.** Một lượt chạy pyannote VAD
-**một mình** (⛔ không decode) trên tệp này là ~10 s GPU và tách hẳn hai khả năng.
-Đó là việc **đầu tiên** của hạng mục này, và nó ⛔ không được bỏ qua: hai khả
-năng dẫn tới hai cần gạt **khác nhau** (`vad_onset` so với `no_speech_threshold`),
-và vặn sai cần gạt thì kết quả ⛔ không đổi một ký tự.
+### ✅ ĐÃ ĐO 28/09 — câu trả lời là **(B)**, ⛔ không phải (A)
+
+Chạy `whisperx.vads.Pyannote` **một mình** (⛔ không decode) với **đúng mặc định
+của gói** (`chunk_size 30 · vad_onset 0,500 · vad_offset 0,363`) trên chính bản
+tiếng 16 kHz của lượt đã đo:
+
+```
+VAD: 11 khoi · tong 247,27 s coi la CO TIENG   = 89,9 % cua 275,0 s
+     khoi  34,25.. 62,15  = 27,89 s
+     khoi  64,27.. 94,26  = 29,99 s   <- DUNG chunk_size 30, TRUM ca lo hong
+     khoi  94,26..117,26  = 23,00 s
+ban chep ASR:                211,56 s          = 76,9 %
+⇒ 35,7 giay VAD goi la TIENG ma whisper ⛔ KHONG ra mot chu
+```
+
+🔑 Và `seg_0024` — đoạn nhả lại `initial_prompt` — nằm ở **`64,27..65,17`**, tức
+**0,9 giây ĐẦU của khối 30 giây ấy**. Cả khối 30 giây chỉ sinh ra lời nhắc của
+chính ta rồi **tắt hẳn**; khối kế cũng mất 3,4 giây đầu (chữ đầu ở `97,66`).
+
+⇒ Đây là **hỏng giải mã CẢ MỘT KHỐI**, ⛔ không phải VAD bỏ vùng. ⛔ **Đừng chạm
+`vad_options`** — cần gạt nằm ở `asr_options` (`no_speech_threshold = 0,6` ·
+`log_prob_threshold = -1,0` · `compression_ratio_threshold = 2,4` ·
+`hallucination_silence_threshold = None`), và ở **chính `initial_prompt`**.
+
+⭐ **Giá trị của việc tách này**: nếu tôi đi thẳng vào vá theo giả thuyết (A) —
+hạ `vad_onset` — thì bản chép ra **y hệt**, và tôi sẽ kết luận *"đã vá, ⛔ không
+ăn"* thay vì *"vặn sai cần gạt"*. Đúng bẫy `whisperx_runner.py:78` ghi (đo 24/09).
+
+⚠️ **Đánh đổi sản phẩm còn treo:** nếu cách sửa duy nhất là **bỏ
+`initial_prompt`** thì ta mất dấu câu (đo 24/09: **0 dấu câu / 646 ký tự** trên
+văn Hán), và ⛔ không dấu câu thì **mọi** phép chia đoạn hạ nguồn mất chỗ bám
+(11 → 78 đoạn). ⇒ Đó là **quyết định của chủ dự án**, ⛔ không phải của làn.
+
+### 1.4 🔴 BA cần gạt của `asr_options` là NO-OP trên đường ta đang chạy
+
+Chủ dự án dặn 28/09: *"gặp vấn đề khó thì check cốt từ `D:\Viral` để lấy lời
+giải."* Làm thế, và nó dẫn tới một phép kiểm trên **chính gói đã cài**.
+
+Đếm trong cả `C:\LTTPlatform\whisperx-venv\Lib\site-packages\whisperx\asr.py`:
+
+```
+temperatures                 1 lan / ca tep
+compression_ratio_threshold  1
+log_prob_threshold           1
+no_speech_threshold          1
+prompt_reset_on_temperature  1
+```
+
+**Đúng một lần** = chỉ ở `default_asr_options` (dòng 371-398). ⛔ **Không ai đọc
+lại.** Và `generate_segment_batched` — đường `FasterWhisperPipeline.transcribe`
+thật sự đi — chỉ đọc `initial_prompt` · `without_timestamps` · `prefix` ·
+`hotwords` · `beam_size` · `patience` · `length_penalty` · `suppress_*` ·
+`no_repeat_ngram_size` · `repetition_penalty`.
+
+⇒ ⛔ **Không nấc lui theo temperature · ⛔ không kiểm `no_speech` · ⛔ không kiểm
+tỉ lệ nén.** Một khối giải mã tệ thì **MẤT, ⛔ không có lượt thử lại nào**.
+
+| cần gạt | phán quyết |
+|---|---|
+| `no_speech_threshold` · `compression_ratio_threshold` · `hallucination_silence_threshold` | 🔴 **NO-OP** trên đường batched |
+| `initial_prompt` | ✅ **CÓ ăn** |
+
+⭐ **Đây là lý do việc TÁCH (A)/(B) ở §1.3 chưa đủ.** Tách xong ta biết thủ phạm ở
+tầng giải mã — rồi suýt vặn **ba cần gạt ⛔ không nối vào đâu cả**, và kết quả sẽ
+là *"⛔ không đổi một ký tự"*, đọc y hệt *"giả thuyết sai"*. Cùng bẫy
+`OMP_NUM_THREADS` ở B12 §3: **một cần gạt mang đúng TÊN việc ta muốn vẫn có thể
+⛔ không nối vào đâu.** ⇒ 🔑 *Sau khi biết TẦNG nào hỏng, còn phải hỏi **cần gạt
+của tầng đó có được ĐỌC không** — và câu ấy chỉ có trong mã gói.*
+
+### 1.5 Lời giải của `D:\Viral` — HAI cơ chế, ⛔ không phải một ngưỡng
+
+**(1) `localize.py:598-616` — nấc lui theo ĐỘ PHỦ.** Đo thật của họ: *"video rap
+65 s ra **2 câu** với VAD, **24 câu** khi tắt VAD; hạ `WHISPER_VAD_THR` **VÔ TÁC
+DỤNG** với nhạc."*
+```
+_phu_kem = _vdur > 30 and (len(segs) <= 2 or _phu_cuoi < _vdur * 0.6)
+   -> chay LAI 1 lan voi vad_filter=False, GIU ban phu tot hon
+```
+⭐ **Đó chính là CỬA A/B của B2, nhưng biến thành HÀNH ĐỘNG.** Ta đo `phu_song`
+rồi **cảnh báo**; họ đo rồi **chạy lại và chọn bản tốt hơn**. Cùng phép đo, khác
+kết cục — và ngưỡng của ta (`76,9 %` vs VAD `89,9 %`) **nhạy hơn** trigger 60 %
+của họ.
+
+**(2) Họ ⛔ KHÔNG dùng whisperx batched.** Họ gọi faster-whisper **thường**, nơi
+các cần gạt ấy **CÓ** ăn: `temperature=[0,0.2..1.0]` (họ ghi rõ `temperature=0.0`
+cố định **TẮT** cơ chế tự-giải-mã-lại), `compression_ratio_threshold=2.4`,
+`no_speech_threshold=0.4`, `hallucination_silence_threshold=2.0`.
+
+🔑 **Và kho TA ĐÃ CÓ đúng đường đó**: `transcription._transcribe_faster`. Nay nó
+chỉ chạy khi sidecar chết ⇒ nó là **ứng viên cho lượt SỬA CHỮA**.
+⚠️ Nhưng nó là nhánh `fallback_unaligned`: mốc từ **có** mà ⛔ không qua căn cưỡng
+bức ⇒ kém chính xác hơn, và `timing_align` bám vào mốc đó. Kho đã có khuôn khai
+suy giảm (`_khai_suy_giam_can_chinh()`) — ⭐ dùng lại, ⛔ đừng để một bản ghi trộn
+hai chất lượng mốc mà ⛔ không khai.
+
+**(3) ⭐ Quà thêm cho B1** (`localize.py:620-622`): họ lọc ảo giác theo chiều
+**NGƯỢC** với ta —
+```
+_dur >= 6.0 and _nchar <= 10 and _nchar / max(_dur, 0.1) < 0.6   -> BO
+```
+tức **quá ÍT** ký tự mỗi giây trên một đoạn DÀI. Ta chỉ có
+`NGUONG_KY_TU_MOI_GIAY = 30` (quá NHIỀU). **Hai đầu của cùng một trục, và ta đang
+mù một đầu.**
 
 ### 1.4 🔑 Và ta ĐÃ ĐO đại lượng đúng rồi — ⛔ không ai đọc nó
 
@@ -520,13 +618,27 @@ mỗi vòng nó tiết kiệm một lượt deploy.
 |---|---|---|
 | **G1** | Gộp bốn làn về `main` bằng **test nhắm xanh** | ⛔ KHÔNG gate để gộp. Gộp xong → `pre-commit run --all-files` |
 | **G2** | Ba bộ kiểm **hình dạng cả cây** (< 45 giây) | `scan_source_secrets` · `check_mypy` · `check_silent_except` — test nhắm ⛔ không bắt được lớp này |
-| **G3** | **MỘT** gate, **MỘT** cấp: `gate.py --doi` (L1) | ⛔ Một gate mỗi nhánh. Còn pha chưa làm ⇒ **chưa bấm** |
+| **G3** | **MỘT** gate, **MỘT** cấp: `gate.py --doi --tu <sha THẬT>` | ⛔ Một gate mỗi nhánh. Còn pha chưa làm ⇒ **chưa bấm** |
 | **G4** | Dựng lại **bundle** rồi deploy | Bundle là **ĐẦU RA** — `manifest.json` còn dấu xung đột ⇒ `/agent/canvas` 503 ⇒ mọi test có đăng nhập đỏ (28/09) |
 | **G5** | `T1a-ter` trên **worker thật** (`asv_chay_worker_that`), `cat=None` | lượt CHỐT — môi trường `LocalSystem` |
 | **G6** | Soát bản ra: cắt frame, **đối chiếu với gốc theo mốc** | A1 đã trả lại khả năng này |
 
 ⛔ **G3 ⛔ không chạy trước khi PHA A–F xong hết.** Còn việc chưa làm ⇒ chưa bấm
 gate. Và ⛔ không chạy gate **trong** phiên cho từng pha.
+
+🔴 **G3 PHẢI có mốc THẬT (`--tu <sha>`), và PHẢI đọc dòng `RESULT`.** Đo 28/09
+(phiên khác, cùng ngày): lượt `--doi` **đầu tiên** của họ bị **TỪ CHỐI** với
+`CHUA DO DUOC GI` — trên một **cây sạch**, `--doi` lấy phạm vi bằng diff với
+`HEAD`, nên phạm vi luôn **RỖNG**.
+
+⇒ ⭐ `PASS` sau vài giây, `0.0s`, hay `CHUA DO DUOC GI` đều là **KHÔNG CÓ ĐỘ
+PHỦ**, ⛔ **không phải xanh**. Đây đúng hai cửa đã ghi sổ: `--doi` hạ cấp thì in
+`PASS`, còn `--pham-vi` vượt trần 32 767 ký tự thì in `FAIL 0.0s` đọc **y hệt**
+một bộ test đỏ. Tín hiệu phân biệt là `0.0s` và dòng `[BOQUA] N buoc` cạnh
+`RESULT`.
+
+⇒ Mốc đúng cho G3 là **SHA đang chạy trên production** (`/health/version` hoặc
+`dau_van_tay.json`), ⛔ không phải `HEAD~1`.
 
 ---
 
@@ -552,3 +664,231 @@ khác chạy song song được.
 - 7 lỗ hổng còn lại (2,1–7,4 s) có cùng nguyên nhân với hố 32,5 s hay không.
 - `use_rec=True` tốn thêm bao nhiêu lõi và bao nhiêu giây (hạng mục 5b).
 - `cv2.setNumThreads` có thật sự ăn trên bản OpenCV đã cài (hạng mục 6#3).
+
+---
+
+## 9. Sau khi triển khai — plan này SAI ở đâu (28/09, đo bởi năm làn)
+
+### 9.1 🔴 §3.4 SAI CHIỀU — hai máy ⛔ không nhân nhau, một cái bị BỎ RƠI
+
+Tôi viết: một `ma` nằm trong **cả hai** tập sẽ bị `1,15 × 1,3333 = 1,53`. **Sai.**
+Đo (L1): `ket_xuat.py:214-216` nạp đúng `duong_video` + `duong_master` và map
+`1:a:0`; `duong_lop` **chỉ bị ĐẾM** ở `:173` và ⛔ **không bao giờ vào `cmd`**.
+
+⇒ `ke_hoach.he_so_toc` ⛔ **KHÔNG được áp**. Một `raise` chống nhân đôi là một
+**nhánh chết** — đúng thứ sổ kho gọi *"mã phòng thủ cho ca không thể xảy ra"*.
+
+🔑 **Chiều CÓ THẬT thì ngược lại, và nó tệ hơn:** `thoi_gian.lap_ke_hoach` đã đặt
+các đoạn theo `dai / he_so_toc`, tức **chừa chỗ hẹp hơn** vì tin rằng tiếng sẽ
+được tăng tốc. Tăng tốc ấy ⛔ không xảy ra ⇒ **12 đoạn** của lượt đã đo có tiếng
+**DÀI HƠN chỗ kế hoạch chừa**. Và `thoi_gian.kiem:391` ⛔ không bắt được: nó kiểm
+chồng lấn trên `dai_ms` **đã chia rồi**, tức nó đo bản đồ chứ ⛔ không đo lãnh thổ.
+
+⭐ Tôi đã dặn L1 *"đọc trước, ⛔ đừng viết mã phòng thủ cho ca không thể xảy
+ra"* — và chính lời dặn ấy làm lộ ra rằng **giả thuyết của tôi sai, còn lỗi thật
+nằm ngược phía**. Nguồn cho ý định gốc (*"vốn định áp ở render"*):
+`docs/auto_scan_video/reports/13_REPORT.md:190`.
+
+Hiện trạng: `thoi_gian.doi_chieu_he_so_toc` (hàm thuần) **đếm và cảnh báo** từng
+đoạn lệch + tính tích lớn nhất của hai máy. ⛔ **Không `raise`** — 12 đoạn lệch
+hôm nay thì `raise` làm đỏ **mọi** lượt thật.
+
+⇒ **HẠNG MỤC MỚI (P1, làn L1):** quyết `he_so_toc` sẽ được **áp** (ở đâu) hay
+**bỏ** (và `lap_ke_hoach` thôi chừa chỗ hẹp). Hai đường đều đúng về kỹ thuật, nên
+đây là **đánh đổi sản phẩm** — phải hỏi chủ dự án. ⛔ Đừng để nguyên trạng: hôm
+nay 12 đoạn tiếng tràn chỗ chừa mà chỉ có một dòng `log.warning` canh.
+
+### 9.2 ⚠️ B4 ⛔ không làm trọn được trong phạm vi L1 như plan viết
+
+Đổi tên `he_so_toc_lon_nhat` / `so_doan_tang_toc` làm đỏ `test_408` theo **hai**
+chiều (khoá mới chưa khai, và khoá đã khai mà ⛔ không ai ghi), và bản vá phải
+nằm ở `tools/asv_doi_soat.py` — mà **§7.0 giao `tools/` cho L3**.
+
+L1 đi đường lồng (`KHOA_CAN["timing_align"] = ("master",)` nên khoá con tự do) +
+docstring. ⇒ **NỢ:** muốn đổi tên thật thì **L3 phải nhận thêm một hàng**.
+
+⭐ Đây là chi phí thật của luật *một-tệp-một-chủ*: nó ngăn xung đột gộp, nhưng một
+việc **đúng** có thể bị chặn vì nó vắt qua hai làn. Ghi ra thay vì để làn tự vượt
+ranh.
+
+### 9.3 🔴 NỢ MỚI — một bánh cóc đang đo CÁCH GÕ
+
+`tests/test_2018::test_he_so_toc_KHONG_bi_kep_ve_tran` **đỏ khi
+`giai_doan_thoi_gian` gọi cả `min` lẫn `max`**, kể cả khi `max` ⛔ không kẹp gì.
+Nó đã **bắt oan** bản vá đầu của L1.
+
+⇒ Đúng họ *"bánh cóc đo CÁCH GÕ thay vì đo tính chất"* đã ghi sổ: `pass` so với
+docstring cùng nghĩa mà khác kết quả, và **báo động giả làm người ta TẮT cổng**.
+L1 né được bằng cách đẩy số học sang `thoi_gian.py` (thật sự sạch hơn), nhưng
+bánh cóc vẫn hỏng. **Giao L3** (nó đã có nghề với đúng lớp lỗi này).
+
+### 9.4 ⚠️ NỢ MỚI — `dem_lech_cuoi` nay là cận TRÊN
+
+Nó so `giay / h_ap` với **`khe`** trong khi ngân sách rộng hơn ⇒ **đếm thừa**
+(chỉ với đoạn bị kẹp `> 2,0`, cực hiếm). Sửa đúng cần `ngan_sach` trên **từng
+dòng `ban_ke`**, tức một bất biến của `nan_thoi_luong` — ⛔ không phải tệp của L1.
+Đã ghi trong docstring. **Giao lượt sau.**
+
+### 9.5 Hai thay đổi làm SỐ BÁO CÁO ⛔ không so được với lượt cũ
+
+| đổi | cái giá | vì sao vẫn đúng |
+|---|---|---|
+| `he_so == 1,0` nay là `VUA`, ⛔ không còn `CO_GIAN` | `so_vua` phồng, `so_co_gian` teo | một `CO_GIAN` hệ số 1,0 kể về một `atempo` **chưa từng chạy** — đúng con bọ `nan_cho_vua.NGAN` đã ghi 25/09 |
+| `ty_le_phu_song` nay đo **HỢP** | ⛔ không so được với lượt cũ nếu có chồng lấn | `outputs["phu_song"]` **giữ TỔNG** nên dữ liệu cũ vẫn so được; hai tên, hai đại lượng |
+
+⭐ Cả hai đều là **sửa phân loại**, ⛔ không phải sửa số. Nhưng ai đọc báo cáo qua
+hai mốc thời gian phải biết — nên chúng nằm ở đây chứ ⛔ không chỉ trong commit.
+
+### 9.6 ⛔ HAI bánh cóc bắt được sau khi gộp, và cả hai NGOÀI pre-commit
+
+```
+check_silent_except    53 -> 57   (TANG 4)    tools/asv_chay_tai_cho.py
+check_mypy union-attr  88 -> 90               cung tep, dong 100-101
+```
+
+Từng làn **xanh**, tổng thì **đỏ** — đúng lý do sổ kho gọi ba bộ này là *"hình
+dạng CẢ CÂY"*: mã **đúng hành vi, sai bất biến toàn kho**, và test nhắm ⛔ **không
+thể** bắt.
+
+🔑 Và `union-attr` là **lỗi của người điều phối**: tôi dặn thêm
+`sys.stdout.reconfigure` (tên phim tiếng Trung làm console cp1252 ném) mà ⛔ không
+dặn **dùng khuôn nào**. Kho đã có khuôn đúng ở `asv_chay_worker_that.py:59-63`.
+⇒ ⭐ *Một lời dặn nêu ĐÍCH mà ⛔ không nêu KHUÔN thì agent sẽ tự dựng khuôn thứ
+hai* — và khuôn thứ hai của nó còn **ném thật** khi `stdout` đã bị thay.
+
+⛔ Và ⛔ **không `--accept`** để hạ mốc `mypy` (nó đang mời, `arg-type 108→106`,
+`index 32→31`): hạ mốc siết bánh cóc cho **cả kho**, trong khi phiên khác còn
+việc dở — một mốc chặt hơn làm việc của họ đỏ vì lý do ⛔ không liên quan. Để
+tới cuối plan.
+
+---
+
+## 10. Trạng thái — `main` = `bb62ca93`, production = `1e34780f`
+
+```
+TOAN PLAN        16 / 29 hang muc  =  55 %     (A5 va C7 DA TAN — xem duoi)
+ ├ phan MA       13 / 13           = 100 %
+ ├ phan DO        3 /  6           =  50 %     A3 ✅ · C1 ✅ · C2 ✅ · B5/D/E2 dang chay
+ └ nghiem thu     0 /  8           =   0 %     A1 · §9.4 · G1-G6
+```
+
+⭐ **Hai hạng mục TAN ra thay vì được làm, và đó là kết quả tốt nhất của vòng này:**
+- **A5** (đổi tên hai khoá `tom_tat`) — A4 cho `he_so_toc` **PHẢN CHIẾU** hệ số
+  thật sự được áp, nên hai trường đi từ **SAI thành ĐÚNG**, ⛔ không phải từ SAI
+  thành CHẾT. Câu hỏi *"đổi tên hay xoá"* ⛔ không còn.
+- **C7** (sửa sổ khai `asv_doi_soat.py`) — hệ quả của A5, nên tan theo. Bản nháp
+  còn ở `wip/c7-doi-ten` (`81f3bfb9`) làm dấu vết.
+
+⇒ 🔑 *Một hạng mục biến mất vì tiền đề của nó sai thì tốt hơn một hạng mục được
+làm xong đúng theo một tiền đề sai.*
+
+⚠️ **Hai mẫu số, ⛔ đừng gộp.** `55 %` đếm **hạng mục**, mà hạng mục ⛔ không đồng
+hạng: `G5` (một lượt `T1a-ter` trên worker thật) một mình quyết sản phẩm có đạt
+hay không, còn `C5` là sửa một câu chú thích. Nói *"plan xong 55 %"* mà ⛔ không
+nói *"0 % phần nghiệm thu"* là báo tiến độ kiểu dễ nghe.
+
+⚠️ **Hai mẫu số, ⛔ đừng gộp.** `39 %` đếm **hạng mục**, mà hạng mục ⛔ không đồng
+hạng: `G5` (một lượt `T1a-ter` trên worker thật) một mình quyết sản phẩm có đạt
+hay không, còn `C5` là sửa một câu chú thích. ⭐ Con số đọc được duy nhất là
+**`75 %` phần MÃ** — vì phần còn lại ⛔ không chặn bởi công sức, nó chặn bởi
+**một điều kiện**: chủ dự án đang phân tích video và đã dặn ⛔ không chạy thử
+(máy đã treo 2 lần ngày 28/09).
+
+⇒ Nói *"plan xong 39 %"* mà ⛔ không nói *"0 % phần phải chạy, vì bị chặn có chủ
+ý"* là báo tiến độ kiểu dễ nghe. Hai con số, hai câu hỏi khác nhau.
+
+| id | việc | trạng thái |
+|---|---|---|
+| A2 | `ket_luan` nhận `ngan_sach` làm mẫu số | ✅ `8a5696f7` · 4 phép chốt **hai chiều** xanh |
+| B1 | tín hiệu ảo giác thứ ba (prompt echo) | ✅ `9cf70bf3` · ngưỡng 4 ký tự, có đối chứng âm |
+| B2 | CỬA A (tổng) + CỬA B (hố đơn lẻ) | ✅ `9cf70bf3` · CỬA A đo **HỢP**, `outputs` giữ **TỔNG** |
+| B3 | bất biến chồng hệ số | ✅ thay bằng `doi_chieu_he_so_toc` — xem §9.1 |
+| B4 | tên đại lượng ⛔ không đọc như một | 🟡 một phần (đường lồng + docstring); đổi tên thật ⇒ **A5** |
+| C3 | fixture `gia_lap_ocr` | ✅ `56462bd8` · chặn ở `co_san()`, ⛔ không dựng tiền đề mới |
+| C4 | bánh cóc tĩnh trần CPU | ✅ `56462bd8` · `check_khai_tran_cpu.py`, AST 3 tầng, 915 tệp / 24 mốc / 1 miễn |
+| C5 | tham chiếu chết `dung_video.py:35` | ✅ `56462bd8` |
+| E1 | báo cáo cửa sổ khách xoá thoại | ✅ `ed425898` · chốt **6 mất hẳn + 1 một phần** |
+| E3 | ngân sách đo bằng **HỢP** | ✅ `ed425898` · có ca chồng lấn dựng ra |
+| F1 | `asv_chay_tai_cho.py` | ✅ `159da8da` + `2c031c63` |
+| — | hai bánh cóc hình dạng cả cây | ✅ `2c031c63` — xem §9.6 |
+| **A4** | bỏ `he_so_toc`, thôi chừa chỗ hẹp | 🔵 **đang chạy** (L1) — xem §9.1 |
+| **A5** | hai khoá `tom_tat`: đổi tên **hay BỎ HẲN** | 🔵 đang chạy (L1 quyết) · bản tham khảo `wip/c7-doi-ten` `81f3bfb9` |
+| C6 | bánh cóc `test_2018` đo CÁCH GÕ | ✅ `31bdb6f4` · bất biến theo HÀNH VI + phép tiêm |
+| C7 | sổ khai `asv_doi_soat.py` | ⏸️ **hoãn tới sau A4/A5** |
+| A1 | `cat = None` cho lượt test | ⏳ chờ chủ dự án xong phân tích video |
+| A3 · B5 | tách (A)/(B) hố VAD rồi mới vặn | ⏳ cần 1 lượt GPU |
+| C1 · C2 | trần lõi cho `rec` · `cv2.setNumThreads` | ⏳ cần **đo** |
+| D1–D3 · E2 | OCR đọc chữ · đuôi cảnh xấu | ⏳ chặn bởi C1/C2 |
+| §9.4 | `dem_lech_cuoi` là cận TRÊN | ⏳ cần `ngan_sach` từng dòng `ban_ke` |
+| G1–G6 | nghiệm thu, **một** gate ở cuối | ⏳ cuối plan |
+
+### 10.1 ⛔ Khoảng lệch `main` ↔ production, ghi ra chứ ⛔ không im
+
+Mã sản phẩm lệch: `ban_ghi.py` · `giai_doan_chep_loi.py` · `giai_doan_hinh_anh.py`
+· `ke_cat.py` · `nan_cho_vua.py` · `giai_doan_giong.py` · `giai_doan_thoi_gian.py`
+· `thoi_gian.py` (+ `dung_video.py` chỉ chú thích, 2 công cụ mới).
+
+⇒ ⛔ **CHƯA tới khách, và đó là CÓ Ý**: plan chưa xong, và luật dự án ghi *deploy
+giữa plan phải HỎI chủ dự án*. ⛔ Không gì bị chặn vì chờ — mọi việc còn lại là mã
++ đo cục bộ; chỉ `G5` (`T1a-ter` trên worker thật) mới cần deploy.
+
+### 10.2 🔴 Tôi CHẨN ĐOÁN SAI một lượt giữ khoá — vì đo SAI KÊNH
+
+**Bản đầu của mục này SAI, và nó sai theo cách đáng ghi hơn cả kết luận đúng.**
+
+Tôi thấy `gate --pham-vi` (35 phạm vi, `-j 2`) giữ `cpu_nhieu` **23,4 phút**, đọc
+`tai_may` ra `CPU 20 % / 20 lõi · RANH · rảnh 8,0/10 lõi vật lý`, rồi kết luận:
+*"nó đang **tính CHẬM có chủ ý**, `-j 2` là tự hạn chế, phép phát hiện cũ (tường
+dài + CPU thấp = đang chờ) ⛔ không bắt được ca này."*
+
+**Cả ba vế đều sai.** Phiên khác đo **giây CPU của chính cây tiến trình** — đại
+lượng đúng cho câu hỏi này:
+
+```
+pid 23096  gate.py --pham-vi <35> -j 2       giay CPU  15,6   / 25 phut tuong
+ └ 21924   test_nhanh.py -n 5                giay CPU   0,2
+    └ 23440                                  giay CPU  12,2
+                        ca cay ~28 giay CPU / ~1.520 giay tuong = 0,02 LOI
+```
+
+⇒ Nó ⛔ **không** tính chậm. Nó **ĐANG CHỜ** — đúng ca mà luật toàn cục cấm thẳng
+(*"⛔ không giữ khoá trong lúc CHỜ"*), và phép phát hiện cũ **CÓ** bắt được.
+
+🔑 **Chỗ lệch nằm ở KÊNH ĐO, ⛔ không ở luật.** `tai_may` trả lời *"MÁY có bận
+không"* — một con số **toàn máy**, gồm cả tôi, cả phiên khác, cả Defender. Câu tôi
+hỏi là *"TIẾN TRÌNH NÀY đốt bao nhiêu"*, và câu ấy ⛔ **không có sẵn** ở `tai_may`;
+nó chỉ có ở giây CPU của cây tiến trình (`Get-Process.CPU`).
+
+⇒ Đúng họ đã ghi sổ — *"đọc thứ ĐẠI DIỆN thay vì đọc thứ THẬT"*, vế
+**"thứ tôi hỏi có SẴN ở chỗ tôi đứng không?"**. Và nó tệ hơn một số sai: nó làm
+tôi **kết tội sai một luật đang hoạt động tốt**, rồi đề nghị đổi mô hình khoá —
+một đề nghị dựa trên một phép đo ⛔ không trả lời câu tôi hỏi.
+
+⚠️ **Thủ phạm thật:** một worktree thứ ba (`restore-incomplete-sessions-d63d42`)
+mà phiên chủ hình như đã đóng, nhưng `bash.exe` cha còn sống nên nó ⛔ không phải
+tiến trình mồ côi theo nghĩa thường. ⛔ **Không ai giết nó** — luật *"chỉ kill
+tiến trình mình khởi động"*.
+
+⚠️ Và một dấu vết lặp lại được ở mọi phiên, trong chính lệnh của họ:
+
+```
+nohup python tools/gate.py --pham-vi ... &  echo "khong dung nohup" ;  python tools/gate.py --pham-vi ...
+```
+
+Gọi gate **HAI lần** — một nền, một tiền cảnh. Nếu cả hai sống, lượt thứ hai
+**xếp hàng sau chính lượt thứ nhất**: tự khoá chính mình, triệu chứng **y hệt**
+cái tôi vừa chẩn đoán sai.
+
+### 10.3 ⚠️ Điểm mô hình vẫn còn, nhưng nó ⛔ KHÔNG phải việc của plan này
+
+`cpu_nhieu` là mutex **nhị phân** cho một tài nguyên **chia được** — đó vẫn là một
+chỗ lệch. Nhưng ⛔ **không ai được tự đổi nó**: `CLAUDE.md` toàn cục chốt 23/09
+*"một khoá cho cả máy, một lượt nặng một lúc"* **sau một sự cố đo được** (gate +
+agent cộng dồn 14/20 lõi rồi bị CPU quá tải ngắt). Đổi thành semaphore có trọng số
+là **đảo một quyết định chủ dự án đã trả giá để có**, và `cua_so_yen.py` phục vụ
+mọi phiên của **cả hai kho**. ⇒ Chỉ chủ dự án quyết.
+
+⭐ Đường **không** đảo luật: khi một lượt **đã** giữ `cpu_nhieu` thì nó đã độc
+quyền máy, nên `-j 2` là **tự hạn chế vô cớ** — cho `gate.py` **in cảnh báo** khi
+`-j` nhỏ hơn hẳn ngân sách lõi trong lúc đang giữ khoá toàn máy. Cảnh báo, ⛔ không
+ghi đè ý định người gọi. (Phiên sở hữu `gate.py` nhận việc này.)
