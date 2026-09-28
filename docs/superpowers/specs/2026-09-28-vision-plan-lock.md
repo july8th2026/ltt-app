@@ -568,19 +568,48 @@ theo SỐ ẢNH** ở `--metrics`, không chỉ theo số token.
 
 ---
 
-## 7-TER. TIẾN ĐỘ THẬT (cập nhật 28/09/2026, nhánh `phien/vision-plan-lock`)
+## 7-TER. TIẾN ĐỘ THẬT (đo lại 28/09/2026 sau khi deploy xong)
 
-| Pha | Trạng thái | Commit |
+### Tổng: **85 %** của plan như đã khoá (Pha 0-6 + ba việc deploy)
+
+| Hạng mục | % | Bằng chứng |
 |---|---|---|
-| **0 — ĐO** | ✅ xong (§6-BIS) | `a79da8f0` |
-| **1 — SỰ THẬT** (cờ engine tường minh, sửa 2 chú thích sai) | ✅ xong | `a79da8f0` |
-| **2 — TÍNH** (`anh_token.py` ×2 byte-identical) | ✅ xong | `a6dd4be3` |
-| **3(B) — cổng máy B tính ngân sách, gỡ `max_images`** | ✅ xong | `a6dd4be3` |
-| **4a — trần thân 4 → 32 MiB** | ✅ xong | `a6dd4be3` |
-| **3(A) — máy A ĐO ảnh, công bố ra catalog** | ✅ xong | `546ab376` |
-| **5 — client nhả theo ngân sách** | 🔨 đang làm (kho `LTTCODEAPP`) | — |
-| **6 — tự hạ + header `X-LTT-Anh-Thu-Nho`** | ⬜ chưa | — |
-| **DEPLOY** | 🔴 **CHẶN — cần chủ dự án** | §7-TER.3 |
+| **Pha 0 — ĐO** | **70 %** | Đ-1 ✅ Đ-2 ✅ Đ-3 ✅ Đ-6 ✅ · **Đ-4 ⬜ Đ-5 ⬜** |
+| **Pha 1 — SỰ THẬT** | **100 %** | `a79da8f0` |
+| **Pha 2 — TÍNH** | **100 %** | `a6dd4be3` · `anh_token.py` ×2 byte-identical |
+| **Pha 3 — NGÂN SÁCH** | **100 %** | `a6dd4be3` (B) + `546ab376` (A), **đã deploy + nghiệm thu** |
+| **Pha 4a — THÂN 32 MiB** | **100 %** | live: `x-ltt-max-body-bytes: 33554432` |
+| **Pha 5 — CLIENT** | **80 %** | `39f3a56` (LTTCODEAPP), 146 xanh — **chưa tới tay khách**, cần build 0.2.17 |
+| **Pha 6 — TỰ HẠ + header** | **0 %** | chưa bắt đầu |
+| **D1 máy B** | **100 %** | `EXITCODE` n/a (deploy.ps1) + restart, 16/16 ô đo khớp |
+| **D2 máy A** | **100 %** | `/health/version` = `3ee8b6a660b6`, `nghiem_thu_deploy` lệch 0 |
+| **D3 WebP** | **100 %** | `1024×768 webp → 770` (trước deploy: 400) |
+
+### ⛔ HAI LỖ HỔNG MỚI, lộ ra khi đo tiến độ — không có trong plan gốc
+
+**(d) 🔴 `docs/PUBLIC_API/` KHÔNG có một chữ nào về bốn trường mới.**
+`grep min_image_tokens docs/PUBLIC_API/` = **rỗng**. Ta đang **công bố** bốn con số
+ra hợp đồng công khai mà **không khách nào học được chúng ở đâu**.
+
+⚠️ Và đây là chỗ tôi **tự mâu thuẫn**: §7.1-BIS dẫn **L-26** làm khuôn, mà L-26 ghi
+tài liệu ở **ba** nơi — `manifest.py`, `DEVELOPER_GUIDE.md`, `CHANGELOG.md`. Tôi
+chỉ làm **một** (`manifest.py`). Dẫn một tiền lệ rồi làm một phần ba của nó là
+tệ hơn không dẫn, vì nó tạo cảm giác đã theo khuôn.
+
+**(e) `MAX_REQUEST_IMAGE_BYTES = 20 MiB` ở client KHÔNG còn chết — và chưa ai xét lại nó.**
+Plan ghi *"gỡ … đã chết"*. Nhưng trần thân nay 32 MiB > 20 MiB, nên nó **sống lại**
+và thành một trần con hợp lý. Giữ là đúng; ⛔ nhưng **20 MiB chưa được đối chiếu**
+với 32 MiB − sàn chữ 2,31 MiB. Việc trong plan phải đổi từ "gỡ" sang "xét lại".
+
+**(f) `plugins/llm-ltt/CONTRACT.md:162`** còn ghi preflight theo `max_images` —
+tài liệu client nói về một trần đã không tồn tại.
+
+### Đ-3 đã tự khép, và không theo đường plan dự tính
+
+Plan định đo *"một ảnh RGBA thật đi hết đường LTTCODE"*. **D3 làm câu hỏi ấy mất
+nghĩa**: máy B nay giải mã được WebP, nên việc harness mã hoá `hasAlpha ⇒ webp`
+không còn là lỗi. ⇒ Đ-3 ✅, nhưng **bằng một bản vá, không bằng một phép đo** —
+ghi ra để không ai tưởng đã có số.
 
 ### 7-TER.1 Ba lỗ hổng THẬT tìm thấy trong lúc làm (không có trong plan gốc)
 
