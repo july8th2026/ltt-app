@@ -36,9 +36,6 @@ FORM_NHO = {
     "apps/video_assembly/templates/video_assembly.html": ("va", "/video-assembly/tao",
                                                           ("clips", "music", "che_do_khop", "bat_demucs",
                                                            "bat_phu_de", "cau_hinh")),
-    "apps/prompt_canh/templates/prompt_canh.html": ("pc", "/prompt-canh/tao",
-                                                    ("kich_ban", "so_canh", "visual_style", "duration",
-                                                     "batch_step2", "batch_step3")),
 }
 
 

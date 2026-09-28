@@ -27,7 +27,7 @@ EXPECTED = {
     # `discover_tools()` lay MOI ToolSpec job-based — khong phai vi ai do quyet
     # dinh mo chung cho Agent. Ca bon deu `api_exposed=False` va disposition
     # DEFER; xem `tests/test_190_public_api_coverage.py`.
-    "transcript.run", "audio_pause.run", "prompt_canh.run", "video_assembly.run",
+    "transcript.run", "audio_pause.run", "video_assembly.run",
     # Model anh NOI BO (H37/Q102). No vao bang nay vi `discover_tools()` lay MOI
     # ToolSpec job-based — khong phai vi ai do quyet dinh mo no cho Agent. Ba cong
     # fail-closed cua Q92 va cong `is_active` cua H37 khong bi anh huong.
@@ -119,7 +119,7 @@ def test_cong_THU_NHAT_that_su_chan_chu_khong_chi_ton_tai():
         #    mot cong. Xem `tests/test_1113_phase14_agent_danh_gia.py`.
         # `transcript.run` HIEN tu 22/09/2026 (mo cho khach, chu du an chot).
         "audio_pause.run",
-        "prompt_canh.run", "video_assembly.run",
+        "video_assembly.run",
     }, (
         f"tap tool AN da doi: {an} — moi thay doi o day la mot quyet dinh "
         "ve thu khach nhin thay trong palette Agent")
