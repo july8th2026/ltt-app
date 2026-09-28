@@ -64,6 +64,39 @@ JOB_TYPE_TEXT_CHAT = "ltt_llm.chat"
 TEN_TOOLSPEC = "text.chat"
 
 
+def doi_tham_so_ai(params: dict) -> dict:
+    """`{prompt, model, ...}` cua node `ai.*` -> `{messages, model, ...}` cua job
+    `ltt_llm.chat`.
+
+    🔴 **Ham nay thieu cho toi 28/09/2026, va mot run THAT tren production tim ra:**
+
+        node y_tuong (ai.llm)  FAILED
+        provider_loi: ThamSoSai: `messages` phai la mot danh sach khong rong
+
+    `apps/ltt_llm/features.py:352` doi `messages` la mot danh sach khong rong, moi
+    phan tu co `role`. Node thi khai mot `prompt` — **co chu dich**, vi mot mang
+    `messages` day du vai tro la thu nguoi soan workflow ⛔ khong nen phai dung.
+
+    ⚠️ Nen day ⛔ KHONG phai "sua node cho khop handler". Tu vung rieng cua node la
+       DUNG; thieu la **lop dich**. Sua node thanh `messages` se day su phuc tap cua
+       giao thuc LLM ra mat nguoi dung.
+
+    ⭐ `luoc_do` (cua `ai.extract`) va `ai_choice`/`mac_dinh` (cua `ai.router`) **⛔
+       KHONG** di sang job: chung la tham so cua **node**, dung o `hau_kiem` va
+       `doi_dau_ra`. Gui chung sang handler la gui rac — va `features.py` co the
+       tu choi mot truong la.
+    """
+    p = dict(params or {})
+    prompt = str(p.pop("prompt", "") or "")
+    ra: dict = {"messages": [{"role": "user", "content": prompt}]}
+    # ⭐ Chi chuyen nhung truong handler THAT SU nhan. ⛔ Khong `ra.update(p)`:
+    #    no se mang `luoc_do`/`ai_choice` sang job.
+    for khoa in ("model", "max_tokens"):
+        if p.get(khoa) not in (None, ""):
+            ra[khoa] = p[khoa]
+    return ra
+
+
 def doi_dau_ra_llm(ket_qua: dict, params: dict) -> dict:
     """`content` của job → cổng ra `text` / `json` của `ai.llm`.
 
@@ -168,7 +201,7 @@ AI_LLM = dang_ky(NodeDefinition(
     ten_toolspec=TEN_TOOLSPEC, hau_kiem=hau_kiem,
     side_effect="external", idempotency_key_fields=(),
     resource={"class": "api"}, gia=Gia.theo_registry(JOB_TYPE_TEXT_CHAT),
-    doi_dau_ra=doi_dau_ra_llm,
+    doi_tham_so=doi_tham_so_ai, doi_dau_ra=doi_dau_ra_llm,
     credential=(), quyen=frozenset({"network"}),
     cho=("JOB",), ma_loi=ai_loi.MA_LOI_AI,
     publish_duoc=True))
@@ -192,11 +225,12 @@ AI_EXTRACT = dang_ky(NodeDefinition(
     ten_toolspec=TEN_TOOLSPEC, hau_kiem=hau_kiem,
     side_effect="external", idempotency_key_fields=(),
     resource={"class": "api"}, gia=Gia.theo_registry(JOB_TYPE_TEXT_CHAT),
-    doi_dau_ra=doi_dau_ra_extract,
+    doi_tham_so=doi_tham_so_ai, doi_dau_ra=doi_dau_ra_extract,
     credential=(), quyen=frozenset({"network"}),
     cho=("JOB",), ma_loi=ai_loi.MA_LOI_AI,
     publish_duoc=True))
 
 
 __all__ = ["AI_EXTRACT", "AI_LLM", "JOB_TYPE_TEXT_CHAT", "TEN_TOOLSPEC",
-           "hau_kiem", "doi_dau_ra_llm", "doi_dau_ra_extract"]
+           "hau_kiem", "doi_dau_ra_llm", "doi_dau_ra_extract",
+           "doi_tham_so_ai"]

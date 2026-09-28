@@ -61,10 +61,11 @@ async page => {
   check(Boolean(csrf), 'khong lay duoc CSRF tu /agent/workflows');
   if (!csrf) return { status: 'FAIL', loi, so };
 
-  const goi = async (duong, body, phuong = 'POST') => {
+  const goi = async (duong, body, phuong = 'POST', themHeader = {}) => {
     const r = await page.request.fetch(GOC + duong, {
       method: phuong,
-      headers: { 'content-type': 'application/json', 'x-csrf-token': csrf },
+      headers: { 'content-type': 'application/json', 'x-csrf-token': csrf,
+                 ...themHeader },
       data: body === undefined ? undefined : { ...body, csrf_token: csrf },
     });
     let than = null;
@@ -114,7 +115,29 @@ async page => {
   if (pub.status !== 200) return { status: 'FAIL', loi, so };
 
   // ── 4. Chay ──────────────────────────────────────────────────────────────
-  const chay = await goi(`/agent/api/v3/workflows/${wid}/run`, {});
+  // ⚠️ `/runs` (SO NHIEU) — doc tu `runs_v3.py:465`, ⛔ khong doan.
+  //
+  // 🔴 Toi doan HAI duong dan trong kich ban nay va CA HAI sai:
+  //      `GET  /agent/api/v3/mau`               -> 404 (cua ay KHONG TON TAI)
+  //      `POST /agent/api/v3/workflows/{id}/run` -> 404 (that la `/runs`)
+  //
+  //    Moi lan toi suy duong dan tu **ten mien nghiep vu** thay vi doc bang dinh
+  //    tuyen. Va ca hai lan phep do ⛔ khong bao dat — no bao 404, tuc no that
+  //    bai **ve phia an toan**. Nhung no ton mot luot chay production moi lan.
+  //
+  // ⭐ Cach re hon: `grep "@router.post" apps/agent/routes/<tep>.py` TRUOC khi
+  //    viet mot loi goi. Mot phut doc doi lay mot luot chay.
+  // ⭐ `Idempotency-Key` la BAT BUOC — cua tra 400 `thieu_idempotency_key` voi
+  //    mot thong diep noi dung cai thieu. Do la mot thong diep loi TOT: no ⛔
+  //    khong bat toi doan, khac han hai lan 404 truoc do.
+  //
+  // ⚠️ Khoa phai DUY NHAT moi lan do: dung lai mot khoa cu se tra ve **run cu**
+  //    (dung theo thiet ke khu trung), va phep do se doc mot run ⛔ khong phai
+  //    cua luot nay — mot cach "xanh tren thu da hong" rat kho thay.
+  const khoaIdem = `do-run-hoan-tat-${Date.now()}`;
+  so.idem_key = khoaIdem;
+  const chay = await goi(`/agent/api/v3/workflows/${wid}/runs`, {}, 'POST',
+                         { 'Idempotency-Key': khoaIdem });
   so.run_status = chay.status;
   check([200, 201, 202].includes(chay.status),
         `run -> ${chay.status} ` + JSON.stringify(chay.than).slice(0, 200));
@@ -151,6 +174,45 @@ async page => {
              + 'Day la phep do CHUA CO ket qua, ⛔ KHONG phai bang chung run hong.');
     return { status: 'CHUA_DO_DUOC', loi, so };
   }
+
+  // ── 5b. KHI THAT BAI, TU IN CHAN DOAN ────────────────────────────────────
+  //
+  // 🔴 Luot do dau tien tra ve: `y_tuong` FAILED, `outputs = {}`, `run.error = ""`.
+  //    Toi ⛔ khong chan doan duoc gi tu do, va khi di viet mot kich ban chan doan
+  //    RIENG thi phat hien no can `GET /api/v3/runs` — mot cua **⛔ KHONG TON TAI**.
+  //    Ma toi cung ⛔ khong co `run_id` day du, vi kich ban nay chi in 8 ky tu dau.
+  //
+  // ⇒ Nen chan doan phai nam **trong chinh phep do**: mot phep do that bai ma ⛔
+  //   khong de lai du lieu de tim nguyen nhan thi no bat nguoi ta chay lai — va
+  //   moi lan chay lai la mot run that.
+  //
+  // ⭐ `node.error` la cho thong diep THAT SU nam: `cau_noi.ap_ket_qua` ghi
+  //    `error=f"{ma}: {chi_tiet}"` len **node**, ⛔ khong len `run`. Doc `run.error`
+  //    roi ket luan "khong co thong diep" la doc sai cho.
+  so.run_id_day_du = String(rid);
+  // ⚠️ Doc `run.nodes` truc tiep, ⛔ KHONG dung bien `nodes` — no duoc khai bang
+  //    `const` o buoc 6 (BEN DUOI), va `const` ⛔ khong hoisting nen tham chieu o
+  //    day nem `ReferenceError: Cannot access 'nodes' before initialization`.
+  //    Toi da mac dung loi nay o luot truoc: mot buoc chan doan them vao **truoc**
+  //    cho khai bien, va no lam ca phep do vo — tuc buoc chan doan tu no thanh
+  //    thu can chan doan.
+  so.node_loi = (run.nodes || []).filter(n => String(n.status) === 'FAILED').map(n => ({
+    id: String(n.node_id || n.id || ''),
+    error: String(n.error || '(rong)').slice(0, 300),
+    attempt: n.attempt_number ?? null,
+    job_id: String(n.job_id || '').slice(0, 10),
+  }));
+
+  const sk = await goi(`/agent/api/v3/runs/${rid}/su-kien`, undefined, 'GET');
+  so.su_kien_status = sk.status;
+  const evs = Array.isArray(sk.than?.items) ? sk.than.items
+            : Array.isArray(sk.than) ? sk.than : [];
+  so.so_su_kien = evs.length;
+  so.su_kien_cuoi = evs.slice(-10).map(e => ({
+    node: String(e.node_id || '').slice(0, 12),
+    sang: String(e.sang || e.status || e.loai || ''),
+    mo_ta: String(e.error || e.mo_ta || e.message || '').slice(0, 180),
+  }));
 
   // ── 6. Doc TUNG node: chinh day la cau hoi thu hai ───────────────────────
   const nodes = Array.isArray(run.nodes) ? run.nodes : [];

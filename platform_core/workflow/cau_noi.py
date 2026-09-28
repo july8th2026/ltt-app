@@ -467,6 +467,41 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
             db, run.id, nid, sang="FAILED", mo_ta="giai tham so",
             error=str(loi), attempt_number=lan, vong=vong)
         return None
+    # ── Dich params NODE -> params JOB (`nd.doi_tham_so`) ───────────────────
+    #
+    # 🔴 Doi xung cua `doi_dau_ra`, va no thieu cho toi 28/09/2026. Mot run THAT
+    #    tren production:
+    #
+    #        node y_tuong (ai.llm)  FAILED
+    #        provider_loi: ThamSoSai: `messages` phai la mot danh sach khong rong
+    #
+    #    `ai.llm` khai `{prompt, model}`; `ltt_llm.chat` doi `messages=[{role,
+    #    content}]`. ⛔ Khong ai dich giua hai hinh dang.
+    #
+    # ⚠️ **DAT O DAY, ⛔ khong som hon va ⛔ khong muon hon:**
+    #      · SAU `giai_tham_so` — de bieu thuc `{{ }}` da duoc giai;
+    #      · TRUOC `cc.tinh_gia` — gia phai tinh tren thu THAT SU gui di
+    #        (`text.chat` tinh theo token cua `messages`; tinh tren `prompt` tho
+    #        se ra mot so khac);
+    #      · TRUOC `_khoa_idem` — khoa khu trung phai mo ta dung luot gui ay.
+    #
+    # ⭐ Mot lop dich dat sai cho ⛔ khong bao loi: no chi lam **gia** hoac **khoa
+    #    khu trung** noi ve mot thu khac thu duoc gui. Ca hai deu im lang.
+    _doi = getattr(_nd, "doi_tham_so", None) if _nd is not None else None
+    if _doi is not None:
+        try:
+            params = dict(_doi(params))
+        except Exception as loi:  # noqa: BLE001
+            # ⛔ Bat rong CO LY, va ly do phai noi ra: mot ham dich do node KHAI
+            #    co the nem bat cu gi (`KeyError` vi thieu truong, `TypeError` vi
+            #    kieu la). Moi cach that bai dan toi CUNG mot ket luan van hanh —
+            #    node nay ⛔ khong nop duoc job — va thong diep duoc in NGUYEN VAN
+            #    ngay duoi, nen no ⛔ khong nuot gi.
+            may_trang_thai.chuyen_node(
+                db, run.id, nid, sang="FAILED", mo_ta="dich tham so node -> job",
+                error=f"doi_tham_so_loi: {type(loi).__name__}: {loi}"[:2000],
+                attempt_number=lan, vong=vong)
+            return None
     gia_that = int(cc.tinh_gia(params))
     tran = int(node.get("gia_tran", 0))
     if gia_that > tran:
