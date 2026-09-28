@@ -1,0 +1,379 @@
+# B17 — PLAN TRIỂN KHAI: dựng chuỗi bước ASV theo đúng cách Viral làm
+
+> **Chủ của**: thứ tự bước và **cổng gọi kết nối** cấp triển khai.
+> B16 là **thiết kế** (8 giai đoạn, vì sao). B17 là **lệnh thi công**: mỗi việc kèm
+> neo dòng trong `localize.py` để agent ⛔ không phải suy diễn.
+> Tham chiếu thô: `B17_THAM_CHIEU_VIRAL/W1_CHUOI_GOI.md` (432 hàng nguyên văn) ·
+> `W2_CONG_KET_NOI.md` (kênh phụ) · `W3_MOT_LAN_ENCODE.md` (hợp đồng `burn_phude`).
+
+⛔ **Nguồn chân lý là mã Viral, ⛔ không phải tệp này.** Mọi hàng đều có neo dòng;
+đọc mã trước khi sửa. `D:\Viral` là **CHỈ ĐỌC**.
+
+## Khai độ phủ (bằng số) — để ⛔ không ai tưởng plan này biết nhiều hơn thực tế
+
+| Đại lượng | Số | Nguồn |
+|---|---|---|
+| Biên `localize.chay()` | `:15021`–`:20576` (5.556 dòng) | W1, đã kiểm 3 neo ngẫu nhiên khớp từng ký tự |
+| Câu lệnh **cấp 1** đã trích nguyên văn | **150 / 150** = 100% | W1 |
+| Câu lệnh cấp 2 (trong 69 khối) | 282 | W1 |
+| Biên `burn_phude()` | `:6560`–`:8532` (1.973 dòng) | W3 |
+| Đọc nguyên văn trong `burn_phude` | ~340 / 1.973 ≈ **17%** | W3 tự khai |
+| ⛔ **CHƯA đọc** trong `burn_phude` | dựng dải che chi tiết `:6670-7263` (~590 dòng) + thân `khung_filter_parts` / `text_wm_parts` / `_srt_to_ass_pos` | W3 tự khai |
+
+⚠️ ⇒ Việc nào **chạm vùng chưa đọc** thì trong §6 được đánh `[ĐỌC TRƯỚC]`: agent
+phải đọc nguyên văn vùng đó **trước** khi sửa, ⛔ không dựa vào plan này.
+
+---
+
+## 1. TRẬT TỰ VĨ MÔ THẬT của `localize.chay()` — 14 khối, đúng thứ tự thực thi
+
+Rút từ 150 câu lệnh cấp 1. Cột **ta có?** so với `pipeline.CHUOI` hiện hành.
+
+| # | Khối | Neo | Việc | Ta có? |
+|---|---|---|---|---|
+| 1 | Chuẩn hoá tham số + ENV | `15039`–`15236` | dựng `burn_kw`, gate `che_chu`+`zoom≥1.3`, chọn `_ocr_video` | một phần, rải rác |
+| 2 | **RESET kênh phụ** | `15280`–`15288` | `_LAST_VIDEO_SLOW`, `_LAST_TIME_WARP`, `_LAST_DUB_ONSETS`, `_LAST_ASR_PARTIAL`, `_KET_ASR_HONG` | ⛔ KHÔNG — xem §4 |
+| 3 | Chọn model ASR | `15250`–`15256` | `medium`+`ASR_TURBO` → turbo; chặn `large*` | có (`whisperx_runner`) |
+| 4 | **Mở SỔ KẾ TOÁN CÂU** | `15312` `_sk_bat_dau(video)` | đếm câu vào/ra từng bước, in `◄── RƠI N CÂU Ở ĐÂY` | có, **khác chỗ**: `tools/asv_so_ke_toan_cau.py` chạy NGOÀI |
+| 5 | Đo tài nguyên + giao thức tiến độ | `15332` `_ResMon`, `15358` `print("STAGE:batdau")` | mỗi stage một mốc CPU/GPU/RAM/VRAM | có (job_runner) |
+| 6 | Phát hiện ngôn ngữ + ngắn mạch cùng-ngữ | `15361`–`15479` | `cung_ngon_ngu` → bỏ dịch | có |
+| 7 | **KHỞI 4 LUỒNG NỀN** | `15611`, `15710`, `15783`, `15880` | xem §3 — **đây là khác biệt lớn nhất** | ⛔ KHÔNG |
+| 8 | Băm video + dựng 4 KHOÁ CACHE | `15732` `_vhash`; `15943` scan, `15983` ocrbox, `16068` trans, `16111` srt | bốn khoá độc lập, mỗi khoá một lớp | một phần (`cache_chung.py`) |
+| 9 | **NHÁNH LỚN: ASR + dịch** | `16235` `if srt_co_san:` / `16381` `else:` → `18110` | 1.729 dòng | có (`transcribe`+`content_process`) |
+| 10 | Dựng `ket` + **thoát sớm `chi_dich`** | `18119`, `18123` | hợp đồng trả về duy nhất | ⛔ KHÔNG có chế độ chạy lẻ |
+| 11 | Giải phóng model ASR | `18137`–`18139` | `phu_de._MODEL = None; gc.collect()` | ngầm (tiến trình chết) |
+| 12 | Phân giọng (diarization) | `18154`–`18199` | `_segs_diar`, `doc_giong_json` | có |
+| 13 | **CHE CHỮ** | `18204` `if che_chu:` → `18914` | 710 dòng: OCR + dải che | ⛔ KHÔNG (B16 định thêm `vung_che`) |
+| 14 | **LỒNG TIẾNG ⊕ BURN — `if/elif` LOẠI TRỪ NHAU** | `19186` `if lam_long_tieng:` → `20464`; `20464` `elif burn:` → `20514` | dub tự burn bên trong | 🔴 ta tách `compose` + `render` NỐI TIẾP |
+| — | Dọn + xong | `20514`–`20576` | `_dep_demucs`, `LOCALIZE_DONE`, `return ket` | có |
+
+### 🔴 Phát hiện gánh cả plan: khối 14 là `if/elif`
+
+`19186 if lam_long_tieng:` … `20464 elif burn:` — **loại trừ nhau**. Đường lồng
+tiếng **tự burn phụ đề bên trong nó**, ⛔ không đi qua một bước burn riêng.
+
+⇒ Chuỗi của ta có `compose` **rồi** `render` **nối tiếp** là một **hình dạng khác**,
+⛔ không phải một thứ tự khác. Đây là gốc của *"vì sao ta encode hai lần"*.
+
+---
+
+## 2. BỐN LUỒNG NỀN — khác biệt lớn nhất, và nó ⛔ không phải "tối ưu thêm"
+
+Viral khởi **bốn** việc dài **trước** nhánh ASR rồi `join` ở **phút cuối cần dùng**.
+Số đo (từ W1 + đọc trực tiếp bốn chỗ join):
+
+| Luồng | `start` | `join` | Chồng lấn | Hạn (ENV) | ⭐ QUÁ HẠN thì sao |
+|---|---|---|---|---|---|
+| `_ct_som_th` che-tính-sớm | `15880` | `18289` | ~2.400 dòng | `CHE_TINH_SOM_JOIN=180` | `_r=None` → dò **đồng bộ** như cũ |
+| `_cdd_th` che-động (OCR nền) | `15783` | `18839` | ~3.050 dòng | `CHE_DONG_JOIN_TO` | `_segs=None` → lùi **blur TĨNH** |
+| `_tn_th` tách-nhạc (demucs) | `15710` | `20016` | ~4.300 dòng | `DEMUCS_TIMEOUT=2400` | ba nhánh, xem 🔴 dưới |
+| `_xn_th` xoá-nhạc (demucs) | `15611` | `20478` | ~4.867 dòng | `DEMUCS_TIMEOUT=2400` | tách lại tuần tự, **tiền tố tạm khác** |
+
+🔑 **Mỗi luồng có một ĐƯỜNG LUI ĐỒNG BỘ đầy đủ.** Luồng nền ⛔ không phải nguồn
+duy nhất của dữ liệu ấy — nó chỉ là đường **nhanh hơn**. ⇒ Quá hạn **⛔ không** làm
+hỏng lượt chạy, chỉ mất phần đã chồng lấn.
+
+### 🔴 `:20478` — "BỎ CHỜ ≠ DỪNG ĐƯỢC" (bài học ta sẽ gặp Y HỆT)
+
+Nguyên văn lý do trong mã: luồng nền là **daemon, ⛔ KHÔNG có cờ dừng**. Hết hạn
+`join` ta **thôi chờ**, nhưng nó **vẫn đang chạy và vẫn đang ghi file**. Vì
+`_audio_xoa_nhac` dùng đường dẫn tạm **CỐ ĐỊNH** `<ten><ptmp>_xnhac_goc.wav`:
+
+- nhánh tuần tự bên dưới **ghi đè đúng file luồng nền đang đọc**;
+- `finally` của bên này **xoá file của bên kia**;
+- trên Windows còn **khoá file** ⇒ `TachNhacThatBai` ⇒ mất cả giọng.
+
+⇒ Cách chữa của họ: **đổi tiền tố tạm** cho nhánh lui (`_ptmp + "_l2"`). Hai bên
+⛔ không bao giờ chạm cùng một file.
+
+### 🔴 `:20016` — ca đã từng rơi vào IM LẶNG, họ vá 30/08/2026
+
+Quá hạn mà luồng nền **còn sống**: trước đây ⛔ không nhánh nào log, rồi tách lại
+ngay bên dưới ⇒ **HAI demucs cùng lúc**. Nay là nhánh `else` tường minh.
+
+⚠️ Cùng họ [[hai-trang-thai-gop-thanh-mot-gia-tri]]: *"⛔ không có kết quả"* và
+*"chưa xong"* là **hai** trạng thái; gộp chúng làm một thì mất đúng khả năng phân biệt
+cần để chọn đường lui.
+
+### Trong mô hình của TA điều này thành gì
+
+Mỗi giai đoạn của ta là **một tiến trình riêng** ⇒ luồng khởi ở giai đoạn 1 ⛔ không
+`join` được ở giai đoạn 6. Bốn luồng phải thành **bốn JOB song song**, và:
+
+| Của Viral | Của ta |
+|---|---|
+| `threading.Thread(daemon=True)` | job trong hàng đợi, `parent_run_id` |
+| `_xn_kq[0]` (holder trong bộ nhớ) | **artifact** trên đĩa + trường `outputs` |
+| `th.join(timeout=T)` | vòng chờ job với hạn `T`, rồi đi đường lui |
+| `th.is_alive()` | trạng thái job ≠ `SUCCEEDED`/`FAILED` |
+| đổi tiền tố tạm `_ptmp+"_l2"` | 🔴 **đường lui phải có `run_id` riêng trong tên tệp tạm** |
+
+🔴 **Bắt buộc**: job bị bỏ chờ **vẫn chiếm GPU/CPU và vẫn ghi đĩa**. Ta có
+`gpu_lease.py` — đường lui ⛔ không được xin lease khi lease cũ chưa hết, nếu ⛔ không
+sẽ **hai demucs** đúng như ca 30/08 của họ, nhưng tệ hơn vì ta có lease thật.
+
+---
+
+## 3. 🔴 CHẶN KIẾN TRÚC: hai trong bốn luồng nền ta ⛔ KHÔNG copy được nguyên dạng
+
+Đây là thứ phải quyết **trước** khi agent nào động vào chuỗi.
+
+**Viral**: ⛔ **không có khoá GPU nào** (`grep Lock()` trong `localize.py`: 12 khoá,
+⛔ không một khoá nào cho GPU). demucs chạy **cuda** (`_demucs_worker.py:50`) **song
+song** whisper **trên cùng một card**, dựa vào biên VRAM. Thứ họ chia khẩu phần là
+**CPU** (`_asr_cpu_slot`) — và demucs khi đã ở GPU thì **bỏ qua** khe CPU
+(`_xn_gpu = (phu_de._whisper_device_nhe()[0] == "cuda")`).
+
+**Ta**: `platform_core/gpu_lease.py:293-300` — `UNIQUE(host, gpu_uuid)`,
+`exclusive=True`, nguyên văn chú thích: *"một job chiếm TRỌN card… Bên kia chia phần
+theo VRAM nên nếu ⛔ không nói rõ, họ sẽ nhét thêm job vào card của ta"*. Máy A có
+**một** 5060 Ti (`docs/HAI_MAY_A_VA_B.md`).
+
+⇒ **Hai luồng demucs (`_xn_th`, `_tn_th`) ⛔ KHÔNG thể thành hai JOB song song** —
+job thứ hai sẽ ⛔ không bao giờ giành được lease, và `acquire` trả `None` ⇒ nó **xếp
+hàng**, ⛔ không phải chồng lấn. Copy nguyên dạng sẽ cho một chuỗi **trông song song
+mà chạy tuần tự**, và ⛔ không phép đo nào của ta hiện bắt được điều đó.
+
+### Quyết (và cái giá nếu sai)
+
+| Luồng | GPU? | Làm gì | Vì sao |
+|---|---|---|---|
+| `_cdd_th` che-động (OCR) | ⛔ không (RapidOCR, đã chặn 6 lõi) | ✅ **JOB song song** | ⛔ không xin lease ⇒ chồng lấn thật |
+| `_ct_som_th` che-tính-sớm | ⛔ không | ✅ **JOB song song** | như trên |
+| `_xn_th` xoá-nhạc (demucs) | ✅ | 🔑 **CÙNG MỘT JOB với ASR** | một lease, hai luồng trong một tiến trình — **đúng hình dạng Viral** |
+| `_tn_th` tách-nhạc (demucs) | ✅ | 🔑 **CÙNG MỘT JOB với ASR** | như trên |
+
+🔑 Gộp demucs + whisper vào **một job GPU** ⛔ không phải sáng kiến mới: `apps/asv_gpu/jobs.py:3`
+đã khai *"Hai giai đoạn thực sự cần GPU: tách nguồn tiếng (demucs) và chép lời (whisper)"*.
+Ta chỉ đang **làm đúng** điều tệp ấy đã nói.
+
+**Cái giá nếu quyết sai**: hai model cùng card có thể vượt VRAM ⇒ OOM giữa lượt.
+`apps/asv_gpu/manifest.py:27` đã đo: *"VRAM là thứ KHÔNG tăng theo độ dài"*, demucs
+RSS phẳng ~2,6 GiB. ⇒ Rủi ro thật là **RAM hệ thống**, ⛔ không phải VRAM. Phép đo
+chốt: VRAM đỉnh + RSS đỉnh khi cả hai cùng chạy — **đo một lượt ở §7**, ⛔ đừng đoán.
+
+⛔ **KHÔNG đổi `gpu_lease` sang chia-theo-VRAM.** Nó phục vụ lưu lượng thật và đứng
+cạnh sổ sách (`CLAUDE.md` luật về `gpu_lease.py`). Đổi mô hình lease để tiện một app
+là đánh đổi sai chiều.
+
+### ⚠️ Thu hẹp: "JOB song song" ở bảng trên nói về **LEASE**, ⛔ không nói về **THỨ TỰ**
+
+Hai hàng `_cdd_th` / `_ct_som_th` chỉ khai một điều: chúng ⛔ không xin lease GPU nên
+**được phép** chồng lấn. Chúng ⛔ **không** khai rằng mọi phần của che-chữ chồng lấn
+được với `transcribe`.
+
+🔴 `W2_CONG_KET_NOI.md` §2.2 đã đo ra điều ngược lại cho **một nửa** của che-chữ:
+phần **bám hộp OCR** đọc `_ocr_boxes` (sinh ở `:16630`, lưu `.ocrbox.json` `:16669`)
+⇒ **buộc sau** `transcribe`. Chỉ phần **dò dải TĨNH** (`detect_blur_band`, đọc **video**
+thuần) mới song song thật — Viral đã gỡ `srt=` khỏi `_band_key` ngày 29/08 kèm bằng
+chứng AST (`:15808-15812`).
+
+⇒ **`vung_che` ở ta là HAI giai đoạn**, ⛔ không phải một:
+
+| Giai đoạn | `sau=` | Đọc | Song song với `transcribe`? |
+|---|---|---|---|
+| `vung_che_tinh` | `(MEDIA_PREPARE,)` | chỉ **video** | ✅ có |
+| `vung_che_bam` | `(TRANSCRIBE, VUNG_CHE_TINH)` | `hop_ocr.json` | ⛔ không |
+
+🔴 **Vì sao đây là lỗi nguy nhất trong cả plan nếu làm sai**: gộp một giai đoạn rồi
+khai `🔀 || transcribe` thì nhánh bám-hộp chạy với `_ocr_boxes = []`, và ca ấy
+⛔ **KHÔNG NỔ** — `:16376` ghi rõ khối nới dải + net an toàn chống lộ chữ **bị tắt im
+lặng**. Kết quả: **chữ Trung lộ trên bản giao khách**, log báo `✔ Xong`.
+⇒ Đúng họ [[phep-kiem-xanh-tren-thu-da-hong]] và [[ma-phong-thu-cho-ca-khong-the-xay-ra]] đảo chiều.
+
+---
+
+## 4. CỔNG KẾT NỐI — ba ĐƯỜNG NGƯỢC CHUỖI, và luật cứng cho mỗi cái
+
+Bảng đủ 68 hàng ở `W2_CONG_KET_NOI.md`. Đây là ba hàng **quyết định plan**.
+⭐ Mẫu số đúng, để ⛔ không ai sợ sai chỗ: Viral **đọc 401** tên biến môi trường nhưng
+chỉ **GHI 15** ⇒ 386 cái là **cấu hình một chiều**, ⛔ **không** phải đường truyền.
+
+### 4.1 🔴🔴 `DUB_WPS` / `DUB_FIT_LEN` / `DUB_NEN` — bản DỊCH phụ thuộc TỐC ĐỌC của GIỌNG
+
+```
+Viral GHI  :15101, :15102, :15136        (đầu chay() = GĐ1 của ta)
+Viral ĐỌC  dich_gemini_web:147, 2132, 2141   (GĐ5 content_process của ta)
+Nội dung   thuộc tính của GIỌNG mà GĐ6 voice_synthesis mới dùng
+```
+
+Trong DAG B16 đây là **chu trình**: `5 → 6` theo `sau=`, mà `5` cần một đại lượng của `6`.
+
+⭐ **Cách giải của Viral là cách DUY NHẤT đúng cho ta**: họ ⛔ **không đo giọng lúc
+chạy**. `_wps_giong_that:1946` **tra bảng đã đo trước** (`:15109` —
+`id 1,56× · en 1,51× · es 1,36× · vi 1,35× · pt 1,33× · ko 1,29× · fr 1,25×`) ⇒ nó là
+**hàm thuần của `settings.voice` + hằng số trong mã** ⇒ tính được ở **dòng đầu**.
+
+| Luật cứng | |
+|---|---|
+| ✅ LÀM | `settings` **dẫn xuất**, tính ở GĐ1, đi vào **vân tay GĐ5** |
+| ⛔ KHÔNG | *"GĐ6 đo giọng rồi báo lại GĐ5"* — DAG vỡ và ⛔ **không ai thấy nó vỡ**: `settings.giong_id` vẫn có giá trị nên GĐ5 vẫn chạy, chỉ **neo sai** |
+| ⚠️ COPY CẢ | `min()` **một chiều** (`:15112-15117`, nguyên văn *"CHỈ SIẾT, KHÔNG NỚI"*). Cài hai chiều ⇒ giọng nhanh **nới** neo ⇒ bản dịch dài hơn ⇒ nén nặng hơn ⇒ **ngược ý** |
+
+🔑 Đây là mảnh còn thiếu của cả chuỗi *"nói dồn"* anh đặt ra: ngân sách thời gian phải
+vào **bản dịch** (GĐ5), ⛔ không chỉ vào bậc thang nắn (GĐ7). Nắn là **cứu chữa**;
+neo đúng ở GĐ5 là **phòng bệnh**.
+
+### 4.2 🔴🔴 `_ocr_boxes` — đã xử ở §3, tách `vung_che_tinh` / `vung_che_bam`
+
+Bằng chứng cơ học W2 đưa thêm: `:18216` dùng `locals().get("_ocr_boxes")` — tức chính
+Viral cũng ⛔ không bảo đảm tên ấy tồn tại. Ca thiếu **im lặng**.
+
+### 4.3 🔴 `.dubsync.vi.srt` — GĐ7 sinh thứ đóng CÙNG VAI với đầu ra GĐ5
+
+```
+GĐ5 content_process -> <ten>.vi.srt           (:15507, ghi :17940)
+GĐ7 timing_align    -> <ten>.dubsync.vi.srt   (:20327)
+GĐ8 render          -> cần CẢ HAI: :20357-20360 (0 cue -> lùi bản gốc)
+                                   :20387-20391 (burn dubsync lỗi -> burn gốc)
+```
+
+⛔ không ngược theo **thứ tự**, nhưng ngược theo **quyền sở hữu**.
+
+| Luật cứng | |
+|---|---|
+| ✅ LÀM | GĐ7 xuất artifact **khoá riêng** `phu_de_canh_giong.srt`; GĐ8 ghi `outputs["phu_de_da_dung"] ∈ {canh_giong, goc}` |
+| ⛔ KHÔNG | ghi đè khoá của GĐ5 — vân tay GĐ5 giữ nguyên trong khi nội dung đã đổi ⇒ **vân tay NÓI DỐI**, lượt chạy lại GĐ8 với cache dùng bản sai |
+| ⚠️ CÙNG HÌNH DẠNG | `_ln.wav` · `_af.wav` · `_nhac_warp.wav` — mỗi cái **một khoá**, ⛔ không ghi đè |
+
+### 4.4 Hai chỗ Viral tự ghi là CÒN NỢ — ⛔ đừng copy cái nợ
+
+| Chỗ | Nội dung | Ta làm gì |
+|---|---|---|
+| chú thích `:15221-15225` | **SAI**: `burn_phude` chỉ **ĐỌC** `CHE_BLUR_FIT_X`/`CHE_BAND_FIT`, ⛔ không ghi | ⛔ đừng thiết kế đường ngược ⛔ không tồn tại |
+| `.boxes.json` `:18699` | **HAI bộ sinh khác nghĩa ghi CHUNG một khoá**; họ tự ghi *"còn nợ, cần đổi CẤU TRÚC"* | ta tách **hai khoá** từ đầu — rẻ hơn nợ |
+
+⚠️ Cùng họ [[luat-thieu-ve-ngoai-le-nhan-theo-so-nguoi-doc]]: một chú thích sai trong
+mã nguồn tham chiếu **nằm chờ**, và bán kính của nó = số agent đọc nó.
+
+---
+
+## 5. MỘT LẦN ENCODE — thứ tự filter THẬT là 10 node, ⛔ không phải 4
+
+Hợp đồng đầy đủ (32 tham số, ⛔ không phải 25 như brief tôi giao — chính chú thích gốc
+thừa nhận số này tăng theo thời gian): `W3_MOT_LAN_ENCODE.md`.
+
+🔴 **Dòng tóm tắt `:7264` trong mã Viral ⛔ KHÔNG ĐỦ.** Nó ghi
+`[biến đổi hình] → [watermark] → [che+burn sub] → [setpts]` và chỉ đúng cho nhánh
+⛔ **không** có `co_khung`/`co_reframe`. Thứ tự thật, đọc từ `:7264-8425`:
+
+| # | Node | Neo | Bật khi |
+|---|---|---|---|
+| 0 | `format=yuv420p` (ép chuẩn màu khi hwaccel GPU bật) | `:7271-7275` | `_hw_vf` |
+| 1 | `extra_vf` (hflip/eq…) | `:7276-7277` | `extra_vf` |
+| 2 | watermark **ẢNH**: `scale=` + `overlay` | `:7278-7282` | `co_wm` |
+| 3 | lật toạ độ che theo x (**⛔ không chèn filter, chỉ tính lại số**) | `:7284-7292` | `mirror`/`hflip` |
+| 4 | **`blur_boxes` ô XOÁ — TRƯỚC mọi node che** | `:7304-7315` | `blur_boxes` |
+| 5 | che chữ (`blur_band`/`blur_segs`) **+** `subtitles=` burn phụ đề | `:7320-8202` | `co_blur`; `vi_srt and not _sub_sau_khung` |
+| 6 | `khung_filter_parts`: logo / ô xoá còn lại / banner | `:8244-8262` | `co_khung` |
+| **7** | **`setpts` tốc độ** — đơn hoặc piecewise `_emit_speed` | `:8210-8267` | `co_speed`/`_has_warp` |
+| **8** | **reframe tỉ lệ**: nền mờ + `overlay` giữa khung | `:8276-8360` | `co_reframe` |
+| **9** | **`text_wm` watermark CHỮ** | `:8370-8375` | `co_text_wm` |
+| — | (nhánh audio, ⛔ không cùng chuỗi) `atempo` → `amix` nhạc nền → `alimiter` | `:8376-8425` | — |
+
+### 🔑 Điều này SỬA cách B16 phát biểu nguyên tắc trục
+
+B16 viết *"trục thời gian và cả hai trục khung đổi CUỐI CÙNG"*. Đúng, nhưng thiếu
+**thứ tự giữa chúng**, và thứ tự ấy là bắt buộc:
+
+> ⭐ **trục THỜI GIAN (node 7) trước trục KHUNG (node 8-9).**
+
+Lý do nguyên văn của họ (`:6846-6852`, `:8208`): node che/overlay nối **TRƯỚC**
+`setpts`, nên `t` mà ffmpeg dùng để đánh giá `enable=between(t,a,b)` **vẫn là timeline
+GỐC** — đúng nguyên tắc *"bake mốc GỐC"*. Đặt `setpts` sớm hơn thì **mọi** mốc che và
+mốc phụ đề lệch, và ⛔ **không** phép kiểm nào của ta hiện bắt được (ảnh vẫn ra, chữ vẫn
+có, chỉ **sai chỗ**).
+
+### Hai luật cứng nữa, đều đã trả giá bằng bug thật
+
+| Luật | Neo | Bằng chứng của họ |
+|---|---|---|
+| **XOÁ trước, CHE sau** (node 4 trước node 5) | `:7293-7303` | chốt 04/09: che chạy trước làm watermark **bị chép xuống bản sao**, đo thật `y≈500 → y≈620` |
+| **phụ đề / text_wm vẽ SAU reframe** | `:7103-7146`, `:8198`, `:8257` | reframe sau burn ⇒ cỡ chữ tính theo `W,H` **GỐC** rồi bị co theo hệ số reframe ⇒ chữ nhỏ đi. Có hàm bù `_wh_bu_reframe` (`:7109`) cho nhánh ⛔ không hoãn được |
+
+### Ba câu trả lời cho *"gộp `render` + `image_finish`"*
+
+| Câu | Trả lời (W3, đọc trực tiếp) |
+|---|---|
+| Cắt cuối nằm trong hàm? | **Có**, nhưng là trần `-t` **toàn cục**, ⛔ không phải node filter ⇒ ⛔ **không** áp thẳng được cho `ke_cat.py` của ta (ta cắt **nhiều đoạn rời**) |
+| Kiểm lộ chữ sau render? | `_kiem_lo_sau_render` gọi ở **dòng áp chót**, SAU khi ffmpeg thành công. 🔴 Nhưng **giá trị trả về bị bỏ qua** và nó **mặc định TẮT** (`CHE_RESIDUAL_CHECK=0`) ⇒ ⛔ đừng tính nó là một cổng |
+| Hợp đồng trả về? | `bool`; caller đọc **trực tiếp** làm điều kiện rẽ (`if burn_phude(...)`, `ok_lt = burn_phude(...)`) |
+
+### ⚠️ `VC_WARP_MAX_DOAN` — brief tôi giao đã SAI, ghi lại cho đúng
+
+Nó **⛔ không thuộc `burn_phude`**. Nó sống trong `_ghep_track_khop` (`:8965-9835`, nhánh
+**audio**), mặc định hiện hành **1200** (`:9451`), ⛔ không phải 150. Con số `400→150` ở
+`:9289` là **chú thích lịch sử**. Ai thiết kế theo 150 sẽ chặn ở 1/8 độ phủ thật.
+
+---
+
+## 6. CHUỖI MỚI — 9 giai đoạn, và vì sao ⛔ không phải 8 như B16
+
+B16 khai 8. W2 §2.2 buộc tách `vung_che` làm hai ⇒ **9**.
+
+🔑 **Máy DAG đã sẵn, ⛔ không phải viết mới**: `pipeline.ke_tiep()` đã trả về **list**, và
+`TIMING_ALIGN` đã khai `sau=(VOICE_SYNTHESIS, AUDIO_PREPARE)` — **hai** tiền nhiệm.
+⇒ Chuỗi hiện hành thẳng **vì lời khai `sau=`**, ⛔ không vì giới hạn công cụ.
+
+```
+1 media_prepare ─┬─> 2 gpu_asr ──────┬─> 4 content_process ─> 6 voice_synthesis ─> 7 timing_align ─┐
+                 │                   │                                                            │
+                 └─> 3 vung_che_tinh ─┴─> 5 vung_che_bam ──────────────────────────────────────────┴─> 8 render_mot_lan ─> 9 qc
+                     (🔀 song song 2)
+```
+
+| # | Giai đoạn | `sau=` | Gộp từ | Neo Viral |
+|---|---|---|---|---|
+| 1 | `media_prepare` | — | + settings dẫn xuất, + **cắt đầu**, + 4 khoá cache | `15039-15236`, `15732`, `15943/15983/16068/16111` |
+| 2 | `gpu_asr` | `(1,)` | 🔑 **`audio_prepare` + `transcribe` MỘT job GPU** | `15611`, `15710` (luồng) + `16381-18110` (ASR) |
+| 3 | `vung_che_tinh` | `(1,)` | mới — chỉ đọc **video** | `15880` → `18289` |
+| 4 | `content_process` | `(2,)` | như cũ, **neo bằng settings GĐ1** | `16990`, `17631`, `17940` |
+| 5 | `vung_che_bam` | `(2, 3)` | mới — đọc `hop_ocr.json` | `18204-18914`, `18230-18238` |
+| 6 | `voice_synthesis` | `(4,)` | **giữ nguyên của ta** (TTS của ta) | — |
+| 7 | `timing_align` | `(6, 2)` | bậc thang nắn + `phu_de_canh_giong.srt` | `9018-9022`, `9043-9050`, `20327` |
+| 8 | `render_mot_lan` | `(5, 7)` | 🔑 **`compose`+`render`+`image_finish`** → MỘT encode | `6560-8425` (10 node §5) |
+| 9 | `qc` | `(8,)` | `qc`+`qc_do_luong`+`qc_ai` → **một bước + module gọi được** | — |
+
+**Bỏ hẳn**: `edit_plan` (đã luôn trả kế hoạch rỗng từ 28/09 — bỏ khai, ⛔ không bỏ mã).
+
+### Bảng việc — mỗi làn MỘT worktree, MỘT nhánh, ⛔ không hai làn sửa cùng tệp
+
+| Làn | Việc | Tệp (chủ duy nhất) | Model | Chặn bởi |
+|---|---|---|---|---|
+| **P0-a** | `settings` dẫn xuất `wps_giong` + bảng đã đo + `min()` một chiều | `apps/auto_scan_video/cai_dat.py`, `ho_so_dich.py` | sonnet | — |
+| **P0-b** | Bỏ khai `edit_plan` khỏi `CHUOI`; hợp nhất 3 QC thành GĐ9 | `apps/auto_scan_video/pipeline.py` | sonnet | — |
+| **P0-c** | Dời **cắt đầu** vào `media_prepare` (trước ASR) | `apps/auto_scan_video/giai_doan_media.py`, `ke_cat.py` | sonnet | — |
+| **P1-a** | 🔑 Gộp demucs+whisper thành **một job GPU** `gpu_asr` | `apps/asv_gpu/jobs.py`, `manifest.py` | **opus** | P0-b |
+| **P1-b** | Tách `vung_che_tinh` / `vung_che_bam`, khai `sau=` | `apps/auto_scan_video/vung_che*.py` (mới) | **opus** | P0-b |
+| **P2** | 🔑 **MỘT encode**: 10 node đúng thứ tự §5, cắt cuối bằng `-t` trong đó | `apps/auto_scan_video/che_do_render.py` | **opus** | P1-a, P1-b |
+| **P3** | `phu_de_canh_giong.srt` khoá riêng + `outputs["phu_de_da_dung"]` | `apps/auto_scan_video/giai_doan_thoi_gian.py` | sonnet | P0-a |
+| **P4** | Chế độ chạy lẻ `chi_asr`/`chi_dich`/`chi_dub` (cổng, ⛔ không chuỗi riêng) | `tools/asv_chay_tai_cho.py` | sonnet | P1-a |
+
+🔴 **Đã đo (28/09)**: mọi chỗ của ta truyền filtergraph bằng `-filter_complex` **trên
+DÒNG LỆNH** (`am_master.py:537,752,1033,1081`), ⛔ không qua `-filter_complex_script`.
+⇒ Gộp 10 node vào một lượt **làm dài chuỗi ấy**, và trần 32.767 ký tự của Windows là
+trần **thật**, ⛔ không phải trần giả thiết. Thuốc rẻ: `-filter_complex_script <tệp>`.
+⛔ Đừng để P2 phát hiện điều này lúc ffmpeg đã báo lỗi khó đọc.
+
+⚠️ **`[ĐỌC TRƯỚC]` cho P2**: W3 chỉ đọc **17%** thân `burn_phude`. Vùng
+`:6670-7263` (dựng dải che chi tiết) và thân `khung_filter_parts` / `text_wm_parts` /
+`_srt_to_ass_pos` **chưa ai đọc nguyên văn**. Agent làm P2 phải đọc vùng đó **trước**,
+⛔ không dựa vào §5 của tệp này.
+
+---
+
+## 7. ❓ CHƯA BIẾT — và phép đo để biết (⛔ đừng đoán, ⛔ đừng bỏ qua)
+
+| Câu hỏi | Phép đo | Chặn việc nào |
+|---|---|---|
+| demucs + whisper cùng card: VRAM đỉnh và **RSS đỉnh**? | một lượt `gpu_asr` thử, ghi cả hai cột | P1-a |
+| Một encode 10 node có vượt **trần dòng lệnh Windows** (32.767 ký tự)? | dựng `fc` **khô**, đếm ký tự, ⛔ chưa chạy ffmpeg | P2 |
+| Có vượt trần **N=99 `if()` lồng** của ffmpeg (⇒ chunk ≤60)? | đếm số dải che động sau `vung_che_bam` | P2 |
+| Ba nhánh song song có vượt `tai_nguyen_suat` máy A? | `tai_may.py` trước/sau một lượt thật | P1-b |
+| `gop_khe` có lệch phụ đề thật ⛔ không, lệch bao nhiêu ms? | so `.vi.srt` với `.dubsync.vi.srt` theo từng cue | P3 |
+| Đại lượng onset trong `_ghep_track_khop` là gì? | đọc `localize.py:9600-9790` nguyên văn | P3 |
+
+⭐ **Phép đo cuối cùng, MỘT lượt** (theo đúng chốt của chủ dự án: *"những gì viral đã
+đo rồi thì ta dùng, ⛔ không đo lại; về cuối đo một lượt luôn"*): `T1a-ter` trên worker
+thật + kiểm frame. Mọi con số Viral đã đo (bảng wps, `MAXSLOW`, 1.25/1.40, chunk ≤60,
+`DUB_TRIM_SIL`) ta **dùng lại**, ⛔ không đo lại.

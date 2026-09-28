@@ -12,6 +12,78 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-28 (tối) — B17: trích NGUYÊN VĂN mã Viral, và một CHẶN KIẾN TRÚC lộ ra
+
+Chủ dự án chốt: *"Thứ tự quy trình các bước ta nên điều chỉnh như viral triển khai,
+⛔ không nên tự suy diễn / Plan có quy trình tham chiếu code viral rõ ràng ⛔ không bỏ
+sót cổng gọi kết nối nào"*.
+
+### Vì sao phải trích lại: V6 chỉ đọc ~3% `localize.py`
+
+B14/V6 so **hình dạng** 33 bước — đủ để quyết *"theo Viral"*, ⛔ **không đủ** để thi
+công. Ba làn trích nguyên văn, tổng **1.244 dòng tham chiếu** trong
+`docs/auto_scan_video_final/B17_THAM_CHIEU_VIRAL/`:
+
+| Làn | Tệp | Độ phủ tự khai |
+|---|---|---|
+| W1 | `W1_CHUOI_GOI.md` (492 dòng) | **150/150** câu lệnh cấp 1 của `chay()` = 100% |
+| W2 | `W2_CONG_KET_NOI.md` (410 dòng) | 12 side-channel trong `localize.py`; 401 ENV **đọc** / **15 ghi** |
+| W3 | `W3_MOT_LAN_ENCODE.md` (342 dòng) | ~340/1.973 dòng thân `burn_phude` ≈ **17%** |
+
+⭐ Cả ba **tự khai phần CHƯA đọc**. Plan `B17_PLAN_TRIEN_KHAI_THEO_VIRAL.md` đánh
+`[ĐỌC TRƯỚC]` lên việc nào chạm vùng đó.
+
+### 🔴 Phát hiện gánh cả plan: `gpu_lease` chặn việc copy hai luồng nền
+
+Viral khởi **bốn** việc dài trước ASR rồi `join` ở phút cuối (chồng lấn 2.400–4.867
+dòng). Nhưng: Viral ⛔ **không có khoá GPU nào** — demucs chạy `cuda` **song song**
+whisper **trên cùng card**. Ta thì `platform_core/gpu_lease.py:293-300`:
+`UNIQUE(host, gpu_uuid)` + `exclusive=True` = **một job chiếm TRỌN card**, và máy A có
+**một** 5060 Ti.
+
+⇒ Copy nguyên dạng cho một chuỗi **trông song song mà chạy tuần tự** (job thứ hai
+⛔ không bao giờ giành được lease), và ⛔ **không phép đo nào của ta hiện bắt được**.
+**Quyết**: hai luồng demucs vào **CÙNG MỘT job GPU với ASR** — đúng hình dạng Viral, và
+đúng điều `apps/asv_gpu/jobs.py:3` đã khai từ trước. ⛔ **KHÔNG** đổi `gpu_lease` sang
+chia-theo-VRAM (nó phục vụ lưu lượng thật).
+
+### Ba đường chạy NGƯỢC chuỗi — W2 tìm ra, một cái sửa B16
+
+1. **`DUB_WPS`**: bản **dịch** (GĐ5) cần tốc đọc của **giọng** (GĐ6) ⇒ chu trình trong
+   DAG. Viral giải bằng **bảng đã đo** tra từ `settings.voice` ⇒ ở ta là `settings`
+   **dẫn xuất** tính ở GĐ1. Copy cả `min()` **một chiều** (*"CHỈ SIẾT, KHÔNG NỚI"*).
+2. **`_ocr_boxes`**: B16 khai `vung_che ∥ transcribe` — **SAI**. Nhánh bám-hộp đọc hộp
+   OCR của `transcribe`; thiếu thì net an toàn chống lộ chữ **tắt IM LẶNG** ⇒ chữ Trung
+   lộ trên bản giao, log báo `✔ Xong`. ⇒ **9 giai đoạn**, ⛔ không 8: tách
+   `vung_che_tinh` (∥ được) / `vung_che_bam` (⛔ không).
+3. **`.dubsync.vi.srt`**: GĐ7 sinh thứ đóng **cùng vai** artifact GĐ5. Ghi đè khoá GĐ5
+   ⇒ **vân tay nói dối**. Mỗi bên một khoá.
+
+### Thứ tự filter thật là 10 node, ⛔ không 4 — và nó sửa cách B16 phát biểu
+
+Dòng tóm tắt `localize.py:7264` chỉ đúng khi ⛔ không có `co_khung`/`co_reframe`. Thật:
+`format` → `extra_vf` → wm ảnh → lật toạ độ → **ô XOÁ** → che+burn sub → khung →
+**`setpts`** → **reframe** → **`text_wm`**.
+
+⇒ B16 viết *"trục thời gian và cả hai trục khung đổi cuối cùng"* là đúng nhưng thiếu
+thứ tự **giữa** chúng: ⭐ **trục THỜI GIAN trước trục KHUNG**. Lý do nguyên văn của họ
+(`:6846-6852`): node che nối **trước** `setpts` nên `enable=between(t,…)` đánh giá trên
+**timeline GỐC**.
+
+### Ba đính chính brief của chính tôi
+
+| Tôi giao | Thật |
+|---|---|
+| `burn_phude` 25 tham số | **32** (chú thích gốc thừa nhận số này tăng dần) |
+| `VC_WARP_MAX_DOAN` = 150, trong `burn_phude` | **1200**, và nó ở `_ghep_track_khop` (nhánh **audio**). `400→150` là chú thích **lịch sử** |
+| `setpts` áp cuối cùng | `setpts` là node **7/10**; reframe + `text_wm` sau nó |
+
+### Hai con số đo được, ghi để ⛔ không ai đo lại
+
+- `pre-commit run --all-files` = **9 giây, CPU nhẹ** ⇒ nhóm **Vừa** (`QUY_TAC_CHAY_LENH_NANG.md` §1), ⛔ không cần khoá.
+- Ta truyền filtergraph bằng `-filter_complex` **trên DÒNG LỆNH** (`am_master.py:537,752,1033,1081`)
+  ⇒ trần **32.767 ký tự** của Windows là trần **thật** khi gộp 10 node. Thuốc: `-filter_complex_script`.
+
 ## 2026-09-28 (khuya) — Gate phát hành: 4 bước đỏ, và hai ĐÍNH CHÍNH của chính tôi
 
 Chủ dự án chốt: *"Triển khai theo quy trình gate rồi deploy"* → *"Nếu của ta xanh hết
