@@ -78,6 +78,43 @@ _KHONG_CHEP = frozenset({"stage", "khoa_asset", "khoa_chung", "tu_cache",
 
 _KIEU_NOI_DUNG = {"audio": "audio/wav", "json": "application/json"}
 
+#: B13 B5 phu (29/09) — CUA HEP, co TEN: mot ban chep co HO LON (CUA B cua
+#: `ban_ghi.do_phu_song`) thi KHONG duoc dung lai qua cache chung cho run
+#: khac. Duong dan khoa trong `outputs` — CHI TRANSCRIBE dat khoa nay
+#: (`giai_doan_chep_loi.chay()` -> `tom_tat["phu_song_kiem"]["canh_bao_lo_hong"]`).
+_DUONG_KHOA_CANH_BAO_HO = ("phu_song_kiem", "canh_bao_lo_hong")
+
+
+def _ho_lon_khong_dung_lai(outputs: dict) -> bool:
+    """Ban chep trong `outputs` co HO LON (CUA B), nen KHONG duoc dung lai
+    qua cache chung cho mot run khac.
+
+    🔑 **HEP theo THIET KE**: chi doc DUONG DAN khoa ma `transcribe` tu dat
+       (`phu_song_kiem.canh_bao_lo_hong`). `audio_prepare` — giai doan CHUNG
+       DUY NHAT con lai — KHONG co khoa nay trong `outputs`, nen ham nay tra
+       ve `False` cho no va hanh vi cache cua no KHONG DOI mot chut nao. ⛔
+       KHONG viet mot luat "stage nao canh bao thi khong cache" chung chung —
+       do se am tham doi hanh vi cua giai doan KHAC ma khong ai do.
+
+    ⛔ **CHI chan DOC, khong chan GHI**: `promote_va_ghi` (`thi_hanh.py`) van
+       chay binh thuong — ban chep HO LON van la ket qua THAT cua run do va
+       van duoc luu. Ham nay chi lam `lay()` ben duoi BO QUA no khi tim ban
+       de DUNG LAI cho run khac.
+
+       Chon vay vi no la vieu AN TOAN va DAO NGUOC DUOC: ban cut van nam
+       trong kho, chi khong ai dung lai; sua duoc thuat toan sau nay thi no
+       tu het hai. Chan GHI thi manh hon nhung KHONG cuu duoc cac ban da
+       luu tu truoc — ma `whisperx_runner.CHUNK_SIZE` (B5) +
+       `giai_doan_chep_loi.PHIEN_BAN_MA` (4->5) da vo hieu chung roi (van
+       tay doi), nen chan DOC la du va la ⛔ KHONG "siet them cho chac".
+    """
+    hop: object = outputs
+    for khoa in _DUONG_KHOA_CANH_BAO_HO:
+        if not isinstance(hop, dict):
+            return False
+        hop = hop.get(khoa)
+    return bool(hop)
+
 
 def _checksum_tieng_asr(db, run) -> str:
     """Checksum cua DUNG ban tieng `transcribe` se doc, lay tu `AsvAsset`.
@@ -196,6 +233,10 @@ def lay(db, kho: Storage, *, run, ten: str, khoa_chung: str) -> dict | None:
     for gd in ung_vien:
         ra = gd.outputs or {}
         if ra.get("khoa_chung") != khoa_chung:
+            continue
+        if _ho_lon_khong_dung_lai(ra):
+            # B13 B5 phu: ban chep nay co HO LON (CUA B) — bo qua, ⛔ khong
+            # dung lai cho run nay. Xem docstring `_ho_lon_khong_dung_lai`.
             continue
         hang = _artifact_song(db, kho, owner_id=run.owner_id, run_id=gd.run_id,
                               khoa_asset=[str(k) for k in ra.get("khoa_asset") or []])
