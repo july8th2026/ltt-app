@@ -60,7 +60,13 @@ MODEL_ASR = "large-v3"
 #:   xem `ban_ghi.nghi_ao_giac`/`danh_dau_nghi_ao_giac`) — thay doi TAP HOP
 #:   doan duoc gan co `nghi_ao_giac` trong `ban` cho CUNG mot dau vao, nen
 #:   cache cu (van_tay cu) se AN nhung doan ao giac moi ma khong tang so nay.
-PHIEN_BAN_MA = 4
+#: 5 (29/09, B13 B5): `whisperx_runner.CHUNK_SIZE` 30 -> 10 (mac dinh goi ->
+#:   muon tu Viral, CHON bang do that tren toan phim cua ta — xem docstring
+#:   dau `whisperx_runner.py`). Doi HAN THAN ban chep: hoi 65..98s tu TRONG
+#:   thanh 12 cau THAT co dau cau, `phu_song` gan nhu khong doi (0,7692 ->
+#:   0,7651) nhung lo lon nhat giam 32,49 -> 11,20 s. Khong tang so nay thi
+#:   cache cu (van_tay theo `phien_ban_ma` cu) tra ve dung ban chep CUT.
+PHIEN_BAN_MA = 5
 
 
 class ThieuBanTieng(ThieuNguon):

@@ -398,8 +398,34 @@ def _transcribe_faster(media_path: str, *, language: str, model_name: str,
         words = [{"start": float(word.start), "end": float(word.end),
                   "text": str(word.word).strip()} for word in (segment.words or [])
                  if word.start is not None and word.end is not None and str(word.word).strip()]
+        # 🔑 **Mang ra ba con số `faster_whisper` đã tính sẵn cho TỪNG đoạn, mà
+        #    bản trước VỨT.** Trên đường non-batched này (⛔ khác `whisperx` đi
+        #    batched — xem `whisperx/asr.py::generate_segment_batched`, nơi ba
+        #    cái này KHÔNG được đọc lại), chúng THẬT SỰ ảnh hưởng quyết định
+        #    "đoạn này có được nhả ra không": `no_speech_prob` cao +
+        #    `avg_logprob` thấp + `compression_ratio` cao là chữ ký của một
+        #    đoạn hỏng — và đó là số **chính model tự khai**, không phải suy
+        #    đoán của ta (cùng họ "đối chiếu đầu vào" như `initial_prompt`).
+        #    Tên khoá ghi rõ nguồn `_engine_khai`: đây là lời khai của model,
+        #    ⛔ không phải phán quyết của ta.
+        #
+        # ⚠️ `getattr(..., None)` + chỉ thêm khoá khi KHÔNG `None`: một `Segment`
+        #    THẬT của `faster_whisper` luôn có ba trường này (dataclass, không
+        #    `Optional`), nhưng một đối tượng giả trong test (`_DoanGia`) có
+        #    thể không khai — và vắng khoá phải đọc được là "engine này KHÔNG
+        #    đo", ⛔ không phải `0.0` ("engine đo và nói CHẮC CÓ tiếng"). Gộp
+        #    hai nghĩa đó vào một giá trị là đúng bẫy đã ghi sổ.
+        khai_them = {}
+        for ten_khoa, ten_thuoc_tinh in (
+                ("no_speech_prob_engine_khai", "no_speech_prob"),
+                ("avg_logprob_engine_khai", "avg_logprob"),
+                ("compression_ratio_engine_khai", "compression_ratio")):
+            gt = getattr(segment, ten_thuoc_tinh, None)
+            if gt is not None:
+                khai_them[ten_khoa] = float(gt)
         out.append({"start": float(segment.start), "end": float(segment.end),
-                    "text": str(segment.text).strip(), "words": words})
+                    "text": str(segment.text).strip(), "words": words,
+                    **khai_them})
         if on_progress:
             on_progress(min(86, 12 + index), "đang chép lời")
     ngon_ra = str(getattr(info, "language", language or ""))

@@ -429,6 +429,55 @@ def danh_dau_nghi_ao_giac(ban: dict) -> int:
     return dem
 
 
+#: B13 B1 phu (dieu phoi 29/09) — nguong AO GIAC CHIEU NGUOC, MUON NGUYEN VAN
+#: tu `D:\Viral\resources\app-src\localize.py:620-622` (kho DOC, ⛔ khong sua).
+#: Ho do: mot doan DAI ma QUA IT ky tu — dau kia cua truc voi
+#: `NGUONG_KY_TU_MOI_GIAY` o tren (qua NHIEU ky tu/giay).
+#:
+#: 🔴 **CHUA hieu chinh tren du lieu cua ta — ba con so nay la NGUYEN VAN cua
+#:    Viral, ⛔ khong phai so ta do lai** (luat kho: muon nguong thi phai do
+#:    lai; o day CHAP NHAN duoc vi day chi la mot BO DEM, xem
+#:    `dem_qua_it_ky_tu_dai`, ⛔ khong phai mot bo loc/hanh dong).
+NGUONG_VIRAL_DAI_S = 6.0
+NGUONG_VIRAL_KY_TU_TOI_DA = 10
+NGUONG_VIRAL_TY_LE_KY_TU_MOI_GIAY = 0.6
+
+
+def _viral_qua_it_ky_tu_dai(doan: dict) -> bool:
+    """Cong thuc NGUYEN VAN muon tu Viral — xem doc o `NGUONG_VIRAL_*`."""
+    dai = float(doan.get("ket", 0)) - float(doan.get("bat", 0))
+    if dai < NGUONG_VIRAL_DAI_S:
+        return False
+    chu = "".join(str(doan.get("chu") or "").split())
+    if len(chu) > NGUONG_VIRAL_KY_TU_TOI_DA:
+        return False
+    return (len(chu) / max(dai, 0.1)) < NGUONG_VIRAL_TY_LE_KY_TU_MOI_GIAY
+
+
+def dem_qua_it_ky_tu_dai(ban: dict) -> dict:
+    """BO DEM (dieu phoi 29/09) — ⛔ KHONG phai bo loc: khong gan co, khong bo
+    doan nao, khong doi `ban`.
+
+    ⭐ **Vi sao dem thay vi loc, va vi sao khong bo hoctoan**: `n = 1` (mot
+       luot da do) ⛔ khong chung minh duoc "khong bao gio xay ra", nen bo hoc
+       la vut mot tin hieu Viral DA CHAY THAT va do duoc tren phim cua ho. Nhung
+       mot nhanh loc ⛔ CHUA TUNG chay tren du lieu cua ta cung la dung ke
+       "ma phong thu cho ca khong the xay ra" — kho da tra gia 4 ca. Dem la
+       duong o GIUA: bien mot dieu CHUA BIET thanh DU LIEU tren moi luot,
+       khong hanh dong gi cho toi khi co vai luot ma no keu THAT.
+
+    🔴 **Tra ve CA tu so LAN mau so** — mot `0` tran doc duoc thanh "chua do"
+       hoac "da do va sach", hai nghia khac han nhau (dung ho "hai trang thai
+       gop thanh mot gia tri"). `{"so_khop": 0, "so_doan_da_xet": 78}` chi doc
+       duoc DUNG MOT CACH: da xet 78 doan, khong doan nao khop — cung khuon
+       `do_vung.KetQua(vung=(), so_khung=N)`: mot lan quet THAT chay ma khong
+       thay gi tra ve RONG kem BANG CHUNG DA CHAY, ⛔ khong phai mot ngoai le.
+    """
+    doan = ban.get("doan") or []
+    so_khop = sum(1 for d in doan if _viral_qua_it_ky_tu_dai(d))
+    return {"so_khop": so_khop, "so_doan_da_xet": len(doan)}
+
+
 #: B13 B2 (28/09) — CUA A: ty le PHU SONG/THOI LUONG NGUON duoi nguong nay ⇒
 #: canh bao van hanh (⛔ khong chan luot).
 #:
@@ -492,6 +541,22 @@ def do_phu_song(ban: dict, *, thoi_luong: float) -> dict:
        nguoc lai mot phim THAT SU it loi co tong thap ma ⛔ khong ho nao —
        CUA A mot minh se keu oan cho ca hai truong hop nhu nhau. Ham nay tra
        ve con so cho CA HAI cua, ⛔ khong rut gon thanh mot co bool.
+
+    🔴 **B13 B5 (29/09) — BANG CHUNG THAT, khong con la ly le suong.** Va
+       ban chep `asvr_47327a869a8f4597960048f09064740` bang `chunk_size=10`
+       (xem `whisperx_runner.CHUNK_SIZE`) thay `30`:
+
+           ty_le_phu_song (CUA A):  0,7692 -> 0,7651   (GAN NHU KHONG DOI)
+           lo_hong_lon_nhat (CUA B): 32,49 -> 11,20 s   (giam **~3 LAN**)
+
+       Ban va nay CHUA duoc mot loi thoai that dai 29,99 giay (12 cau co dau
+       cau) — mot ban vien sua ro rang. Nhung `ty_le_phu_song` GAN NHU KHONG
+       DICH CHUYEN, vi 20+ giay cuu duoc chi la mot phan nho cua 275 giay
+       toan phim ⇒ **CUA A se KHONG BAO GIO phat hien duoc ban va nay**. Chi
+       CUA B (do TUNG lo hong rieng le, khong pha loang vao tong) thay duoc.
+       ⇒ do phu TONG la SAI dai luong cho cau hoi "co mat loi thoai khong" —
+       no chi la thu DE DO cho cai ta muon (bao nhieu loi thoai THAT duoc
+       chep), va hai dai luong RE nhau dung o truong hop nay.
 
     🔴 **CUA A dung HOP, ⛔ khong dung TONG — hai dai luong KHAC nghia:**
 
@@ -593,6 +658,11 @@ def tom_tat(ban: dict) -> dict:
         #    ⭐ Khac `so_doan_thieu_moc_tu`: cai kia la NGHI, cai nay la CHOT.
         "so_doan_nghi_ao_giac": sum(
             1 for d in doan if d.get("nghi_ao_giac")),
+        # 🔴 Dieu phoi 29/09: BO DEM (⛔ khong phai bo loc), nguong MUON tu
+        #    Viral CHUA hieu chinh — xem `dem_qua_it_ky_tu_dai`. Mang ca tu
+        #    so lan mau so de mot `so_khop: 0` doc duoc la "da xet
+        #    so_doan_da_xet doan, sach", khong phai "chua do".
+        "qua_it_ky_tu_dai_muon_viral": dem_qua_it_ky_tu_dai(ban),
         "ngon_ngu": ban.get("ngon_ngu", ""),
         "engine": ban.get("engine", ""),
         "canh_chinh": ban.get("canh_chinh", ""),
