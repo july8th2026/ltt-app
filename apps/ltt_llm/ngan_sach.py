@@ -574,8 +574,40 @@ BYTE_MOI_TOKEN_JSON = 16.0
 #:    con số của cả cửa `/api/v1`, và một request `ltt-3.5` hợp lệ ở trần công
 #:    bố của NÓ phải lọt qua. Lấy theo model mặc định (hẹp hơn) là dựng lại
 #:    đúng lỗi "hai trần không biết nhau" cho model kia.
+#: Phần thân dành cho **ẢNH**, byte trên dây (đã nở base64).
+#:
+#: 🔴 VÌ SAO HẰNG TRÊN MỘT MÌNH LÀ MỘT LỜI HỨA HỎNG (đo 28/09/2026).
+#:    Chú thích của `BYTE_MOI_TOKEN_JSON` tự thừa nhận *"⛔ VẪN CHƯA TÍNH ẢNH"*
+#:    và đẩy việc đó sang `platform_core/public_api/config.py`. Nhưng ở đó
+#:    **không có** số hạng nào cho ảnh — trần 4 MiB chỉ là 4 MiB. Hệ quả tính
+#:    được:
+#:
+#:        sàn chữ                         2.424.832 B  (2,31 MiB)
+#:        trần thân đang chạy             4.194.304 B  (4,00 MiB)
+#:        ⇒ chỗ còn cho ảnh               1.769.472 B  (1,69 MiB base64)
+#:        ⇒ tức 1,27 MiB byte ảnh THÔ    = VỪA ĐÚNG MỘT ảnh cỡ tối đa của client
+#:
+#:    Và `ANH_BYTE_TOI_DA` = 12 MiB/ảnh ta **đang công bố** ra `/api/v1/models`
+#:    nở thành 16 MiB base64 — gấp **4×** cả trần thân. Một con số công bố mà
+#:    không request nào có thể đạt tới là một lời hứa hỏng, không phải một trần.
+#:
+#: ⭐ SỐ HẠNG NÀY LÀ HỆ QUẢ CỦA `ANH_BYTE_TOI_DA` — không phải một số thứ hai.
+#:    Đó là toàn bộ điểm: con số ta **công bố** cho mỗi ảnh nay **buộc** vào trần
+#:    thân, nên nó không thể lại thành một lời hứa không thực hiện được.
+#:
+#:    base64 nở đúng **4/3** — phép nhân chính xác, không phải ước, nên số hạng
+#:    này không cần biên. Biên an toàn nằm hết ở `BYTE_MOI_TOKEN_JSON` (đã có
+#:    1,23× trên sàn đo 12,97 B/token).
+#:
+#: ⚠️ Sàn này chỉ bảo đảm **MỘT** ảnh cỡ tối đa cùng một hội thoại kín cửa sổ.
+#:    Chỗ cho **nhiều** ảnh đến từ khoảng cách giữa sàn này và trần thật
+#:    (`DEFAULT_MAX_BODY_BYTES`), không đến từ sàn. Nói thẳng ra để không ai đọc
+#:    sàn thành lời hứa về số lượng.
+BODY_BYTES_ANH_TOI_THIEU = (ANH_BYTE_TOI_DA * 4 + 2) // 3
+
 BODY_BYTES_TOI_THIEU = int(
-    max(cong_bo_cua(m) for m in CUA_SO_THEO_MODEL) * BYTE_MOI_TOKEN_JSON)
+    max(cong_bo_cua(m) for m in CUA_SO_THEO_MODEL) * BYTE_MOI_TOKEN_JSON
+) + BODY_BYTES_ANH_TOI_THIEU
 
 
 #: Ngưỡng client **phải nén** hội thoại, tính từ cửa sổ công bố.

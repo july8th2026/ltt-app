@@ -63,8 +63,11 @@ def _cac_loi_b():
     from tests.test_1701_gateway_error_envelope import _anh
     from tests.test_250_llm_gateway import FakeUpstream, _cfg, _client, _tt_ban
 
-    def _anh_qua_so():
-        return _goi_b(_client(_cfg(max_images=0))[0], **_anh())
+    def _anh_qua_lon():
+        # 28/09: doi tu `max_images=0` (tran dem, DA GO theo C4) sang tran BYTE.
+        # Chu de o day la "moi loi duong model cua B giu nguyen status day", nen
+        # mot loi anh bat ky la du.
+        return _goi_b(_client(_cfg(max_image_bytes=1))[0], **_anh())
 
     def _model_la():
         return _goi_b(_client()[0], model="khong-co")
@@ -90,7 +93,7 @@ def _cac_loi_b():
         return lambda: _goi_b(_client(up=FakeUpstream(ma=ma, than=b"x"))[0])
 
     return (
-        ("anh", 413, _anh_qua_so),
+        ("anh", 413, _anh_qua_lon),
         ("model", 404, _model_la),
         ("auth", 401, _sai_token),
         ("cong_day", 429, _cong_day),

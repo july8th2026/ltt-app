@@ -71,10 +71,13 @@ model đang nạp, năm loại nội dung:
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import re
 from dataclasses import dataclass, replace
 from typing import Any
 
+from . import anh_token as AT
 from . import uoc_token as UT
 from .error_contract import make_error
 
@@ -133,6 +136,13 @@ class KetQuaDo:
     so_anh: int
     token_anh: int
     byte_anh_lon_nhat: int
+    #: `token_anh` có được tính bằng ĐO kích thước thật, hay rơi về hằng phẳng cũ?
+    #:
+    #: ⭐ `False` KHÁC `so_anh == 0`. Cùng bài học với `token_that = None` ở dưới:
+    #:    không phân biệt được "không đo được" với "không có ảnh" thì một lần
+    #:    không đo được trông y hệt một lượt chỉ có chữ — và một lượt chỉ có chữ
+    #:    thì vừa mọi trần, tức lỗi nghiêng về chiều nguy hiểm.
+    anh_do_duoc: bool = True
     #: URL ảnh KHÔNG phải `data:` — mỗi cái là một đường SSRF tiềm năng.
     url_tu_xa: tuple = ()
     #: Mọi đoạn văn bản đã gom, để `kiem_tra` đếm **thật** khi cần.
@@ -164,6 +174,59 @@ class KetQuaDo:
         return self.token_van_ban + self.token_anh
 
 
+#: Bao nhiêu ký tự base64 cần giải để đọc được HEADER ảnh.
+#:
+#: JPEG là ca xấu nhất: `kich_thuoc` phải duyệt marker, và một khối EXIF APP1 có
+#: thể đẩy `SOF0` ra xa. 64 KiB phủ mọi EXIF thực tế (trường APP1 tối đa 65.533
+#: byte) mà vẫn chỉ là **một phần nghìn** của một ảnh 12 MiB.
+#: ⛔ Không giải cả ảnh: hàm này chạy trên đường nóng của mọi lượt có ảnh.
+_BYTE_HEADER_ANH = 64 * 1024
+_KY_TU_HEADER_ANH = (_BYTE_HEADER_ANH // 3 + 1) * 4
+
+
+def _kich_thuoc_anh(url: str) -> "tuple[int, int] | None":
+    """`(rộng, cao)` của một ảnh `data:` URL, đọc từ HEADER. `None` = không đọc được.
+
+    ⭐ Chỉ giải `_KY_TU_HEADER_ANH` ký tự base64 đầu — đủ cho header của cả năm
+       định dạng, **không** giải cả ảnh.
+    """
+    if not _DATA_URL.match(url or ""):
+        return None
+    phan = (url or "").split(",", 1)
+    if len(phan) != 2:
+        return None
+    dau = phan[1][:_KY_TU_HEADER_ANH]
+    dau = dau[:len(dau) - len(dau) % 4]          # base64 giải theo khối 4
+    if not dau:
+        return None
+    try:
+        du_lieu = base64.b64decode(dau, validate=False)
+    except (ValueError, binascii.Error):
+        return None
+    return AT.kich_thuoc(du_lieu)
+
+
+def _token_mot_anh(url: str, *, toi_thieu: int, toi_da: int) -> int:
+    """Token ngữ cảnh của MỘT ảnh.
+
+    ⛔ KHÔNG ĐỌC ĐƯỢC KÍCH THƯỚC ⇒ TÍNH BẰNG `toi_da`, KHÔNG bằng một hằng "an
+       toàn" nào khác. Đây là chỗ duy nhất trong phép tính này có thể đoán, nên
+       nó phải đoán về **cận trên thật của engine**:
+
+       * hằng cũ `TOKEN_GIU_MOI_ANH = 2.048` KHÔNG phải cận trên — đo 28/09:
+         một ảnh 2048×2048 ăn 4.098, tức 2× hằng ấy;
+       * mà 2048×2048 đúng bằng cỡ tối đa client LTTCODE gửi.
+
+       ⇒ Đoán bằng 2.048 là đoán THIẾU ở đúng ca phổ biến nhất. `toi_da` là số
+         engine tự kẹp, nên không ảnh nào vượt được nó.
+    """
+    kt = _kich_thuoc_anh(url)
+    if kt is None:
+        return toi_da + AT.TOKEN_DAU_VISION
+    return AT.token_anh(kt[0], kt[1], toi_thieu=toi_thieu,
+                        toi_da=toi_da) + AT.TOKEN_DAU_VISION
+
+
 def _do_anh(url: str) -> int:
     """Byte thật của một ảnh `data:` URL. Trả 0 nếu là URL thường (không tải về).
 
@@ -181,8 +244,30 @@ def _do_anh(url: str) -> int:
     return (len(phan[1]) * 3) // 4
 
 
-def do_yeu_cau(body: dict[str, Any]) -> KetQuaDo:
+class ThieuTranAnhEngine(RuntimeError):
+    """Không biết `--image-min-tokens`/`--image-max-tokens` của engine ⇒ không tính được ảnh.
+
+    ⭐ FAIL-CLOSED CÓ PHẠM VI. Xảy ra khi `llama-swap.yaml` trên máy B chưa khai
+       hai cờ ấy (bản deploy cũ). Cổng **vẫn khởi động** và đường CHỮ **vẫn chạy**
+       — chỉ lượt có ảnh bị từ chối, với lý do đọc được.
+
+    ⛔ Đây là một quyết định về **kiểu hỏng**, xem `vat_ly.VatLy.token_anh_toi_thieu`:
+       ném lúc đọc yaml sẽ biến một lỗi của đường ẢNH thành sự cố toàn phần cho
+       cả khách chỉ gửi chữ.
+    """
+
+
+def do_yeu_cau(body: dict[str, Any], *,
+               token_anh_toi_thieu: "int | None" = None,
+               token_anh_toi_da: "int | None" = None) -> KetQuaDo:
     """Đo một body của bất kỳ giao thức nào trong ba giao thức cổng phục vụ.
+
+    ⭐ `token_anh_toi_thieu`/`token_anh_toi_da` là `--image-min-tokens` /
+       `--image-max-tokens` của **hồ sơ engine** lượt này đi vào, đọc từ
+       `vat_ly`. Vắng ⇒ không đo được ảnh ⇒ `token_anh` rơi về hằng cũ
+       `TOKEN_GIU_MOI_ANH` và `anh_do_duoc=False`; `kiem_tra` sẽ từ chối ảnh.
+       ⛔ Vắng KHÁC "không có ảnh": hai thứ đó phải phân biệt được, nếu không một
+          lần "không đo được" trông y hệt một lượt chỉ có chữ.
 
     ⭐ Gom văn bản bằng `uoc_token.gom_than` — CÙNG hàm máy A dùng (qua bản sao
        `platform_core/llm/uoc_token.py`): đi mọi chuỗi của mọi tin nhắn (cả
@@ -198,10 +283,26 @@ def do_yeu_cau(body: dict[str, Any]) -> KetQuaDo:
     # Ảnh nào KHÔNG mở đầu bằng `data:...;base64,` thì là một địa chỉ để ai đó đi
     # tải — và bên đi tải sẽ là máy B. Gom lại để `kiem_tra` từ chối.
     tu_xa = tuple(u for u in anh if u and not _DATA_URL.match(u))
+
+    # ── Ngân sách ảnh: Σ f(rộng, cao), KHÔNG phải `số ảnh × một hằng` ──────────
+    #
+    # 🔴 Hằng phẳng `TOKEN_GIU_MOI_ANH = 2.048` sai CẢ HAI CHIỀU (đo 28/09, 14/14
+    #    ô, cả hai model): thừa 25× ở ảnh 320×240 (82 token thật), và **thiếu 2×**
+    #    ở 2048×2048 (4.098 token thật) — vốn đúng bằng cỡ tối đa client gửi.
+    #    Thiếu là chiều `DatChoVuotPool` sinh ra để chặn, và chiều mà một lần
+    #    tràn `-kvu` giết MỌI slot (llama.cpp b10689).
+    do_duoc = token_anh_toi_thieu is not None and token_anh_toi_da is not None
+    if do_duoc:
+        tong_anh = sum(_token_mot_anh(u, toi_thieu=int(token_anh_toi_thieu),
+                                      toi_da=int(token_anh_toi_da)) for u in anh)
+    else:
+        tong_anh = len(anh) * TOKEN_GIU_MOI_ANH
+
     return KetQuaDo(
         token_van_ban=UT.uoc_doan(van_ban) + khuon,
         so_anh=len(anh),
-        token_anh=len(anh) * TOKEN_GIU_MOI_ANH,
+        token_anh=tong_anh,
+        anh_do_duoc=do_duoc,
         byte_anh_lon_nhat=byte_lon_nhat,
         url_tu_xa=tu_xa,
         van_ban=tuple(van_ban),
@@ -210,8 +311,10 @@ def do_yeu_cau(body: dict[str, Any]) -> KetQuaDo:
 
 
 def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: int,
-             max_images: int, max_image_bytes: int, max_context: int,
-             co_vision: bool, dem_that=None) -> KetQuaDo:
+             max_image_bytes: int, max_context: int,
+             co_vision: bool, dem_that=None,
+             token_anh_toi_thieu: "int | None" = None,
+             token_anh_toi_da: "int | None" = None) -> KetQuaDo:
     """Ném `VuotNganSach` nếu yêu cầu vượt bất kỳ trần nào. Không chạm GPU.
 
     `dem_that` — tuỳ chọn — là một hàm `(list[str]) -> int | None` đếm token
@@ -223,7 +326,8 @@ def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: 
        tuyệt đại đa số yêu cầu — không thêm một round-trip nào, và đó là điều
        kiện để thay đổi này không phải một cái giá trả mỗi lượt.
     """
-    do = do_yeu_cau(body)
+    do = do_yeu_cau(body, token_anh_toi_thieu=token_anh_toi_thieu,
+                    token_anh_toi_da=token_anh_toi_da)
 
     if do.so_anh and not co_vision:
         raise VuotNganSach(
@@ -231,10 +335,18 @@ def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: 
             "Ho so model nay khong nap vision. Goi model co vision thay vi model nay.",
             truong="images", tran=0, thay=do.so_anh)
 
-    if do.so_anh > max_images:
-        raise VuotNganSach("image_count_exceeded",
-                           "Qua nhieu anh trong mot yeu cau.",
-                           truong="images", tran=max_images, thay=do.so_anh)
+    # ⛔ ĐÃ GỠ `image_count_exceeded` theo `max_images` (28/09/2026, quyết định C4
+    #    của chủ dự án). Con số 4 không có phép đo nào đứng sau, và llama.cpp
+    #    KHÔNG có trần số ảnh — trần thật luôn là **ngữ cảnh**, và ngữ cảnh nay
+    #    được tính đúng ở `token_anh` (Σ f(rộng, cao)) rồi kẹp ở nhánh
+    #    `context_window_exceeded` phía dưới.
+    #
+    # ⚠️ RỦI RO TỒN DƯ ĐÃ NHẬN, ghi ra chứ không giấu: ngân sách KV **không** chặn
+    #    được "200 ảnh 64×64" — chỉ ~3.000 token KV nhưng là 200 lượt mã hoá
+    #    mmproj nối tiếp trên một `mtmd_context` DÙNG CHUNG cho mọi slot. Cờ whale
+    #    cũng không đỡ hộ (nó bật theo token, mà 3.000 token không phải whale).
+    #    Thuốc khi cần: đo độ trễ mã hoá một ảnh (Đ-4) rồi dựng trần theo ĐỘ TRỄ.
+    #    ⛔ Không dựng lại `max_images = 4` — xem §7.2 của kế hoạch.
 
     # 🔒 CHỈ NHẬN ẢNH `data:` — TỪ CHỐI MỌI URL TỪ XA.
     #
@@ -255,6 +367,25 @@ def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: 
     if do.byte_anh_lon_nhat > max_image_bytes:
         raise VuotNganSach("image_too_large", "Anh qua lon.", truong="image_bytes",
                            tran=max_image_bytes, thay=do.byte_anh_lon_nhat)
+
+    # ⭐ ĐỨNG SAU CẢ BA PHÉP TRÊN, VÀ THỨ TỰ LÀ MỘT QUYẾT ĐỊNH VỀ BẢO MẬT.
+    #
+    # 🔴 Bản đầu của bản vá này đặt phép dưới đây LÊN TRƯỚC phép chặn SSRF, và
+    #    `test_1701` bắt được ngay: một `image_url` trỏ vào `http://127.0.0.1:8188`
+    #    trả về "cấu hình engine thiếu cờ" thay vì `image_url_not_allowed`. Tức
+    #    một phép chặn BẢO MẬT bị che bởi một lỗi VẬN HÀNH của ta.
+    #
+    #    Hai hệ quả, cả hai đều xấu: khách không biết mình vừa làm sai điều gì, và
+    #    người trực đọc log thấy "thiếu cờ" trong khi thứ vừa xảy ra là một lượt
+    #    thăm dò SSRF. Phép chặn SSRF nay là lớp DUY NHẤT (llama-server đã thôi
+    #    từ chối URL http — xem `tests/test_373`), nên để nó bị che là không được.
+    #
+    # ⇒ Luật: khách nghe về lỗi CỦA KHÁCH trước; lỗi CỦA TA chỉ nói khi yêu cầu
+    #   đã hợp lệ về mọi mặt khách kiểm soát được.
+    if do.so_anh and not do.anh_do_duoc:
+        raise ThieuTranAnhEngine(
+            "ho so engine khong khai --image-min-tokens/--image-max-tokens nen "
+            "khong tinh duoc chi phi ngu canh cua anh")
 
     # `max_tokens` (Chat/Anthropic) và `max_output_tokens` (Responses) là cùng một thứ.
     xin_ra = body.get("max_tokens")

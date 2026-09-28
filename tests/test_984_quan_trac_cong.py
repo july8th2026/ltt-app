@@ -54,7 +54,7 @@ def _cfg(**doi) -> Config:
     goc = dict(
         upstream_url="http://127.0.0.1:8280", host="127.0.0.1", port=8299, token="",
         models_mo=("qwen38-api",), max_output_tokens=100,
-        max_images=1, max_image_bytes=1024, upstream_timeout_s=1.0,
+        max_image_bytes=1024, upstream_timeout_s=1.0,
         stream_timeout_s=1.0, ram_trong_toi_thieu_gb=1.0, trong_tai_bat=False,
         vram_sach_mb=1,
         nhip_tim_giay=0.0, nguon_vat_ly="test",

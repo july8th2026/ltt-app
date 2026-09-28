@@ -16,13 +16,12 @@ def _anh(url: str = "data:image/png;base64,QUJD") -> dict:
     ]}]}
 
 
-BASE = dict(max_input_tokens=10_000, max_output_tokens=100, max_images=4,
+BASE = dict(max_input_tokens=10_000, max_output_tokens=100,
             max_image_bytes=1024, max_context=20_000, co_vision=True)
 
 
 @pytest.mark.parametrize(("body", "overrides", "code", "field"), (
     (_anh(), {"co_vision": False}, "unsupported_modality", "images"),
-    (_anh(), {"max_images": 0}, "image_count_exceeded", "images"),
     (_anh("http://127.0.0.1/image.png"), {}, "image_url_not_allowed", "image_url"),
     (_anh("data:image/png;base64," + "A" * 8000), {"max_image_bytes": 10},
      "image_too_large", "image_bytes"),
@@ -53,22 +52,25 @@ def _assert_v1(response, code: str, request_id: str) -> dict:
 
 
 def test_413_anh_chi_con_ma_v1_status_day_giu_nguyen():
-    client, _ = _client(_cfg(max_images=0))
+    # 28/09: cai DO da doi tu `max_images=0` sang `max_image_bytes=1`. Chu de cua
+    # phep kiem nay la HINH DANG PHONG BI 413, khong phai tran nao sinh ra no -
+    # nen no chi can MOT loi anh bat ky. Tran dem (`max_images`) da go theo C4.
+    client, _ = _client(_cfg(max_image_bytes=1))
     response = client.post(
         "/v1/chat/completions",
         headers={"X-LTT-Request-Id": "rid-image-01"},
         json={"model": "qwen38-api", **_anh()},
     )
     assert response.status_code == 413
-    detail = _assert_v1(response, "image_count_exceeded", "rid-image-01")
-    assert detail["field"] == "images" and detail["limit"] == 0
-    assert detail["actual"] == 1
+    detail = _assert_v1(response, "image_too_large", "rid-image-01")
+    assert detail["field"] == "image_bytes" and detail["limit"] == 1
+    assert detail["actual"] == 3          # "QUJD" giai base64 = 3 byte
     for khoa in ("legacy", "ly_do", "truong", "tran", "thay"):
         assert khoa not in detail, detail
 
 
 def test_B_tu_tao_request_id_khi_client_khong_gui():
-    client, _ = _client(_cfg(max_images=0))
+    client, _ = _client(_cfg(max_image_bytes=1))
     response = client.post(
         "/v1/chat/completions",
         json={"model": "qwen38-api", **_anh()},
