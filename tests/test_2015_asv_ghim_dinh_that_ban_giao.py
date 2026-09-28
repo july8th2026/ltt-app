@@ -155,17 +155,40 @@ def test_ghim_tran_phoi_HA_tran_cho_toi_khi_ban_giao_dat(tmp_path):
         (v["tran_phoi"] for v in bc["vet"]), reverse=True)
 
 
-def test_ghim_khong_LAM_TO_mot_ban_phoi_da_nam_duoi_tran(tmp_path):
-    """⛔ Vong ghim chi ha, khong bao gio nang: no khong duoc dung lam bo chuan am."""
+def test_ghim_nang_mot_ban_phoi_QUA_NHO_nhung_KHONG_vuot_TRAN_GAIN(tmp_path):
+    """🔴 **Bai nay DA DAO CHIEU o T4 (28/09), va viec dao chieu la chu dich.**
+
+    Ban cu chot *"vong ghim chi ha, khong bao gio nang: no khong duoc dung lam bo
+    chuan am"*. Menh de ay dung khi vong nay CHI sua dinh — nhung no cung la dung
+    thu da lam T4 hong: `T1a-bis` giao `-15,44 LUFS` voi dinh con **3 dB bien
+    chua dung**, tuc mot ban phoi co the to hon ma vong nay bi cam nang.
+
+    ⇒ Tu T4, vong nay sua CA DO TO (`ghim_tran_phoi` -> `_buoc_do_to`), nen no CO
+      nang. Cai con lai cua menh de cu — va la cai that su dang bao ve — la:
+      no ⛔ **khong duoc nang vo han** (`GHIM_GAIN_TRAN_DB`), va nang bao nhieu thi
+      dinh cung ⛔ **khong duoc vuot T5**.
+
+    ⚠️ Am don 997 Hz o -24 dB la mot ca CUC DOAN co y (lech ~20 LU, xa hon tran
+       gain gap ba) — no chot dung cai tran ay. Ca thuong va ca tiem vua phai o
+       `test_4896`.
+    """
     nho = _to(tmp_path / "nho.wav")
     subprocess.run([fx.require_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y",
                     "-i", str(nho), "-af", "volume=-24dB", "-c:a", "pcm_s16le",
                     str(tmp_path / "nho2.wav")], check=True, capture_output=True)
     truoc = tach_tieng.do_am_luong(str(tmp_path / "nho2.wav"))
-    am_master.ghim_tran_phoi(str(tmp_path / "nho2.wav"), str(tmp_path / "ra.wav"))
+    bc = am_master.ghim_tran_phoi(str(tmp_path / "nho2.wav"),
+                                  str(tmp_path / "ra.wav"))
     sau = tach_tieng.do_am_luong(str(tmp_path / "ra.wav"))
-    assert sau["dinh_that"] <= truoc["dinh_that"] + 0.05
-    assert abs(sau["lufs"] - truoc["lufs"]) <= 0.2
+
+    assert bc["gain_do_to"] == am_master.GHIM_GAIN_TRAN_DB, (
+        "lech ~20 LU thi buoc bu phai di tan TRAN roi dung", bc)
+    assert sau["lufs"] - truoc["lufs"] <= am_master.GHIM_GAIN_TRAN_DB + 0.2, (
+        f"nang qua tran gain: {truoc['lufs']} -> {sau['lufs']}")
+    assert bc["dinh_giao"] <= tach_tieng.DINH_THAT_DB, (
+        "nang do to ⛔ khong duoc mua T4 bang T5", bc)
+    assert bc["ket_do_to"] == "kep_boi_tran_gain" and bc["dat_do_to"] is False, (
+        "mot ca ⛔ khong cuu duoc phai thoat CO GHI", bc)
 
 
 # ── 4. Duong san pham: ban phoi do `tron_cuoi` sinh ra ───────────────────────
