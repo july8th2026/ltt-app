@@ -51,7 +51,11 @@ log = logging.getLogger(__name__)
 #:    (`nan_cho_vua.co_gian_du_khong`: he_so = giay/NGAN_SACH tu 28/09 — B13-A2,
 #:    truoc do la giay/khe — va chi tinh khi giay > mau so), nen chi can MOT tran
 #:    tren, khong can `max()` cho bien duoi.
-TRAN_KY_THUAT_ATEMPO = 2.0
+#: ⭐ **Bí danh từ 28/09 (B13-A4) — con số khai ở `thoi_gian.TRAN_KY_THUAT_ATEMPO`.**
+#:    Từ A4 `thoi_gian.kiem()` phải cưỡng chế đúng trần này (`he_so_toc` nay là
+#:    hệ số SẼ ĐƯỢC ÁP), nên nó phải sống ở module THUẦN. Tên ở đây giữ nguyên vì
+#:    `giai_doan_qc_do_luong.py:169` và `test_4870` đọc nó qua tên này.
+TRAN_KY_THUAT_ATEMPO = thoi_gian.TRAN_KY_THUAT_ATEMPO
 
 
 def he_so_ap(h: float, *, tran_ky_thuat: float) -> float:
@@ -119,6 +123,51 @@ def dem_lech_cuoi(doan: list[dict], he_so_theo_ma: dict[str, float]) -> tuple[in
                 so_doan_lech_cuoi += 1
                 giay_lech_cuoi += giay_sau - khe
     return so_doan_lech_cuoi, giay_lech_cuoi
+
+
+def he_so_da_ap_theo_ma(ban_ke: dict) -> dict[str, float]:
+    """`{ma: he so `atempo` THAT SU se ap}` — MOT cho tinh, MOT cho log.
+
+    🔴 **Vi sao ham nay ton tai (B13-A4, 28/09).** Tu A4 chinh
+       `thoi_gian.lap_ke_hoach` cung phai biet he so nay (no chua cho theo
+       `dai / he_so`), nen con so ay duoc DOC o hai cho. Tinh lai o cho thu hai
+       la dat hai ban sao cua mot chinh sach canh nhau — va ke nay da tra gia
+       dung cho do: ke hoach noi `1,15`, ban phoi ap `1,0`, va ⛔ khong ai doi
+       chieu.
+
+    🔑 **Tran la CANH BAO, ⛔ khong phai mot cong (chu du an chot 26/09).**
+       Truoc day `he_so_co_gian` cua mot doan `CAN_SUA` bi KEP ve tran THIET KE
+       (`thoi_gian.TRAN_TANG_TOC`) — mot doan tran qua trai bi dat SAI CHO trong
+       im lang. Nay: ap DUNG he so can, chi `log.warning` khi vuot tran thiet ke.
+
+    ⭐ Van con MOT tran, va la tran KY THUAT cua `atempo`
+       (`thoi_gian.TRAN_KY_THUAT_ATEMPO` = 2,0) — qua do la TIENG RAC chu ⛔ khong
+       con la "tieng nhanh". `he_so_co_gian` luon >= 1.0 nen chi can mot tran
+       TREN, ⛔ khong can bien duoi.
+
+    ⛔ **Dong DI THEO ⛔ KHONG co mot muc rieng.** 2–4 `ma` cua mot khe da gop
+       tro vao CUNG mot tep, va tep ay duoc `atempo` MOT lan
+       (`nan_thoi_luong.la_dong_theo_sau`). Dem no lan thu hai lam sai lech thong
+       ke; TRON no lan thu hai nghe thanh tieng vang.
+    """
+    ra: dict[str, float] = {}
+    for d in (ban_ke.get("doan") or []):
+        if nan_thoi_luong.la_dong_theo_sau(d):
+            continue
+        ma = str(d["ma"])
+        h = float(d.get("he_so_co_gian") or 1.0)
+        h_ap = he_so_ap(h, tran_ky_thuat=TRAN_KY_THUAT_ATEMPO)
+        if h_ap != h:
+            log.warning(
+                "asv timing_align: doan %s co he_so_co_gian=%.4f vuot tran KY "
+                "THUAT cua atempo %.2f - ap %.4f de tranh tieng rac",
+                ma, h, TRAN_KY_THUAT_ATEMPO, h_ap)
+        if h_ap > nan_cho_vua.tran_co_gian():
+            log.warning(
+                "timing_align: doan %s tang toc %.3f vuot tran %.3f",
+                ma, h_ap, nan_cho_vua.tran_co_gian())
+        ra[ma] = h_ap
+    return ra
 
 
 class ThieuDauVao(ThieuNguon):
@@ -281,9 +330,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    Giai doan 1 giao MP4 tieng Viet **toan bo do dai goc**, nen hai preset
     #    di y het mot duong voice. Cat canh nam o giai doan 2 (`ke_cat.py`), sau
     #    render, tren mot tep da xong. `test_4801` ghim menh de nay bang may.
+    # ══ B13-A4 (28/09): ke hoach chua cho theo he so SE DUOC AP ═════════
+    #
+    # 🔴 **Thu tu la mot phan cua ban va.** `he_so_da_ap` phai dung TRUOC
+    #    `lap_ke_hoach`, vi tu A4 ke hoach doc no de biet moi doan se dai bao
+    #    nhieu SAU `atempo`. Truoc A4, `lap_ke_hoach` tu tinh mot `he_so_toc`
+    #    rieng ma ⛔ khong ai thi hanh ⇒ 12 doan bi chua cho hep hon tep that.
+    he_so_da_ap = he_so_da_ap_theo_ma(ban_ke)
     ke_hoach = thoi_gian.lap_ke_hoach(
         tl_vb.get("muc") or [], do_dai, tong_giay=tong_giay, che_do=che_do,
-        nhom_gop=nan_thoi_luong.nhom_theo_ma(ban_ke))
+        nhom_gop=nan_thoi_luong.nhom_theo_ma(ban_ke),
+        he_so_da_ap=he_so_da_ap)
 
     goi = json.dumps(ke_hoach, sort_keys=True, ensure_ascii=False).encode("utf-8")
     vt = thoi_gian.van_tay_ke_hoach(checksum_van_ban=cs_vb, ban_ke_tieng=cs_ke,
@@ -305,7 +362,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     khoa_master, do_duoc, vt_master = _dung_ban_phoi(
         db, kho, run, ke_hoach=ke_hoach, ban_ke=ban_ke, tong_giay=tong_giay,
-        van_tay_ke_hoach=vt, ctx=ctx)
+        van_tay_ke_hoach=vt, he_so_theo_ma=he_so_da_ap, ctx=ctx)
     phan.append({"staging_key": khoa_master, "kind": "audio", "duoi": "wav",
                  "van_tay": vt_master})
 
@@ -321,7 +378,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
 
 def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
-                   tong_giay: float, van_tay_ke_hoach: str, ctx=None):
+                   tong_giay: float, van_tay_ke_hoach: str,
+                   he_so_theo_ma: dict[str, float], ctx=None):
     """Tron nen + cac doan tieng theo ke hoach.
 
     Tra `(khoa, do_duoc, van_tay)` — `do_duoc["he_so_toc_da_ap"]` liet ke moi
@@ -342,42 +400,11 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     #    ay 2-4 lan — nghe thanh tieng vang, ⛔ khong nem, ⛔ khong log. Ham ay chi
     #    tra ve nhung dong SO HUU mot tep (`nan_thoi_luong.la_dong_theo_sau`).
     khoa_theo_ma = nan_thoi_luong.tep_theo_ma(ban_ke)
-    # 🔑 **Tran la CANH BAO, ⛔ khong phai mot cong (chu du an chot 26/09).**
-    #    Truoc day `he_so_co_gian` cua mot doan `CAN_SUA` (vuot
-    #    `thoi_gian.TRAN_TANG_TOC`, thuong vi `LTT_ASV_QC_AI` tat theo mac
-    #    dinh nen khong lan chay nao qua vong sua truoc khi toi day) bi KEP ve
-    #    tran THIET KE — mot doan tran qua trai bi dat SAI CHO trong im lang.
-    #    Nay: ap DUNG he so can, chi GHI CANH BAO (log.warning) khi vuot tran
-    #    thiet ke, va DEM moi he so THAT SU da ap vao `he_so_toc_da_ap` (danh
-    #    sach float, ra trong `do_duoc` — giai doan nay tra ve trong outputs)
-    #    de ai doc bao cao van hanh thay duoc: cai gia (giong hoi meo) khach
-    #    nghe duoc va ⛔ khong giau.
-    #
-    # ⭐ Van con MOT tran, nhung la tran KY THUAT cua `atempo`
-    #    (`TRAN_KY_THUAT_ATEMPO` = 2.0, dinh nghia o dau tep nay) — qua tran do
-    #    la TIENG RAC chu khong con la "tieng nhanh". `he_so_co_gian` luon
-    #    >= 1.0 o day nen chi can mot tran TREN, ⛔ khong can `max()`.
-    he_so_theo_ma: dict[str, float] = {}
-    he_so_toc_da_ap: list[float] = []
-    for d in (ban_ke.get("doan") or []):
-        # ⛔ Dong DI THEO mang cung `he_so_co_gian` voi dong dau (mot tep, mot
-        #    lan `atempo`) — dem no lan thu hai chi lam sai lech thong ke.
-        if nan_thoi_luong.la_dong_theo_sau(d):
-            continue
-        ma = str(d["ma"])
-        h = float(d.get("he_so_co_gian") or 1.0)
-        h_ap = he_so_ap(h, tran_ky_thuat=TRAN_KY_THUAT_ATEMPO)
-        if h_ap != h:
-            log.warning(
-                "asv timing_align: doan %s co he_so_co_gian=%.4f vuot tran KY "
-                "THUAT cua atempo %.2f - ap %.4f de tranh tieng rac",
-                ma, h, TRAN_KY_THUAT_ATEMPO, h_ap)
-        he_so_toc_da_ap.append(float(h_ap))
-        if h_ap > nan_cho_vua.tran_co_gian():
-            log.warning(
-                "timing_align: doan %s tang toc %.3f vuot tran %.3f",
-                ma, h_ap, nan_cho_vua.tran_co_gian())
-        he_so_theo_ma[ma] = h_ap
+    # ⭐ `he_so_theo_ma` do NGUOI GOI dung (`chay`) va truyen vao — mot cho
+    #    tinh, mot cho log. Xem `he_so_da_ap_theo_ma`: tu B13-A4 chinh
+    #    `thoi_gian.lap_ke_hoach` cung phai doc no, nen hai cho khong duoc
+    #    tinh lai (hai ban sao cua mot chinh sach la cho se troi).
+    he_so_toc_da_ap: list[float] = list(he_so_theo_ma.values())
 
     # ══ B13-B3/B4 (28/09): HAI máy tăng tốc, và chỉ MỘT cái được thi hành ════
     #
@@ -387,8 +414,9 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     #        `duong_video` và `duong_master` — và map `nhan_tieng = "1:a:0"`.
     #        `duong_lop` **chỉ** bị đếm để đối chiếu độ dài (`:173`), ⛔ không
     #        xuất hiện trong `cmd`;
-    #      · `am_master.tron_lo` nhận `he_so` lấy TỪ `he_so_theo_ma` ở trên, tức
-    #        từ `he_so_co_gian` của `ban_ke` — ⛔ không từ kế hoạch;
+    #      · `am_master.tron_lo` nhận `he_so` lấy TỪ `he_so_theo_ma` mà `chay`
+    #        dựng bằng `he_so_da_ap_theo_ma`, tức từ `ban_ke.he_so_co_gian` —
+    #        ⛔ không từ kế hoạch;
     #      · `ban_dung.py:158` vẫn chép `he_so_toc` vào từng lớp với chú thích
     #        *"Trinh render chi ap atempo khi > 1"*, và `docs/auto_scan_video/
     #        reports/13_REPORT.md:190` khai đúng thiết kế CŨ ấy (*"belongs to
@@ -404,9 +432,14 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     #
     # ⭐ Nên bất biến ở đây là bất biến RẺ và SỐNG: ĐẾM chỗ lệch và nói to
     #   (`log.warning`), rồi đưa CẢ HAI đại lượng vào `master` dưới hai cái tên
-    #   ⛔ không đọc lẫn được. ⛔ Không `raise`: lượt đã đo có 12 đoạn lệch, nên
-    #   `raise` ở đây là làm đỏ mọi lượt chạy thật vì một sai lệch mốc ≤ dung sai
-    #   chồng lấn — cái giá đó thuộc chủ dự án, ⛔ không thuộc một bản vá mẫu số.
+    #   ⛔ không đọc lẫn được. ⛔ Không `raise`: khi bộ đếm này được viết, lượt đã
+    #   đo có 12 đoạn lệch, nên `raise` sẽ làm đỏ mọi lượt chạy thật.
+    #
+    # 🔑 **Và A4 (28/09 chiều) đã đưa con số ấy về 0.** `thoi_gian.lap_ke_hoach`
+    #    nay MIRROR `he_so_da_ap`, nên kế hoạch và bản phối nói cùng một hệ số.
+    #    ⇒ Bộ đếm này ⛔ KHÔNG chết đi vì thế — nó là **phép chứng minh** A4 còn
+    #    ăn: một con số đếm ra `0` **sau khi từng đếm ra 12** là bằng chứng, và
+    #    nó sẽ lớn lên ngay lần đầu ai đó làm hai bên lệch lại.
     # ⭐ Phép ĐO là một hàm THUẦN ở `thoi_gian` — ⛔ không viết số học ở đây.
     #    Hai lực: (i) `doi_chieu_he_so_toc` kiểm được mà ⛔ không cần một lượt trộn
     #    nào; (ii) bánh cóc `test_2018::test_he_so_toc_KHONG_bi_kep_ve_tran` đọc

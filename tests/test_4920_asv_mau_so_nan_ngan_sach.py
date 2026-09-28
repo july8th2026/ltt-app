@@ -242,9 +242,16 @@ def test_4920_B4_bao_cao_khai_RO_ke_hoach_so_voi_da_ap():
         "⛔ đừng đổi tên hai khoá này: `asv_doi_soat.KHOA_BO_QUA_CO_Y` khai "
         "đúng chúng và `test_408` chốt hai chiều")
     tai_lieu = inspect.getdoc(thoi_gian.tom_tat) or ""
-    assert "KẾ HOẠCH" in tai_lieu and "he_so_toc_da_ap" in tai_lieu, (
-        "docstring của `thoi_gian.tom_tat` phải nói RÕ hai khoá này là kế "
-        "hoạch và chỉ sang `master.he_so_toc_da_ap`")
+    # ⚠️ **Lời khai này ĐỔI ở A4 (28/09 chiều).** Bản B4 buổi sáng đòi docstring
+    #    nói *"hai khoá này là KẾ HOẠCH"* — và sau A4 lời ấy SAI: `lap_ke_hoach`
+    #    nay MIRROR hệ số sẽ được áp, nên hai khoá đo đúng cái tên chúng hứa.
+    #    ⇒ Điều docstring phải nói là **MẪU SỐ** (`ma` so với TỆP), ⛔ không còn
+    #    là "kế hoạch so với đã áp". Xem `test_4921` §3.
+    assert "he_so_toc_da_ap" in tai_lieu, (
+        "docstring của `thoi_gian.tom_tat` phải chỉ sang `master.he_so_toc_da_ap`")
+    assert "mẫu số" in tai_lieu and "TỆP" in tai_lieu, (
+        "sau A4 vế còn khác nhau là MẪU SỐ (`ma` kể cả dòng đi theo, so với "
+        "TỆP) — docstring phải nói đúng vế ấy")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
