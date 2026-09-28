@@ -174,14 +174,92 @@ def gia_lap_do_luong(monkeypatch):
                        str(Path(__file__).parent / "_khong_co_qc_venv" / "python.exe"))
 
 
-# ⛔ `gia_lap_ocr` DA XOA 26/09 (Task 21). Rao do ton tai vi TRANSCRIBE o che do
-#    `auto` chay OCR (RapidOCR trong venv do luong) TREN VIDEO NGUON truoc ASR,
-#    nen moi phep kiem chuoi tren may da cai venv do luong se nap model OCR that.
+# ⛔ `gia_lap_ocr` (ban CU) DA XOA 26/09 (Task 21). Rao do ton tai vi TRANSCRIBE
+#    o che do `auto` chay OCR (RapidOCR trong venv do luong) TREN VIDEO NGUON
+#    truoc ASR, nen moi phep kiem chuoi tren may da cai venv do luong se nap
+#    model OCR that.
 #
 # ⭐ Nay TRANSCRIBE chi doc BAN TIENG (mot duong duy nhat voice->voice), nen
-#    ⛔ khong con duong nao nap model OCR ⇒ khong con gi de rao. Xoa rao la dung;
-#    giu lai mot `monkeypatch.setattr` tro vao mot ham khong ton tai se nem
-#    `AttributeError` o MOI tep test da nap fixture nay.
+#    ⛔ khong con duong nao nap model OCR qua nga do ⇒ khong con gi de rao O
+#    NGA DO. Xoa rao la dung cho nga do; giu lai mot `monkeypatch.setattr` tro
+#    vao mot ham khong ton tai se nem `AttributeError` o MOI tep test da nap
+#    fixture nay.
+#
+# 🔴 Ham `gia_lap_ocr` MOI o duoi (them 28/09, B12 lop 2 / B13 C3) la cho MOT
+#    duong KHAC han, ⛔ khong phai lam song lai cai vua xoa: `do_vung_ocr`
+#    (B10-4) — tang OCR cua GIAI DOAN 2 (de xuat vung che hardsub sau khi video
+#    da xong tieng), goi qua `do_vung.de_xuat()`. Cung mot thu vien
+#    (`rapidocr_onnxruntime`), hai tinh nang khong lien quan ve san pham — trung
+#    ten vi cung mot cau hoi ("test nay co nap RapidOCR that khong").
+
+
+def gia_lap_ocr(monkeypatch):
+    """Tat tang OCR THAT (RapidOCR) cua `do_vung_ocr` — them 28/09 (B12 lop 2 /
+    B13 viec C3).
+
+    🔴 **Vi sao can:** `test_4301` goi `dv.de_xuat(clip)` nhieu lan. Sau B10-4,
+       `de_xuat` -> `_dai_chu_nhieu_tang` -> (neu `do_vung_ocr.co_san()`) nap
+       RapidOCR THAT — dung mat xich [2] ma `B12_TREO_MAY_VI_OCR_KHONG_KHAI_TRAN.md`
+       goi la loi nang nhat: mot phep kiem von NHE bi B10-4 doi nghia thanh NANG
+       ma ⛔ khong ai khai bao. Tren mot may da cai `rapidocr-onnxruntime`, moi
+       loi goi lai an toi ~15 loi (da vá bang `CPU_TRAN_LOI`/`chan_loi()`, nhung
+       van con NAP MODEL that moi lan, va do la chi phi khac voi chi phi loi).
+
+    ## Vi sao chan o `co_san()`, ⛔ khong phai o `do_dai_chu_ocr`
+
+    `do_vung._dai_chu_nhieu_tang` hoi DUY NHAT mot cau TRUOC khi vao OCR:
+    `do_vung_ocr.co_san()`. Gia lap no thanh `False` cho di THANG xuong
+    `do_vung.do_dai_chu` (bien thien diem anh, **0 model**) — mot nhanh SAN
+    PHAM THAT (chay khi may KHONG cai RapidOCR), da duoc
+    `tests/test_4895_asv_do_vung_tang_ocr.py::test_BB4_CHUA_CAI_thi_lui_tang_chu_khong_ket_luan`
+    xac nhan dung hanh vi. Gia lap `False` o day ⛔ KHONG dung tien de nao san
+    pham khong co — no MO DUNG mot nhanh co that.
+
+    ⛔ **KHONG gia lap `do_dai_chu_ocr`** de tra thang ve mot `KetQua` dung san:
+       lam vay phai CHEP LAI logic `_trung_vung_tay` (BAT BIEN 2 cua `do_vung`)
+       cho dung voi tham so `tranh` ma `test_4301` truyen vao (vd
+       `test_de_xuat_giu_BA_trang_thai_chu_khong_hai` goi
+       `dv.de_xuat(clip, tranh=[(0.0, 1.0)])` va doi day chu bi loai) — tuc chep
+       san pham VAO fixture, va neu chep sai thi phep kiem xanh tren mot hanh
+       vi ⛔ KHONG THAT. Gia lap `co_san()=False` khong co rui ro do: no lui ve
+       chinh ham `do_dai_chu` that, dang chay that, tu xu ly dung `tranh`.
+
+    ⛔ **KHONG cham `_hop_cua_khung`/`_may()`.** Khi `co_san()` la `False`,
+       `_dai_chu_nhieu_tang` ⛔ khong bao gio goi toi hai ham do — nen su phan
+       biet `None` (may OCR nem) voi `[]` (chay that, khong thay) ma
+       `do_vung_ocr._hop_cua_khung` co y giu (xem docstring cua no) ⛔ khong bi
+       fixture nay dung toi, du la gian tiep. `tests/test_4895_...` da kiem
+       dung phan biet do bang monkeypatch RIENG, ⛔ khong can fixture nay dam
+       vao.
+
+    Muon chay OCR that: `set LTT_TEST_NANG=1`.
+    """
+    from apps.auto_scan_video import do_vung_ocr
+
+    monkeypatch.setattr(do_vung_ocr, "co_san", lambda: False)
+
+
+@pytest.fixture(autouse=True)
+def ocr_gia_lap(monkeypatch):
+    """Fixture AUTOUSE **pham vi tep** — nap vao mot tep test bang mot dong:
+
+        from tests.rao_chan_nang import ocr_gia_lap   # noqa: F401
+
+    ⛔ Co y KHONG dat o `tests/conftest.py`, cung ly do voi `demucs_gia_lap` o
+       duoi: mot fixture autouse toan cuc la mot khoan thue thu tren ca bo test
+       de phuc vu mot mien (o day la `do_vung`/`do_vung_ocr`).
+
+    Xem `gia_lap_ocr()` o tren cho ly do chon diem chan (`co_san()`, ⛔ khong
+    phai `do_dai_chu_ocr`).
+
+    Muon chay OCR that: `set LTT_TEST_NANG=1` — khi do fixture nay tu tranh ra,
+    dung nguyen tac voi `demucs_gia_lap`.
+    """
+    if bat():
+        yield
+        return
+    gia_lap_ocr(monkeypatch)
+    yield
 
 
 @pytest.fixture(autouse=True)

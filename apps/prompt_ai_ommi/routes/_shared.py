@@ -26,7 +26,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apps.prompt_ai_ommi.manifest import MANIFEST
-from apps.prompt_ai_ommi.project_schema import (MAX_SCENES, SCHEMA_VERSION,
+from apps.prompt_ai_ommi.project_schema import (IMAGE_JOB_TYPE,
+                                                MAX_SCENES, SCHEMA_VERSION,
                                                 clean_project, empty_project,
                                                 prompt_job_params)
 from apps.prompt_ai_ommi.services.composer import load_catalog
@@ -41,8 +42,9 @@ router = APIRouter(tags=["prompt-ai-ommi"])
 _ASSET_CAP = {"image": 20 * 1024 * 1024, "video": 60 * 1024 * 1024,
               "audio": 20 * 1024 * 1024}
 _PREFERENCES_KIND = "preferences"
-# Dat o _shared vi ba mien deu dung: resources, library, storyboard.
-_IMAGE_JOB_TYPE = "taoanh.generate"
+# Ba mien deu dung (resources, library, storyboard) nen giu mot ten cuc bo,
+# nhung GIA TRI den tu `project_schema` — mot nguon chan ly.
+_IMAGE_JOB_TYPE = IMAGE_JOB_TYPE
 
 
 def _run_mode() -> str:

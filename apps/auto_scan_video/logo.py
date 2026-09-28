@@ -103,7 +103,22 @@ def chuan_hoa_mot(tho: dict) -> dict:
     if khoa and (".." in khoa or "://" in khoa or khoa.startswith("/")):
         raise LogoLoi(_t('Logo trỏ tới một tệp không hợp lệ.'))
 
-    ra = {
+    # 🔴 **Khai kieu TUONG MINH, ⛔ dung de mypy tu suy** (sua 28/09). Dict nay
+    #    CO Y khong dong kieu: `float` cho toa do/kich thuoc, `str` cho `khoa`,
+    #    va `khoang_thoi_gian` con them khoa gio. Neu de suy, mypy doc bon phan
+    #    tu `_so(...)` dau roi chot `dict[str, float]`, va dong `ra["khoa"] =
+    #    khoa` thanh `assignment` error.
+    #
+    # ⚠️ Loi nay **da nam san** trong ma; no chi **lo ra** khi mot thay doi o
+    #    module KHAC lam mypy suy hep hon truoc (mypy suy kieu xuyen module).
+    #    ⇒ Cung ho *"mot tinh nang moi lam lo loi cu"* va *"hai luot cua mot
+    #    cong cu co mien khac nhau"* — ⛔ khong phai mot hoi quy cua ai ca.
+    #
+    # ⭐ Dung `float | str` chu ⛔ khong `object`: `object` cho phep gan BAT KY
+    #    thu gi (mot list, mot dict long nhau) va nhu vay banh coc mat luon kha
+    #    nang bat mot phep gan that su sai. Mot dict khong dong kieu van nen
+    #    khai DUNG hai kieu no mang.
+    ra: dict[str, float | str] = {
         "x": _so(tho.get("x"), thap=0.0, cao=1.0),
         "y": _so(tho.get("y"), thap=0.0, cao=1.0),
         "rong": _so(tho.get("rong", RONG_MAC_DINH),

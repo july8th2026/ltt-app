@@ -82,8 +82,19 @@ import time
 from collections.abc import Iterable
 from pathlib import Path
 
+# ⭐ EP UTF-8 nam trong `main()` (~2056), ⛔ KHONG o cap module. Ban dau toi dat no
+#    o day — vi tri "manh hon" vi no phu ca `print` luc import — nhung do la SAI
+#    TANG: `tests/conftest.py` **import** mo-dun nay (`import gate as _g` de hoi
+#    `loi_cho_bo_test`), nen mot `reconfigure` o cap module se doi encoding stdout
+#    cua CHINH pytest. Mot mo-dun bi import ⛔ khong duoc sua luong cua nguoi import;
+#    diem vao cua mot cong cu thi duoc sua luong cua chinh no.
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cua_so_yen import KHONG_DUOC_CHEN, MAC_DINH, CuaSoYen  # noqa: E402  (can sys.path o tren)
+# `test_nhanh.argv_an_toan` la MOT nguon cho ca hai bien cua tran dong lenh
+# Windows (goi no cho tep nay, va `ke_hoach_pha` goi lai chinh no cho lenh
+# pytest ben trong no) — xem chu thich o `_steps_pham_vi` va `lenh_chay_lai`.
+import test_nhanh  # noqa: E402  (can sys.path o tren)
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi", "chatltt")
@@ -277,6 +288,35 @@ def loi_dang_ban(mau_s: float = 1.0) -> float:
 #:       `thua = 3,7 - 2 = 1,7 -> 2`, va ngan sach tu tut ve `min(8, 10-2-2) = 6`.
 #:       Tuc con so nay la DIEM XUAT PHAT khi may ranh, khong phai mot loi hua.
 #:       Bo `loi_dang_ban()` di thi con so 2 nay moi thanh nguy hiem.
+#:
+#: 🔴 **GIOI HAN CUA VAN DONG, do duoc 28/09/2026 sau mot lan TREO MAY.**
+#:
+#:    `loi_dang_ban()` duoc lay mau o **DUNG HAI CHO, ca hai luc KHOI DONG**:
+#:      · `loi_cho_bo_test()` (dong ~391) - chot so worker cho `bo test`
+#:      · vong chay (dong ~2030)         - in `[tai may]` roi canh bao QUA TAI
+#:
+#:    ⇒ Van nay chan duoc tai **DA CO SAN**. No ⛔ KHONG chan duoc tai **DEN SAU**
+#:      khi gate da bat dau, vi ⛔ khong ai lay mau lai nua.
+#:
+#: ⚠️ Va thu hay den sau thi da co ten trong `CLAUDE.md`: **Windows Defender an
+#:    toi 5,45 loi va nam NGOAI moi khoa**. Do 28/09 luc khoi dong:
+#:    `loi_dang_ban() = 0,49` — tuc ngan sach xuat phat o muc "may ranh", roi
+#:    Defender vao giua luot.
+#:
+#: 📐 So hoc cua lan treo: `--ho-so day-du` tren may nay
+#:      10 loi vat ly
+#:    -  7 `bo test (song song)`  (`loi_cho_bo_test()` do duoc)
+#:    -  cac buoc tinh chay cung  (`-j` mac dinh **8**)
+#:    -  ~5,4 Defender (ngoai khoa, den sau, khong ai tru)
+#:    ⇒ vuot tran, may dung.
+#:
+#: ⭐ Nen KHONG sua hang so nay (no dung cho cai no mo ta, va chu du an chot
+#:    12/09). Ba duong re hon, theo thu tu:
+#:      1. `--ho-so doi` (L1): khi ha cap no BO `bo test (song song)` — tuc bo
+#:         dung buoc chiem ~85% thoi gian va 7 worker. **Day la luot nhe nhat.**
+#:      2. `-j 2..3` thay vi 8: giam so buoc tinh chay cung.
+#:      3. `--noi-tiep`: mot buoc mot luc, MOT tien trinh pytest. Cham (~25-30
+#:         phut) nhung theo docstring cua no *"khong the bi nhieu boi tai may"*.
 LOI_DE_DANH_VAT_LY = 2
 
 #: Tran `-n` cho pytest GO TAY (khong phai bo test trong gate). Chu du an doi
@@ -327,6 +367,19 @@ TRAN_N_GO_TAY = 7
 #:       mot luot gate chet o phut thu 10 lam mat tron ca luot do — va o day no
 #:       da lam mat HAI.
 TRAN_WORKER_BO_TEST = 7
+
+#: SAN cua van DONG (`_chay_theo_lich._do_lai_tran`). Tran loi khong bao gio
+#: xuong duoi con so nay, du may bi chiem het.
+#:
+#: 🔴 Vi sao phai co SAN chu khong de van tu do tut ve 0: Windows Defender co the
+#:    an 5,45 loi trong nhieu phut. Mot van khong san se ha tran ve 0 va gate
+#:    **dung han** cho tới khi Defender quet xong — tuc mot co che sinh ra de
+#:    tranh treo may lai tu no thanh mot cai treo.
+#:
+#: ⭐ 2 la so nho nhat con tien duoc: mot buoc khai 1 luon chay, va hai buoc nhe
+#:    van nap duoc vao nhau. Cham thi duoc, dung han thi khong — cung cau voi
+#:    `max(1, ...)` o `loi_cho_bo_test`.
+SAN_LOI_DONG = 2
 
 
 def loi_cho_bo_test(*, phien: str = "", do_tai: bool = True) -> int:
@@ -443,10 +496,23 @@ TEP_KHONG_DUOC_DOC_SONG_SONG = {
 class Step:
     def __init__(self, name: str, argv: list[str], cwd: Path,
                  nhom: str = "tinh", tai_nguyen: tuple[str, ...] = (),
-                 so_loi: int = 1, giay_toi_thieu: float = 0.0):
+                 so_loi: int = 1, giay_toi_thieu: float = 0.0,
+                 tep_test: tuple[str, ...] = ()):
         assert nhom in NHOM, nhom
         self.name = name
         self.argv = argv
+        #: Tep test buoc nay se chay, khi danh sach ⛔ KHONG nam tren `argv`.
+        #:
+        #: 🔴 Vi sao can truong nay thay vi doc `argv`. Truoc 28/09 phep kiem
+        #:    `test_1500` doi soat pham vi bang `{x for x in argv if
+        #:    x.startswith("tests/")}` — tuc no do **CACH GO** chu khong do
+        #:    **TINH CHAT**. Khi danh sach phai roi khoi `argv` (tran 32 767 ky
+        #:    tu cua Windows), phep kiem do chuyen sang do MOT TAP RONG va bao
+        #:    xanh/do vi mot ly do khong con lien quan gi den pham vi.
+        #:
+        #: ⭐ Mot cong chat luong phai hoi *"nhung tep nao SE CHAY"*, va cau do
+        #:    can mot cho de tra loi khong phu thuoc vao hinh dang dong lenh.
+        self.tep_test = tuple(tep_test)
         self.cwd = cwd
         self.nhom = nhom
         #: So LOI buoc nay chiem khi chay — khong phai so tien trinh.
@@ -1095,11 +1161,34 @@ def _steps_pham_vi(tep_test: list[str]) -> list[Step]:
     #    Va `_ap_ngan_sach_thuc` tim buoc bang `-n` trong argv — khong co `-n` thi
     #    no bo qua buoc nay luon. Cung mot nguon so voi `bo test (song song)`.
     loi = loi_cho_bo_test()
-    return [Step("bo test (pham vi)",
-                 [sys.executable, "tools/test_nhanh.py", "-n", str(loi), *sorted(tep_test)],
+    # 🔴 SU CO 28/09 (B11 lan B): pham vi 972-1001 tep ghep thang vao argv lam
+    #    dong lenh vuot tran CreateProcess cua Windows (32.767 ky tu) ⇒
+    #    `subprocess.run` chet voi `[WinError 206]` trong 0,0 giay — buoc nay
+    #    KHONG chay nhung 32 buoc con lai van chay xong, nen `RESULT` trong
+    #    nhu da do. `argv_an_toan` giu argv nguyen ven khi con ngan, va chi
+    #    chuyen sang `@<tep trong .gate/>` khi vuot tran (boundary 1 — xem
+    #    `test_nhanh.argv_an_toan`, `_ap_ngan_sach_thuc` van tim duoc `-n` vi
+    #    no o phan `dau`, khong bi day vao tep).
+    #
+    # ⭐ GOP 28/09: HAI phien vá cùng con bọ này độc lập nhau (`b7f6274e` của
+    #    phiên prompt-ai, `1f3a0656` của làn B). Giữ bản của làn B vì nó MỘT
+    #    nguồn cho CẢ HAI chặn spawn, và vì nó vá luôn `lenh_chay_lai` — dòng
+    #    *"CHAY LAI DUNG PHEP DO"* mà gate in cho người copy, thứ với 1067 tệp
+    #    cũng dài 41 KB và chết khi dán. Bản kia bỏ lọt chỗ đó.
+    #
+    # ⚠️ Giữ `duong` từ bản kia: `Step.tep_test` ở dưới đọc nó, và trường đó tồn
+    #    tại vì `test_1500` từng đối soát phạm vi bằng cách LỌC `argv` — một
+    #    phép đo CÁCH GÕ, sẽ lặng lẽ đo một tập RỖNG ngay khi danh sách rời
+    #    khỏi `argv`. `argv_an_toan` làm điều đó xảy ra, nên trường này là thứ
+    #    giữ cho phép kiểm ấy còn đo được gì.
+    duong = sorted(tep_test)
+
+    dau = [sys.executable, "tools/test_nhanh.py", "-n", str(loi)]
+    argv, _ = test_nhanh.argv_an_toan(dau, duong, ten="pham_vi")
+    return [Step("bo test (pham vi)", argv,
                  ROOT, nhom="nang",
                  tai_nguyen=("cpu_nhieu", "postgres_test"), so_loi=loi,
-                 giay_toi_thieu=3.0)]
+                 giay_toi_thieu=3.0, tep_test=tuple(duong))]
 
 
 #: Tai nguyen KHONG BAO GIO duoc bo qua bang `--khong-khoa` hay bang chen qua han.
@@ -1152,9 +1241,36 @@ HO_SO: dict[str, dict] = {
         "mo_ta": "suy pham vi TU cay hien tai (moc mac dinh HEAD; `--tu <ref>` "
                  "doi moc sang mot baseline SHA)",
         "chung_minh": "moi test cham toi phan da doi SO VOI MOC deu xanh",
-        "khong_chung_minh": "KHONG phai bang chung phat hanh. Va no TU HA CAP "
-                            "xuong day du khi khong chac (cham tep dung chung, "
-                            "hoac mot duong dan khong thanh phan nao so huu).",
+        # 🔴 SUA 28/09: cau cu ghi *"no TU HA CAP xuong DAY DU"* — **SAI**, va sai
+        #    theo huong nguy hiem nhat. Ma (dong ~1921) ha xuong **`nhanh`**, va
+        #    chu du an da chot 24/09: **L1/L2 KHONG BAO GIO tu nang len L3.**
+        #
+        #    Cau sai ay lam nguoi doc tin rang mot lan `--doi` co the **tu bung
+        #    thanh mot luot toan kho** — nen ho ne L1 vi so treo may, dung luc L1
+        #    la thu **NHE NHAT**: khi ha cap no bo `bo test (song song)`, tuc bo
+        #    dung buoc chiem ~85% thoi gian va 7 worker.
+        #
+        # ⚠️ Mot cau sai trong tep LUAT thi NAM CHO, va ban kinh cua no = so agent
+        #    doc `gate.py`. Do la ly do sua mot dong chu cung dang mot commit.
+        "khong_chung_minh": "KHONG phai bang chung phat hanh. Va khi khong thu "
+                            "hep duoc (cham tep dung chung, hoac mot duong dan "
+                            "khong thanh phan nao so huu) no HA CAP xuong "
+                            "`nhanh`: GIU moi buoc tinh, BO 4 buoc — `bo test "
+                            "(song song)`, `migration tren postgres`, `M-1 tren "
+                            "postgres`, `bat bien da tien trinh`. No KHONG tu "
+                            # ⛔ KHONG dat ky tu ngoai cp1252 vao chuoi
+                            #    NAY: no di ra stdout, va stdout co the la
+                            #    mot console cp1252 (PowerShell 5.1). Mot
+                            #    `⛔` o day da lam mat MOT PHAN QUYET GATE
+                            #    ngay 28/09/2026 — `RESULT: PASS` in ra
+                            #    roi tien trinh chet truoc khi ghi `.gate/`.
+                            #    `test_5610::test_moi_chuoi_khong_chung_minh_
+                            #    IN_DUOC_tren_cp1252` ghim lai. Emoji trong
+                            #    CHU THICH thi vo hai — chi chuoi IN RA moi
+                            #    di qua bo ma hoa cua console.
+
+                            "nang len `day-du` (chot 24/09), nen mot luot "
+                            "`--doi` KHONG THE tu bien thanh mot luot toan kho.",
         "xep_hang": True,
     },
     "day-du": {
@@ -1375,7 +1491,8 @@ NHOM_RE = ("cong", "tinh", "frontend")
 
 
 def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
-                    dung_som: bool = False, _da_tach: bool = False) -> None:
+                    dung_som: bool = False, _da_tach: bool = False,
+                    phien: str = "") -> None:
     """Chạy các bước theo lịch, in mỗi bước khi nó **xong**.
 
     ## Vì sao không chạy tuần tự nữa
@@ -1431,7 +1548,7 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
         #    nen `dat` rong, va gate chet SAU khi da chay xong 24/24 buoc —
         #    tuc mat trang ca luot do vi mot phep chia cho khong.
         if re:
-            _chay_theo_lich(re, j=j, tuan_tu=tuan_tu)
+            _chay_theo_lich(re, j=j, tuan_tu=tuan_tu, phien=phien)
         if any(s.ok is False for s in re):
             if dat:
                 # ⛔ THUAN ASCII o moi dong xuat ra man hinh. `gate.py > gate.log`
@@ -1447,7 +1564,7 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
                       f"chua chay: {', '.join(s.name for s in dat)}", flush=True)
             return
         if dat:
-            _chay_theo_lich(dat, j=j, tuan_tu=tuan_tu, dung_som=True,
+            _chay_theo_lich(dat, j=j, tuan_tu=tuan_tu, dung_som=True, phien=phien,
                             _da_tach=True)
         return
 
@@ -1491,15 +1608,66 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
     #    te hon han cham.
     import threading
 
-    ngan_sach = ngan_sach_loi()
+    # 🔴 **HAI LO, do duoc 28/09/2026 sau mot lan treo may.**
+    #
+    #    LO 1 — `tru_phien_khac` la MA CHET. Tham so ay ton tai tu 03/09, co tai
+    #    lieu o `cua_so_yen.py:549`, va **khong mot noi nao truyen `True`**. Nen
+    #    bo dem nay lay 8 loi du may co MOT hay BON luot gate. `loi_cho_bo_test`
+    #    thi co tru — tuc `bo test` biet ve phien khac ma **lich chay thi khong**,
+    #    va nhom `tinh`/`frontend` phat thoai mai tren phan da co chu.
+    #
+    #    LO 2 — `ngan_sach` la mot HANG SO suot ca luot. `loi_dang_ban()` chi duoc
+    #    lay mau luc KHOI DONG (hai cho, ca hai trong pha dung len), nen tai **den
+    #    sau** khong ai tru. Windows Defender an toi 5,45 loi, nam ngoai moi khoa,
+    #    va no khong hoi ta luc nao thi bat dau quet.
+    #
+    # ⇒ `tran` duoi day la mot **van DONG**: mot luong nen do lai tai NGOAI luot
+    #   nay moi ~10 giay va ha/nang tran. Ba ve giu cho no khong tu bien thanh
+    #   mot cai chan:
+    #     · `SAN_LOI_DONG` — tran khong bao gio xuong duoi 2, luot van tien.
+    #     · buoc lon hon ca tran van chay **MOT MINH** (`con_lai == ngan_sach`) —
+    #       giu nguyen y dinh cu, neu khong `bo test` (khai 7) se treo vinh vien
+    #       moi khi Defender quet.
+    #     · `loi_dang_ban()` khong do duoc ⇒ tra 0.0 ⇒ tran = ngan sach = **y het
+    #       hanh vi cu**. Fail-open co chu y: mot van khong do duoc khong duoc
+    #       phep dung ca cong chat luong.
+    ngan_sach = ngan_sach_loi(phien=phien, tru_phien_khac=True)
     con_lai = ngan_sach
+    tran = ngan_sach
     khoa = threading.Condition()
+    xong_het = threading.Event()
+
+    def _do_lai_tran() -> None:
+        """Luong nen: ha `tran` khi co ai NGOAI luot nay chiem may.
+
+        ⚠️ `da_phat` la so KHAI BAO cua cac buoc dang chay, khong phai so do
+           duoc. Do 28/09: moi buoc `tinh` dot 0,15-0,97 loi tuy buoc, tuc khai
+           1 la **khai du hoac hoi thua**. Nen `ngoai` thien ve phia 0 — van nay
+           bo sot tai ngoai de hon la ha tran oan, va do la chieu an toan: mot
+           tran hoi rong lam may ban hon; mot tran hoi chat lam gate dung.
+        """
+        nonlocal tran
+        while not xong_het.is_set():
+            da_phat = max(0, ngan_sach - con_lai)
+            ngoai = max(0.0, loi_dang_ban(1.0) - da_phat)
+            moi = max(SAN_LOI_DONG, ngan_sach - int(ngoai + 0.5))
+            with khoa:
+                if moi != tran:
+                    cu, tran = tran, moi
+                    print(f"  [van dong] tran loi {cu} -> {moi} "
+                          f"({ngoai:.1f} loi bi chiem NGOAI luot nay)")
+                    khoa.notify_all()
+            xong_het.wait(9.0)
 
     def chay_co_ngan_sach(step: Step) -> None:
         nonlocal con_lai
         can = min(step.so_loi, ngan_sach)
         with khoa:
-            khoa.wait_for(lambda: con_lai >= can)
+            # ⛔ Ve thu hai (`con_lai == ngan_sach`) KHONG phai phong thu thua:
+            #    thieu no thi mot buoc khai nhieu hon `tran` hien tai cho mai.
+            khoa.wait_for(lambda: con_lai >= can
+                          and (ngan_sach - con_lai + can <= tran
+                               or con_lai == ngan_sach))
             con_lai -= can
         # 🔴 KIEM SAU KHI DA GIANH DUOC NGAN SACH, khong o vong nop.
         #
@@ -1543,9 +1711,17 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
     #    chet SAU khi 24/24 buoc da xanh — mat trang ca luot do vi mot phep
     #    `min()` cham day. `tests/test_1235::test_mot_nhom_RONG...` ghim lai.
     if thu_tu:
-        with ThreadPoolExecutor(max_workers=min(len(thu_tu), max(1, j))) as ex:
-            for f in [ex.submit(chay_co_ngan_sach, s) for s in thu_tu]:
-                f.result()
+        van = threading.Thread(target=_do_lai_tran, daemon=True)
+        van.start()
+        try:
+            with ThreadPoolExecutor(max_workers=min(len(thu_tu), max(1, j))) as ex:
+                for f in [ex.submit(chay_co_ngan_sach, s) for s in thu_tu]:
+                    f.result()
+        finally:
+            # ⛔ KHONG de luong nen song qua vong nop: no in ra sau khi bang ket
+            #    qua da in thi dong `[van dong]` lot vao giua phan quyet.
+            xong_het.set()
+            van.join(timeout=3)
 
     # ⛔ SAU khi `bo test` xong hẳn, KHÔNG song song với nó.
     #
@@ -1834,6 +2010,39 @@ def _thanh_phan_chon(args) -> list[str]:
 
 
 def main() -> int:
+    # ══════════════════════════════════════════════════════════════════════════
+    #  🔴 EP UTF-8 TRUOC MOI DONG IN. Do duoc 28/09/2026 — HAI lan trong mot ngay.
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    #    Ca 1 (phien `Prompt AI` bao lai): `RESULT: PASS` in ra, roi
+    #    `UnicodeEncodeError` tren `⛔` trong `HO_SO["doi"]["khong_chung_minh"]`,
+    #    va `.gate/` **khong co ban ghi nao**. Man hinh noi dat; bang chung khong
+    #    ton tai; `deploy` doc bang chung.
+    #
+    #    Ca 2 (chinh toi, cung ngay, trong khi DANG SUA ca 1): mot `⚠️` o dong
+    #    canh bao `[khoa]` — va lan nay no chet o dong ~2152, **truoc khi mot buoc
+    #    nao chay xong**, nen phep va "ghi so truoc khi in" cua toi ⛔ KHONG cuu
+    #    duoc: khoi ghi so nam sau phan chay.
+    #
+    # ⭐ ⇒ Ba tang, va moi tang bat mot ca tang khac KHONG bat duoc:
+    #      1. dong nay        — moi `print`, ke ca truoc khi co gi de ghi;
+    #      2. ghi so TRUOC in — cuu ca chet GIUA `RESULT` va khoi ghi;
+    #      3. `test_5610`     — chan mot chuoi ngoai cp1252 quay lai.
+    #
+    # ⚠️ Toi tung viet *"tang 2 go cai sung"*. Sai: no **thu hep** cua so, ⛔ khong
+    #    dong no. Cai sung la **bat ky `print` nao truoc khi gate ghi so**, va tep
+    #    nay co ~150 dong nhu the. Chi tang 1 phu duoc ca do.
+    #
+    # ⛔ `errors="replace"` chu khong de nem: mot dau nghieng in ra thanh `?` la
+    #    mot thiet hai co the doc qua; mot phan quyet gate bien mat thi khong.
+    for _luong in (sys.stdout, sys.stderr):
+        try:
+            _luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, OSError, ValueError):
+            # ⛔ KHONG nuot lang le: `stdout` da bi thay (pytest capture, mot lop
+            #    boc) thi `reconfigure` khong co o do — va do la BINH THUONG.
+            #    Noi ra o muc chan doan chu dung lam do ca luot gate.
+            pass
     parser = _parser()
     args = parser.parse_args()
 
@@ -1991,6 +2200,27 @@ def main() -> int:
         else:
             dong += (f", toi da {args.j} buoc cung luc"
                      f", ngan sach {ngan_sach_loi()}/{os.cpu_count()} loi")
+        # ── ⚠️ Giu mutex CA MAY ma tu han che ───────────────────────────────
+        #
+        # 🔴 Ca that 28/09/2026: mot luot `--pham-vi` (35 pham vi) chay `-j 2`,
+        #    giu `cpu_nhieu` + `postgres_test` **25 phut**, va do giay CPU cua ca
+        #    cay tien trinh duoc **28 giay** — tuc 0,02 loi. Hai lan cua mot phien
+        #    khac dung sau no, moi lan vai giay.
+        #
+        # ⭐ `cpu_nhieu` la mutex **toan may** (chu du an chot 23/09 sau mot su co
+        #    do duoc). Nen khi mot luot DA giu no, no da doc quyen may — va mot `-j`
+        #    nho la **tu han che vo co**: cai gia ⛔ khong do len may, no do len
+        #    **KHOA**, tuc len nguoi xep hang sau.
+        #
+        # ⛔ CHI canh bao, ⛔ KHONG tu ghi de `-j`. Nguoi goi co the co ly do that
+        #    (do mot con so can it nhieu, hay may dang co viec ngoai khoa). Mot
+        #    cong cu tu doi y dinh cua nguoi goi thi lan sau ho ⛔ khong tin no nua.
+        if can and not tuan_tu and args.j * 2 <= ngan_sach_loi():
+            print(f"  [khoa] CANH BAO: dang giu mutex CA MAY ({', '.join(sorted(can))}) "
+                  f"ma chi cho {args.j} buoc cung luc / ngan sach "
+                  f"{ngan_sach_loi()} loi. Luot nay se giu khoa LAU hon can, va "
+                  f"nguoi xep hang sau tra gia do. Can `-j` nho that thi giu; "
+                  f"neu khong, bo `-j` di de gate tu chon.")
         if can:
             dong += f", tai nguyen: {', '.join(sorted(can))}"
         print(dong)
@@ -1999,16 +2229,30 @@ def main() -> int:
         #    thay bon dich vu production dang ban. Do 03/09: `cua_so_yen
         #    trang-thai` bao RANH trong khi CPU 65%.
         ban = loi_dang_ban()
-        muc = ("RANH" if ban <= LOI_DE_DANH_CHO_MAY else
-               "BAN" if ban <= ngan_sach_loi() else "QUA TAI")
-        print(f"  [tai may] {ban:.1f}/{os.cpu_count()} loi dang ban -> {muc}")
+        # 🔴 **BA con so o day tung o BA don vi, do 28/09/2026.** Ban cu:
+        #
+        #        ban <= LOI_DE_DANH_CHO_MAY      # 10-thang VAT LY vs 20-thang LOGIC
+        #        ban <= ngan_sach_loi()          # dung don vi, nhung la NGAN SACH
+        #        f"{ban:.1f}/{os.cpu_count()}"   # in mau so 20 cho mot tu so max 10
+        #
+        #    Hau qua do duoc: mot may ban **60 %** in ra `RANH`, va `6.0/20` doc
+        #    nhu 30 %. Nguong `QUA TAI` o `> 8/10` = 80 % thi gan nhu khong bao
+        #    gio bat — ke ca lan Defender an 5,45 loi.
+        #
+        # ⚠️ Day dung la benh ma `loi_cong_cu_tu_do()` duoc viet ra de chua
+        #    (`-n 11` > `auto` = 10), tai phat o **duong BAO CAO** thay vi duong
+        #    tinh. Mot con so dung dat canh mot mau so sai thi la mot con so sai.
+        vat_ly = loi_cong_cu_tu_do()
+        muc = ("RANH" if ban <= LOI_DE_DANH_VAT_LY else
+               "BAN" if ban <= vat_ly - LOI_DE_DANH_VAT_LY else "QUA TAI")
+        print(f"  [tai may] {ban:.1f}/{vat_ly} loi VAT LY dang ban -> {muc}")
         if muc == "QUA TAI":
             print("  [tai may] CANH BAO: co thu gi do NGOAI luot nay dang chiem "
                   "may. Ket qua co the bi nhieu; xem `--noi-tiep`.")
         print()
         t0_chay = time.time()
         _chay_theo_lich(steps, j=args.j, tuan_tu=tuan_tu,
-                        dung_som=args.dung_som)
+                        dung_som=args.dung_som, phien=phien)
         tong_s = time.time() - t0_chay
 
     print("\n" + "=" * 62)
@@ -2075,6 +2319,41 @@ def main() -> int:
     #    sach - va dong RESULT la thu duy nhat duoc doc khi nguoi ta voi.
     if cay_da_doi:
         ket += "  [CAY DA DOI GIUA CHUNG - KHONG DUNG LAM BANG CHUNG]"
+    # ══════════════════════════════════════════════════════════════════════
+    #  🔴 GHI SO TRUOC KHI IN. Do 28/09/2026, mot phien khac bao lai.
+    # ══════════════════════════════════════════════════════════════════════
+    #
+    #    Su co: `python tools/gate.py --doi --tu <sha> -j 2`
+    #
+    #        RESULT: PASS  [--ho-so doi: bo test THU HEP theo pham vi]   <- DA IN
+    #        UnicodeEncodeError: 'charmap' codec can't encode character '⛔'
+    #          File "tools\gate.py", line ~2274, in main
+    #        ls -t .gate/*.json  ->  ban ghi moi nhat la cua luot TRUOC
+    #
+    #    Man hinh noi `PASS`. `.gate/` **khong co ban ghi nao** cho luot ay. Va
+    #    ban ghi la thu `deploy` doc — nen ai tin man hinh se deploy tren mot
+    #    phan quyet KHONG TON TAI.
+    #
+    # ⭐ Ep UTF-8 (mot phien khac da va) go **cai co**. Dong nay go **cai sung**:
+    #    moi `print` giua dong RESULT va khoi ghi so deu la mot co tiem nang, va
+    #    tep nay co ~150 dong print phia duoi. Ghi so TRUOC thi ca lop loi ay
+    #    bien mat, **khong phu thuoc vao viec ai do co nho ep UTF-8 hay khong**.
+    #
+    # ⚠️ Cung ho `nha khoa ngay khi tinh xong`: thu tu giua mot viec KHONG THE
+    #    THAT LAC (ghi bang chung) va mot viec CO THE NEM (in cho nguoi doc) thi
+    #    viec khong the that lac phai di TRUOC.
+    #
+    # ⛔ `_ghi_ket_qua` nay TRA VE dong de in, khong tu in: dong `[ket qua] ...`
+    #    van phai xuat hien o CUOI man hinh (noi nguoi ta tim no), con TEP thi da
+    #    duoc ghi tu truoc do. Hai thu khac nhau, va truoc day chung bi buoc vao
+    #    nhau chi vi cung nam trong mot ham.
+    chay_lai = lenh_chay_lai(steps) if failed else []
+    _dong_ban_ghi = _ghi_ket_qua(
+        ho_so, steps, ket, tong_s, khoa, cay_da_doi,
+        chay_lai=chay_lai, ha_cap_tu=ha_cap_tu,
+        ly_do_ha_cap=ly_do_ha_cap, l3_lai=bool(args.l3_lai),
+        sha=sha_dau, thanh_phan=_thanh_phan_chon(args))
+
     if args.vong_lap:
         # 🔴 Cùng luật với `--quick`: một chế độ chạy ít hơn thì dòng kết quả
         #    của nó **phải trông khác**. Đọc "PASS" ở đây rồi báo xong là lặp
@@ -2125,7 +2404,6 @@ def main() -> int:
     # 🔴 DO THI IN SAN DUONG DI TIEP — xem khoi "NHIP MOT L3" o cuoi tep.
     #    Nguoi vua thay mot dong FAIL se lam thu de nhat trong tam tay; neu thu do
     #    la "chay lai gate" thi ta tra them ~15 phut moi vong.
-    chay_lai = lenh_chay_lai(steps) if failed else []
     if chay_lai:
         print("\nCHAY LAI DUNG PHEP DO (KHONG chay lai ca gate):")
         for lenh in chay_lai:
@@ -2134,10 +2412,9 @@ def main() -> int:
             print("Sua xong va cac phep tren xanh -> KHEP ban sua:")
             print(f"  python tools/gate.py --doi --tu {sha_dau}")
 
-    _ghi_ket_qua(ho_so, steps, ket, tong_s, khoa, cay_da_doi,
-                 chay_lai=chay_lai, ha_cap_tu=ha_cap_tu,
-                 ly_do_ha_cap=ly_do_ha_cap, l3_lai=bool(args.l3_lai),
-                 sha=sha_dau, thanh_phan=_thanh_phan_chon(args))
+    # ⭐ Tep DA duoc ghi o tren; day chi la dong CHO NGUOI DOC, dat o cuoi man
+    #    hinh noi ho tim no.
+    print(_dong_ban_ghi)
     return 0 if not failed else 1
 
 
@@ -2145,8 +2422,14 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
                  khoa, cay_da_doi: bool, *, chay_lai: list[str] | None = None,
                  ha_cap_tu: str = "", ly_do_ha_cap: str = "",
                  l3_lai: bool = False, sha: str = "",
-                 thanh_phan: list[str] | None = None) -> None:
-    """Ghi danh tinh cua luot chay nay vao `.gate/<id>.json`.
+                 thanh_phan: list[str] | None = None) -> str:
+    """Ghi danh tinh cua luot chay nay vao `.gate/<id>.json`. TRA VE dong de in.
+
+    ⛔ **Ham nay GHI, KHONG IN** (doi 28/09/2026). Nguoi goi in dong tra ve o
+       cuoi man hinh. Hai viec bi buoc vao nhau truoc day chi vi cung nam trong
+       mot ham — va he qua la: de dong `[ket qua]` nam dung cho nguoi doc tim no,
+       ca **viec ghi** phai doi toi cuoi, sau ~150 dong `print` bat ky dong nao
+       trong so do cung co the nem `UnicodeEncodeError` va lam mat ban ghi.
 
     ## Vi sao can
 
@@ -2205,12 +2488,12 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
         tep = thu_muc / f"{ban_ghi['id']}.json"
         tep.write_text(json.dumps(ban_ghi, ensure_ascii=False, indent=2),
                        encoding="utf-8", newline="\n")
-        print(f"        [ket qua] {tep.relative_to(ROOT).as_posix()}")
+        return f"        [ket qua] {tep.relative_to(ROOT).as_posix()}"
     except OSError as e:
         # ⚠️ Khong ghi duoc thi NOI RA roi di tiep. Mot kho ket qua hong khong
         #    duoc phep lam do mot luot gate da chay xong — nhung im lang o day
         #    thi phien sau se tuong no da duoc ghi.
-        print(f"        [ket qua] KHONG ghi duoc: {e}")
+        return f"        [ket qua] KHONG ghi duoc: {e}"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -2317,8 +2600,19 @@ def lenh_chay_lai(steps: list[Step]) -> list[str]:
                     pass
             tep = _tep_test_do(dau_ra)
             if tep:
-                n = f" -n {TRAN_N_GO_TAY}" if len(tep) >= 3 else ""
-                ra.append(f"python -m pytest{n} -q {' '.join(tep)}")
+                n = ["-n", str(TRAN_N_GO_TAY)] if len(tep) >= 3 else []
+                dau = ["python", "-m", "pytest", *n, "-q"]
+                # 🔴 SU CO 28/09 (B11 lan B): mot pham vi do vai tram/nghin tep
+                #    thi CHINH dong lenh goi y nay cung vuot tran — nguoi doc
+                #    dan lenh, no chet, ho di tim nguyen nhan o cho khac. Dung
+                #    lai `argv_an_toan`: con ngan thi in nguyen nhu truoc; dai
+                #    thi ghi danh sach vao `.gate/` va in `@<tep>` + noi ro cho.
+                argv, tep_argfile = test_nhanh.argv_an_toan(dau, tep, ten="chay_lai")
+                lenh = " ".join(argv)
+                if tep_argfile is not None:
+                    lenh += (f"   # {len(tep)} tep vuot tran dong lenh -> danh"
+                             f" sach nam o {tep_argfile.relative_to(ROOT).as_posix()}")
+                ra.append(lenh)
                 continue
         argv = ["python" if a == sys.executable else a for a in s.argv]
         lenh = " ".join(argv)

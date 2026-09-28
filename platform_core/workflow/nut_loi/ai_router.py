@@ -8,7 +8,15 @@ phần LÕI của node: một hàm THUẦN, không đụng job/engine, nên ki�
    tệp này không thay thế và không đụng `core.if`/`core.switch` (phạm vi
    node điều khiển của làn p3, `nut_loi/core_*.py`).
 
-⛔ CHƯA nối vào `cau_noi.nop_job` — cùng lý do đã ghi ở `ai_llm.py`.
+✅ Đã nối 28/09/2026. `chon_nhanh()` viết từ plan P7 Task 2, **có test đơn vị
+   `test_2903`, và ⛔ KHÔNG ai gọi** cho tới hôm nay — một hàm đúng, được kiểm,
+   nằm ngoài mọi đường chạy. Cùng họ với `gate.ngan_sach_loi(tru_phien_khac=...)`:
+   một cơ chế có tài liệu, có phép kiểm riêng, và ⛔ không nơi nào dùng, nên ⛔
+   không phép kiểm nào thất bại khi nó vắng mặt.
+
+⚠️ ⇒ *"Có hàm + có test"* ⛔ **không** trả lời *"tính năng có chạy không"*. Câu
+   trả lời nằm ở **ai gọi nó**, và ⛔ không bảng độ phủ nào hỏi câu đó: dòng mã ấy
+   **có** chạy — trong test.
 """
 from __future__ import annotations
 
@@ -35,6 +43,22 @@ def chon_nhanh(dau_ra, nhanh_hop_le, *, mac_dinh: str = NHANH_MAC_DINH) -> str:
     """
     ung_vien = (dau_ra or "").strip()
     return ung_vien if ung_vien in set(nhanh_hop_le) else mac_dinh
+
+
+def doi_dau_ra_router(ket_qua: dict, params: dict) -> dict:
+    """`content` → cổng ra `nhanh`, qua `chon_nhanh()`.
+
+    ⭐ Đọc `ai_choice`/`mac_dinh` từ **`params` của node**, ⛔ không từ một hằng:
+       danh sách nhánh là thứ người soạn khai lúc thiết kế workflow (ADR Q8).
+
+    ⚠️ `mac_dinh` lấy `params.get("mac_dinh") or NHANH_MAC_DINH` — chuỗi rỗng phải
+       rơi về hằng, ⛔ không được thành một tên nhánh rỗng. Lược đồ có `default`,
+       nhưng `default` của JSON Schema ⛔ không tự điền vào `params` đã lưu.
+    """
+    return {"nhanh": chon_nhanh(ket_qua.get("content"),
+                                params.get("ai_choice") or (),
+                                mac_dinh=str(params.get("mac_dinh")
+                                             or NHANH_MAC_DINH))}
 
 
 AI_ROUTER = dang_ky(NodeDefinition(
@@ -78,7 +102,10 @@ AI_ROUTER = dang_ky(NodeDefinition(
     resource={"class": "api"}, gia=Gia.theo_registry(ai_llm.JOB_TYPE_TEXT_CHAT),
     credential=(), quyen=frozenset({"network"}),
     cho=("JOB",), ma_loi=ai_loi.MA_LOI_AI,
-    publish_duoc=False))
+    doi_tham_so=ai_llm.doi_tham_so_ai,
+    doi_dau_ra=doi_dau_ra_router,
+    publish_duoc=True))
 
 
-__all__ = ["AI_ROUTER", "NHANH_MAC_DINH", "chon_nhanh"]
+__all__ = ["AI_ROUTER", "NHANH_MAC_DINH", "chon_nhanh",
+           "doi_dau_ra_router"]

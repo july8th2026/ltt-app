@@ -18,16 +18,32 @@ lại từ ToolSpec là đường thực thi:
 đồ ⇒ FAILED `dau_ra_sai_luoc_do` (spec §12.1) — việc kiểm thật nằm ở
 `ai_loi.dien_giai` (Task 3+4), tệp này chỉ khai `tham_so`/cổng/`ma_loi`.
 
-⛔ `publish_duoc=False`: bộ biên dịch (`bien_dich._node`) chưa biết dịch
-   `tham_so` của `ai.*` (vd `luoc_do`) thành `params` của job `text.chat`
-   thật — cùng lý do `trigger.manual`/mọi `core.*` hôm nay đều `False` cho
-   tới khi có plan nối compiler. Việc đó KHÔNG thuộc `nut_loi/ai_*.py`.
+✅ `publish_duoc=True` từ 28/09/2026. Hai điều kiện còn thiếu đã xong:
 
-⛔ CHƯA nối vào `cau_noi.nop_job`/`ap_ket_qua`: cầu nối job chung suy tên
-   ToolSpec bằng `node["type"][4:]` (cắt đúng 4 ký tự cho tiền tố `"app."`)
-   — áp trực tiếp cho `"ai.llm"` ra `"lm"`, vô nghĩa. Tổng quát hoá cầu nối
-   đó là việc ở `platform_core/workflow/cau_noi.py`, ngoài phạm vi tệp cho
-   phép của làn p7. Xem `docs/superpowers/reports/p7-ai/task-1-report.md`.
+  - cầu nối job **⛔ không còn** cắt chuỗi `node["type"][4:]`; `cau_noi.py:103`
+    đọc `nd.ten_toolspec`. Đo được: `text.chat` tra ra trong `cong_cu.tat_ca()`
+    và `job_type` khớp đúng `ltt_llm.chat`.
+  - **phép dịch đầu ra** (`nd.doi_dau_ra`, thêm cùng ngày) — xem dưới.
+
+🔴 **Và đây là lý do THẬT khiến cờ ấy phải `False` suốt tới 28/09 — ⛔ KHÔNG phải
+   lý do bản docstring cũ ghi.** Bản cũ nói *"compiler chưa biết dịch `tham_so`
+   thành `params`"* và *"cầu nối suy tên ToolSpec bằng `[4:]`"*. Đo trực tiếp thì
+   **cả hai đã hết đúng**: bật cờ trong bộ nhớ, `bien_dich.bien_dich()` chạy
+   thẳng. Nếu tin docstring, ta sẽ bật cờ và tưởng đã xong.
+
+   Thứ thật sự hỏng nằm ở **từ vựng đầu ra**:
+
+       ToolSpec `text.chat`  returns  content · tool_calls · usage
+       `ai.llm`              cong_ra  text · json
+
+   và `ap_ket_qua` ghi `output_ref = result` **nguyên văn**. Nên
+   `{{ nodes.n2.output.text }}` đọc ra **rỗng** — ⛔ không lỗi, ⛔ không cảnh báo,
+   sau khi credit đã bị trừ.
+
+⚠️ Một lời giải thích **sai** cho một cái cờ nguy hiểm hơn ⛔ không có lời giải
+   thích nào: nó mời người đọc bật cờ. Cùng họ *"tham chiếu chết"* mà B12 ghi
+   (`dung_video.py:35` nói `demucs_runner` ⛔ không đặt `set_num_threads` trong khi
+   dòng 324 đã đặt).
 """
 from __future__ import annotations
 
@@ -46,6 +62,86 @@ JOB_TYPE_TEXT_CHAT = "ltt_llm.chat"
 #: là làn hàng đợi, cái này là khoá tra `cong_cu.tat_ca()`. Hai chuỗi khác
 #: nhau, và không phép cắt chuỗi nào nối được chúng.
 TEN_TOOLSPEC = "text.chat"
+
+
+def doi_tham_so_ai(params: dict) -> dict:
+    """`{prompt, model, ...}` cua node `ai.*` -> `{messages, model, ...}` cua job
+    `ltt_llm.chat`.
+
+    🔴 **Ham nay thieu cho toi 28/09/2026, va mot run THAT tren production tim ra:**
+
+        node y_tuong (ai.llm)  FAILED
+        provider_loi: ThamSoSai: `messages` phai la mot danh sach khong rong
+
+    `apps/ltt_llm/features.py:352` doi `messages` la mot danh sach khong rong, moi
+    phan tu co `role`. Node thi khai mot `prompt` — **co chu dich**, vi mot mang
+    `messages` day du vai tro la thu nguoi soan workflow ⛔ khong nen phai dung.
+
+    ⚠️ Nen day ⛔ KHONG phai "sua node cho khop handler". Tu vung rieng cua node la
+       DUNG; thieu la **lop dich**. Sua node thanh `messages` se day su phuc tap cua
+       giao thuc LLM ra mat nguoi dung.
+
+    ⭐ `luoc_do` (cua `ai.extract`) va `ai_choice`/`mac_dinh` (cua `ai.router`) **⛔
+       KHONG** di sang job: chung la tham so cua **node**, dung o `hau_kiem` va
+       `doi_dau_ra`. Gui chung sang handler la gui rac — va `features.py` co the
+       tu choi mot truong la.
+    """
+    p = dict(params or {})
+    prompt = str(p.pop("prompt", "") or "")
+    ra: dict = {"messages": [{"role": "user", "content": prompt}]}
+    # ⭐ Chi chuyen nhung truong handler THAT SU nhan. ⛔ Khong `ra.update(p)`:
+    #    no se mang `luoc_do`/`ai_choice` sang job.
+    for khoa in ("model", "max_tokens"):
+        if p.get(khoa) not in (None, ""):
+            ra[khoa] = p[khoa]
+    return ra
+
+
+def doi_dau_ra_llm(ket_qua: dict, params: dict) -> dict:
+    """`content` của job → cổng ra `text` / `json` của `ai.llm`.
+
+    ⭐ `json` là `content` đã `json.loads` khi đọc được, ngược lại `None`.
+       `ai.llm` ⛔ không bắt buộc JSON (chỉ `ai.extract` mới bắt), nên một
+       `content` là văn xuôi là **bình thường** — và `None` ở cổng `json` nói
+       đúng điều đó.
+
+    ⚠️ Hàm này chạy **sau** `hau_kiem`, tức sau khi `content` rỗng đã bị chặn.
+       Nên ⛔ không lặp lại phép kiểm rỗng ở đây: hai chỗ cùng kiểm một điều rồi
+       trôi khỏi nhau là lỗi ta đã trả giá nhiều lần.
+    """
+    return {"text": ket_qua.get("content"),
+            "json": _thu_doc_json(ket_qua.get("content"))}
+
+
+def doi_dau_ra_extract(ket_qua: dict, params: dict) -> dict:
+    """`content` → cổng ra `json` của `ai.extract`.
+
+    🔴 `ai_loi.dien_giai` **đã** `json.loads` nội dung này để kiểm lược đồ, rồi
+       **vứt giá trị đã parse đi** và chỉ trả `(trạng thái, mã, chi tiết)`. Nên
+       công parse bị làm hai lần. Đó là một cái giá nhỏ, nhưng lý do giữ nguyên
+       là đáng nói: `dien_giai` là hàm THUẦN về *"dùng được không"*; đổi nó thành
+       *"dùng được không VÀ giá trị là gì"* làm nó mang hai nghĩa, và mọi nơi gọi
+       nó phải học nghĩa thứ hai.
+
+    ⭐ `hau_kiem` đã chặn ca ⛔ không phải JSON và ca sai lược đồ, nên tới đây
+       `_thu_doc_json` ⛔ không thể trả `None` — trừ khi ai bỏ `hau_kiem` đi.
+       ⇒ Vẫn trả thẳng, ⛔ không thêm nhánh phòng thủ cho ca ấy: một nhánh ⛔
+         không bao giờ chạy mua sự yên tâm bằng tín dụng giả.
+    """
+    return {"json": _thu_doc_json(ket_qua.get("content"))}
+
+
+def _thu_doc_json(content):
+    """`json.loads` khi đọc được, `None` khi không. ⛔ Không nuốt lặng lẽ điều gì
+    quan trọng: với `ai.llm`, *"⛔ không phải JSON"* là một ca HỢP LỆ, ⛔ không
+    phải một lỗi bị che."""
+    import json as _json
+    if not isinstance(content, str) or not content.strip():
+        return None
+    try:
+        return _json.loads(content)
+    except ValueError:
+        return None
 
 
 def hau_kiem(ket_qua: dict, params: dict) -> tuple:
@@ -105,9 +201,10 @@ AI_LLM = dang_ky(NodeDefinition(
     ten_toolspec=TEN_TOOLSPEC, hau_kiem=hau_kiem,
     side_effect="external", idempotency_key_fields=(),
     resource={"class": "api"}, gia=Gia.theo_registry(JOB_TYPE_TEXT_CHAT),
+    doi_tham_so=doi_tham_so_ai, doi_dau_ra=doi_dau_ra_llm,
     credential=(), quyen=frozenset({"network"}),
     cho=("JOB",), ma_loi=ai_loi.MA_LOI_AI,
-    publish_duoc=False))
+    publish_duoc=True))
 
 
 AI_EXTRACT = dang_ky(NodeDefinition(
@@ -128,10 +225,12 @@ AI_EXTRACT = dang_ky(NodeDefinition(
     ten_toolspec=TEN_TOOLSPEC, hau_kiem=hau_kiem,
     side_effect="external", idempotency_key_fields=(),
     resource={"class": "api"}, gia=Gia.theo_registry(JOB_TYPE_TEXT_CHAT),
+    doi_tham_so=doi_tham_so_ai, doi_dau_ra=doi_dau_ra_extract,
     credential=(), quyen=frozenset({"network"}),
     cho=("JOB",), ma_loi=ai_loi.MA_LOI_AI,
-    publish_duoc=False))
+    publish_duoc=True))
 
 
 __all__ = ["AI_EXTRACT", "AI_LLM", "JOB_TYPE_TEXT_CHAT", "TEN_TOOLSPEC",
-           "hau_kiem"]
+           "hau_kiem", "doi_dau_ra_llm", "doi_dau_ra_extract",
+           "doi_tham_so_ai"]

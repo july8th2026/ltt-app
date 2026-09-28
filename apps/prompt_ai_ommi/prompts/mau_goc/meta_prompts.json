@@ -1,0 +1,195 @@
+{
+  "items": [
+    {
+      "name": "Anh Thang",
+      "body": "Hãy tạo cho tôi 1 prompt video bằng TIẾNG VIỆT để dùng trên Seedance 2.0, chia thành {SCENES} cảnh, tổng độ dài {DURATION} giây.\n\nTiêu đề kịch bản: {TITLE}\nDự án: {PROJECT_NAME}  ·  Khung hình: {ASPECT_RATIO}\n\nBrief / Miêu tả nội dung cảnh:\n{BRIEF_VI}\n\nPhong cách (style preset):\n{STYLE_FULL}\n\nAsset đi kèm (upload làm ảnh tham chiếu):\n{ASSET_LIST}\n\nGắn thẻ ảnh tham chiếu:\n- Mỗi asset ở trên = 1 ảnh tham chiếu, gán thẻ theo thứ tự: @IMG_1, @IMG_2, @IMG_3...\n- Khi nhắc nhân vật/đạo cụ trong một shot, chỉ dùng tên có trong mô tả của shot đó và gắn đúng thẻ @IMG tương ứng.\n\nVideo tham chiếu (nhịp + ngôn ngữ máy quay để bám theo):\n{VIDEO_LIST}\n\nGắn thẻ video tham chiếu:\n- Mỗi video ở trên = 1 clip tham chiếu, gán thẻ theo thứ tự RIÊNG: @VID_1, @VID_2...\n- Ảnh đánh số riêng (@IMG_n), video đánh số riêng (@VID_n) — TUYỆT ĐỐI không dùng chung\n  một dãy số, vì nền tảng đếm hai loại độc lập.\n- Bám nhịp cắt và chuyển động máy của @VID_k; giữ nhân dạng nhân vật theo @IMG_k.\n- Nếu clip tham chiếu ngắn hơn thời lượng đích, LẶP LẠI tiết tấu chứ đừng kéo giãn.\n\nYêu cầu prompt cuối (tiếng Việt, phong cách điện ảnh):\n- Chia đúng {SCENES} cảnh, mỗi cảnh có timecode rõ ràng từng giây (vd: 0s-2s, 2s-4s...).\n- Mỗi cảnh nêu rõ: shot type / góc máy (rear view, medium tracking, close-up...), nhân vật, hành động.\n- Cinematic, chân thực điện ảnh, chuyển cảnh mạch lạc.\n- Lưu ý: Nội dung không được quá 5000 ký tự.\n\nAn toàn nội dung (bắt buộc):\n- Đạn phải là đạn NERF (đạn xốp), KHÔNG đạn thật.\n- Tránh: máu me, bạo lực thực, gãy xương, chết chóc, thương tích thật, tứ chi/ngón tay thừa hoặc biến dạng, anime/hoạt hình, chất lượng thấp, võ thuật phi thực tế, siêu năng lực, bay lượn, dịch chuyển tức thời.\n\n- Cuối prompt thêm dòng: STYLE TAGS: {STYLE_POSITIVE}\n- Cuối prompt thêm dòng: NEGATIVE PROMPT: {STYLE_NEGATIVE}\n- không có nhạc nền và chỉ có SFX\n- hiệu ứng cinematic, khói bụi, slomotion\n",
+      "target_format": "gemini_style",
+      "is_default": true,
+      "placeholders": [
+        "ASPECT_RATIO",
+        "ASSET_LIST",
+        "BRIEF_VI",
+        "DURATION",
+        "PROJECT_NAME",
+        "SCENES",
+        "STYLE_FULL",
+        "STYLE_NEGATIVE",
+        "STYLE_POSITIVE",
+        "TITLE",
+        "VIDEO_LIST"
+      ]
+    },
+    {
+      "name": "Character reference sheet 4×2",
+      "body": "A professional character reference sheet, 4x2 grid layout, pure white background, high resolution. The subject is a single consistent character in all panels. Studio lighting, sharp focus, no text.\n\nDescription of the character:\n{CHARACTER_DESCRIPTION}\n\nTop Row (4 Panels):\n1. Close-up: Front view of the head.\n2. Close-up: Side profile view of the head.\n3. Close-up: Back view of the head.\n4. Close-up: Top-down view of the head.\n\nBottom Row (4 Panels):\n1. Full-body: Front view, head to toe.\n2. Full-body: Side view, head to toe.\n3. Full-body: Back view, head to toe.\n4. Close-up: Top-down view focusing on both hands and forearms.",
+      "target_format": "gemini_style",
+      "is_default": false,
+      "placeholders": [
+        "CHARACTER_DESCRIPTION"
+      ]
+    },
+    {
+      "name": "Seedance — video phân cảnh",
+      "body": "Hãy tạo cho tôi 1 prompt tiếng Việt để dùng trên Seedance 2.0 với {SCENES} cảnh, độ dài tổng {DURATION} giây.\n\nTiêu đề kịch bản: {TITLE}\nDự án: {PROJECT_NAME}  ·  Khung hình: {ASPECT_RATIO}\n\nBrief / Miêu tả nội dung cảnh:\n{BRIEF_VI}\n\nPhong cách (style preset):\n{STYLE_FULL}\n\nAsset đi kèm (sẽ upload làm reference image):\n{ASSET_LIST}\n\nYêu cầu prompt cuối:\n- Cinematic, thật điện ảnh\n- Có timecode rõ ràng cho từng cảnh, từng giây (vd: 0s-1s, 1s-2s...)\n- Mỗi cảnh có shot type cụ thể (rear view, medium tracking, close-up, ...)\n- Khi nhắc nhân vật: Chỉ nhắc đến tên nhân vật có trong mô tả của từng shot.\n- Cuối prompt: STYLE TAGS: {STYLE_POSITIVE}\n- Cuối prompt: NEGATIVE PROMPT: {STYLE_NEGATIVE}",
+      "target_format": "gemini_style",
+      "is_default": false,
+      "placeholders": [
+        "ASPECT_RATIO",
+        "ASSET_LIST",
+        "BRIEF_VI",
+        "DURATION",
+        "PROJECT_NAME",
+        "SCENES",
+        "STYLE_FULL",
+        "STYLE_NEGATIVE",
+        "STYLE_POSITIVE",
+        "TITLE"
+      ]
+    },
+    {
+      "name": "Ông Ngoại",
+      "body": "META DIRECTOR — PROMPT CỐT TẠO VIDEO SEEDANCE 2.0: VAI TRÒ & NHIỆM VỤ: Bạn là Đạo diễn hành động, DOP, Biên đạo tác chiến, Giám sát Continuity và Kỹ sư Prompt Seedance 2.0; từ input gồm {PROJECT_NAME}, {TITLE}, {DURATION}, {ASPECT_RATIO}, {SCENES}, {BRIEF_VI}, {STYLE_FULL}, {ASSET_LIST}, {VIDEO_LIST}, {FACTION_A}, {FACTION_B}, {NEUTRAL_LIST}, {MIN_COMBAT_DISTANCE}, {STYLE_POSITIVE}, {STYLE_NEGATIVE}, hãy tạo 1 prompt video Seedance 2.0 hoàn chỉnh bằng tiếng Việt, dưới 5.000 ký tự, timecode chuẩn từng giây, không giải thích ngoài lề. QUY TẮC CỐT LÕI: 1. REFERENCE MAPPING: Đánh số độc lập @IMG_n cho ảnh (khóa nhân dạng/trang phục/vũ khí) và @VID_n cho video (khóa nhịp/chuyển động camera); trong SCENE BREAKDOWN tuyệt đối chỉ gọi nhân vật bằng thẻ @IMG_n, không dùng tên riêng. 2. GLOBAL FACTION & DISTANCE LOCK: Cố định Phe A (@IMG_...), Phe B (@IMG_...), Trung lập (@IMG_...); giữ nghiêm trục 180°, hướng nhìn đối đầu và khoảng cách tối thiểu {MIN_COMBAT_DISTANCE}; hai phe luôn ở hai tuyến/vật cản riêng, cấm đứng chung hàng, cấm dùng chung một bên vật cản hoặc hòa lẫn vào nhau. 3. COVER-BASED FIREFIGHT & ACTION PHYSICS: Biên đạo chuẩn chuỗi chiến thuật 'quan sát → nấp → ngắm → bắn foam dart → áp chế → trượt/lăn vai né → đổi vật cản → phản công'; mọi hành động phải đủ 'chuẩn bị → phát lực → quỹ đạo → va chạm/né → quán tính/tiếp đất'; cận chiến chỉ áp sát trong nhịp ra đòn rồi tách ra theo phản lực. 4. CAMERA & FLYCAM: Dùng phối hợp wide xác lập, medium bám sát, over-the-shoulder định hướng bắn, low-angle cho động tác lăn/trượt, close-up cho cơ cấu blaster; flycam chỉ dùng khi bao quát toàn cảnh/khoảng cách hai phe, tuyệt đối không để lộ drone, cánh quạt, bóng thiết bị hoặc người điều khiển. 5. NERF SAFETY LOCK (BẮT BUỘC): Toàn bộ vũ khí là đồ chơi NERF/foam blaster màu sắc, đạn xốp mềm foam dart thấy rõ đường bay, va chạm nảy ra hoặc rơi xuống; cấm tuyệt đối súng thật, đạn thật, lửa đầu nòng, vỏ đạn, máu me, vết thương, gãy xương, chết chóc, siêu năng lực, bay lượn, dịch chuyển tức thời. 6. AUDIO & CONTINUITY LOCK: 100% không nhạc nền (No BGM), không lời thoại, nhân vật khép miệng; chỉ có SFX tiếng bước chân, cơ cấu súng đồ chơi, đạn xốp 'phụt/vút/bộp' và bụi đất; tư thế cuối cảnh trước phải nối khớp hoàn hảo với đầu cảnh sau. ĐỊNH DẠNG ĐẦU RA BẮT BUỘC: Tiêu đề: {TITLE} | Dự án: {PROJECT_NAME} | Tỷ lệ: {ASPECT_RATIO} | Thời lượng: {DURATION}s ({SCENES} cảnh) | Âm thanh: Không nhạc nền, không thoại, chỉ có SFX | REFERENCE MAPPING: Gán @IMG_n và @VID_n | GLOBAL LOCK: Khóa phe, trục giao tranh và khoảng cách {MIN_COMBAT_DISTANCE} | SCENE BREAKDOWN (đúng {SCENES} cảnh, mỗi cảnh đủ 8 trường trên cùng 1 khối: 'Nhân vật' [chỉ dùng @IMG_n], 'Góc quay', 'Camera', 'Hành động' [chi tiết theo giây], 'Biểu cảm', 'Âm thanh' [SFX], 'Continuity' [tư thế đầu-cuối/vị trí phe], 'Chuyển tiếp') | CONTINUITY LOCK | STYLE TAGS: {STYLE_POSITIVE} | NEGATIVE PROMPT: {STYLE_NEGATIVE}. LỆNH THỰC THI: CHỈ XUẤT PROMPT VIDEO HOÀN CHỈNH THEO ĐÚNG CẤU TRÚC TRÊN, KHÔNG GIẢI THÍCH, KHÔNG CHÀO HỎI.",
+      "target_format": "gemini_style",
+      "is_default": false,
+      "placeholders": [
+        "ASPECT_RATIO",
+        "ASSET_LIST",
+        "BRIEF_VI",
+        "DURATION",
+        "FACTION_A",
+        "FACTION_B",
+        "MIN_COMBAT_DISTANCE",
+        "NEUTRAL_LIST",
+        "PROJECT_NAME",
+        "SCENES",
+        "STYLE_FULL",
+        "STYLE_NEGATIVE",
+        "STYLE_POSITIVE",
+        "TITLE",
+        "VIDEO_LIST"
+      ]
+    },
+    {
+      "name": "🌀 Flow Omni · Phân cảnh có timecode",
+      "body": "Hãy tạo cho tôi 1 prompt video bằng TIẾNG ANH để dùng trên Flow Omni, chia thành {SCENES} cảnh, tổng độ dài {DURATION} giây.\n\nTiêu đề kịch bản: {TITLE}\nDự án: {PROJECT_NAME}  ·  Khung hình: {ASPECT_RATIO}\n\nBrief / Miêu tả nội dung cảnh:\n{BRIEF_VI}\n\nPhong cách (style preset):\n{STYLE_FULL}\n\nAsset đi kèm (upload làm ảnh tham chiếu):\n{ASSET_LIST}\n\nGắn thẻ ảnh tham chiếu:\n- Mỗi asset ở trên = 1 ảnh tham chiếu, gán thẻ theo thứ tự: @IMG_1, @IMG_2, @IMG_3...\n- Khi nhắc nhân vật/đạo cụ trong một shot, chỉ dùng tên có trong mô tả của shot đó và gắn đúng thẻ @IMG tương ứng.\n\nYêu cầu prompt cuối (tiếng Anh, phong cách điện ảnh):\n- Chia đúng {SCENES} cảnh, mỗi cảnh có timecode rõ ràng (vd: 0s-2s, 2s-4s...).\n- Mỗi cảnh nêu rõ: shot type / góc máy (rear view, medium tracking, close-up...), nhân vật, hành động.\n- Cinematic, chân thực điện ảnh, chuyển cảnh mạch lạc.\n\nAn toàn nội dung (bắt buộc):\n- Đạn phải là đạn NERF (đạn xốp), KHÔNG đạn thật.\n- Tránh: máu me, bạo lực thực, gãy xương, chết chóc, thương tích thật, tứ chi/ngón tay thừa hoặc biến dạng, anime/hoạt hình, chất lượng thấp, võ thuật phi thực tế, siêu năng lực, bay lượn, dịch chuyển tức thời.\n\n- Cuối prompt thêm dòng: STYLE TAGS: {STYLE_POSITIVE}\n- Cuối prompt thêm dòng: NEGATIVE PROMPT: {STYLE_NEGATIVE}",
+      "target_format": "gemini_style",
+      "is_default": false,
+      "placeholders": [
+        "ASPECT_RATIO",
+        "ASSET_LIST",
+        "BRIEF_VI",
+        "DURATION",
+        "PROJECT_NAME",
+        "SCENES",
+        "STYLE_FULL",
+        "STYLE_NEGATIVE",
+        "STYLE_POSITIVE",
+        "TITLE"
+      ]
+    },
+    {
+      "name": "🌀 Flow Omni · Đơn cảnh liền mạch",
+      "body": "Hãy tạo cho tôi 1 prompt video bằng TIẾNG ANH để dùng trên Flow Omni cho MỘT cảnh quay liền mạch dài {DURATION} giây — KHÔNG cắt cảnh, KHÔNG chia timecode.\n\nTiêu đề kịch bản: {TITLE}\nDự án: {PROJECT_NAME}  ·  Khung hình: {ASPECT_RATIO}\n\nBrief / Miêu tả nội dung cảnh:\n{BRIEF_VI}\n\nPhong cách (style preset):\n{STYLE_FULL}\n\nAsset đi kèm (upload làm ảnh tham chiếu):\n{ASSET_LIST}\n\nGắn thẻ ảnh tham chiếu:\n- Mỗi asset ở trên = 1 ảnh tham chiếu, gán thẻ theo thứ tự: @IMG_1, @IMG_2, @IMG_3...\n- Khi nhắc nhân vật/đạo cụ trong một shot, chỉ dùng tên có trong mô tả của shot đó và gắn đúng thẻ @IMG tương ứng.\n\nYêu cầu prompt cuối (tiếng Anh, phong cách điện ảnh):\n- Một take DUY NHẤT, máy quay chuyển động liên tục; mô tả một hành động chính chảy liền mạch, KHÔNG chia shot, KHÔNG timecode.\n- Nêu rõ shot type tổng thể + chuyển động máy (tracking, dolly, orbit, handheld...).\n- Cinematic, chân thực điện ảnh.\n\nAn toàn nội dung (bắt buộc):\n- Đạn phải là đạn NERF (đạn xốp), KHÔNG đạn thật.\n- Tránh: máu me, bạo lực thực, gãy xương, chết chóc, thương tích thật, tứ chi/ngón tay thừa hoặc biến dạng, anime/hoạt hình, chất lượng thấp, võ thuật phi thực tế, siêu năng lực, bay lượn, dịch chuyển tức thời.\n\n- Cuối prompt thêm dòng: STYLE TAGS: {STYLE_POSITIVE}\n- Cuối prompt thêm dòng: NEGATIVE PROMPT: {STYLE_NEGATIVE}",
+      "target_format": "gemini_style",
+      "is_default": false,
+      "placeholders": [
+        "ASPECT_RATIO",
+        "ASSET_LIST",
+        "BRIEF_VI",
+        "DURATION",
+        "PROJECT_NAME",
+        "STYLE_FULL",
+        "STYLE_NEGATIVE",
+        "STYLE_POSITIVE",
+        "TITLE"
+      ]
+    },
+    {
+      "name": "🎬 Seedance · Phân cảnh có timecode",
+      "body": "Hãy tạo cho tôi 1 prompt video bằng TIẾNG VIỆT để dùng trên Seedance 2.0, chia thành {SCENES} cảnh, tổng độ dài {DURATION} giây.\n\nTiêu đề kịch bản: {TITLE}\nDự án: {PROJECT_NAME}  ·  Khung hình: {ASPECT_RATIO}\n\nBrief / Miêu tả nội dung cảnh:\n{BRIEF_VI}\n\nPhong cách (style preset):\n{STYLE_FULL}\n\nAsset đi kèm (upload làm ảnh tham chiếu):\n{ASSET_LIST}\n\nGắn thẻ ảnh tham chiếu:\n- Mỗi asset ở trên = 1 ảnh tham chiếu, gán thẻ theo thứ tự: @IMG_1, @IMG_2, @IMG_3...\n- Khi nhắc nhân vật/đạo cụ trong một shot, chỉ dùng tên có trong mô tả của shot đó và gắn đúng thẻ @IMG tương ứng.\n\nYêu cầu prompt cuối (tiếng anh, phong cách điện ảnh):\n- Chia đúng {SCENES} cảnh, mỗi cảnh có timecode rõ ràng từng giây(vd: 0s-2s, 2s-4s... hoặc 0s-1, 1-2s...).\n- Mỗi cảnh nêu rõ: shot type / góc máy (rear view, medium tracking, close-up...), nhân vật, hành động.\n- Cinematic, chân thực điện ảnh, chuyển cảnh mạch lạc.\n- Lưu ý: Nội dung không được quá 5000 ký tự.\nAn toàn nội dung (bắt buộc):\n- Đạn phải là đạn NERF (đạn xốp), KHÔNG đạn thật.\n- Tránh: máu me, bạo lực thực, gãy xương, chết chóc, thương tích thật, tứ chi/ngón tay thừa hoặc biến dạng, anime/hoạt hình, chất lượng thấp, võ thuật phi thực tế, siêu năng lực, bay lượn, dịch chuyển tức thời.\n\n- Cuối prompt thêm dòng: STYLE TAGS: {STYLE_POSITIVE}\n- Cuối prompt thêm dòng: NEGATIVE PROMPT: {STYLE_NEGATIVE}\n- không có nhạc nền và chỉ có SFX\n- hiệu ứng cinematic, khói bụi, slomotion",
+      "target_format": "gemini_style",
+      "is_default": false,
+      "placeholders": [
+        "ASPECT_RATIO",
+        "ASSET_LIST",
+        "BRIEF_VI",
+        "DURATION",
+        "PROJECT_NAME",
+        "SCENES",
+        "STYLE_FULL",
+        "STYLE_NEGATIVE",
+        "STYLE_POSITIVE",
+        "TITLE"
+      ]
+    },
+    {
+      "name": "🎬 Seedance · Phân cảnh có timecode + VIDEO",
+      "body": "Hãy tạo cho tôi 1 prompt video bằng TIẾNG VIỆT để dùng trên Seedance 2.0, chia thành {SCENES} cảnh, tổng độ dài {DURATION} giây.\n\nTiêu đề kịch bản: {TITLE}\nDự án: {PROJECT_NAME}  ·  Khung hình: {ASPECT_RATIO}\n\nBrief / Miêu tả nội dung cảnh:\n{BRIEF_VI}\n\nPhong cách (style preset):\n{STYLE_FULL}\n\nAsset đi kèm (upload làm ảnh tham chiếu):\n{ASSET_LIST}\n\nGắn thẻ ảnh tham chiếu:\n- Mỗi asset ở trên = 1 ảnh tham chiếu, gán thẻ theo thứ tự: @IMG_1, @IMG_2, @IMG_3...\n- Khi nhắc nhân vật/đạo cụ trong một shot, chỉ dùng tên có trong mô tả của shot đó và gắn đúng thẻ @IMG tương ứng.\n\nVideo tham chiếu (nhịp + ngôn ngữ máy quay để bám theo):\n{VIDEO_LIST}\n\nGắn thẻ video tham chiếu:\n- Mỗi video ở trên = 1 clip tham chiếu, gán thẻ theo thứ tự RIÊNG: @VID_1, @VID_2...\n- Ảnh đánh số riêng (@IMG_n), video đánh số riêng (@VID_n) — TUYỆT ĐỐI không dùng chung\n  một dãy số, vì nền tảng đếm hai loại độc lập.\n- Bám nhịp cắt và chuyển động máy của @VID_k; giữ nhân dạng nhân vật theo @IMG_k.\n- Nếu clip tham chiếu ngắn hơn thời lượng đích, LẶP LẠI tiết tấu chứ đừng kéo giãn.\n\nYêu cầu prompt cuối (tiếng Việt, phong cách điện ảnh):\n- Chia đúng {SCENES} cảnh, mỗi cảnh có timecode rõ ràng từng giây (vd: 0s-2s, 2s-4s...).\n- Mỗi cảnh nêu rõ: shot type / góc máy (rear view, medium tracking, close-up...), nhân vật, hành động.\n- Cinematic, chân thực điện ảnh, chuyển cảnh mạch lạc.\n- Lưu ý: Nội dung không được quá 5000 ký tự.\n\nAn toàn nội dung (bắt buộc):\n- Đạn phải là đạn NERF (đạn xốp), KHÔNG đạn thật.\n- Tránh: máu me, bạo lực thực, gãy xương, chết chóc, thương tích thật, tứ chi/ngón tay thừa hoặc biến dạng, anime/hoạt hình, chất lượng thấp, võ thuật phi thực tế, siêu năng lực, bay lượn, dịch chuyển tức thời.\n\n- Cuối prompt thêm dòng: STYLE TAGS: {STYLE_POSITIVE}\n- Cuối prompt thêm dòng: NEGATIVE PROMPT: {STYLE_NEGATIVE}\n- không có nhạc nền và chỉ có SFX\n- hiệu ứng cinematic, khói bụi, slomotion",
+      "target_format": "gemini_style",
+      "is_default": false,
+      "placeholders": [
+        "ASPECT_RATIO",
+        "ASSET_LIST",
+        "BRIEF_VI",
+        "DURATION",
+        "PROJECT_NAME",
+        "SCENES",
+        "STYLE_FULL",
+        "STYLE_NEGATIVE",
+        "STYLE_POSITIVE",
+        "TITLE",
+        "VIDEO_LIST"
+      ]
+    },
+    {
+      "name": "🎬 Seedance · Đơn cảnh liền mạch",
+      "body": "Hãy tạo cho tôi 1 prompt video bằng TIẾNG VIỆT để dùng trên Seedance 2.0 cho MỘT cảnh quay liền mạch dài {DURATION} giây — KHÔNG cắt cảnh, KHÔNG chia timecode.\n\nTiêu đề kịch bản: {TITLE}\nDự án: {PROJECT_NAME}  ·  Khung hình: {ASPECT_RATIO}\n\nBrief / Miêu tả nội dung cảnh:\n{BRIEF_VI}\n\nPhong cách (style preset):\n{STYLE_FULL}\n\nAsset đi kèm (upload làm ảnh tham chiếu):\n{ASSET_LIST}\n\nGắn thẻ ảnh tham chiếu:\n- Mỗi asset ở trên = 1 ảnh tham chiếu, gán thẻ theo thứ tự: @IMG_1, @IMG_2, @IMG_3...\n- Khi nhắc nhân vật/đạo cụ trong một shot, chỉ dùng tên có trong mô tả của shot đó và gắn đúng thẻ @IMG tương ứng.\n\nYêu cầu prompt cuối (tiếng Việt, phong cách điện ảnh):\n- Một take DUY NHẤT, máy quay chuyển động liên tục; mô tả một hành động chính chảy liền mạch, KHÔNG chia shot, KHÔNG timecode.\n- Nêu rõ shot type tổng thể + chuyển động máy (tracking, dolly, orbit, handheld...).\n- Cinematic, chân thực điện ảnh.\n- Lưu ý: Nội dung không được quá 5000 ký tự.\nAn toàn nội dung (bắt buộc):\n- Đạn phải là đạn NERF (đạn xốp), KHÔNG đạn thật.\n- Tránh: máu me, bạo lực thực, gãy xương, chết chóc, thương tích thật, tứ chi/ngón tay thừa hoặc biến dạng, anime/hoạt hình, chất lượng thấp, võ thuật phi thực tế, siêu năng lực, bay lượn, dịch chuyển tức thời.\n\n- Cuối prompt thêm dòng: STYLE TAGS: {STYLE_POSITIVE}\n- Cuối prompt thêm dòng: NEGATIVE PROMPT: {STYLE_NEGATIVE}",
+      "target_format": "gemini_style",
+      "is_default": false,
+      "placeholders": [
+        "ASPECT_RATIO",
+        "ASSET_LIST",
+        "BRIEF_VI",
+        "DURATION",
+        "PROJECT_NAME",
+        "STYLE_FULL",
+        "STYLE_NEGATIVE",
+        "STYLE_POSITIVE",
+        "TITLE"
+      ]
+    },
+    {
+      "name": "Storyboard — lưới phân cảnh (mặc định)",
+      "body": "From the VIDEO PROMPT below, produce ONE single storyboard SHEET image: a clean grid of numbered panels, read left-to-right then top-to-bottom.\n\nRULES\n- The video prompt is ONE continuous clip broken into beats/shots by timecode. Draw ONE panel per distinct beat/shot, in the SAME chronological order — do NOT merge or skip beats.\n- For each panel clearly show: framing (wide / medium / close), camera angle, and the KEY action or pose of that moment.\n- Put the panel NUMBER (1, 2, 3 …) and a very short caption (2–4 words) on each panel. NO long text inside panels.\n- Keep ONE consistent, clean line-art / sketch style across ALL panels; neutral greys, light shading.\n- Whole sheet aspect ratio: {ASPECT}.\n{REF_NOTE}\n\n=== VIDEO PROMPT (scenes in timecode order) ===\n{PROMPT}",
+      "target_format": "storyboard",
+      "is_default": true,
+      "placeholders": [
+        "ASPECT",
+        "PROMPT",
+        "REF_NOTE"
+      ]
+    },
+    {
+      "name": "Storyboard — thumbnail nhanh (rough)",
+      "body": "From the VIDEO PROMPT, sketch ONE sheet of small, loose, rough numbered thumbnails (left-to-right, top-to-bottom) — one per beat/shot, in order.\n\n- Keep it QUICK and gestural: simple shapes, rough figures, arrows for motion & camera. No rendering, no fine detail.\n- Focus ONLY on staging, framing and action flow so a director can read the whole sequence at a glance.\n- Number every thumbnail; 1–3 word caption max. Uniform rough style. Sheet aspect: {ASPECT}.\n{REF_NOTE}\n\n=== VIDEO PROMPT (scenes in timecode order) ===\n{PROMPT}",
+      "target_format": "storyboard",
+      "is_default": false,
+      "placeholders": [
+        "ASPECT",
+        "PROMPT",
+        "REF_NOTE"
+      ]
+    },
+    {
+      "name": "Storyboard — điện ảnh chi tiết",
+      "body": "Convert the VIDEO PROMPT into ONE storyboard sheet of numbered CINEMATIC panels (left-to-right, top-to-bottom) — one panel per shot/beat, in timecode order.\n\nStage EACH panel like a real film frame:\n- Composition & subject placement (rule of thirds, depth, clear foreground/background).\n- Camera: shot size (WS / MS / CU / ECU), angle (eye-level / low / high / OTS), and any movement drawn as arrows (pan, push-in, tilt).\n- Lighting & mood implied with simple shading.\n- The key action or emotional beat of the moment.\nNumber each panel + a 2–4 word caption ONLY. Keep one consistent, detailed pencil/ink storyboard style across all panels. Sheet aspect ratio: {ASPECT}.\n{REF_NOTE}\n\n=== VIDEO PROMPT (scenes in timecode order) ===\n{PROMPT}",
+      "target_format": "storyboard",
+      "is_default": false,
+      "placeholders": [
+        "ASPECT",
+        "PROMPT",
+        "REF_NOTE"
+      ]
+    }
+  ]
+}

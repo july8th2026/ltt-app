@@ -144,6 +144,62 @@ class NodeDefinition:
     mock: Optional[Callable[[dict], dict]] = None
     cho: tuple = ()
     ma_loi: tuple = ()
+    #: Dịch `params` của node sang **từ vựng params của JOB**. `(params) -> dict`.
+    #: `None` = params của node đi thẳng sang job.
+    #:
+    #: 🔴 **Đối xứng của `doi_dau_ra`, và tôi đã vá MỘT NỬA rồi dừng — đo được
+    #:    trên production 28/09/2026.**
+    #:
+    #:    Tôi thấy hai từ vựng khác nhau ở đường **RA** (`content` → `text`) và
+    #:    vá nó. Tôi ⛔ **không hỏi** đường **VÀO** có cùng vấn đề không. Kết quả,
+    #:    một run thật trên production:
+    #:
+    #:        node y_tuong (ai.llm)  FAILED
+    #:        provider_loi: ThamSoSai: `messages` phai la mot danh sach khong rong
+    #:
+    #:    Node `ai.llm` khai `params = {prompt, model}`; handler `ltt_llm.chat`
+    #:    đòi `messages = [{role, content}]` (`apps/ltt_llm/features.py:352`).
+    #:    ⛔ Không ai dịch giữa hai hình dạng ấy.
+    #:
+    #: ⚠️ Và docstring của `ai_llm.py` **đã nói thẳng** điều đó ngay từ đầu:
+    #:    *"`tham_so`/cổng của `ai.llm` là từ vựng RIÊNG của node (đơn giản hơn
+    #:    `text.chat` thô: một `prompt`, không phải mảng `messages` đầy đủ vai
+    #:    trò)"*. Tôi **đọc** câu ấy, rút ra kết luận đúng về đường ra, và ⛔ không
+    #:    đi tiếp một bước sang đường vào.
+    #:
+    #: ⭐ ⇒ Khi phát hiện hai module dùng hai từ vựng, câu hỏi ⛔ **không** phải
+    #:    *"chỗ nào lệch?"* mà là ***"CẢ HAI chiều đã được dịch chưa?"***. Một
+    #:    chỗ nối có hai đầu, và vá một đầu làm cái còn lại **khó thấy hơn** —
+    #:    vì nay node publish được, chạy được, và chỉ hỏng ở tận provider.
+    #:
+    #: ⛔ Áp **sau** `giai_tham_so` (biểu thức đã giải) và **trước** `tinh_gia` +
+    #:    `_khoa_idem`: giá phải tính trên thứ THẬT SỰ gửi đi, và khoá khử trùng
+    #:    phải mô tả đúng lượt gửi ấy.
+    doi_tham_so: Optional[Callable[[dict], dict]] = None
+    #: Dịch `result` của job sang **từ vựng cổng ra của node**. `(ket_qua,
+    #: params) -> dict`. `None` = output của node LÀ `result` thô của job.
+    #:
+    #: 🔴 **Vì sao trường này phải tồn tại, đo được 28/09/2026.** Node `app.*`
+    #:    suy cổng ra TỪ `ToolSpec.returns` (`nut.tu_toolspec`), nên hai từ vựng
+    #:    trùng nhau và ⛔ không ai cần một phép dịch. Node `ai.*` thì có từ vựng
+    #:    RIÊNG, có chủ đích:
+    #:
+    #:        ToolSpec `text.chat`  returns  content · tool_calls · usage
+    #:        `ai.llm`              cong_ra  text · json
+    #:        `ai.extract`          cong_ra  json
+    #:        `ai.router`           cong_ra  nhanh
+    #:
+    #: ⚠️ Và `cau_noi.ap_ket_qua` ghi `output_ref = result` **nguyên văn**. Nên
+    #:    một `{{ nodes.n2.output.text }}` đọc ra **rỗng** — ⛔ không lỗi, ⛔ không
+    #:    cảnh báo, chỉ rỗng. Đó là hình dạng tệ nhất: người soạn thấy node xanh,
+    #:    thấy credit bị trừ, và thấy ô sau trống.
+    #:
+    #: ⭐ Đây là lý do THẬT khiến `ai.*` có `publish_duoc=False`. Docstring cũ
+    #:    của `ai_llm.py` ghi một lý do KHÁC — *"cầu nối suy tên ToolSpec bằng
+    #:    `node["type"][4:]`"* — và lý do ấy **đã hết đúng**: `cau_noi.py:103`
+    #:    đọc `nd.ten_toolspec` từ lâu. Một tham chiếu chết trong lời giải thích
+    #:    một cái cờ làm người đọc bật cờ ấy vì tưởng điều kiện đã xong.
+    doi_dau_ra: Optional[Callable[[dict, dict], dict]] = None
     #: Compiler hôm nay có biên dịch được `type` này không (`bien_dich._node`).
     #: Plan 02 chỉ có `app.*`; node lõi bật cờ này ở plan 04.
     publish_duoc: bool = False

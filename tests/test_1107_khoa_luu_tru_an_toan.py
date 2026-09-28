@@ -131,7 +131,7 @@ def test_hai_app_am_thanh_lay_duoi_tu_DANH_SACH_CHO_PHEP(app) -> None:
 
 
 @pytest.mark.parametrize("app", ["transcript", "audio_pause", "video_assembly",
-                                 "prompt_canh"])
+                                 ])
 def test_khoa_luu_tru_luon_bat_dau_bang_slug_va_user(app) -> None:
     """Khoá phải neo vào `<slug>/<user>/…`: đó là thứ làm phép kiểm sở hữu ở
     route đọc kết quả có nghĩa."""

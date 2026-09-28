@@ -42,6 +42,48 @@ git -C D:\LTTSTUDIOSAPP status --porcelain    # phải RỖNG
   bị **xoá lặng lẽ** (trừ `$VAN_CHUYEN`) — đối chiếu `C:\LTTPlatform\app` với commit
   trước khi chép.
 
+### 🔴 Luật này có HAI vế, và vế thứ hai thiếu cho tới 28/09/2026
+
+Câu *"deploy xuất HEAD cây chính ⇒ **báo** các phiên đang chạy trước"* dạy người
+**deploy** phải báo. Nó ⛔ **không** dạy người **gộp** phải giữ. Nên nó đọc như đã
+đủ, trong khi một nửa cơ chế không tồn tại.
+
+⇒ Vế còn lại, nay là luật:
+
+| ai | làm gì |
+|---|---|
+| người sắp **gộp `main`** khi biết có phiên đang deploy | **GIỮ LẠI**, ⛔ không gộp cho tới khi bên kia nói đã `git archive` xong |
+| người **deploy** | **nhắn một dòng ngay khi `archive` xong** — ⛔ không chờ tới lúc nghiệm thu xong, và ⛔ không để bên kia tự đoán |
+
+🔴 **Vì sao thiếu vế ấy là một lỗ IM LẶNG, ⛔ không phải một bất tiện.** Nếu một
+phiên gộp `main` giữa lúc `git archive` chưa chạy, bản deploy mang theo mã **chưa**
+nằm trong lượt gate — và ⛔ **không phép kiểm nào trong kho bắt được**:
+`nghiem_thu_deploy.py` so bản đang chạy với **một** commit, nên nó vẫn báo *"khớp
+tuyệt đối một commit xác định"*. Chỉ là một commit **khác** commit mà gate đã xem.
+
+⭐ Ca thật 28/09: phiên `Auto Scan Video` có ba làn xong, **sẵn sàng gộp**, và tự
+giữ lại vì đọc ra chiều thiếu. Nếu họ gộp, tôi đã deploy một SHA chưa bao giờ được
+phán quyết, và cả hai phía đều thấy màu xanh.
+
+⚠️ Cùng họ với việc chạy lại `ai_dang_dung_may_chu.py` **ngay trước** `archive`
+thay vì tin phép đo lúc chiều: chỗ hở luôn là **khoảng cách giữa lúc đo và lúc
+dùng** — ở đây là giữa **lúc gate phán quyết** và **lúc `archive` chụp cây**.
+
+### ⚠️ `main` đi trước production thì GHI khoảng lệch ra
+
+Sau deploy, `main` thường tiếp tục nhận commit. Điều đó bình thường — nhưng
+*"lệch bao nhiêu, và lệch ở đâu"* phải nói được, nếu không lần deploy sau ⛔ không
+ai biết mình đang mang gì lên.
+
+```bash
+SHA=$(curl -s https://app.lttstudios.com/health/version | python -c "import json,sys; print(json.load(sys.stdin)['commit'])")
+git -C D:\LTTSTUDIOSAPP log --oneline "$SHA..main"
+git -C D:\LTTSTUDIOSAPP diff --name-only "$SHA..main" | sort -u
+```
+
+⇒ Nếu mọi commit trong khoảng ấy chỉ chạm `tests/` · `docs/` · `tools/` thì ⛔
+**không** cần deploy lại — nhưng hãy **nói ra** là mình đã kiểm, chứ đừng im lặng.
+
 Ba phép kiểm **cố ý không nằm trong gate** (cần mạng / máy chủ đang chạy / phiên trình
 duyệt — đỏ vì môi trường là thứ dạy người ta bỏ qua màu đỏ):
 

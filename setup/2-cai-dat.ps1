@@ -30,6 +30,46 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# ==========================================================================
+#  KHOI PHUC DICH VU KHI SCRIPT BO DO. Su co 2026-09-28 17:38.
+# ==========================================================================
+#
+#  Giua "dung dich vu" (~dong 665) va "khoi dong lai" (~dong 1290) co ~620
+#  dong. Truoc `trap` nay, MOI loi trong khoang do de production xuong VO HAN
+#  DINH: script thoat, va ba dich vu o lai `Stopped` cho toi khi co nguoi de y.
+#
+#  Ca that: `Move-Item C:\LTTPlatformpp` nem 'Access denied' luc 17:39:14.
+#  Deploy thoat voi EXITCODE=1. `/health/ready` tra 502. Production chi song
+#  lai khi mot nguoi goi `Start-Service` bang tay.
+#
+#  `trap` nay KHONG che loi - no `Write-Error` roi de loi di tiep (`break`
+#  giu ma thoat khac 0). Viec duy nhat no lam la: neu ta DA dung dich vu ma
+#  chua kip khoi dong lai, dua chung tro lai TRUOC khi thoat.
+#
+#  Mot deploy that bai la mot lan chay lai. Mot production nam duoi la mot
+#  su co. Hai thu do khong cung hang, nen script phai nghieng ve giu dich vu
+#  song ke ca khi ban than no da that bai.
+$global:DaDungDichVu = $false
+$global:DaKhoiDongLai = $false
+trap {
+    if ($global:DaDungDichVu -and -not $global:DaKhoiDongLai) {
+        Write-Host ""
+        Write-Host "  [!] DEPLOY BO DO sau khi da dung dich vu - dang dua chung tro lai"
+        foreach ($svc in @('LTTStudioWeb', 'LTTStudioWorker', 'LTTStudioVoice',
+                           'LTTStudioCodex')) {
+            try {
+                Start-Service $svc -ErrorAction Stop
+                Write-Host "      $svc -> Running"
+            } catch {
+                Write-Host "      $svc -> KHONG khoi dong lai duoc: $($_.Exception.Message)"
+            }
+        }
+        Write-Host "  [!] Kiem `/health/ready` truoc khi lam gi khac."
+        Write-Host ""
+    }
+    break
+}
+
 # --------------------------------------------------------------- Invoke-Ngoai
 # Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
 # `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
@@ -249,9 +289,60 @@ $srcChep  = $src          # duong lui: cay song, y nhu truoc 08/09
 $xuatTam  = $null
 $shaXuat  = ''
 if (Test-Path $gitPath -PathType Container) {
-    try { $shaXuat = (& git -C $src rev-parse HEAD 2>$null) } catch { $shaXuat = '' }
+    # ======================================================================
+    #  XUAT TU REF `refs/heads/main`, KHONG TU `HEAD` CUA CAY. Do 28/09/2026.
+    # ======================================================================
+    #
+    #  Ban cu doc `rev-parse HEAD` cua cay chinh. Nhung cay chinh ganh HAI VAI:
+    #    1. be mat deploy cua MOI phien (CLAUDE.md luat 5);
+    #    2. cho dung lam viec cua MOT phien.
+    #
+    #  Do duoc trong reflog cua chinh kho nay:
+    #      18:05  checkout: moving from main to phien/vision-plan-lock
+    #      12:42  checkout: moving from main to phien/lan-giong-theo-danh-muc
+    #      12:46  checkout: moving from phien/lan-giong... to main
+    #
+    #  => Muon cay chinh lam cho dung la chuyen BINH THUONG o day, khong phai
+    #    mot su co. Luc toi do, nhanh ay co 13 commit chua len `main`.
+    #
+    # !! Va luot deploy 18:04:32 hom nay chi kip chay TRUOC cu checkout 18:05 -
+    #    sat mot phut. Neu no chay luc 18:06 thi no da xuat
+    #    `phien/vision-plan-lock` len production, va nhat ky se ghi
+    #    `[OK] Xuat commit 9f963938` trong trang thai hoan toan binh thuong.
+    #    Khong mot dong nao trong quy trinh hoi *"cay dang o nhanh nao?"*.
+    #
+    # !! Script CO mot cua chan deploy nham CAY (~dong 66, chong deploy tu mot
+    #    worktree). No khong chan deploy nham NHANH trong dung cay. Cung ho voi
+    #    bon ca khac hom nay: mot cua ten la "chan deploy nham" nhung chi do MOT
+    #    chieu nham.
+    #
+    # ** Vi sao doc REF tot hon mot cua chan: `git archive` nhan mot tree-ish bat
+    #    ky, nen doc ref lam deploy DUNG `main` **du** ai dang muon cay chinh.
+    #    Mot cua chan se chan OAN chinh nhung phien dang lam viec hop le o do.
+    #    => Cua chan la thuoc cho trieu chung; doc ref go luon cai benh.
+    #
+    #  Phien `Prompt AI` de nghi cach nay, va ho dung.
+    try {
+        $shaXuat = (& git -C $src rev-parse refs/heads/main 2>$null)
+    } catch { $shaXuat = '' }
     if ($LASTEXITCODE -ne 0) { $shaXuat = '' }
     $global:LASTEXITCODE = 0
+    if ($shaXuat) {
+        $shaXuat = $shaXuat.Trim()
+        $nhanhCay = ''
+        try { $nhanhCay = (& git -C $src rev-parse --abbrev-ref HEAD 2>$null) } catch { }
+        $global:LASTEXITCODE = 0
+        if ($nhanhCay -and $nhanhCay.Trim() -ne 'main') {
+            # NOI RA, dung im: nguoi doc nhat ky phai biet ban giao KHONG phai
+            # thu dang nam trong cay. Khong phai loi, nhung la mot su that can khai.
+            Canh ("cay chinh dang o nhanh '" + $nhanhCay.Trim() +
+                  "' - deploy xuat tu refs/heads/main (" +
+                  $shaXuat.Substring(0, 12) + "), KHONG tu cay")
+        }
+    } else {
+        # KHONG roi ve HEAD: roi ve HEAD la dung lai chinh con bo nay.
+        throw 'khong doc duoc refs/heads/main - DUNG deploy, kiem kho truoc'
+    }
 }
 if ($shaXuat) {
     $shaXuat = $shaXuat.Trim()
@@ -666,13 +757,78 @@ $DichVuGiuAppDir = @($WorkerServiceName, $ServiceName, 'LTTStudioCodex',
 foreach ($svc in $DichVuGiuAppDir) {
     Stop-Service $svc -Force -ErrorAction SilentlyContinue
 }
-Start-Sleep -Seconds 2
+
+# ==========================================================================
+#  SU CO 2026-09-28 17:38: `Move-Item` NEM 'Access denied', DEPLOY THOAT, VA
+#  BA DICH VU O LAI TRANG THAI Stopped -> production 502 cho toi khi CO NGUOI
+#  DE Y.
+# ==========================================================================
+#
+#  Ban cu: `Stop-Service` roi `Start-Sleep -Seconds 2` roi `Move-Item`.
+#
+#  Hai khiem khuyet, va cai thu hai moi la cai dat:
+#
+#    1. `Stop-Service` tra ve khi trang thai LA Stopped, nhung Windows co the
+#       chua nha handle cua tien trinh vua chet. Hai giay la mot con so doan,
+#       va no dung phan lon cac lan - lan 15:12 cung ngay THANH CONG. Mot cuoc
+#       dua theo thoi diem thi khong hong deu, no hong khi may dang ban.
+#
+#    2. Giua "dung dich vu" va "khoi dong lai" co ~550 dong. MOI loi trong
+#       khoang do de production xuong VO HAN DINH - script thoat, khong ai
+#       dua dich vu tro lai. Do la thu bien mot loi thanh mot su co.
+#
+#  Chu thich ngay tren doan nay da ghi mot ca Y HET ngay 31/08: *"production
+#  502 khoang ba phut. Trieu chung nhin nhu mot loi quyen han, khong nhu mot
+#  dich vu bi bo sot."* Lan nay trieu chung LAI la 'Access denied'. Cung ho:
+#  mot loi ve THOI DIEM deo mat na mot loi ve QUYEN.
+#
+#  Nen o day lam ba viec:
+#    a. cho tung dich vu toi khi THAT SU Stopped (do, khong doan);
+#    b. thu lai `Move-Item` co backoff, va khi that bai thi NOI AI DANG GIU;
+#    c. dat co `$global:DaDungDichVu` de khoi `catch` o duoi dua dich vu tro
+#       lai. Ke ca khi deploy that bai, production phai song.
+
+foreach ($svc in $DichVuGiuAppDir) {
+    $han = (Get-Date).AddSeconds(30)
+    while ((Get-Date) -lt $han) {
+        $s = Get-Service $svc -ErrorAction SilentlyContinue
+        if (-not $s -or $s.Status -eq 'Stopped') { break }
+        Start-Sleep -Milliseconds 500
+    }
+    $s = Get-Service $svc -ErrorAction SilentlyContinue
+    if ($s -and $s.Status -ne 'Stopped') {
+        Write-Host "  [!] $svc van o trang thai $($s.Status) sau 30s"
+    }
+}
+$global:DaDungDichVu = $true
+
 # Giu ban truoc de rollback duoc.
 if (Test-Path $appDir) {
     $prev = Join-Path $Root 'app.previous'
     if (Test-Path $prev) { Remove-Item $prev -Recurse -Force }
-    Move-Item $appDir $prev
-    Ok "Ban cu chuyen sang app.previous (dung de rollback)"
+    # Thu lai: mot handle chua nha thuong nha trong vai giay. KHONG thu vo han
+    # - mot vong khong tran la cach production xuong 20 phut ngay 2026-08-05.
+    $daChuyen = $false
+    foreach ($lan in 1..6) {
+        try {
+            Move-Item $appDir $prev -ErrorAction Stop
+            $daChuyen = $true
+            break
+        } catch {
+            if ($lan -eq 6) {
+                # NOI AI DANG GIU. Mot 'Access denied' tran khong the chan doan,
+                # va lan 28/09 toi mat mot luot deploy de tim ra dieu nay.
+                Write-Host "  [!] Move-Item that bai $lan lan: $($_.Exception.Message)"
+                Write-Host "  [!] Tien trinh dang mo tep duoi app\ (neu co):"
+                Get-CimInstance Win32_Process |
+                    Where-Object { $_.CommandLine -and $_.CommandLine -match 'LTTPlatform\app' } |
+                    ForEach-Object { Write-Host ("      pid " + $_.ProcessId + " " + $_.Name) }
+                throw
+            }
+            Start-Sleep -Seconds ($lan * 2)
+        }
+    }
+    if ($daChuyen) { Ok "Ban cu chuyen sang app.previous (dung de rollback)" }
 }
 New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 # /XD: khong copy du lieu van hanh, bi mat, cache. Chung song o ngoai app\
@@ -703,10 +859,45 @@ Ok "Da copy $n file vao $appDir"
 #    BOM, json.load() vo, va /health/ready tra 503 trong khi dich vu van chay.
 #    Loi do da that su lam production sap o du an nay.
 $vanTay = Join-Path $appDir "dau_van_tay.json"
-$sha = ""
-try { $sha = (& git -C $src rev-parse HEAD 2>$null) } catch { $sha = "" }
-if ($LASTEXITCODE -ne 0) { $sha = "" }
-$global:LASTEXITCODE = 0
+
+# ==========================================================================
+#  MARKER PHAI LA SHA DA XUAT, KHONG PHAI HEAD LUC NAY. Do duoc 28/09/2026.
+# ==========================================================================
+#
+#  Ban cu goi `git rev-parse HEAD` **LAN THU HAI** o day. Giua dong 292 (noi
+#  `git archive` chup `$shaXuat`) va dong nay co ~520 dong va **90 giay** thuc
+#  te. Tren may nay `main` la cay DUNG CHUNG cua nhieu phien, nen no dich duoc
+#  trong khoang do.
+#
+#  Ca that, luot deploy 18:04:32 hom nay:
+#
+#      [OK] Xuat commit 4ab49b267bb0: 6318 tep      <- thu THAT SU duoc giao
+#      dau_van_tay.commit = 979130b09b47            <- thu marker KHAI
+#      /health/version    = 979130b09b47            <- va khach/ta doc cai nay
+#
+#  `979130b0` **chua bao gio duoc xuat**. Production tu khai mot commit khong
+#  phai thu no dang chay.
+#
+# !! Vi sao no te hon mot con so sai thuong: `dau_van_tay.json` va
+#    `/health/version` la **nguon chan ly** cho cau *"dang chay ban nao"*
+#    (docs/16 bang tra cuu chi thang vao chung, va `api_prod_canary.py` doc
+#    chung thay cho mot bang chep tay). Mot nguon chan ly noi sai thi moi phep
+#    do dung tren no deu sai theo -- va hom nay no lam chinh toi ket luan rang
+#    da deploy mot SHA chua qua gate, trong khi khong he.
+#
+# !! Va day la "hai cho khai mot dieu, khong ai bat khop" o dang re nhat de
+#    tranh: MOT bien da ton tai san. `$shaXuat` duoc tinh o dong ~292 va la
+#    chinh cai `git archive` dung. Dung lai no.
+#
+#  Roi ve `rev-parse` chi khi `$shaXuat` rong (duong lui chep cay song, khong
+#  co ban xuat) -- va luc ay marker mo ta dung thu duoc chep: cay luc nay.
+$sha = $shaXuat
+if (-not $sha) {
+    try { $sha = (& git -C $src rev-parse HEAD 2>$null) } catch { $sha = "" }
+    if ($LASTEXITCODE -ne 0) { $sha = "" }
+    $global:LASTEXITCODE = 0
+    if ($sha) { Canh "marker dung HEAD hien tai (khong co ban xuat commit)" }
+}
 if ($sha) {
     # !! GHI CA NOI DUNG DA GIAO, KHONG CHI COMMIT DINH GIAO.
     #
@@ -1215,6 +1406,7 @@ if ($voicePy -and (Test-Path $voicePy)) {
 
 Head 'Khoi dong'
 Start-Service $ServiceName
+$global:DaKhoiDongLai = $true
 Start-Service $CodexServiceName -ErrorAction SilentlyContinue
 
 # Sau cung: nap ~320 MB trong so len GPU, mat khoang 20 giay moi san sang.

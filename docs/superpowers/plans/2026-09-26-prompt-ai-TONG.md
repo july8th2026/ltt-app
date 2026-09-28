@@ -4,8 +4,45 @@
 > bên dưới giữ **các bước TDD chi tiết** — chúng là phần chi tiết của plan này,
 > ⛔ không phải nguồn chân lý song song. Lệch nhau ⇒ tệp này thắng, và phải sửa tệp pha.
 
-**Trạng thái:** chờ chủ dự án chốt. ⛔ **Chưa viết một dòng mã nào** —
-`git status` chỉ có tài liệu.
+**Trạng thái — đo ngày 28/09/2026, ⛔ không phải tự khai.** Năm pha đã viết xong mã;
+ba pha đang sống trên production. Đối chứng dùng **migration**, không dùng ô tick:
+mỗi pha có đúng một migration, và `git log main -- <tệp migration>` trả lời dứt khoát
+*"pha này có trên `main` chưa"* — một ô tick chỉ nói ai đó đã tick.
+
+| Pha | Mã | Trên `main` | Production | Còn nợ |
+|---|---|---|---|---|
+| 1 · Chỗ nối | ✅ | ✅ `a82786f7` | ✅ `fd565a47` | — |
+| 2 · Giao bài | ✅ | ✅ `b4f24329` | ✅ | — |
+| 3 · Lõi Studio | ✅ | ✅ `b4f24329` | ✅ (kiểm trên trình duyệt thật) | — |
+| 4 · Kho chung | ✅ | ⛔ | ⛔ | gộp `main` · nghiệm thu GUI |
+| 5 · Kho tài nguyên | ✅ | ⛔ | ⛔ | gộp `main` · nghiệm thu GUI |
+| 6 · Chia lô (Q-16, Q-18) | ✅ | ✅ | ⛔ | **thi hành xong 28/09** (4 task) ⇒ E5 đã mở và ĐÃ XOÁ |
+
+⭐ **E5 xong 28/09 (`0c2aabab`): `apps/prompt_canh` đã xoá.** Và nó xong sau một phép đo
+có đối chứng, không sau một suy đoán:
+
+```
+prompt_canh.run   tong 0 | 30 ngay 0 | queued/running 0
+
+doi chung — bang `jobs` co rong khong:
+  TONG moi loai 63.347 · auto_scan_video.advance 55.223 · ltt_llm.chat 7.443
+=> so 0 cua `prompt_canh` CO NGHIA
+```
+
+⚠️ Cái giá là **thật và chủ dự án chọn**: `prompt_canh` đỡ 250 cảnh, `prompt_ai_ommi`
+chặn ở 20 (Q-17 giữ trần). Pha 6 mang **cơ chế** chia lô sang, ⛔ không mang **trần**.
+Mở lại năng lực >20 cảnh là một quyết định sản phẩm riêng, ⛔ không phải một việc kĩ thuật.
+
+
+⚠️ **Và đây là một lỗi sổ sách, ghi lại để người sau không tin ô tick.** 397 ô
+`- [ ]` trong năm tệp pha ⛔ **chưa bao giờ được tick**, nên một phép đếm máy móc
+trả **0/397 = 0%** trong khi 5/6 pha đã xong và 3/6 đã ra khách. Trạng thái được
+theo dõi trong hội thoại thay vì trong tệp — đúng thứ luật toàn cục cấm
+(*"trạng thái công việc ghi vào tệp plan/sổ lỗi, không chỉ trong hội thoại"*).
+
+⇒ ⛔ **Đừng "sửa" bằng cách tick 397 ô.** Tick một ô mình không kiểm được từng
+cái là chế ra bằng chứng. Bảng trên đo **cái đo được** (migration nào trên `main`),
+và đó là thứ dùng để phán quyết.
 
 | Tài liệu | Đường |
 |---|---|
@@ -28,7 +65,8 @@ thành máy dựng prompt có ba thứ bản gốc chứng minh là dùng thật
 | 3 · Lõi Studio | [pha3-loi-studio](2026-09-26-prompt-ai-pha3-loi-studio.md) | 3 593 | 21 | 111 |
 | 4 · Kho chung | [pha4-kho-chung](2026-09-26-prompt-ai-pha4-kho-chung.md) | 2 833 | 15 | 81 |
 | 5 · Kho tài nguyên sâu | [pha5-kho-tai-nguyen](2026-09-26-prompt-ai-pha5-kho-tai-nguyen.md) | 3 035 | 12 | 83 |
-| | **Tổng** | **14 286** | **65** | **397** |
+| 6 · Chia lô | [pha6-chia-lo](2026-09-28-prompt-ai-pha6-chia-lo.md) | 985 | 6 | 28 |
+| | **Tổng** | **15271** | **71** | **425** |
 
 ---
 
@@ -280,7 +318,7 @@ cảnh kịch bản là **nguồn chân lý duy nhất** của prompt đi ra ngo
 | R-3 | Nhập 12 mẫu gốc làm hỏng catalog đang có | Endpoint **idempotent** theo `(target_format, name)`; chạy trên tài khoản thử trước |
 | R-4 | Tách `tables.py` thành package làm vỡ import cũ | `tables/__init__.py` re-export **đủ mọi** tên lớp cũ; `test_5100` khẳng định |
 | R-5 | Bật `ROLLOUT=public` ở pha 1, nhưng pha 3 **đổi hẳn lối vào** ⇒ khách vừa quen lại phải học lại | Chủ dự án chốt bật luôn (Q-11), và đã xác nhận **chưa có khách thật** — đo được 26/09: `LTT_PROMPT_AI_OMMI_ROLLOUT` chưa đặt trên cả `LTTStudioWeb` và `LTTStudioWorker` |
-| R-6 | Xoá `apps/prompt_canh` làm đỏ **10 tệp test, 26 chỗ** — trong đó 5 tệp liên-app dùng chung của mọi phiên | Pha 3 E5 có bảng từng tệp, sửa **tối thiểu**. Và **đo lại trước khi xoá** (`grep -rc`) vì phiên khác có thể vừa thêm tham chiếu |
+| R-6 | ~~Xoá `apps/prompt_canh` làm đỏ 10 tệp test~~ — **đã xảy ra 28/09, thực tế 15 phép đỏ trên 9 sổ đăng ký khai tay** | ✅ Đóng. Và một bài ⛔ KHÔNG gỡ tên được: `test_1113` dùng `prompt_canh.run` làm **đạo cụ** dựng một kế hoạch phải bị từ chối vì *lệch kiểu cổng*; mất app thì nó bị từ chối vì lý do KHÁC và bài thành xanh-giả. Thay bằng `story.storyboard` — tool của chính `prompt_ai_ommi` |
 | R-7 | Khách **nhân bản brief** để lấy thêm 2 lượt miễn phí | Ghi rõ ở §4.1. Sửa là **một dòng**, có test nói rõ đây là quyết định |
 
 ---

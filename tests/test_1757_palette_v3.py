@@ -103,8 +103,13 @@ def test_node_loi_chua_publish_duoc_thi_bao_ra_chu_khong_giau(api):
     theo_ten = {x["type"]: x for x in trig}
     # ⭐ 25/09 (vong P-C): them 3 piece POLLING that (google-drive, gmail,
     #    notion) canh google-sheets — xem allowlist.json `palette`.
+    # ⭐ 28/09/2026: thêm `trigger.schedule` + `trigger.webhook` (làn `ui8b`/UX-1,
+    #    UX-2). Cả hai đường thực thi ĐÃ sống từ trước (`ban_trigger` +
+    #    `POST /hooks/wf/{id}`); lần này chỉ thêm NODE để người soạn kéo được.
     assert set(theo_ten) == {
         "trigger.manual",
+        "trigger.schedule",
+        "trigger.webhook",
         "trigger.piece.google_sheets.new_spreadsheet",
         "trigger.piece.google_drive.new_file",
         "trigger.piece.google_drive.new_folder",
@@ -112,11 +117,82 @@ def test_node_loi_chua_publish_duoc_thi_bao_ra_chu_khong_giau(api):
         "trigger.piece.gmail.gmail_new_email_received",
         "trigger.piece.notion.new_database_item",
     }
-    # Điều bài này thật sự chốt: node CHƯA publish được thì palette **khai ra**,
-    # ⛔ không giấu đi. Hỏi từng cái theo TÊN.
+    # ⭐ 28/09/2026 (Q11): `trigger.manual` `False` -> `True`. Nay CA BAY trigger
+    #    publish được, nên nhóm TRIGGERS ⛔ không còn một ví dụ `False` nào.
     for ten, x in theo_ten.items():
-        ky_vong = False if ten == "trigger.manual" else True
-        assert x["publish_duoc"] is ky_vong, ten
+        assert x["publish_duoc"] is True, ten
+
+    # 🔴 Mệnh đề *"node chưa publish được thì palette KHAI RA, ⛔ không giấu đi"*
+    #    ĐÃ CHUYỂN sang `test_palette_KHAI_RA_node_chua_publish_duoc` ở dưới —
+    #    đúng thứ tự tác giả bản 25/09 dặn: *chuyển trước khi xoá*.
+    #
+    # ⚠️ Vì sao phải chuyển: bản cũ lấy nhân chứng từ **registry thật**, và
+    #    28/09/2026 ba node `ai.*` được mở (plan 10) ⇒ registry ⛔ không còn một
+    #    node `False` nào, nên bài đỏ với thông điệp *"mất nhân chứng"*. Nó ⛔
+    #    KHÔNG báo một lỗi sản phẩm: nó báo rằng **phép đo đã hết vật đo**.
+    #
+    # ⭐ Bài mới ⛔ không chờ kho có sẵn một node chưa mở — nó **tiêm** một node
+    #    giả. Một bất biến phụ thuộc vào việc *"tình cờ còn ai đó chưa xong"* là
+    #    một bất biến sẽ tự tắt đúng vào ngày mọi thứ xong.
+
+
+def test_palette_KHAI_RA_node_chua_publish_duoc(api, monkeypatch):
+    """**Node chưa publish được thì palette KHAI RA, ⛔ không giấu đi.**
+
+    🔴 Vì sao bất biến này đáng một bài riêng: nếu palette **lọc** theo
+       `publish_duoc`, người soạn tìm một bước họ cần và thấy nó ⛔ không tồn tại —
+       ⛔ không thông điệp, ⛔ không lý do. Một cửa **khoá** còn nói được *"chưa
+       mở"*; một cửa **bị xoá khỏi bản đồ** thì ⛔ không nói gì cả.
+
+    ⭐ Node giả, ⛔ KHÔNG dùng nhân chứng thật trong registry. Bản 25/09 lấy nhân
+       chứng thật và bài tự tắt ngày 28/09 khi ba node `ai.*` mở — tức phép đo hết
+       **vật đo**, chứ ⛔ không phải sản phẩm hết lỗi. Một bất biến ⛔ không được
+       phụ thuộc vào việc *"tình cờ còn ai đó chưa xong"*.
+
+    ⚠️ Tiêm bằng `monkeypatch` vào bản sao registry, ⛔ KHÔNG gọi `dang_ky` thật:
+       `dang_ky` ghi vào một dict cấp module, nên nó rỉ sang mọi bài chạy sau
+       trong cùng tiến trình — và dưới `-n` thì rỉ sang một tập bài **khác nhau
+       mỗi lượt**, tức một bài đỏ ⛔ không tái hiện được.
+    """
+    from platform_core.workflow import nut as _nut
+    from platform_core.workflow.nut import NodeDefinition
+
+    # ⚠️ Patch `platform_core.workflow.nut.tat_ca`, ⛔ KHÔNG `nut_loi.tat_ca`.
+    #    Lần đầu tôi nhắm `nut_loi` và **vế đối chứng ở dưới đã bắt được** —
+    #    `palette_v3` gọi `nut.tat_ca(cong_cu=...)` (ba nguồn: node lõi + piece +
+    #    ToolSpec), còn `nut_loi.tat_ca` chỉ là MỘT trong ba nguồn ấy.
+    #
+    # ⭐ Đó đúng là việc của vế đối chứng: nếu ⛔ không có nó, bài này đã XANH với
+    #    một phép tiêm ⛔ không tới được route — tức đo một cửa ⛔ không có xe.
+    GIA = "core.node_gia_chua_mo"
+    nd_gia = NodeDefinition(
+        type=GIA, type_version=1, kind="control", category="FLOW",
+        title="Node giả chưa mở", description="chỉ dùng trong test",
+        icon="?", cong_vao=(), cong_ra=(),
+        tham_so={"type": "object", "properties": {}, "required": [],
+                 "additionalProperties": False},
+        thi_hanh="inline", publish_duoc=False)
+
+    that = _nut.tat_ca
+
+    def co_ca_node_gia(*a, **k):
+        ra = dict(that(*a, **k))
+        ra[GIA] = nd_gia
+        return ra
+
+    monkeypatch.setattr(_nut, "tat_ca", co_ca_node_gia)
+
+    body = api.get("/agent/api/v3/palette").json()
+    moi_nut = {x["type"]: x for nhom in body["nhom"] for x in nhom["nut"]}
+
+    # ⛔ Vế ĐỐI CHỨNG trước: nếu phép tiêm ⛔ không tới được route thì bài dưới
+    #    xanh mà ⛔ không đo gì — đúng bẫy "fixture tự dựng tiền đề sản phẩm không
+    #    có", chỉ là chiều ngược lại.
+    assert GIA in moi_nut, (
+        "phep tiem KHONG toi duoc route (palette doc registry qua mot duong khac?) "
+        "⇒ bai nay chua do duoc gi. Kiem `palette_v3` lay `nut_loi.tat_ca` o dau.")
+    assert moi_nut[GIA]["publish_duoc"] is False, (
+        "palette bao node gia la publish duoc — no ⛔ khong doc `nd.publish_duoc`")
 
 
 def test_khong_lo_job_type_noi_bo_cua_provider(api):
@@ -159,7 +235,7 @@ def test_palette_loc_theo_quyen_app_cua_nguoi_dung(api, monkeypatch):
 #: Cong cu app CO TINH khai `customer_visible=False` — cua dong TAY vi chua
 #: nghiem thu E2E (`apps/audio_pause/manifest.py:73-87`). Duong v2 loc chung o
 #: `presentationAdapter.ts:65`; duong v3 phai loc o server.
-KHONG_CHO_KHACH = ("app.audio_pause.run", "app.prompt_canh.run",
+KHONG_CHO_KHACH = ("app.audio_pause.run",
                    "app.video_assembly.run", "app.chatltt.trich_tep",
                    "app.chatltt.nghien_cuu")
 

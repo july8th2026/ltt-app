@@ -40,9 +40,31 @@ def test_canvasShell_KHONG_tu_publish_sau_khi_soan():
     sửa sau này nối `soanBangAI` thẳng vào `publishWorkflowV3`/`createRunV3`,
     bài này bắt được — đọc thân hàm `soanBangAI`, không đọc cả tệp (tệp có
     `publishWorkflowV3` ở chỗ khác, của `chayWorkflow`)."""
-    nguon = (SRC / "CanvasShell.tsx").read_text(encoding="utf-8")
-    i = nguon.index("soanBangAI=useCallback(")
-    than = nguon[i:nguon.index("},[workflow,readOnly,dangSoan", i)]
-    assert "soanWorkflowV3(" in than
-    assert "publishWorkflowV3(" not in than
-    assert "createRunV3(" not in than
+    # 🔴 LAN UI-3 DOI CHO HAM NAY, va bai kiem khong di theo.
+    #
+    #    Truoc 28/09 dong duoi doc `src/CanvasShell.tsx` va `.index(...)` chuoi
+    #    `soanBangAI=useCallback(`. UI-3 tach trinh soan ra `features/editor/`,
+    #    nen `CanvasShell.tsx` nay la MOT dong re-export: tep **van ton tai** ma
+    #    chuoi thi khong ⇒ `ValueError: substring not found`.
+    #
+    # ⚠️ Mot phep kiem "duong dan con song khong" ⛔ KHONG bat duoc ca nay — toi
+    #    da viet mot bo dem nhu vay va no bao *"38/39 con song"*, tuc "khong con
+    #    bai nao mu", trong khi CHINH bai nay dang do. Thu mat la **NOI DUNG**.
+    #
+    # ⭐ Tinh chat thi KHONG doi: `soanBangAI` phai goi `soanWorkflowV3` va ⛔
+    #    KHONG duoc tu publish/tao run. Chi CHO O doi.
+    nguon = (SRC / "features/editor/hooks/useWorkflowRun.ts").read_text(
+        encoding="utf-8")
+    NEO = "const soanBangAI = useCallback("
+    assert NEO in nguon, (
+        f"⛔ khong thay {NEO!r} — ham da doi cho/doi ten lan nua. Tim lai bang "
+        "`grep -rn soanBangAI frontend/agent-canvas/src/` roi neo lai, ⛔ dung xoa bai.")
+    i = nguon.index(NEO)
+    # ⚠️ Neo DONG bang `}, [` (ket thuc `useCallback`) chu ⛔ khong bang danh sach
+    #    phu thuoc cu the (`},[workflow,readOnly,dangSoan`): danh sach phu thuoc
+    #    doi moi lan ai do them mot bien, va mot neo nhu vay lam bai nay do vi
+    #    mot ly do ⛔ khong lien quan gi den dieu no canh.
+    than = nguon[i:nguon.index("}, [", i)]
+    assert "soanWorkflowV3(" in than, than
+    assert "publishWorkflowV3(" not in than, than
+    assert "createRunV3(" not in than, than

@@ -110,7 +110,7 @@ class DatChoVuotPool(ValueError):
 
 
 def luat_cho(suc: "AdmissionModel | None", *, lop: str, token_vao_uoc: int,
-             xin_ra: int, so_anh: int = 0,
+             xin_ra: int, token_anh: int = 0,
              token_prefill_moi: int | None = None) -> dict:
     """Tham số đa lượt cho `admission.acquire`/`xet_va_giu` — MỘT phép tính đặt chỗ.
 
@@ -118,7 +118,7 @@ def luat_cho(suc: "AdmissionModel | None", *, lop: str, token_vao_uoc: int,
     `None` hoặc `token_pool <= 0` ⇒ `{}` ⇒ đúng hành vi cũ (tool không khai
     ngân sách KV — đếm slot).
 
-        dat_cho = vào_ước + xin_ra + dem_uoc + so_anh × token_giu_moi_anh
+        dat_cho = vào_ước + xin_ra + dem_uoc + token_anh
         whale   = token_prefill_moi ≥ nguong_whale   (nguong_whale > 0)
 
     ⭐ MỘT chỗ gắn cờ whale cho MỌI cửa (O-07): stream/ChatLTT truyền
@@ -136,12 +136,20 @@ def luat_cho(suc: "AdmissionModel | None", *, lop: str, token_vao_uoc: int,
     if dem <= 0:
         raise ValueError(f"tai nguyen {getattr(suc, 'resource', '')!r} khai pool {pool} "
                          f"ma khong khai dem_uoc")
-    anh = max(0, int(so_anh))
-    giu_anh = int(getattr(suc, "token_giu_moi_anh", 0) or 0)
-    if anh and giu_anh <= 0:
-        raise ValueError(f"tai nguyen {getattr(suc, 'resource', '')!r} nhan anh ma "
-                         f"khong khai token_giu_moi_anh")
-    dat = int(token_vao_uoc) + int(xin_ra) + dem + anh * giu_anh
+    # ⭐ 28/09/2026: `token_anh` là **tổng đã ĐO** (`Σ anh_token.token_anh(w, h)`),
+    #    không còn là `số ảnh × một hằng`. Hàm này không nhân gì nữa — nó chỉ cộng.
+    #
+    # 🔴 VÌ SAO ĐỔI: hằng phẳng 2.048 sai CẢ HAI CHIỀU (đo 14/14 ô, 28/09): thừa
+    #    25× ở ảnh 320×240 (82 token thật) và **THIẾU 2×** ở 2048×2048 (4.098) —
+    #    vốn đúng bằng cỡ tối đa client LTTCODE gửi. Thiếu là chiều
+    #    `DatChoVuotPool` sinh ra để chặn, và chiều mà một lần tràn `-kvu` giết
+    #    MỌI slot (llama.cpp b10689).
+    #
+    # ⛔ Không còn phép kiểm "nhận ảnh mà không khai hằng": người ĐO ảnh là
+    #    `luong.do_anh`, và nó fail-closed ở đó (thiếu trần engine ⇒ không đo ⇒
+    #    từ chối ảnh). Kiểm lại ở đây là kiểm hai lần một điều, ở chỗ không có
+    #    thông tin để nói câu chẩn đoán đúng.
+    dat = int(token_vao_uoc) + int(xin_ra) + dem + max(0, int(token_anh))
     if dat > pool:
         raise DatChoVuotPool(dat, pool)
     moi = int(token_vao_uoc) if token_prefill_moi is None else int(token_prefill_moi)

@@ -131,8 +131,6 @@ def test_ba_App_GPU_cua_chuong_trinh_nay_deu_co_VRAM() -> None:
     assert m["transcript"].vram_for("transcript.run") == 5000
     assert m["audio_pause"].vram_for("audio_pause.run") == 5000
     assert m["video_assembly"].vram_for("video_assembly.run") == 8000
-    # `prompt_canh` không dùng GPU — phải là 0, không phải "quên khai".
-    assert m["prompt_canh"].vram_for("prompt_canh.run") == 0
 
 
 @pytest.mark.parametrize("slug,jt", [("transcript", "transcript.run"),

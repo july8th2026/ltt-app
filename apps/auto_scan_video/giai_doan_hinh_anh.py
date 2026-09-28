@@ -197,14 +197,27 @@ def ung_vien_tu_ban_bien_tap(ban, chi_muc) -> list[kc.UngVien]:
     return ra
 
 
-def _ke_cat(db, kho: Storage, run, *, thoi_luong: float) -> kc.KeCat:
-    """Ke cat cua lan chay. ⭐ MOT noi tra loi cau *"ta bo gi"*.
+def _ke_cat(db, kho: Storage, run, *, thoi_luong: float
+            ) -> tuple[kc.KeCat, tuple[tuple[float, float], ...]]:
+    """Ke cat cua lan chay + khe thoai da dung de dung no. ⭐ MOT noi tra loi cau
+    *"ta bo gi"*.
 
     ⭐ **⛔ Khong con tham so `bien_tap` (B6, 27/09).** Truoc B6 ham nay phai nhan
        ho so DAY DU chi de doi truc khe thoai tu `timing_align` (truc NGUON) sang
        truc ban ra cua `render` (SAU `toc_do`). Nay `toc_do` ap o CUOI GD2, nen
        khe thoai, ung vien cat va tep bi cat **cung mot truc** — ⛔ khong con
        phep doi nao de lam sai.
+
+    ⭐ **Tra ca `thoai` (E1, 28/09).** `chay()` can no de do CUA SO KHACH da xoa
+       bao nhieu doan thoai (`kc.thoai_bi_xoa`) — tra thang tu day thay vi doc
+       lai `TIMING_ALIGN` lan hai o `chay()`.
+
+    🔴 **⛔ KHONG con goi `diem_dong` nua (B14, 28/09).** Chu du an chot BO
+       tinh nang cat canh xau — xem `diem_dong.py` dau tep. `ung_vien_tu_ban_
+       bien_tap` mot minh la du: `EDIT_PLAN` nay LUON quyet GIU moi canh
+       (`giai_doan_ban_bien_tap.chay` goi `lap_ban(hieu_canh=())`), nen ham
+       nay tra ve mot danh sach RONG mot cach TU NHIEN — ⛔ khong can mot
+       nhanh `if` rieng o day de ep no rong.
     """
     from . import ban_bien_tap as bbt, canh as canh_mod
 
@@ -212,6 +225,7 @@ def _ke_cat(db, kho: Storage, run, *, thoi_luong: float) -> kc.KeCat:
     khoa_kh = _khoa_theo_duoi(db, run, pipeline.TIMING_ALIGN, ".json")
     if khoa_kh:
         ke_hoach = _doc_json(kho, khoa_kh)
+    thoai = kc.khe_thoai_tu_ke_hoach(ke_hoach)
 
     ban = chi_muc = None
     khoa_ep = _khoa_theo_duoi(db, run, pipeline.EDIT_PLAN, ".json")
@@ -220,9 +234,9 @@ def _ke_cat(db, kho: Storage, run, *, thoi_luong: float) -> kc.KeCat:
         ban = bbt.BanBienTap.tu_dict(goi.get("ban") or {})
         chi_muc = canh_mod.tu_dict(goi.get("chi_muc") or {})
 
-    return kc.chon(ung_vien_tu_ban_bien_tap(ban, chi_muc),
-                   thoai=kc.khe_thoai_tu_ke_hoach(ke_hoach),
-                   thoi_luong=thoi_luong)
+    ke = kc.chon(ung_vien_tu_ban_bien_tap(ban, chi_muc),
+                thoai=thoai, thoi_luong=thoi_luong)
+    return ke, thoai
 
 
 def _cua_so_khach(db, run):
@@ -335,13 +349,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         ke = kc.chon([], thoi_luong=thoi_luong)      # mac dinh: ⛔ khong cat gi
         khoang = [(0.0, thoi_luong)]
         cua = None
+        thoai: tuple[tuple[float, float], ...] = ()
         ds_logo: list = []
         lop_phu: list = []
         bien_tap_gd2: dict | None = None
         if cach == cdr.CAT_MA_HOA_LAI:
             # ⭐ `ke_cat` ⛔ khong can biet `toc_do` nua (B6): khe thoai cua
             #    `timing_align`, ung vien cat va tep bi cat deu o truc NGUON.
-            ke = _ke_cat(db, kho, run, thoi_luong=thoi_luong)
+            ke, thoai = _ke_cat(db, kho, run, thoi_luong=thoi_luong)
             # ⭐ MOT lan doc cua so, dung cho CA phep giao LAN bao cao: hai lan
             #    doc cung mot cai dat la hai cho co the lech (`cai_dat.doc` co the
             #    doc mot `run.settings` da bi ghi lai giua chuoi — xem
@@ -357,6 +372,19 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             ds_logo = list(cai.logo or ())
             lop_phu = list(cai.lop_phu or ())
             bien_tap_gd2 = loc_bien_tap_gd2(cai.bien_tap)
+
+        # 🔴 **E1 (28/09) — cua so khach co the xoa loi thoai, va phai BAO,
+        #    ⛔ KHONG chan.** `ke_cat.chon` da bao dam moi khe trong `thoai` nam
+        #    TRON trong `ke.giu` (luat cung `co_thoai`), nen moi mat mat tu day
+        #    la do CUA SO KHACH thu hep tiep — dung `khoang` (SAU giao voi cua
+        #    so), ⛔ khong dung `ke.giu` (TRUOC giao). Cua so khach la lua chon
+        #    cua khach: bien no thanh cua CHAN la tu choi mot yeu cau ro rang
+        #    cua khach vi mot nguong he thong.
+        so_mat_han, so_mat_mot_phan = kc.thoai_bi_xoa(thoai, khoang)
+        if so_mat_han or so_mat_mot_phan:
+            log.warning(
+                "image_finish: cua so khach da xoa %d doan thoai (mat han), "
+                "%d doan mat mot phan", so_mat_han, so_mat_mot_phan)
 
         ban_do = _ban_do_tu_khoang(khoang, thoi_luong)
         # ⭐ MOT lan tinh, dung lai cho CA logo/lop_phu (`dung_lenh`) LAN
@@ -408,6 +436,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
         tom = {**kc.tom_tat(ke),
                "cua_so_khach": list(cua or ()),
+               # 🔴 E1 (28/09) — CANH BAO, ⛔ khong chan. Hai con so KHAC nhau,
+               #    ⛔ gop lam mot: "mat han" (doan bien mat hoan toan) va "mat
+               #    mot phan" (doan con lai nhung bi cat cut) la hai cai gia
+               #    khac nhau cho khach doc.
+               "cua_so_khach_thoai_mat_han": so_mat_han,
+               "cua_so_khach_thoai_mat_mot_phan": so_mat_mot_phan,
                "cach": cach,
                "thoi_luong_vao": round(thoi_luong, 3),
                "thoi_luong_ra": round(float(ban_do.thoi_luong_ra), 3),

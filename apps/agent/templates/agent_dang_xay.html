@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_app_head.html" as ah %}
+{% block title %}{{ ten_muc }} · LTT Agent AI{% endblock %}
+{% block page_mode %}standard{% endblock %}
+{% block content %}
+{#- Trang DAT CHO cho mot muc IA da khai o `manifest.nav` nhung noi dung thuoc
+    lan khac.
+
+    🔴 VI SAO NO NOI THANG "DANG XAY": mot trang trong ma trong NHU THAT la mot
+       loi noi doi — nguoi dung se bao "muc nay hong" thay vi "muc nay chua co",
+       va ta mat dung thong tin can nhat. Nen trang nay noi ro ba dieu: muc nay
+       la gi, no chua lam, va duong di dung bay gio la dau. -#}
+<section aria-labelledby="adx-title">
+  {{ ah.dau_trang(_("AI Studio"), ten_muc, mo_ta_muc, id_tieu_de="adx-title",
+                  viec=false, lop="ag-head",
+                  quay_lai={'href': '/agent/workflows', 'nhan': _("Workflows")}) }}
+
+  <div class="card">
+    {#- `data-dang-xay` la moc ASCII cho kich ban nghiem thu: mot bo chon
+        `text=Đang xây` di qua nhieu lop cong cu (tep JS, argv, shell) va mot
+        lop doc sai bang ma se lam phep do do vi ly do KHONG lien quan gi toi
+        trang. Chu tieng Viet van la thu nguoi dung doc, va `test_6200` chot
+        dung chuoi do trong HTML. -#}
+    <p><span class="badge b-warn" data-dang-xay="1"><span class="dot"></span>{{ _("Đang xây") }}</span></p>
+    <h2>{{ _("Mục này chưa làm xong") }}</h2>
+    <p>{{ _("Phần này đã có chỗ trong điều hướng nhưng nội dung chưa được dựng. Trang này nói thẳng điều đó thay vì hiện một danh sách trống trông như đã hoạt động.") }}</p>
+    <p class="muted">{{ _("Mã theo dõi nội bộ") }}: <code>{{ lan_lam }}</code></p>
+    <p><a class="btn" href="/agent/workflows">{{ _("Về danh sách workflow") }}</a></p>
+  </div>
+</section>
+{% endblock %}

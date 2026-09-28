@@ -23,8 +23,25 @@ def test_nut_loi_khai_trigger_manual():
     assert nd.cong_vao == ()                       # trigger khong co cong vao
     assert dict((t, c.type) for t, c in nd.cong_ra) == {"event": "event"}
     assert nd.gia == nut.Gia.mien_phi()
-    # Compiler hom nay tu choi `trigger.*` (`bien_dich._node`) => plan 04.
-    assert nd.publish_duoc is False
+    # ⭐ MO 28/09/2026 (Q11): `False` -> `True`.
+    #
+    #    Chu thich cu o day ghi *"compiler hom nay tu choi `trigger.*`
+    #    (`bien_dich._node`) => plan 04"*. Ly do ay **da het**: UI-0 Task 1 day
+    #    `trigger.*` sang `_node_loi`, va node nay nay bien dich sach.
+    #
+    # 🔴 Va mot minh co `publish_duoc=True` thi CHUA du — do la ly do
+    #    `_chay_trigger_thu_cong` phai ton tai cung luc. `dong_co._chay_mot_inline`
+    #    xu ca thieu bo thi hanh bang `FAILED "loi_he_thong: ... khong co bo thi
+    #    hanh"`, nen mo co nay mot minh se cho ra mot node **publish sach roi
+    #    FAILED luc chay** — te hon hien trang, vi hien trang it ra chan TRUOC khi
+    #    khach bam Chay va giu tien.
+    #
+    # ⚠️ Truoc ban va, **0/7 trigger** dung duoc: moi workflow tren Canvas deu
+    #    thieu diem bat dau. Do la cai gia cua mot bat bien dung-luc-viet nhung
+    #    khong ai do lai khi dieu kien cua no het.
+    assert nd.publish_duoc is True
+    # Ve di kem: co mo thi PHAI co bo thi hanh, neu khong la publish-roi-FAILED.
+    assert nut_loi.bo_thi_hanh("trigger.manual") is not None
 
 
 def test_tat_ca_hop_ba_nguon():

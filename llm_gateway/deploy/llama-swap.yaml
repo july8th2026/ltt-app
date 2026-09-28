@@ -149,6 +149,32 @@ macros:
   # thieu tensor MTP, va thieu MTP la mat 38,5 % toc do giai ma (52,69 -> 73,00).
   GGUF35: "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf"
   #
+  # ------------------------------------------------- ffmpeg cho anh WebP (28/09)
+  # !! VI SAO CAN. stb_image - bo giai ma anh cua llama.cpp - KHONG doc WebP.
+  #    Duong WebP duy nhat la `decode_webp_with_ffmpeg()`, nam tron trong
+  #    `#ifdef MTMD_VIDEO` va goi mot `ffmpeg` NGOAI luc chay.
+  #
+  # !! VA CLIENT CUA TA GUI WebP. Harness DSH ma hoa anh request theo
+  #    `hasAlpha ? "image/webp" : "image/jpeg"`
+  #    (`dsh-attachment-local/lib/index.js`), va anh chup man hinh tu trinh
+  #    duyet/Playwright mac dinh la RGBA. Do 28/09: gui WebP -> may B tra 400
+  #    voi `upstream_status: 400` tu chinh llama-server.
+  #
+  # !! VI SAO KHONG SUA PATH. Dich vu `LTTLlamaSwap` chay duoi
+  #    `SERVICE_START_NAME : LocalSystem` (do bang `sc qc`), nen no chi thay PATH
+  #    MAY. `ffmpeg` tren may B nam trong ho so nguoi dung `lengo` (WinGet Links)
+  #    - PATH cua NGUOI DUNG, khong phai cua may. Va `nssm` nuong ENV luc CAI,
+  #    nen sua PATH may cung khong an neu khong cai lai dich vu.
+  #
+  #    Lan dau toi hoi `where ffmpeg` qua SSH va nhan duoc cau tra loi cho MOT
+  #    CAU HOI KHAC: PATH cua `lengo`, khong phai cua dich vu. Bay nay da ghi
+  #    trong bo nho tu 23/09 ("worker chay duoi LocalSystem khac moi truong").
+  #
+  # => Chi ro thu muc, tuong minh. ACL da doi chieu: SYSTEM = FullControl, giong
+  #    het thu muc engine ma dich vu DANG chay. Va co da duoc kiem la engine
+  #    NHAN - doi chung am: mot co bia tra `error: invalid argument`, ma thoat 1.
+  FFMPEG: "H:/LTT_LLM/bin/ffmpeg"
+  #
   # ------------------------------------------------------------------ macro CHUNG
   # !! `CHUNG` KHONG con mang `-c`/`-np`/`--parallel 1`, va day la mot thay doi
   #    co chu y cua Task 3.3: hai model nam tren hai card co kich thuoc khac
@@ -254,11 +280,37 @@ macros:
   #      nen token ket thuc dung bang "now." + LF. Go exec truyen argv thang,
   #      khong qua shell (internal/process/process_command.go).
   #    Da do tren may B 19/09 (L-31 trong DECISION_LOG).
+  # --------------------------------------------------- tran token ANH (28/09/2026)
+  # !! HAI CO DUOI DAY KHAI DUNG GIA TRI MAC DINH DANG CHAY. Chung KHONG doi mot
+  #    hanh vi nao. Ly do them chung la de co mot CHO BUOC: truoc hom nay, tran
+  #    token anh cua engine la mot con so NGAM, nen may A khong the doc no va
+  #    khong the tinh chi phi mot anh truoc khi dat cho KV.
+  #
+  #    llama.cpp b10883 (commit 91f6a6cf3) dat `set_limit_image_tokens(8, 4096)`
+  #    cho ho Qwen2VL/Qwen25VL/Qwen3VL tai tools/mtmd/clip.cpp:1660. Hai mmproj
+  #    cua ta deu la `qwen3vl_merger` (doc GGUF 28/09), nen ta roi vao nhanh do.
+  #
+  # !! KHOA GGUF KHONG DUNG DUOC. `clip.vision.image_min_pixels` /
+  #    `image_max_pixels` VANG MAT trong ca hai tep mmproj, VA llama.cpp cung
+  #    khong doc chung cho ho Qwen (clip.cpp:1416 khong co get_u32 nao trong
+  #    khoi ay). Hai co CLI nay la can gat DUY NHAT.
+  #
+  # !! SAN 8 LA MOT NO CHAT LUONG DA BIET, chua tra. clip.cpp:1662-1667 in canh
+  #    bao rang Qwen-VL can toi thieu 1024 token anh de lam dung tac vu dinh vi
+  #    (dan issue #16842). Nang san len la mot DANH DOI SAN PHAM (do chinh xac
+  #    doi lay KV + credit khach tra), nen no cho phep do D-5 va mot quyet dinh
+  #    rieng cua chu du an. Xem docs/superpowers/specs/2026-09-28-vision-plan-lock.md
+  #
+  # !! Ai doi hai so nay phai doi luon hang o `llm_gateway/anh_token.py`, va
+  #    `tests/test_4204_co_anh_khai_tuong_minh.py` doc nguoc chinh tep nay de bat
+  #    khop. Do dung la ly do chung duoc khai o day thay vi nam ngam.
   CHUNG: >-
     --jinja
     --reasoning-format deepseek
     -fa 1 -ngl 999 -kvu
     --top-p 0.95 --top-k 20 --min-p 0
+    --image-min-tokens 8 --image-max-tokens 4096
+    --video-ffmpeg-dir ${FFMPEG}
     --metrics
 
 models:

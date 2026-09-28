@@ -158,25 +158,93 @@ def _nhap_cua(p: pathlib.Path) -> set[str]:
     return ra
 
 
-def test_KHONG_module_nao_trong_apps_con_goi_RapidOCR():
-    """🔑 Bat bien 3 — do bang **duong NHAP** (AST), ⛔ khong bang chuoi.
+def test_KHONG_module_nao_trong_apps_dung_OCR_de_LAY_LOI_THOAI():
+    """🔑 Bất biến 3 — đo bằng **đường NHẬP** (AST), ⛔ không bằng chuỗi.
 
-    ⭐ Do CHUOI se do sai thu: `do_vung.py` nhac ten `RapidOCR` trong mot chu
-       thich ghi lai mot phep DO co that (`RapidOCR 73,5-82,1 % vs OpenCV
-       74,9-80,7 %` tren cung mot video) — do la bang chung lich su, ⛔ khong
-       phai mot nguoi goi. Bai hoc `banh-coc-do-CACH-GO-thay-vi-tinh-chat`:
-       phep kiem phai do **tinh chat** (co nap goi khong), ⛔ khong do cach go.
+    🔴 **THU HẸP 28/09 (B10-4) — chủ dự án chốt, và lý do là một phép đo.**
 
-    ⚠️ `ocr_khung`/`phu_de_cung` cung bi hoi o day: mot `import` con sot lai lam
-       app hong o **luc nap**, tuc o mot cho khong ai dang xem.
+       Bản cũ cấm **mọi** đường nhập `rapidocr` trong `apps/`. Lệnh cấm ấy
+       **rộng hơn lý do sinh ra nó**: quyết định 22/09 bỏ `nguon_loi` =
+       `ocr`/`embedded`/`auto`, tức bỏ việc dùng OCR để **LẤY LỜI THOẠI** thay
+       cho ASR. Việc xoá hai module và gỡ gói là **hệ quả dọn dẹp** của quyết
+       định ấy, ⛔ không phải một phán quyết rằng OCR vô dụng cho mọi việc.
+
+    ⚠️ Và chính `do_vung.py` giữ một phép đo nói **ngược lại** cho việc dò dải
+       (chú thích `BU_MOI_DAU`, cùng video `H=1280`):
+
+           RapidOCR 73,5–82,1 %   ·   OpenCV 74,9–80,7 %
+           ⇒ OpenCV hụt ~1,4 % mỗi đầu ≈ 18 px ⇒ đỉnh và chân chữ Hán LỘ ra
+
+       Ta đã phải thêm hằng số bù `BU_MOI_DAU = 0.015` để vá đúng chỗ hụt đó.
+
+    ⭐ Đo lại 28/09 trên phim nghiệm thu, qua chính `_dai_chu_nhieu_tang`:
+
+           tầng lùi   cao 15,5 %  ·  rộng 100 %
+           tầng OCR   cao 10,7 %  ·  rộng 80,8 %     ⇒ diện tích **/1,78**
+
+    ⇒ Bất biến nay nói đúng điều quyết định gốc nói: **⛔ không dùng OCR để lấy
+      LỜI THOẠI.** Dò **HỘP** (det-only) thì được — xem bài kế tiếp, nó chốt
+      rằng đường mới ⛔ không hề đọc trường văn bản.
     """
-    xau = ("rapidocr", "ocr_khung", "phu_de_cung")
+    xau = ("ocr_khung", "phu_de_cung")
     vi_pham = []
     for p in sorted((GOC / "apps").rglob("*.py")):
         for ten in _nhap_cua(p):
             if any(s in ten for s in xau):
                 vi_pham.append(f"{p.relative_to(GOC).as_posix()} — nhap {ten!r}")
-    assert not vi_pham, "con nhap duong OCR trong apps/:\n  " + "\n  ".join(vi_pham)
+    assert not vi_pham, ("con nhap duong OCR-lay-loi trong apps/:\n  "
+                         + "\n  ".join(vi_pham))
+
+
+def test_CHI_MOT_module_duoc_nhap_rapidocr_va_van_ban_KHONG_ro_ra_ngoai():
+    """🔑 Bất biến 3b — cập nhật B13 D1 (28/09): chủ dự án ĐẢO LẠI lệnh 27/09.
+
+    ⛔ Thu hẹp một lệnh cấm mà ⛔ không đặt lại hàng rào ở chỗ mới thì là **gỡ**
+       lệnh cấm — nhưng CHÍNH SÁCH đã đổi, nên hàng rào cũng phải đổi CHỖ:
+
+       1. **Đúng MỘT module** được nhập `rapidocr`. Một lệnh cấm đổi thành
+          "được phép ở khắp nơi" là ⛔ không còn lệnh cấm. (KHÔNG đổi.)
+       2. **Cũ (27/09 → 28/09 sáng)**: *"⛔ không sử dụng text để đối chiếu"*
+          — module ⛔ không được đọc `muc[1]`.
+          **Mới (B13 D1, 28/09 chiều)**: *"nên bật lại OCR đọc text tham
+          chiếu"* — module NAY ĐƯỢC ĐỌC `muc[1]`, nhưng văn bản đó CHỈ được
+          dùng nội bộ để hỏi *"đổi hay không"* (`_van_ban_giong`), ⛔ không
+          bao giờ được đi ra ngoài tệp: `_bao()` — hàm DUY NHẤT dựng dict trả
+          về của `do_dai_chu_ocr`/`_theo_doan` — ⛔ không được đọc trường
+          `van_ban`.
+
+    ⚠️ Vế 2 đo bằng **AST**, ⛔ không phải chuỗi: đọc thân hàm `_bao` và đòi nó
+       ⛔ không chứa bất kỳ `Name`/`Attribute`/khoá dict nào tên `van_ban`.
+       Đo CHUỖI ở đây sẽ đo sai thứ: tệp ấy **nói về** văn bản trong nhiều chú
+       thích — đó là bằng chứng, ⛔ không phải một phép đọc. Đúng bài học
+       `banh-coc-do-CACH-GO-thay-vi-tinh-chat`.
+    """
+    import ast as _ast
+
+    nhap = [p for p in sorted((GOC / "apps").rglob("*.py"))
+            if any("rapidocr" in t for t in _nhap_cua(p))]
+    assert [p.name for p in nhap] == ["do_vung_ocr.py"], (
+        "dung MOT module duoc nhap rapidocr; thay: %s"
+        % [p.relative_to(GOC).as_posix() for p in nhap])
+
+    cay = _ast.parse(nhap[0].read_text(encoding="utf-8"))
+    ham_bao = next((n for n in _ast.walk(cay)
+                    if isinstance(n, _ast.FunctionDef) and n.name == "_bao"),
+                   None)
+    assert ham_bao is not None, "khong thay ham `_bao` — hinh dang tep da doi"
+
+    ro_ra: list[int] = []
+    for n in _ast.walk(ham_bao):
+        if isinstance(n, _ast.Name) and n.id == "van_ban":
+            ro_ra.append(n.lineno)
+        if isinstance(n, _ast.Attribute) and n.attr == "van_ban":
+            ro_ra.append(n.lineno)
+        if isinstance(n, _ast.Constant) and n.value == "van_ban":
+            # Khoa dict "van_ban" go tay (`_bao` tra ve mot dict-literal).
+            ro_ra.append(n.lineno)
+    assert not ro_ra, (
+        "`_bao()` cham vao `van_ban` o dong %s — van ban OCR dang RO RA khoi "
+        "ket qua tra ve, trai voi rang buoc D1 'chu CHI dung noi bo'" % ro_ra)
 
 
 def test_hai_module_cua_duong_OCR_da_bi_XOA():

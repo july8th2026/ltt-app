@@ -523,21 +523,21 @@ STORES: tuple = (
           N_("Bối cảnh khách dựng để dùng lại: mô tả nơi diễn ra, ánh sáng, "
              "và khối chữ khoá giữ bối cảnh nhất quán.")),
 
-    # 🔴 GHI THẲNG chứ không giấu trong một dòng TODO, vì đây là chỗ người ta
-    #    đọc khi hỏi "dữ liệu này sống bao lâu".
+    # ⭐ 28/09: món nợ ghi ở đây hôm 27/09 ĐÃ TRẢ. Khi khai lần đầu, app ⛔ không
+    #    có `bao_tri` và ⛔ không chỗ nào xoá `OmmiHandoff`, nên khai `OPERATIONAL`
+    #    lúc ấy sẽ là một lời khai SAI — lớp đó buộc `purged_by` trỏ vào một hàm
+    #    worker THẬT gọi, và `test_211` kiểm đúng điều đó chứ ⛔ không tin lời khai.
+    #    Nay `services/bao_tri.py` đi qua `AppManifest.bao_tri` ⇒ lời khai thành ĐÚNG.
     #
-    #    `ommi_handoff` được THIẾT KẾ là vé tạm 30 phút (`expires_at`), nhưng đo
-    #    27/09: KHÔNG có `bao_tri` trong manifest của app và KHÔNG chỗ nào xoá
-    #    `OmmiHandoff` ⇒ hàng tích tụ vô hạn. Nên nó ⛔ KHÔNG được khai
-    #    `OPERATIONAL` (lớp ấy buộc phải có `purged_by` trỏ vào một hàm worker
-    #    THẬT gọi, và `test_211` kiểm đúng điều đó chứ không tin lời khai).
-    #    Khai `None` ở đây là ghi SỰ THẬT hiện tại, ⛔ không phải một lựa chọn
-    #    thiết kế — và nó là một món nợ có tên, không phải một chính sách.
-    Store("ommi_handoff", CONTENT, None, N_("chủ tài khoản"),
+    # ⚠️ `retention_days` tính bằng NGÀY, còn vé sống **30 phút**. Làm tròn lên `1`
+    #    và nói rõ con số thật trong lý do: một trường đơn vị ngày ⛔ không diễn đạt
+    #    được phút, và làm tròn LÊN là chiều an toàn — ta hứa giữ KHÔNG LÂU HƠN một
+    #    ngày, thực tế ngắn hơn nhiều.
+    Store("ommi_handoff", OPERATIONAL, 1, N_("chủ tài khoản"),
           N_("Vé tạm để gửi một cảnh sang app khác (ví dụ Tạo video): giữ bản "
-             "sao prompt và danh sách ảnh tham chiếu trong ít phút. Thiết kế là "
-             "vé sống 30 phút, nhưng hiện chưa có lượt dọn tự động nào, nên hàng "
-             "sống theo vòng đời tài khoản.")),
+             "sao prompt và danh sách ảnh tham chiếu trong 30 phút. Hết hạn là "
+             "xoá, kể cả khi chưa ai đọc."),
+          purged_by=N_("services.bao_tri.bao_tri, mỗi giờ")),
 
     # 🔴 SINH TRẮC HỌC. Vector suy từ ẢNH MẶT khách tải lên. Đo 27/09: hiện
     #    KHÔNG chỗ nào ghi vào bảng này (0 chỗ ghi trong `services/` và
@@ -552,6 +552,46 @@ STORES: tuple = (
           N_("Vector đặc trưng khuôn mặt, suy từ ảnh nhân vật do khách tải lên, "
              "dùng để giữ đúng một mặt qua nhiều cảnh. Là dữ liệu sinh trắc học "
              "nên ⛔ không ra API; đi cùng nhân vật khi nhân vật bị xoá.")),
+
+    # ── PROMPT AI OMMI, pha 4-5: chia sẻ, thư viện, sinh ảnh, thùng rác ──────
+    Store("ommi_share_code", CONTENT, None, N_("chủ tài khoản"),
+          N_("Mã chia sẻ khách sinh ra để gửi một mục của họ cho người khác: mã, "
+             "loại mục, số lần đã dùng, hạn dùng, mốc thu hồi. Là bằng chứng ai "
+             "đã mở cửa cho ai, nên nó sống theo tài khoản.")),
+    Store("ommi_image_template", CONTENT, None, N_("chủ tài khoản"),
+          N_("Mẫu sinh ảnh: câu prompt có ô trống, tỉ lệ, số ảnh mỗi lượt. Khách "
+             "tự viết hoặc clone từ mẫu gốc rồi sửa — bản thảo của họ.")),
+    Store("ommi_storyboard_framework", CONTENT, None, N_("chủ tài khoản"),
+          N_("Khung dựng storyboard: phần mở đầu, luật ghép, đoạn phủ định, và "
+             "lời nhắc dùng khi chia cảnh tự động. Khách sửa được từng phần.")),
+    Store("ommi_sample", CONTENT, None, N_("chủ tài khoản"),
+          N_("Mẫu khách lưu lại từ một lượt đã chạy: prompt cuối, phong cách và "
+             "model đã dùng, điểm khách tự đánh giá. Giữ để họ tra lại vì sao "
+             "một lượt cho kết quả tốt.")),
+    Store("ommi_profile", CONTENT, None, N_("chủ tài khoản"),
+          N_("Bộ thiết lập sẵn của khách: phong cách nào, meta-prompt nào, lọc "
+             "theo nhãn nào. Một lối tắt họ tự đặt để khỏi chọn lại mỗi lần.")),
+
+    # ⭐ `retention_days=None` vì đây là LỊCH SỬ khách đọc lại: mất nó thì nút
+    #    "quay về bản trước" trỏ vào hư không. Tệp ảnh THẬT sống theo vòng đời
+    #    của `jobs` (CONTENT/30 ngày) — dòng này chỉ là con trỏ, cùng quan hệ
+    #    với `voice_block.audio_key` đã ghi ở trên.
+    Store("ommi_image_job", CONTENT, None, N_("chủ tài khoản"),
+          N_("Một lượt sinh ảnh: tham số đã gửi, mẫu đã dùng, phiên bản thứ mấy "
+             "và bản nào là cha nó. Giữ để khách so hai bản và quay lui.")),
+
+    # ⭐ CHỦ DỰ ÁN CHỐT 28/09: "xoá rồi không cần khôi phục" ⇒ khôi phục trả về
+    #    tài nguyên TRẦN, ⛔ KHÔNG mang liên kết về (nhãn đã gắn, ghi nhận đã
+    #    dùng ở cảnh nào, thuộc bộ sưu tập nào). `payload` vì thế chỉ chụp bản
+    #    thân tài nguyên và biến thể của nó.
+    # ⛔ Đừng "sửa" điều này thành chụp cả liên kết: đó là một QUYẾT ĐỊNH sản
+    #    phẩm, ⛔ không phải một thiếu sót.
+    Store("ommi_trash", OPERATIONAL, 30, N_("chủ tài khoản"),
+          N_("Bản chụp một tài nguyên khách đã xoá, giữ 30 ngày để họ đổi ý. "
+             "Khôi phục trả lại tài nguyên và biến thể của nó, ⛔ không trả lại "
+             "nhãn hay liên kết bộ sưu tập. Quá 30 ngày là xoá vĩnh viễn, kể cả "
+             "tệp trên kho."),
+          purged_by=N_("services.bao_tri.bao_tri, mỗi giờ")),
 
     # ── Auto Scan Video ──────────────────────────────────────────────────────
     #

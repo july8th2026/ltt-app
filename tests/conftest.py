@@ -150,9 +150,30 @@ def pytest_collection_modifyitems(session, config, items):
                   "to tien cua no den het gio.")
             return
         from cua_so_yen import CuaSoYen
+        # 🔴 **KHAI `so_loi`, do duoc 28/09/2026.** Truoc do loi goi nay KHONG
+        #    khai, nen `cua_so_yen.loi_da_hua` roi ve `SO_LOI_KHI_KHONG_KHAI = 8`
+        #    — tuc **mot lenh `pytest -n 2` go tay lam moi phien khac tuong may
+        #    da het cho** va tut ngan sach ve `max(2, 8-8) = 2`.
+        #
+        # ⚠️ Fail-closed o `loi_da_hua` la DUNG cho cho no dung: khi khong ai khai
+        #    thi doan ve phia de dat. Nhung o day ta **biet** so that, va mot cho
+        #    biet ma khong khai la mot cho bat co che kia phai doan.
+        #
+        # ⭐ Cung khuon `chay_nang.py::_so_loi_khai` va `test_nhanh.py`: doc `-n`
+        #    cua CHINH lenh nay, khong go hang so. `auto`/`logical` thi hoi dung
+        #    ham ma `pytest_xdist_auto_num_workers` hoi (`loi_cho_bo_test`), nen
+        #    con so khai bao va con so thuc dung KHONG the lech nhau.
+        _np = getattr(config.option, "numprocesses", None)
+        if isinstance(_np, int) and _np > 0:
+            _so_loi = _np
+        elif _np:                                  # "auto" / "logical"
+            import gate as _g                       # sys.path da co `tools` o tren
+            _so_loi = _g.loi_cho_bo_test(do_tai=False)
+        else:
+            _so_loi = 1                            # khong xdist: mot tien trinh
         _KHOA_PHIEN = CuaSoYen(
             os.environ.get("LTT_PHIEN") or f"pytest:{os.getpid()}",
-            "pytest go tay", cho_toi_da_s=900.0,
+            "pytest go tay", cho_toi_da_s=900.0, so_loi=_so_loi,
             # ⛔ KHONG con `postgres_test` (Task 0 / N-10, 24/09).
             #
             # 🔴 Khoa do khong bao ve mot tai nguyen doc quyen — no bao ve **mot

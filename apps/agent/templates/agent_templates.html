@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% import "_app_head.html" as ah %}
+{% block title %}{{ _("Mẫu") }} · LTT Agent AI{% endblock %}
+{% block page_mode %}standard{% endblock %}
+{% block content %}
+{#- Danh muc MAU (UI-9). Ve o MAY CHU: danh sach + mo ta + uoc credit doc duoc
+    khi JS chet, dung nhu `agent_workflows.html`.
+
+    ⭐ "Dung mau nay" KHONG phai xem truoc — no goi DUNG cua da co
+       (`POST /agent/api/v3/workflows`, drafts_v3.py::v3_tao) voi `document`
+       cua chinh mau do, roi mo Canvas cua workflow VUA TAO (khong phai
+       `items[0]`). Xem `apps/agent/routes/trang.py::trang_templates`.
+    ⛔ KHONG mo cua HTTP moi o day — mot `POST /agent/templates/...` thu hai
+       se la mot be mat cho dung mot viec cua v3 da lam. -#}
+<style>
+  .mau-ds{list-style:none;margin:0;padding:0;display:grid;gap:14px;
+          grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+  .mau-o{display:flex;flex-direction:column;gap:8px;padding:16px;
+         border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+  .mau-ten{font-weight:600;font-size:15px;margin:0}
+  .mau-mo-ta{margin:0;font-size:13px;flex:1 1 auto}
+  .mau-gia{margin:0;font-size:12px}
+  .mau-hanh{margin-top:4px}
+</style>
+<section aria-labelledby="mau-title">
+  {{ ah.dau_trang(_("AI Studio"), _("Mẫu"),
+     _("Mở một mẫu ra là một workflow thật của bạn — sửa được ngay, không cần dựng từ đầu."),
+     id_tieu_de="mau-title", lop="ag-head") }}
+
+  <div class="alert alert-err" id="mau-loi" role="alert" hidden></div>
+
+  {% if mau_list %}
+  <ul class="mau-ds" id="mau-ds">
+    {% for m in mau_list %}
+    <li class="mau-o" data-mau-id="{{ m.id }}">
+      <p class="mau-ten">{{ _(m.ten) }}</p>
+      <p class="mau-mo-ta muted">{{ _(m.mo_ta) }}</p>
+      <p class="mau-gia muted">
+        {{ _("Ước") }} ~{{ m.uoc_tinh }} · {{ _("tối đa") }} {{ m.toi_da }} credit
+      </p>
+      <div class="mau-hanh">
+        <button class="btn" type="button" data-mau-dung="{{ m.id }}">{{ _("Dùng mẫu này") }}</button>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="card wfl-trong">
+    <p>{{ _("Chưa có mẫu nào.") }}</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module">
+  /* ⛔ KHONG cua HTTP moi: "Dung mau nay" di qua dung cua da co cua
+     `drafts_v3.py` — y het "Nhan ban" cua `agent_workflows.html`. */
+  const CSRF = {{ csrf_token | tojson }}
+  const MAU = {{ mau_json | tojson }}
+  const LOI = document.getElementById('mau-loi')
+  const CHU_LOI = {{ _("Không tạo được workflow từ mẫu này. Thử lại, hoặc tải lại trang.") | tojson }}
+
+  function bao_loi(e) { LOI.textContent = CHU_LOI; LOI.hidden = false; console.error(e) }
+
+  async function goi(url, tuy = {}) {
+    const r = await fetch(url, { credentials: 'same-origin', ...tuy })
+    if (!r.ok) throw new Error(url + ' -> ' + r.status)
+    return r.json()
+  }
+
+  for (const nut of document.querySelectorAll('[data-mau-dung]')) {
+    nut.addEventListener('click', async () => {
+      const ma = nut.dataset.mauDung
+      const m = MAU[ma]
+      if (!m) { bao_loi(new Error('mau khong ton tai: ' + ma)); return }
+      nut.disabled = true
+      try {
+        const wf = await goi('/agent/api/v3/workflows', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+          body: JSON.stringify({ name: m.name, document: m.document, csrf_token: CSRF }),
+        })
+        /* Mo NGAY workflow vua tao tu mau — khong phai `items[0]`. */
+        window.location.href = '/agent/workflows/' + encodeURIComponent(wf.id)
+      } catch (e) { nut.disabled = false; bao_loi(e) }
+    })
+  }
+</script>
+{% endblock %}

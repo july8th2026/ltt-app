@@ -134,8 +134,11 @@ class AdmissionModel:
     nguong_whale: int = 0
     #: Đệm ước token vào cộng vào MỖI đặt chỗ (≙ phần chừa trong trần vào).
     dem_uoc: int = 0
-    #: Token đặt chỗ cho mỗi ảnh đầu vào.
-    token_giu_moi_anh: int = 0
+    #: `--image-min-tokens` / `--image-max-tokens` của engine — THAM SỐ của
+    #: `platform_core/llm/anh_token.token_anh(rộng, cao, …)`, không phải một hằng
+    #: "token mỗi ảnh". Thay `token_giu_moi_anh` (2.048 phẳng) ngày 28/09/2026.
+    token_anh_toi_thieu: int = 0
+    token_anh_toi_da: int = 0
     #: "Một prefill dài mỗi lúc" (L-29): whale không vào engine khi lượt khác trên
     #: cùng tài nguyên còn prefill. Cần `toc_prefill_tok_s > 0` (hạn ước prefill
     #: cho cửa không stream) — `admission._ban_do_prefill` đọc cặp này theo tên

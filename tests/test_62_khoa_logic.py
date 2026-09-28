@@ -188,7 +188,27 @@ def test_moi_thu_vien_deu_co_can_tren(ten):
         goi = re.split(r"[<>=\[]", line, maxsplit=1)[0].strip().lower()
         if goi in NGOAI_LE:
             continue
-        if "<" not in line:
+        # ⭐ GHIM CHINH XAC cung la mot can tren — va la can CHAT HON `<`.
+        #
+        # 🔴 Ban cu chi hoi `"<" in line`, tuc do **CACH GO** chu khong do
+        #    **TINH CHAT** ma docstring o tren tuyen bo: *"hai lan cai cung mot
+        #    ma nguon cho ra hai moi truong khac nhau"*. `pkg==1.2.3` lam dieu do
+        #    KHONG THE xay ra, va no chat hon `pkg<1.3` (thu van cho 1.2.4 vao).
+        #
+        #    Do 28/09/2026: `rapidocr-onnxruntime==1.2.3` (lan ASV, ban va
+        #    RapidOCR) lam buoc gate `bo test` DO tren mot dong hoan toan dung
+        #    luat. Do la mot BAO DONG GIA, va bao dong gia la thu lam nguoi ta
+        #    TAT ca cai cong.
+        #
+        # ⛔ `==1.2.*` thi KHONG duoc tinh: dau `*` mo lai dung cai khe nay dong.
+        #
+        # ⚠️ Va chi doc phan TRUOC dau `;`: mot marker nhu
+        #    `; python_version<"3.13"` co chua `<` ma khong rang buoc phien ban goi
+        #    nao ca — ban cu tinh no la "co can tren". Mot lo hong rieng, nay het.
+        dac_ta = line.split(";", 1)[0].strip()
+        co_can_tren = ("<" in dac_ta
+                       or re.search(r"==\s*[0-9][^,\s*]*$", dac_ta) is not None)
+        if not co_can_tren:
             thieu.append(line)
     assert thieu == [], (
         f"{ten}: thiếu cận trên, một lần cài lại có thể đổi hành vi âm thầm: {thieu}"

@@ -319,11 +319,48 @@ def _doi(gia_tri: Any, node_id: str, *, nghiem: bool = True) -> Any:
             if boc is None or not _bieu_thuc_s6_hop_le(boc.group(1).strip()):
                 raise LoiBienDich(
                     "bieu_thuc_chua_ho_tro",
-                    "chi ho tro dung MOT bieu thuc ngon ngu Sec6 boc trong "
-                    "{{ }} (vi du {{ nodes.<id>.output.<cong> }}, ke ca "
-                    "duong dan long ben trong cong)",
-                    node_id)
+                    _vi_sao_bieu_thuc_do(gia_tri, boc), node_id)
     return gia_tri
+
+
+#: Một đoạn sau `nodes.` mà ⛔ KHÔNG phải định danh Python — nguyên nhân số một
+#: của `bieu_thuc_chua_ho_tro` trên thực tế.
+_NODES_DAU_CHAM_XAU = re.compile(r"\bnodes\.([A-Za-z_]\w*-[\w-]*)")
+
+
+def _vi_sao_bieu_thuc_do(gia_tri: str, boc) -> str:
+    """Thông điệp NÓI ĐÚNG nguyên nhân, ⛔ không phải một câu chung.
+
+    ## 🔴 Vì sao đáng một hàm riêng
+
+    Thông điệp cũ luôn là *"chỉ hỗ trợ đúng MỘT biểu thức ... bọc trong `{{ }}`"*.
+    Với ca thật hay gặp nhất — id Canvas chứa **gạch ngang** (`nmukpruo1-1`) — câu
+    ấy **sai lạc**: biểu thức CÓ đúng một, và nó CÓ được bọc. Nguyên nhân thật là
+    `nodes.<id>` với `<id>` ⛔ không phải định danh.
+
+    ⚠️ UI-11 mất một lượt điều tra vì câu ấy, và lượt ấy đi **đúng hướng mà câu
+       kia chỉ** — tức một thông điệp sai không chỉ vô ích, nó **tiêu thời gian
+       theo hướng ngược**. Đó là cùng hạng lỗi với *"tham chiếu chết"*: nó tạo
+       niềm tin rằng mình đã biết chỗ hỏng.
+
+    ⭐ Nên hàm này phân biệt BA ca và mỗi ca nói được việc cần làm:
+       thiếu `{{ }}` · `nodes.` + id không-định-danh · còn lại (câu cũ).
+    """
+    m = _NODES_DAU_CHAM_XAU.search(gia_tri)
+    if m is not None:
+        nid = m.group(1)
+        return (f"`nodes.{nid}` khong phai Sec6 hop le: {nid!r} co ky tu "
+                "khong dung trong mot dinh danh (thuong la dau `-` cua id do "
+                f"Canvas sinh). Viet dang subscript: nodes[{nid!r}]... "
+                "-- ngon ngu Sec6 nhan dang nay, va cua goi y "
+                "(`goi_y.tham_chieu_node`) nay tu sinh no.")
+    if boc is None:
+        return ("chi ho tro dung MOT bieu thuc ngon ngu Sec6 boc trong {{ }} "
+                "-- chuoi nay co `{{` nhung khong phai MOT bieu thuc boc tron "
+                "(vi du con chu ben ngoai `{{ }}`, hay thieu `}}`)")
+    return ("chi ho tro dung MOT bieu thuc ngon ngu Sec6 boc trong "
+            "{{ }} (vi du {{ nodes.<id>.output.<cong> }}, ke ca "
+            "duong dan long ben trong cong)")
 
 
 def cong_params_nhan(bieu_thuc: str) -> bool:

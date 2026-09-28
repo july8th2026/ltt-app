@@ -24,7 +24,8 @@ def _lay(db, bid: str, user):
     try:
         return bf.doc_brief(db, bid, user.id)
     except KeyError:
-        raise HTTPException(status_code=404, detail=_t('Không tìm thấy brief.'))
+        raise HTTPException(status_code=404,
+                            detail=_t('Không tìm thấy brief.')) from None
 
 
 @router.post("/api/briefs/{bid}/generate", status_code=201)

@@ -56,11 +56,40 @@ MODEL_ASR = "large-v3"
 #:   (`nguon_loi.py`), ban ghi mang `nguon_loi` + `do_tin`.
 #:   ⛔ **Da BO 26/09 (Task 21)** — MOT duong duy nhat voice->voice. Ban ghi van
 #:   mang `nguon_loi`, nay luon `asr`. Xem `nguon_loi.py` dau tep.
-PHIEN_BAN_MA = 3
+#: 4 (28/09, B13 B1): them tin hieu AO GIAC THU BA (vong lai `initial_prompt`,
+#:   xem `ban_ghi.nghi_ao_giac`/`danh_dau_nghi_ao_giac`) — thay doi TAP HOP
+#:   doan duoc gan co `nghi_ao_giac` trong `ban` cho CUNG mot dau vao, nen
+#:   cache cu (van_tay cu) se AN nhung doan ao giac moi ma khong tang so nay.
+#: 5 (29/09, B13 B5): `whisperx_runner.CHUNK_SIZE` 30 -> 10 (mac dinh goi ->
+#:   muon tu Viral, CHON bang do that tren toan phim cua ta — xem docstring
+#:   dau `whisperx_runner.py`). Doi HAN THAN ban chep: hoi 65..98s tu TRONG
+#:   thanh 12 cau THAT co dau cau, `phu_song` gan nhu khong doi (0,7692 ->
+#:   0,7651) nhung lo lon nhat giam 32,49 -> 11,20 s. Khong tang so nay thi
+#:   cache cu (van_tay theo `phien_ban_ma` cu) tra ve dung ban chep CUT.
+PHIEN_BAN_MA = 5
 
 
 class ThieuBanTieng(ThieuNguon):
     """Giai doan truoc chua sinh ra ban tieng cho ASR."""
+
+
+def _canh_bao_ao_giac(ban: dict) -> list[tuple]:
+    """Rut gon co `nghi_ao_giac` cua tung doan thanh `(ma, ly_do, so_lieu)` de
+    log MA doan + con so — ⛔ KHONG log loi thoai (`chu`).
+
+    🔑 B13 B1: ⛔ KHONG doc thang `["ky_tu_moi_giay"]` — tin hieu THU BA (vong
+       lai prompt, `ly_do == "vong_lai_initial_prompt"`) khong mang khoa do,
+       chi mang `khop_ky_tu`. Doc bang `.get()` de mot ly_do moi khong lam
+       KeyError ca lan chay.
+    """
+    ra = []
+    for d in ban.get("doan") or []:
+        co = d.get("nghi_ao_giac")
+        if not co:
+            continue
+        so_lieu = co.get("ky_tu_moi_giay", co.get("khop_ky_tu"))
+        ra.append((d.get("ma"), co.get("ly_do"), so_lieu))
+    return ra
 
 
 def _khoa_tieng_asr(db, run) -> str:
@@ -160,8 +189,21 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         if (n_ao := ban_ghi.danh_dau_nghi_ao_giac(ban)):
             log.warning(
                 "asv_chep_loi nghi AO GIAC ASR: %d doan | %s", n_ao,
-                [(d["ma"], d["nghi_ao_giac"]["ky_tu_moi_giay"])
-                 for d in ban["doan"] if d.get("nghi_ao_giac")])
+                _canh_bao_ao_giac(ban))
+
+        # 🔴 B13 B2 (28/09): CUA doc `phu_song` — con so DA CO SAN trong
+        #    `ban_ghi.tom_tat()` (78 doan, `211,56/275,04 = 76,9 %` o luot that
+        #    da do) ma truoc gio chua ai doc. CUA A (tong) + CUA B (mot lo hong
+        #    don le) doc lap — xem `ban_ghi.do_phu_song`. ⛔ Chi canh bao van
+        #    hanh, KHONG chan luot: mot phim that su it loi la hop le.
+        phu = ban_ghi.do_phu_song(ban, thoi_luong=tt["thoi_luong"])
+        if phu["canh_bao_ty_le"] or phu["canh_bao_lo_hong"]:
+            log.warning(
+                "asv_chep_loi canh bao PHU SONG: ty_le=%.3f (nguong %.2f) | "
+                "lo_hong_lon_nhat=%.1fs (nguong %.1fs, %d lo qua nguong)",
+                phu["ty_le_phu_song"], phu["nguong_ty_le"],
+                phu["lo_hong_lon_nhat_s"], phu["nguong_lo_hong_s"],
+                phu["so_lo_hong_qua_nguong"])
 
         # ⛔ Ban ghi khong duoc keo dai hon chinh ban tieng. Neu co, moc thoi
         #    gian da troi, va TIMING se dat tieng vao mot cho khong co hinh.
@@ -201,5 +243,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                         #    giau san phan xau cua chinh no.
                         "dinh_tuyen": {k: dinh_tuyen.get(k) for k in
                                        ("che_do", "nguon_loi", "ly_do", "cat_lai")
-                                       if dinh_tuyen.get(k) is not None}},
+                                       if dinh_tuyen.get(k) is not None},
+                        # B13 B2: hai CUA doc lap tren `phu_song` — xem
+                        # `ban_ghi.do_phu_song` cho can cu nguong.
+                        "phu_song_kiem": phu},
         }

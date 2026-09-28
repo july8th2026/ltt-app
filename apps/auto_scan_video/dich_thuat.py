@@ -263,3 +263,168 @@ def dich_ban_ghi(db, ban_ghi_goc: dict, *, ctx=None) -> dict:
                          _t('Đang dịch'))
         gop.update(dich_mot_lo(db, lo, ngon_ngu_goc=ngon_ngu, ctx=ctx))
     return gop
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  B14/V3 — bon CUA PHAT HIEN muon tu D:\Viral (doi chieu 28/09, KHONG sua dich)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Chu du an chot 28/09/2026 (sau khi lan B14 dua bang doi chieu
+# `docs/auto_scan_video_final/B14_SO_SANH_VIRAL/V3_DICH.md`): "Nhung gi Viral da
+# do roi thi ta SU DUNG, khong can do lai." Cac nguong duoi day la NGUYEN BAN
+# cua Viral (`D:\Viral\resources\app-src\ai_dich.py` / `dich_gemini_web.py`,
+# CHI DOC, khong sua) — KHONG hieu chinh cho du lieu ASV. Ghi ro N cua phep do
+# goc de nguoi sau biet no manh den dau, khong phai de doi lai do.
+#
+# Ca ba ham deu la CUA PHAT HIEN: goi noi chi tra ve co/dem, KHONG cat, KHONG tu
+# viet lai cau cua khach. Noi goi (`giai_doan_noi_dung.chay`) danh dau vao
+# `outputs`/`tom_tat` + `log.warning`, dung nhu han_lot da lam.
+
+
+def cau_dich_phinh_bia(nguon: str, dich_ra: str) -> bool:
+    """N4 — cau dich PHINH/BIA so voi nguon (AI "ke/bia" dai bat thuong).
+
+    Muon NGUYEN cong thuc `ai_dich.py:1062-1077 _parse_lo` (chot 28/09, khong
+    hieu chinh):
+
+        n_nguon = so ky tu nguon (nguon la van ban TRUNG, dinh lien — moi ky tu
+                  Han xap xi 1 tu, DEM KY TU chu KHONG dem theo dau cach)
+        n_dich  = dich CO dau cach -> dem TU; dich KHONG dau cach -> dem KY TU
+        PHINH khi  n_dich > n_nguon * 10  VA  so_ky_tu(dich) > tran
+
+    ⭐ Hai dieu kien VA (khong phai HOAC): mot minh ti le bat oan cau nguon cuc
+       ngan, mot minh nguong tuyet doi bat oan cau nguon dai.
+
+    🔴 **Dich cua ta CHI co hai dich, ca hai deu La Tinh CO dau cach**
+       (`ngon_ngu.DICH_HOP_LE = (vi, en)`) — nen o day CHI dung nhanh tuyet doi
+       `>90 ky tu` cua Viral. Nhanh `>60` (dich CJK dinh lien, dung khi Viral
+       dich sang ja/ko/zh) khong ap dung cho ta — giu lai trong ham de doi so
+       dung, nhung nhanh do se khong bao gio duoc chon voi dich=vi/en.
+
+    Doi chung AM (bat buoc — xem test): mot cau nguon DAI dich ra DAI TUONG XUNG
+    (ti le duoi 10x) khong duoc gan co, du ban dich dai hon 90 ky tu.
+    """
+    src = str(nguon or "").strip()
+    tgt = str(dich_ra or "").strip()
+    if not tgt:
+        return False
+    n_nguon = max(1, len(src))
+    co_khoang_trang = " " in tgt
+    n_dich = len(tgt.split()) if co_khoang_trang else len(tgt)
+    tran_ky_tu = 90 if co_khoang_trang else 60
+    return n_dich > n_nguon * 10 and len(tgt) > tran_ky_tu
+
+
+#: Ti le "don vi dich / don vi nguon" cua mot ban dich VIET TU NHIEN (khong ep
+#: ngan). NGUYEN BAN Viral (`dich_gemini_web.py:155-184 tran_tu_dich`, dong 169:
+#: "0.75 la muc no GIU DUOC nghia, khong bia ra"), do that tren **2 loai video
+#: khac mat do** (SRT anime thoai ngan · SRT thuyet minh phim Trung — ti le nen
+#: do duoc 0,70-0,79x tren ca hai). Chot 28/09 cua chu du an: dung NGUYEN, khong
+#: hieu chinh.
+TI_LE_DICH_TREN_NGUON = 0.75
+
+
+def _dem_don_vi_nguon(nguon: str) -> int:
+    """So don vi "am tiet nguon" de tinh tran THEO MAT DO (N5).
+
+    Muon cach dem cua Viral (`dich_gemini_web.py:79 _RE_AM` — chi dem ky tu
+    CJK/kana, KHONG dem ca cau vi tieng Han dinh lien khong co dau cach): nguon
+    co chu CJK thi dem so ky tu CJK; nguon KHONG co CJK (nguon en/vi, trong hop
+    dong `ngon_ngu.NGUON_HOP_LE`) thi dem tu theo dau cach.
+    """
+    from . import ngon_ngu
+
+    s = str(nguon or "")
+    n_cjk = sum(1 for k in s if ngon_ngu._la_cjk(k))
+    if n_cjk:
+        return n_cjk
+    return max(1, len(s.split()))
+
+
+def tran_do_dai_theo_nguon(giay: float, nguon: str, *, dich) -> int:
+    """N5 — tran DO DAI THEO MAT DO NGUON, cong THEM tran vat ly da co.
+
+    ⚠️ **Khac PHA voi `nan_cho_vua`**: cua cua no chay SAU TTS (do giay tieng
+       THAT); cua nay chay TRUOC TTS, ngay khi ban dich vua sinh ra o
+       `content_process` — chua co tieng nao ca, chi uoc tu MAT DO NGUON. Hai
+       cua BO SUNG nhau, KHONG thay nhau: `nan_cho_vua` van la cua CUOI CUNG
+       truoc khi giao, con cua nay bat som hon — giam so vong nan-cho-vua ton
+       kem (`ngon_ngu.py` tu ghi lai cai gia thieu cua re nay: mot NHIP sai 34%
+       lam **751/943 giay** cua giai doan GIONG la vong `rut_ngan_cho_vua`).
+
+    Cong thuc NGUYEN BAN Viral (`tran_tu_dich`): `min(giay * wps_dich,
+    so_am_tiet_nguon * 0.75)`.
+
+    🔴 **`wps_dich` KHONG lay tu bang `_TU_MOI_GIAY` cua Viral** (ho do `vi` =
+       5,00 tren giong edge-tts CUA HO) — tien de do SAI voi ta: may sinh tieng
+       cua san pham nay la LTT Voice VieNeu-TTS v3, mot hang TTS khac han. Day
+       KHONG phai "hieu chinh nguong 0,75" (phan do van GIU NGUYEN theo chot
+       28/09) — chi rieng `wps` (toc do DOC) la mot dac tinh CUA GIONG, khong
+       phai cua ban dich, nen no PHAI doi theo giong THAT cua ta. Dung
+       `ngon_ngu.NHIP` — da do tren chinh giong that cua san pham (vi=3,35,
+       23/09; en=3,63) — dung KIEU tien le da chot o
+       `V3_DICH.md` hang 8 cho CUNG mot ly do (bang nhip cua Viral cung khong
+       duoc lay vi khac TTS).
+
+    `ngon_ngu.ngan_sach_do_dai` da la tran VAT LY (`giay * NHIP * 0,92`) — ham
+    nay lay `min` voi tran THEO NGUON de duoc CA HAI, dung nhu cong thuc goc.
+    """
+    from . import ngon_ngu
+
+    tran_vat_ly = ngon_ngu.ngan_sach_do_dai(giay, dich)
+    n_nguon = _dem_don_vi_nguon(nguon)
+    tran_theo_nguon = max(1, int(n_nguon * TI_LE_DICH_TREN_NGUON))
+    return min(tran_vat_ly, tran_theo_nguon)
+
+
+def vuot_tran_theo_nguon(*, giay: float, nguon: str, dich_ra: str,
+                         dich) -> tuple[bool, int, int]:
+    """N5 — co PHAT HIEN cho MOT doan. Tra `(vuot, do_dai_dich, tran)`.
+
+    ⛔ Cua PHAT HIEN thuan tuy: chi danh dau + dem, KHONG cat/sua ban dich —
+       noi goi (`giai_doan_noi_dung.chay`) ghi con so nay vao outputs/tom_tat,
+       khong dung no de chan hay viet lai gi ca.
+
+    Doi chung AM (bat buoc — xem test): mot doan noi NHANH THAT (giay ngan so
+    voi nguon nhieu ky tu, tuc `n_nguon` lon) co tran RONG hon tuong ung, nen
+    mot ban dich TUONG XUNG voi nhip noi that van KHONG bi gan co.
+    """
+    tran = tran_do_dai_theo_nguon(giay, nguon, dich=dich)
+    do_dai = len(str(dich_ra or "").split())
+    return do_dai > tran, do_dai, tran
+
+
+#: N6 — nguong PHAT HIEN GOP CAU (nhieu doan bi model nhet chung vao MOT khoa
+#: JSON). NGUYEN BAN Viral (`dich_gemini_web.py:1366-1416
+#: _bo_key_gop/_nguong_gop`), do that **27.139 cue / 90 video**: p50=29 ky tu,
+#: p90=48, p99=63, p99,9=91, max=921. Chot 28/09 cua chu du an: dung NGUYEN,
+#: khong hieu chinh cho du lieu ASV — 27.139 cue la mot bang chung manh hon
+#: nhieu thu ta tu do duoc.
+TRAN_GOP_CAU_TUYET_DOI = 200          # ky tu — khong cue LANH nao trong mau vuot
+HE_SO_GOP_CAU_TUONG_DOI = 4           # x trung vi CUA CHINH LO
+
+
+def danh_dau_gop_cau(do_dai_theo_ma: dict) -> set:
+    """N6 — ma nao trong CUNG MOT LO co do dai bat thuong (dau hieu GOP CAU).
+
+    `do_dai_theo_ma`: `{ma_doan: so_ky_tu_ban_dich}` cua DUY NHAT mot lo (khong
+    phai ca video) — tran TUONG DOI so voi trung vi CUA CHINH LO, vi mot cau dai
+    bat thuong trong mot lo thoai it khac han mot lo thoai nhieu.
+
+    Ca hai dieu kien VA (giu dung cong thuc Viral): vuot tran TUYET DOI 200 ky
+    tu VA vuot trung vi CUA LO nhan 4 lan.
+
+    ⭐ Doi chung AM (bat buoc — xem test): mot lo ma MOI cau deu dai DEU NHAU
+       (phim nhieu loi thoai, khong phai loi gop) khong bi gan co — moi gia tri
+       gan trung vi cua chinh no nen khong vuot `trung_vi * 4`, mien la tung gia
+       tri con duoi tran tuyet doi 200.
+    """
+    if not do_dai_theo_ma:
+        return set()
+    gia_tri = sorted(do_dai_theo_ma.values())
+    n = len(gia_tri)
+    trung_vi = (gia_tri[n // 2] if n % 2
+                else (gia_tri[n // 2 - 1] + gia_tri[n // 2]) / 2)
+    nguong_tuong_doi = trung_vi * HE_SO_GOP_CAU_TUONG_DOI
+    return {ma for ma, do_dai in do_dai_theo_ma.items()
+            if do_dai > TRAN_GOP_CAU_TUYET_DOI and do_dai > nguong_tuong_doi}

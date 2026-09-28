@@ -70,7 +70,7 @@ def test_ca_BON_App_deu_duoc_tang_dieu_phoi_nhin_thay() -> None:
     from platform_core.agent.tools import discover_tools
     t = discover_tools()
     for ten in ("transcript.run", "audio_pause.run",
-                "prompt_canh.run", "video_assembly.run"):
+                "video_assembly.run"):
         assert ten in t, f"{ten} khong den duoc tang dieu phoi"
         assert t[ten].job_type == ten
 

@@ -2,15 +2,18 @@
 {% block title %}LTT Agent AI{% endblock %}
 {% import "_app_head.html" as ah %}
 {% block content %}
-{# 23/09 (spec §17.4): form `POST /agent/plan` đã bị gỡ cùng luồng chạy v1, nên
-   nút cũ trả 405 cho người bấm. Việc "gõ mục tiêu + ngân sách rồi xem giá" nay
-   làm trong Canvas — trang này chỉ còn là cửa dẫn sang đó, KHÔNG dựng luồng
-   mới. `test_969::test_moi_url_trong_template_agent_deu_con_song` canh rằng
-   mọi URL ở đây còn nằm trong bảng định tuyến thật. #}
-{{ ah.dau_trang("AI Studio", "LTT Agent AI", _("Mô tả kết quả bạn muốn. Agent lập kế hoạch và báo giá trước; chưa duyệt sẽ không giữ credit hay chạy công cụ."), lop="ag-head") }}
+{# 23/09 (spec §17.4): form `POST /agent/plan` đã bị gỡ cùng luồng chạy v1.
+   28/09 (Q1 = B, `09_TARGET_DESIGN.md` §1): trang này không còn là cửa duy nhất
+   dẫn vào Canvas — app nay có danh sách workflow thật, và thanh mục của app
+   (`base.html::app_tabs`) là điều hướng chính. Trang này chỉ còn nói app làm gì
+   rồi đẩy người dùng sang Workflows.
+   `test_969::test_moi_url_trong_template_agent_deu_con_song` canh rằng mọi URL
+   ở đây còn nằm trong bảng định tuyến thật. #}
+{{ ah.dau_trang("AI Studio", "LTT Automation Studio", _("Dựng một chuỗi bước chạy được: mỗi bước làm một việc, workflow nối chúng lại. Báo giá hiện ra trước khi chạy, chưa duyệt thì không giữ credit."), lop="ag-head") }}
 {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
 <div class="card ag-form">
-  <p>{{ _("Mục tiêu, ngân sách và các bước đều dựng trong Canvas. Bản nháp tự lưu, báo giá hiện ra trước khi chạy.") }}</p>
-  <a href="/agent/canvas" class="btn u-mt14">{{ _("Mở Canvas") }}</a>
+  <p>{{ _("Workflows là nơi bạn xem, tìm và mở các workflow của mình. Mở một workflow ra là vào Canvas — chỗ bạn thêm bước, nối chúng với nhau và chạy thử.") }}</p>
+  <p><a href="/agent/workflows" class="btn u-mt14">{{ _("Mở Workflows") }}</a></p>
+  <p class="muted">{{ _("Lượt chạy, Mẫu, Các kết nối và Agent đã có chỗ trong thanh mục phía trên; những mục đó còn đang xây và trang của chúng nói rõ điều đó.") }}</p>
 </div>
 {% endblock %}

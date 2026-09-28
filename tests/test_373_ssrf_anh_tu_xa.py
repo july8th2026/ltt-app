@@ -15,9 +15,28 @@ nó — và ComfyUI ở cổng 8188 **không có xác thực** (theo thiết k�
 loopback). Tức lớp phòng thủ của ComfyUI chính là "không ai gọi được tới nó từ
 bên ngoài", và một `image_url` chuyển tiếp phá đúng giả định đó.
 
-⭐ Đo 22/08: `llama-server` hiện **cũng** từ chối URL http. Nhưng đó là một bảo
-   đảm **đi mượn** — nó phụ thuộc hành vi của thượng nguồn và có thể đổi ở một
-   bản nâng cấp mà không ai báo. Phép kiểm này biến nó thành bảo đảm **của ta**.
+🔴 **ĐÍNH CHÍNH 28/09/2026 — LỚP THỨ HAI ĐÃ MẤT, VÀ ĐÚNG NHƯ CHÚ THÍCH CŨ CẢNH BÁO.**
+
+   Bản trước của đoạn này viết: *"Đo 22/08: `llama-server` hiện **cũng** từ chối
+   URL http. Nhưng đó là một bảo đảm **đi mượn** — nó phụ thuộc hành vi của
+   thượng nguồn và có thể đổi ở một bản nâng cấp mà không ai báo."*
+
+   Câu cảnh báo ấy **đã thành sự thật**. Tra lại ở **đúng commit đang chạy**
+   (`91f6a6cf3`, build b10883): `handle_media` ở `tools/server/server-common.cpp`
+   (gọi từ ba chỗ dựng nội dung đa phương thức) **TẢI** mọi URL bắt đầu bằng
+   `http` qua `common_remote_get_content()` — trần 10 MB, hết giờ 10 s, **không
+   cờ bật/tắt, không danh sách trắng**. Chỉ `file://` mới bị chặn sau
+   `--media-path`.
+
+⇒ ⛔ **Phép kiểm này KHÔNG còn là lớp thứ hai. Nó là lớp DUY NHẤT.** Nếu
+  `url_tu_xa` ở `llm_gateway/ngan_sach.py` bị gỡ, không còn thứ gì đứng giữa
+  khách và `http://127.0.0.1:8188`. Đừng nới nó vì "llama-server chắc cũng chặn".
+
+⚠️ Và bài học rộng hơn, đáng giá hơn chính con bọ: một câu **"đo 22/08"** nằm
+   trong chú thích **không tự già đi**. Nó đọc y như một sự thật hiện tại suốt
+   năm tuần sau khi hết đúng. Số đo trong chú thích phải mang **ngày** và mang
+   **bản** — và một bảo đảm đi mượn thì phải được **đo lại sau mỗi lần nâng
+   thượng nguồn** (`docs/ltt_llm_dual/RUNBOOK.md` §4b).
 
 ## Ba giao thức, ba hình dạng — phải chặn cả ba
 
@@ -33,8 +52,14 @@ import pytest
 from llm_gateway.ngan_sach import VuotNganSach, do_yeu_cau, kiem_tra
 
 TRAN = {"max_input_tokens": 96_256, "max_output_tokens": 32_768,
-        "max_images": 4, "max_image_bytes": 20 * 1024 * 1024,
-        "max_context": 131_072, "co_vision": True}
+        "max_image_bytes": 20 * 1024 * 1024,
+        "max_context": 131_072, "co_vision": True,
+        # 28/09: mot ho so engine DA CAU HINH DUNG. Thieu hai so nay thi
+        # `kiem_tra` nem `ThieuTranAnhEngine` cho MOI anh, ke ca anh `data:` hop
+        # le - va luc do `TestVanNHAN_anh_data` se do vi mot ly do khong lien
+        # quan gi toi SSRF. Chu de cua tep nay la SSRF, nen no phai mo phong mot
+        # he DANG CHAY BINH THUONG, khong phai mot he cau hinh thieu.
+        "token_anh_toi_thieu": 8, "token_anh_toi_da": 4096}
 
 _ANH_THAT = "data:image/png;base64," + base64.b64encode(b"\x89PNG" * 40).decode()
 

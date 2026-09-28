@@ -77,7 +77,6 @@ DUNG_MACRO = [
     "apps/transcript/templates/transcript.html",
     "apps/audio_pause/templates/audio_pause.html",
     "apps/video_assembly/templates/video_assembly.html",
-    "apps/prompt_canh/templates/prompt_canh.html",
     "apps/qualitylab/templates/qualitylab.html",
     "apps/qualitylab/templates/qualitylab_report.html",
     "apps/agent/templates/agent.html",

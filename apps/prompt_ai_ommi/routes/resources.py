@@ -530,3 +530,136 @@ async def attach_generated_images(request: Request, resource_id: str,
         db.rollback()
         raise _resource_error(exc) from exc
     return {"variants": [_variant_json(row) for row in made]}
+
+
+# ── Upload ZIP hàng loạt (R5) ───────────────────────────────────────────────
+#
+# Request CHỈ nhận và lưu ZIP — giải nén luôn chạy trong job (G-8): Cloudflare
+# cắt upload ở 100 MB / phản hồi ở 100 giây, và một ZIP vài trăm ảnh giải nén
+# xong dễ vượt cả hai trần đó nếu làm đồng bộ trong request.
+
+_ZIP_UPLOAD_CAP = 95 * 1024 * 1024   # chừa biên dưới trần 100 MB của Cloudflare
+
+
+@router.post("/api/resources/upload-zip", status_code=202)
+async def upload_resource_zip(request: Request, file: UploadFile = File(...),
+                              resource_id: str = Form(...),
+                              csrf_token: str = Form(""),
+                              _identity: str = Depends(require_login),
+                              db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    from platform_core.job_submit import dedupe_key_for
+    from platform_core.jobs import submit
+    from platform_core.storage import get_storage
+    _csrf(request, {"csrf_token": csrf_token}); user = _user(request)
+    _require_run_enabled(user)
+    try:
+        rsvc.get_owned(db, resource_id, user.id)
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+
+    data = await file.read(_ZIP_UPLOAD_CAP + 1)
+    if not data:
+        raise HTTPException(status_code=400, detail=_t('File rỗng.'))
+    if len(data) > _ZIP_UPLOAD_CAP:
+        # Tái dùng msgid đã dịch (apps/video_assembly) — cùng ý "vượt 95 MB".
+        raise HTTPException(status_code=413, detail=_t('Tổng dung lượng vượt 95 MB.'))
+
+    staging_key = f"ommi/{user.id}/zip-staging/{uuid.uuid4().hex[:16]}.zip"
+    get_storage().put(staging_key, io.BytesIO(data),
+                      content_type="application/zip")
+
+    params = {"owner_id": user.id, "resource_id": resource_id,
+             "zip_key": staging_key}
+    job = submit(db, user_id=user.id, app_slug=MANIFEST.slug,
+                job_type="prompt_ai_ommi.import_zip", params=params,
+                dedupe_key=dedupe_key_for("prompt_ai_ommi.import_zip", params))
+    db.commit()
+    return {"job_id": job.id, "status": job.status}
+
+
+# ── Bulk ops trên variant (R2) ──────────────────────────────────────────────
+
+@router.post("/api/resources/{resource_id}/variants/bulk")
+async def bulk_variant_update(request: Request, resource_id: str,
+                              _identity: str = Depends(require_login),
+                              db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    try:
+        result = rsvc.bulk_update(
+            db, resource_id=resource_id, owner_id=user.id,
+            action=str(body.get("action") or ""),
+            ids=body.get("ids") or [], value=body.get("value"))
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return result
+
+
+# ── Thùng rác (R4) ───────────────────────────────────────────────────────────
+
+@router.post("/api/resources/{resource_id}/delete")
+async def delete_resource_to_trash(request: Request, resource_id: str,
+                                   _identity: str = Depends(require_login),
+                                   db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import thung_rac
+    _csrf(request); user = _user(request)
+    try:
+        trash = thung_rac.delete_resource(db, resource_id=resource_id,
+                                          owner_id=user.id)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return {"trash_id": trash.id, "purge_after": trash.purge_after.isoformat()}
+
+
+@router.get("/api/trash")
+def list_trash(request: Request, _identity: str = Depends(require_login),
+              db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import thung_rac
+    user = _user(request)
+    rows = thung_rac.list_trash(db, owner_id=user.id)
+    return {"items": [{"id": r.id, "target_kind": r.target_kind,
+                       "target_id": r.target_id,
+                       "deleted_at": r.deleted_at.isoformat(),
+                       "purge_after": r.purge_after.isoformat()}
+                      for r in rows]}
+
+
+@router.post("/api/trash/{trash_id}/restore")
+async def restore_trash(request: Request, trash_id: str,
+                        _identity: str = Depends(require_login),
+                        db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import thung_rac
+    _csrf(request); user = _user(request)
+    try:
+        restored = thung_rac.restore(db, trash_id=trash_id, owner_id=user.id)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return _resource_json(restored)
+
+
+@router.delete("/api/trash/{trash_id}")
+async def purge_one_trash_item(request: Request, trash_id: str,
+                               _identity: str = Depends(require_login),
+                               db: Session = Depends(get_db)):
+    """Purge THỦ CÔNG một vé — khách bấm "xoá vĩnh viễn" trước hạn."""
+    from datetime import datetime, timezone
+    from apps.prompt_ai_ommi.services import thung_rac
+    from apps.prompt_ai_ommi.tables import OmmiTrash
+    from platform_core.storage import get_storage
+    _csrf(request); user = _user(request)
+    row = db.get(OmmiTrash, trash_id)
+    if row is None or row.owner_id != user.id:
+        # Tái dùng msgid đã dịch — xem lý do trong services/thung_rac.py::restore.
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy tài nguyên.'))
+    row.purge_after = datetime.now(timezone.utc)
+    db.flush()
+    result = thung_rac.purge_expired(db, storage=get_storage())
+    db.commit()
+    return result

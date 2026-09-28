@@ -1,0 +1,355 @@
+/* Node UX V2 (UI-4) — ba muc mat do, hai truc trang thai, khay cong.
+ *
+ * ⛔ TEP NAY LA CUA UI-4. `canvas.css` la so dung chung cua UI-2 (S1) — no
+ *    van giu bo cuc node V1, va khoi nay ghi DE len dung nhung cho can.
+ *
+ * ⭐ Vi sao ghi de thay vi sua `canvas.css`: hai lan dang chay song song. Moi
+ *    luat o day mang mot bo chon DAC HIEU HON ban o `canvas.css`
+ *    (`.node-khung[data-muc-do]` > `.node-khung`), nen ket qua ⛔ khong phu
+ *    thuoc thu tu goi CSS cua Vite — mot thu doi khi ai do them mot `import`.
+ *
+ * ⚠️ jsdom ⛔ khong tinh layout: 100% bai vitest van xanh voi mot node cao
+ *    525px. Moi con so o day do bang Playwright tren may chu co lap 8198.
+ */
+
+/* ── Ba muc mat do (`09 §3.1`) ─────────────────────────────────────────────
+ * `--node-rong` do `NodeKhung` dat tu `matDo.RONG_MUC` — MOT nguon so, khong
+ * hai. ⛔ Dung go lai 200/280/360 o day.
+ */
+.node-khung[data-muc-do] {
+  width: var(--node-rong);
+  min-width: var(--node-rong);
+  /* Node phai la khung quy chieu cua huy hieu goc VA cua moi cong. */
+  position: relative;
+  /* ⛔ KHONG `overflow:hidden`: cong tran nua than ra ngoai hai mep
+   *    (`translate(±50%,-50%)`) va bi cat thi vung bam mat mot nua. */
+  overflow: visible;
+}
+
+/* Dau node: ten buoc la thu to nhat va doc duoc tu 1m. `kind` tut xuong mot
+ * huy hieu nho. `01 §4.1` do duoc phan cap cu bi LON NGUOC. */
+.node-khung[data-muc-do] .node-khung-dau {
+  gap: 7px;
+  padding: 7px 9px;
+  align-items: center;
+}
+.node-khung[data-muc-do] .node-tieu-de {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.node-khung[data-muc-do='expanded'] .node-tieu-de { white-space: normal; }
+.node-khung[data-muc-do] .node-icon { font-size: 15px; line-height: 1; }
+.node-khung[data-muc-do] .node-kind {
+  flex: 0 0 auto;
+  font-size: 9px;
+  letter-spacing: .07em;
+  opacity: .45;
+}
+.node-khung[data-muc-do] .node-trang-thai {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 🔴 `type@version` KHONG len mat node (`09 §3.2` cam hien
+ *    `app.video.generate@1` cho nguoi dung cuoi) — nhung phan tu VAN o trong
+ *    DOM: no la danh tinh MAY doc, va `NodeRenderer.test.tsx` doc no.
+ *
+ * ⚠️ `display:none`, ⛔ KHONG phai `clip-path` kieu sr-only. Ban dau la sr-only,
+ *    va phep do tren trinh duyet that (28/09) bat duoc: mot phan tu 1x1 bi
+ *    `clip-path` VAN nam trong `innerText`, tuc no van la mot dong chu duoc
+ *    trinh bay. Ma nguoi dung dung trinh doc man hinh CUNG la nguoi dung cuoi,
+ *    nen mot chuoi `app.video.generate@1` doc len cho ho la dung cai `09 §3.2`
+ *    cam. Danh tinh may doc thi o lai DOM; NGUOI doc no o `title` cua ca node.
+ *
+ * ⚠️ `getByText` cua testing-library ⛔ khong kiem CSS (do la viec cua
+ *    `toBeVisible`), va vitest o day khong ap `node.css` vao jsdom — nen bai
+ *    cu `getByText('x.app@2')` xanh voi ca hai cach. Phep phan xu la trinh
+ *    duyet that, khong phai jsdom. */
+.node-khung[data-muc-do] .node-type { display: none; }
+
+.node-khung[data-muc-do] .node-khung-than {
+  gap: 5px;
+  padding: 0 9px 6px;
+  align-items: center;
+  font-size: 11px;
+}
+/* Muc compact: than chi con la vo chua cac dau MAY doc. */
+.node-khung[data-muc-do] .node-khung-than.node-than-an {
+  padding: 0;
+  height: 0;
+  overflow: hidden;
+}
+.node-khung[data-muc-do] .node-mo-ta {
+  width: 100%;
+  margin: 1px 0 0;
+  overflow: hidden;
+  color: var(--text-secondary, #9aa3ad);
+  font-size: 11.5px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.node-khung[data-muc-do='expanded'] .node-mo-ta { white-space: normal; }
+/* `title` khi no KHAC `app_name` — mot dong nho, ⛔ khong mot hang moi. */
+.node-khung[data-muc-do] .node-ten-phu {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-muted, #7d858e);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.node-khung[data-muc-do] :is(.node-tai-nguyen, .node-credential, .node-sap-co) {
+  padding: 0 5px;
+  font-size: 9.5px;
+  line-height: 15px;
+}
+
+/* ── Cong: HANG co nhan ────────────────────────────────────────────────────
+ * `position:relative` + `min-height:var(--handle-hit)` da o `canvas.css` va
+ * la ca ban va P0-2 — khoi nay ⛔ KHONG ha hai thuoc tinh ay, chi thu gon
+ * padding va chu.
+ */
+.node-khung[data-muc-do] .node-cong-cot {
+  gap: 0;
+  padding: 2px 9px 7px;
+}
+.node-khung[data-muc-do] .node-cong { font-size: 11px; }
+.node-khung[data-muc-do] .node-cong-ten {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.node-khung[data-muc-do] .node-cong-kieu {
+  flex: 0 0 auto;
+  font-size: 9.5px;
+  opacity: .7;
+}
+/* Cong DANG CO DAY doc dam hon — nguoi dung phai thay soi day cua minh. */
+.node-khung[data-muc-do] .node-cong[data-da-noi] .node-cong-ten { font-weight: 650; }
+/* Cong BAT BUOC: mot dau `*`, khong phai mot mau (mau mot minh ⛔ khong phai
+ * mot thong tin — `09 §12`).
+ *
+ * ⚠️ `*` o day la mot SU KIEN TINH ("cong nay bat buoc"), ⛔ khong phai mot
+ *    canh bao ("cong nay dang thieu"). Ban dau no la `:not([data-da-noi])`,
+ *    tuc mot canh bao — va no keu tren MOI node da go du tham so o Inspector,
+ *    vi mot cong bat buoc duoc thoa bang GIA TRI cung nhieu nhu bang DAY.
+ *    Viec dem cai gi con thieu thuoc ve HUY HIEU goc, noi co doc duoc tham so. */
+.node-khung[data-muc-do] .node-cong-vao[data-bat-buoc] .node-cong-ten::after {
+  content: ' *';
+  color: var(--canh-bao, #d79a2b);
+}
+
+/* ── Cong: KHAY cham ──────────────────────────────────────────────────────
+ * 🔴 ĐÂY LA PHEP CAT TRA LOI 525px, va no phai giu CA HAI bat bien cua UI-0.
+ *
+ * `app.video.generate` co 15 tham so => `luoc_do.cong_vao()` sinh 15 cong vao
+ * (moi tham so la mot cong). 15 HANG chu o buoc 24px = 360px chi rieng cong:
+ * tran 320px la vo nghia truoc khi ta ve mot chu nao.
+ *
+ * Khay xep cham theo luoi NGANG buoc 24px (cham 12px + `gap:12px`):
+ *   - moi cham co MOT vi tri rieng                       (bat bien 1)
+ *   - hai vung bam 24px CHAM NHAU chu khong chong nhau   (bat bien 2 + WCAG
+ *     2.2 AA 2.5.8: dich vuong 24px, tam cach tam 24px)
+ *   - 9 tham so vo huong gon vao MOT dong 24px thay vi 216px
+ *
+ * ⛔ KHONG xep cham theo chieu DOC buoc 14px: hai vung bam 24px chong nhau
+ *    10px, tam cong chi con cach mep hop ben 2px, va WCAG 2.5.8 do.
+ */
+.node-khung[data-muc-do] .node-khay {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  /* Chua cho nua cham tran ra ngoai mep node. */
+  padding: 6px calc(var(--handle-size, 12px) / 2);
+}
+.node-khung[data-muc-do] .node-khay-ra { justify-content: flex-end; }
+/* 🔴 `position:relative` o TUNG o — cung ly do voi `.node-cong`. Bo no thi ca
+ *    khay roi dung mot diem va ta lam hong lai P0-2. */
+.node-khung[data-muc-do] .node-khay-o {
+  position: relative;
+  width: var(--handle-size, 12px);
+  height: var(--handle-size, 12px);
+}
+/* Trong khay, handle nam GIUA o (khong tran ra mep node nhu o hang). */
+.node-khung[data-muc-do] .node-khay-o .react-flow__handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: var(--handle-size, 12px);
+  height: var(--handle-size, 12px);
+  transform: translate(-50%, -50%);
+}
+/* 🔴 VUNG BAM 24px CHO CONG TRONG KHAY — ⛔ ĐUNG BO LUAT NAY.
+ *
+ * `canvas.css` dat lop gia `::after` cho `.node-cong .react-flow__handle`, tuc
+ * CHI cho cong o HANG. Cong trong khay khong khop bo chon do, nen khong co
+ * luat nay thi cham cham bam la 12px — duoi san WCAG 2.2 AA (2.5.8), va Chrome
+ * cung khong bat noi mot cu keo 12px cho chac.
+ *
+ * ⚠️ Day dung la hinh dang "luat thieu ve ngoai le": bo chon cu dung o thoi
+ *    diem chi co MOT kieu cong, va no im lang sai ngay khi co kieu thu hai. */
+.node-khung[data-muc-do] .node-khay-o .react-flow__handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--handle-hit, 24px);
+  height: var(--handle-hit, 24px);
+  transform: translate(-50%, -50%);
+}
+
+/* Mau cham theo KIEU (`09 §5` P0). Mot bang nho, ⛔ khong mot ten app nao. */
+.node-khung[data-muc-do] .react-flow__handle[data-kieu^='image'] { background: #4a9ef5; }
+.node-khung[data-muc-do] .react-flow__handle[data-kieu^='video'] { background: #a970f0; }
+.node-khung[data-muc-do] .react-flow__handle[data-kieu^='audio'] { background: #35b39a; }
+.node-khung[data-muc-do] .react-flow__handle[data-kieu^='json'] { background: #d79a2b; }
+.node-khung[data-muc-do] .react-flow__handle[data-kieu='control'] { background: #ef6f4d; }
+/* Cong bat buoc: vien day hon — hinh dang, khong chi mau. */
+.node-khung[data-muc-do] .react-flow__handle[data-bat-buoc] {
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--text-primary, #eceff3);
+}
+
+/* ── Khay MEDIA (`09 §3.4`), chi o `expanded` ─────────────────────────────
+ * ⚠️ MOT CHO GIU CHO CO NHAN, khong phai mot preview: `RunV3Node` khong mang
+ *    artifact nao. ⛔ Khong ve <img> tro vao dau ca.
+ */
+.node-khung[data-muc-do='expanded'] .node-media {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 9px 6px;
+  padding: 6px;
+  border: 1px dashed var(--vien, #333a42);
+  border-radius: 8px;
+}
+.node-khung[data-muc-do='expanded'] .node-media-khung {
+  width: 48px;
+  aspect-ratio: 16 / 9;
+  border-radius: 4px;
+  background: var(--surface-overlay, #2a3138);
+}
+.node-khung[data-muc-do='expanded'] .node-media small {
+  color: var(--text-muted, #7d858e);
+  font-family: ui-monospace, monospace;
+  font-size: 9.5px;
+}
+
+/* ── Chan: tom tat LUOT CHAY (credit · thoi luong · lan thu) ──────────────*/
+.node-khung[data-muc-do] .node-chan {
+  padding: 4px 9px 6px;
+  border-top: 1px solid var(--vien, #333a42);
+  color: var(--text-secondary, #9aa3ad);
+  font-size: 10.5px;
+}
+
+/* ── TRUC 1: VIEN = SUC KHOE (`09 §3.3`) ─────────────────────────────────
+ * Bay gia tri, bay hinh dang phan biet duoc. ⛔ Khong mot cap nao chi khac
+ * nhau o SAC DO — `09 §12` (WCAG 2.2 AA) doi hinh dang, khong chi mau.
+ */
+.node-khung[data-suc-khoe] { border-width: 2px; border-style: solid; }
+.node-khung[data-suc-khoe='idle'] { border-color: var(--vien, #333a42); }
+.node-khung[data-suc-khoe='running'] { border-color: #4a9ef5; }
+.node-khung[data-suc-khoe='waiting'] {
+  border-style: dashed;
+  border-color: var(--canh-bao, #d79a2b);
+}
+.node-khung[data-suc-khoe='succeeded'] { border-color: #35b39a; }
+.node-khung[data-suc-khoe='failed'] { border-color: var(--nguy-hiem, #e0503f); }
+.node-khung[data-suc-khoe='skipped'] {
+  border-style: dotted;
+  border-color: var(--text-muted, #7d858e);
+  opacity: .72;
+}
+/* `stale`: XONG nhung ket qua co the khong con ung voi do thi hien tai. Vien
+ * KEP — doc khac han moi gia tri con lai, ke ca khi in den trang. */
+.node-khung[data-suc-khoe='stale'] {
+  border-style: double;
+  border-width: 3px;
+  border-color: var(--canh-bao, #d79a2b);
+}
+
+/* ⭐ HAI ANIMATION KHAC NHAU cho `running` va `waiting` — `09 §3.3` doi nguoi
+ *    dung phan biet duoc "dang tinh" voi "dang cho nguoi duyet" TU XA, tuc khi
+ *    chu da khong doc duoc nua. Nen chung khac nhau ve CHUYEN DONG:
+ *      running : mot vach sang CHAY quanh vien   (co viec dang tien trien)
+ *      waiting : ca node THO, cham va deu        (khong ai tien trien, dang cho)
+ */
+.node-khung[data-suc-khoe='running']::before {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent 0 30%, #7fc0ff 50%, transparent 70% 100%)
+              0 0 / 260% 100% no-repeat;
+  animation: node-vach-chay 1.15s linear infinite;
+  pointer-events: none;
+}
+/* ⭐ Chay theo mot TRUC (ngang), ⛔ khong phai mot nhip dap: nhin tu xa no doc
+ *    ra "co viec dang tien trien", khac han `waiting` (tho, tai cho). */
+@keyframes node-vach-chay {
+  from { background-position: -160% 0; }
+  to { background-position: 160% 0; }
+}
+
+.node-khung[data-suc-khoe='waiting'] { animation: node-tho 2.4s ease-in-out infinite; }
+@keyframes node-tho {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(215, 154, 43, .42); }
+  50% { box-shadow: 0 0 0 7px rgba(215, 154, 43, 0); }
+}
+
+/* ⛔ Chuyen dong khong duoc la kenh DUY NHAT: tat animation thi vien vẫn phan
+ *    biet (`solid` xanh vs `dashed` vang) va huy hieu goc van con. */
+@media (prefers-reduced-motion: reduce) {
+  .node-khung[data-suc-khoe='running']::before,
+  .node-khung[data-suc-khoe='waiting'] { animation: none; }
+}
+
+/* ── TRUC 2: HUY HIEU GOC = DINH LUONG (`09 §3.3`) ───────────────────────
+ * 🔴 `pointer-events:none` KHONG phai trang tri: mot huy hieu o goc tren-phai
+ *    nam dung tren duong cua cong ra dau tien, va mot nhan de len tam cong
+ *    CHINH LA con bo P0-2 doi dang (do 27/09: `elementFromPoint` tra ve
+ *    `.node-cong-kieu` chu khong tra ve cong).
+ */
+.node-khung[data-muc-do] .node-huy-hieu {
+  position: absolute;
+  z-index: 3;
+  top: -9px;
+  right: 8px;
+  display: flex;
+  gap: 3px;
+  pointer-events: none;
+}
+.node-khung[data-muc-do] .node-hh {
+  min-width: 17px;
+  height: 17px;
+  display: grid;
+  padding: 0 4px;
+  border: 1px solid var(--surface-canvas, #12171c);
+  border-radius: 9px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  place-items: center;
+}
+.node-hh-loi_cau_hinh { background: var(--canh-bao, #d79a2b); color: #1a1205; }
+.node-hh-loi_chay { background: var(--nguy-hiem, #e0503f); }
+.node-hh-thieu_ket_noi { background: #5b6672; }
+.node-hh-so_lan_thu { background: #4a5a8a; }

@@ -1,7 +1,18 @@
 """tables/thu_vien.py — thu vien prompt: meta prompt + snippet + version + style.
 
-Tach tu apps/prompt_ai_ommi/tables.py (2026-09-26, spec pha 1 R-4). Noi dung
-lop KHONG doi mot dong nao so voi ban goc — chi doi vi tri tep.
+Tach tu apps/prompt_ai_ommi/tables.py (2026-09-26, spec pha 1 R-4). Bon lop cu
+(OmmiMetaPrompt/OmmiPromptSnippet/OmmiPromptVersion/OmmiStyle) khong doi mot
+dong logic nao so voi ban goc luc tach — chi doi vi tri tep.
+
+Pha 4 (27/09, Lan M — khung schema; noi dung du lieu catalog do Lan G nhap
+qua services/nhap_mau_goc.py) them:
+  - `share_level` vao OmmiMetaPrompt/OmmiPromptSnippet/OmmiStyle (ba bang con
+    lai — OmmiCharacter/OmmiBackground/OmmiPose — da co cot nay tu migration
+    Pha 3, xem alembic/versions/20260927_1842_ommi_pha4_kho_chung.py).
+  - `target_format`/`is_default`/`placeholders` vao OmmiMetaPrompt;
+    `parent_id`/`provider_overrides` vao OmmiStyle.
+  - 4 bang moi: OmmiImageTemplate, OmmiStoryboardFramework, OmmiSample,
+    OmmiProfile.
 """
 from __future__ import annotations
 
@@ -10,6 +21,11 @@ from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, DateTime, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
+
+# Pha 4 (26/09-27/09): them share_level (private/code/catalog) vao ba lop cu
+# duoi day + 4 bang moi (OmmiImageTemplate/OmmiStoryboardFramework/OmmiSample/
+# OmmiProfile). Cot da co o CSDL tu migration
+# alembic/versions/20260927_1842_ommi_pha4_kho_chung.py.
 
 from platform_core.db import Base
 
@@ -57,6 +73,15 @@ class OmmiMetaPrompt(Base):
         DateTime(timezone=True), default=_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, onupdate=_now, nullable=False)
+    # -- Pha 4 --
+    target_format: Mapped[str] = mapped_column(
+        String(24), default="gemini_style", nullable=False)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False,
+                                             nullable=False)
+    placeholders: Mapped[list] = mapped_column(JSON, default=list,
+                                               nullable=False)
+    share_level: Mapped[str] = mapped_column(String(12), default="private",
+                                             nullable=False)
 
 
 class OmmiPromptSnippet(Base):
@@ -87,6 +112,9 @@ class OmmiPromptSnippet(Base):
         DateTime(timezone=True), default=_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, onupdate=_now, nullable=False)
+    # -- Pha 4 --
+    share_level: Mapped[str] = mapped_column(String(12), default="private",
+                                             nullable=False)
 
 
 class OmmiPromptVersion(Base):
@@ -138,5 +166,140 @@ class OmmiStyle(Base):
         DateTime(timezone=True), default=_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, onupdate=_now, nullable=False)
+    # -- Pha 4 --
+    parent_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    provider_overrides: Mapped[dict] = mapped_column(JSON, default=dict,
+                                                      nullable=False)
+    share_level: Mapped[str] = mapped_column(String(12), default="private",
+                                             nullable=False)
+
+
+class OmmiImageTemplate(Base):
+    """Mau composite anh (character/prop/background). Ban that cua PROMPT AI
+    la 21 mau nhap tu Prompt Seedance Studio (xem services/nhap_mau_goc.py,
+    Lan G). `placeholders` la bo TEN KHAC voi bo cua meta prompt o tren --
+    {SUBJECT}/{STYLE}/{EXTRA}/{EQUIPMENT}, xem spec Sec 7.2 -- dung cai nham
+    thanh mot bo la loi (spec noi ro dung tron)."""
+
+    __tablename__ = "ommi_image_template"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    icon: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    prompt_text: Mapped[str] = mapped_column(Text, nullable=False)
+    n_outputs: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    aspect: Mapped[str] = mapped_column(String(8), default="1:1", nullable=False)
+    asset_type: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    asset_subtype: Mapped[str] = mapped_column(String(32), default="",
+                                               nullable=False)
+    grid_layout: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    output_mode: Mapped[str] = mapped_column(String(16), default="grid",
+                                             nullable=False)
+    requires_ref: Mapped[bool] = mapped_column(Boolean, default=False,
+                                               nullable=False)
+    multi_ref_max: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    bg_style: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    negative_lock: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    placeholder_hint: Mapped[str] = mapped_column(String(200), default="",
+                                                   nullable=False)
+    # Bo sung 26/09 (spec Sec 7.2) -- thieu cot nay thi khong kiem duoc mau
+    # nao can bien gi (T-2 pha 4 chi kiem cu phap, khong kiem nguon gia tri).
+    placeholders: Mapped[list] = mapped_column(JSON, default=list,
+                                               nullable=False)
+    is_builtin: Mapped[bool] = mapped_column(Boolean, default=False,
+                                             nullable=False)
+    use_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    share_level: Mapped[str] = mapped_column(String(12), default="private",
+                                             nullable=False)
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now, nullable=False)
+
+
+class OmmiStoryboardFramework(Base):
+    """Khung storyboard (composite header/rules/footer + prompt chia canh).
+    5 khung that nhap tu Prompt Seedance Studio."""
+
+    __tablename__ = "ommi_storyboard_framework"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    icon: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    composite_header: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    composite_rules: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    composite_negative_footer: Mapped[str] = mapped_column(Text, default="",
+                                                            nullable=False)
+    breakdown_llm_prompt: Mapped[str] = mapped_column(Text, default="",
+                                                       nullable=False)
+    default_style_id: Mapped[str | None] = mapped_column(String(36),
+                                                          nullable=True)
+    default_aspect: Mapped[str] = mapped_column(String(8), default="16:9",
+                                                nullable=False)
+    default_n_scenes: Mapped[int] = mapped_column(Integer, default=3,
+                                                   nullable=False)
+    is_builtin: Mapped[bool] = mapped_column(Boolean, default=False,
+                                             nullable=False)
+    use_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    share_level: Mapped[str] = mapped_column(String(12), default="private",
+                                             nullable=False)
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now, nullable=False)
+
+
+class OmmiSample(Base):
+    """Ket qua da tao (snapshot), dung de khoe/tham khao. Bat bien -- khong co
+    archived_at/updated_at vi khong ai sua mot sample sau khi tao."""
+
+    __tablename__ = "ommi_sample"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    final_prompt: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    style_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    meta_prompt_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rating_reasons: Mapped[list] = mapped_column(JSON, default=list,
+                                                  nullable=False)
+    used_model: Mapped[str] = mapped_column(String(64), default="",
+                                            nullable=False)
+    actual_credit: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    iter_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    notes: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    share_level: Mapped[str] = mapped_column(String(12), default="private",
+                                             nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+
+class OmmiProfile(Base):
+    """Ho so cau hinh nhanh (style + meta_prompt + bo loc asset thuong dung)."""
+
+    __tablename__ = "ommi_profile"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    style_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    meta_prompt_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    asset_tag_filter: Mapped[list] = mapped_column(JSON, default=list,
+                                                    nullable=False)
+    share_level: Mapped[str] = mapped_column(String(12), default="private",
+                                             nullable=False)
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
 
 

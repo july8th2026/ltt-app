@@ -155,7 +155,21 @@ def test_lap_ke_hoach_KHONG_CON_mot_tham_so_nao_de_nhanh_theo_preset():
     assert "ban_do" not in tham, (
         "`ban_do` da roi khoi giai doan 1 (b4 hai giai doan) — cat canh nam o "
         "giai doan 2, tren MP4 da xong")
-    assert tham == {"muc", "thoi_luong_tieng", "tong_giay", "che_do", "nhom_gop"}
+    # 🔴 **Truoc 28/09 dong duoi la `assert tham == {...}` — mot phep ghim TAP
+    #    CHINH XAC, va no do voi MOI tham so moi ke ca tham so ⛔ khong lien quan
+    #    gi den loi khai cua bai nay.** A4 them `he_so_da_ap` (ke hoach PHAN CHIEU
+    #    he so that su duoc ap) va bai nay do, tuy `he_so_da_ap` **thoa** ca hai
+    #    menh de: `ban_do` van vang, va no ⛔ khong nhanh theo preset.
+    #
+    # ⭐ Day la ca thu BA trong mot ngay cua cung mot lop loi — **banh coc do
+    #    HINH DANG thay vi do TINH CHAT** (hai ca kia: `min`/`max` trong
+    #    `test_2018`, va tap chu ky y het o `test_4801`). Ca ba deu bat OAN mot
+    #    ban va DUNG, va bao dong gia la thu lam nguoi ta TAT cong.
+    #
+    # ⇒ Ghim dung thu bai nay khai: bon tham so nen tang phai CO (bat duoc ca
+    #   chieu mot tham so bi XOA), va `ban_do` phai VANG (dong tren). ⛔ Khong
+    #   ghim tap dong — tap dong la mot su that ve HOM NAY, ⛔ khong phai mot luat.
+    assert {"muc", "thoi_luong_tieng", "tong_giay", "che_do"} <= tham
 
 
 def test_ke_hoach_dat_doan_tren_truc_NGUON():

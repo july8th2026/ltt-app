@@ -68,7 +68,11 @@ log = logging.getLogger(__name__)
 #:    nhung PHAI bump o day: mot json THEM MOT KHOA (`nhac_nen: None`) ngay ca
 #:    o ho so mac dinh la mot HINH DANG hash khac, va bump la tai lieu tuong
 #:    minh cho dieu do (cung quy uoc voi lan bump 4->5 vua roi).
-PHIEN_BAN_MASTER = 6
+#: ⬆️ 6 -> 7 (T4, 28/09): `ghim_tran_phoi` nay sua CA DO TO, ⛔ khong chi dinh —
+#:    `loc_han_dinh` co them mot khau `aformat` + `volume` truoc bo han, va mot ban
+#:    phoi lech do to nay ra byte KHAC. Thieu buoc tang nay thi mot ban phoi CHUA
+#:    duoc sua do to duoc dung lai tu cache va T4 do lai lech y nguyen.
+PHIEN_BAN_MASTER = 7
 
 #: So doan tieng moi lo. Xem ghi chu dau tep ve vi sao khong lam mot lan.
 #:
@@ -242,6 +246,49 @@ def dinh_that_db() -> float:
 #:    (tang gain de len -14,0 thi day dinh len, vong ghim lai ha xuong), va mot
 #:    vong hoi tu chung can thiet ke chu ⛔ khong can mot hang so.
 #:
+#: ══════════════════════════════════════════════════════════════════════════
+#: 🔴 **28/09 (T4, lan B11-A): vong do-to DA LAM — va cau "hai vong ay TRANH
+#:    nhau" o ngay tren la mot TIEN DE SAI. No duoc do, va no sai gan hai bac.**
+#:
+#:    Cau tren suy luan: `volume=+g` thi dinh cung len `g`. Nhung `volume` nam
+#:    TRUOC bo han dinh (`alimiter` o `tran`), nen bo han hung gan het phan
+#:    tang. Do tren BON ban `tho` THAT (nen = tieng mot clip phim that, doan =
+#:    giong Viet that o `tmp/giong_cu`), moi ban sau bay muc gain, ma hoa THU
+#:    bang dung tham so giao hang roi do lai BAN GIAO:
+#:
+#:        gain   Δ do to ban giao (LU)      Δ dinh ban giao (dB)
+#:        ────────────────────────────────────────────────────────
+#:        +0,5      +0,47 .. +0,50            -0,10 .. +0,10
+#:        +1,0      +0,92 .. +0,98            -0,10 .. +0,15
+#:        +2,0      +1,79 .. +1,94            -0,05 .. +0,21
+#:        +4,0      +3,31 .. +3,56            -0,05 .. +0,25
+#:        +8,0      +5,09 .. +5,54            +0,09 .. +0,39
+#:        -1,0      -1,00 .. -1,00            -0,96 .. -1,21
+#:        -3,0      -2,99 .. -3,00            -2,99 .. -3,08
+#:
+#: ⭐ **Hai cot ay la ca thiet ke.** Can gat DO TO co he so ~0,95 len do to va
+#:    ⛔ **≤ 0,05** len dinh (8 dB gain day dinh len 0,39 dB — mot phan hai muoi).
+#:    Can gat DINH (`tran`) thi nguoc lai: ~1:1 len dinh. Tuc he nay **cheo troi**
+#:    — hai vong gan nhu VUONG GOC, khong tranh nhau. Sua ca hai trong CUNG mot
+#:    vong hoi tu duoc, va no hoi tu vi moi can gat chi thuc su keo mot dai luong.
+#:
+#: ⚠️ Chieu AM thi 1:1 tren CA HAI cot (bo han nha tay ra) — nen mot ban QUA TO
+#:    duoc keo xuong khong bao gio lam hong T5.
+#:
+#: ⛔ **Va tien de "loi nam o chinh phep chuan hoa master" van CHUA duoc tai
+#:    hien.** Bay ca chay qua DUNG duong san pham (`tron_lo` + `tron_cuoi`, LRA
+#:    dau vao 1,6 -> 13,3, toc do 1,0 va 1,25) deu cho ban phoi **-13,84 ..
+#:    -14,14 LUFS** — tuc `loudnorm` hai luot TRUNG dich tren moi ca thu duoc.
+#:    Con so `-15,0` cua lan chay that ⛔ khong tai hien duoc o day, va gia thuyet
+#:    con lai manh nhat la `_do_am_luong` LUI VE MOT LUOT (no chi `log.warning`,
+#:    va mot luot `loudnorm` do duoc ~-15,0 o pha 10/09 — dung con so ay). ⭐ Vong
+#:    do-to duoi day sua CA truong hop do ma ⛔ khong can biet nguyen nhan: no do
+#:    ban giao roi bu, tu bat ky nguyen nhan nao.
+#:
+#: 🔑 Nen hang so nay tu nay chi con la **diem xuat phat cua CA HAI vong**, ⛔
+#:    khong con la thu quyet dinh do to. Doi no chi doi so vong, ⛔ khong doi ket
+#:    qua — va do la dung y nghia ta muon mot hang so hieu chinh co.
+#:
 #: ⛔ Va no ⛔ KHONG lam hong T5: o BIEN = 0,5 ban giao do duoc **-1,92 dBTP**,
 #:    du 0,42 dB duoi tran T5 (-1,5), va `ghim_tran_phoi` chi can **1 vong** —
 #:    tuc ban sua nay ⛔ khong tra them mot luot ma hoa nao.
@@ -266,12 +313,97 @@ def dinh_that_phoi_db() -> float:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  GHIM DINH THAT CUA BAN GIAO — do, khong doan (asv-final R-03)
+#  GHIM BAN GIAO — hai can gat, MOT vong hoi tu (asv-final R-03; T4 28/09)
 # ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔑 **Mot vong, hai can gat, va chung gan nhu VUONG GOC.** Bang do o cuoi khoi
+#    `BIEN_CHO_CODEC_DB` la ly le: `tran` keo DINH ~1:1 va `gain` keo DO TO ~0,95
+#    trong khi chi lam DINH nhich ≤ 0,05 dB moi dB. Nen ta ⛔ khong can hai vong
+#    long nhau (se khong hoi tu) va ⛔ khong can mot hang so hieu chinh: moi vong
+#    do BAN GIAO mot lan roi sua CA HAI can gat theo dung phan lech vua do.
+#
+# ⚠️ Bat doi xung CO Y giua hai can gat, vi hai rang buoc khong cung loai:
+#      * DINH la rang buoc CUNG (T5 chan phat hanh) ⇒ `tran` chi bao gio GIAM,
+#        va vong CUOI CUNG **chi duoc sua dinh** (xem `_duoc_sua_do_to`), de tep
+#        cuoi con lai tren dia khong bao gio te hon tep cua mot vong truoc do.
+#      * DO TO la mot KHOANG (`qc.LUFS_DUNG_SAI = 1,0`) ⇒ no co VUNG CHET, va
+#        khi het cho de sua no BAO CAO chu ⛔ khong keo them.
 
-#: So vong ha tran toi da. Moi vong = mot lan han dinh (mot dau vao) + mot lan
-#: ma hoa thu. Ba vong du cho vot lo toi ~6 dB voi buoc lui o duoi.
-SO_VONG_GHIM = 3
+#: So vong toi da. Moi vong = MOT lan han dinh + MOT lan ma hoa thu (vai giay).
+#:
+#: 🔑 **Con so nay duoc DO, ⛔ khong chon.** 32 lan chay: 8 ca tiem loi x 4 ban
+#:    phoi THAT (nen = tieng mot clip phim that, doan = giong Viet that o
+#:    `tmp/giong_cu`; LRA dau vao 1,6 .. 13,3). Chay voi tran vong RONG (8) de
+#:    xem vong nao la vong THAT SU cuoi, ⛔ khong phai de xem no co chay het tran:
+#:
+#:        ca tiem                       tho LUFS/dinh      so vong (4 ban)
+#:        ──────────────────────────────────────────────────────────────────
+#:        lanh (khong tiem)             -13,8..-14,1 / -1,8      1 1 1 1
+#:        nho 1 LU                      -14,8..-15,1 / -2,8      2 2 2 2
+#:        nho 3 LU                      -16,8..-17,1 / -4,8      2 2 2 2
+#:        nho 6 LU                      -19,8..-20,1 / -7,8      2 2 2 2
+#:        TO 2 LU (dinh +1,25 dBFS)     -10,8..-11,1 / +1,2      3 2 3 3
+#:        hinh dang T1a-bis (PLR 7,8)   -14,8..-15,1 / -7,2      2 2 2 2
+#:        nho 1 LU + dinh VUOT tran     -14,8..-15,1 / -2,8      3 2 3 2
+#:        nho 12 LU (vuot tran gain)    -25,8..-26,1 / -13,8     2 2 2 2  <- thoat co ghi
+#:
+#: ⇒ **Lon nhat DO DUOC = 3.** Lay 4 = 3 + mot vong du: mot ca 3 vong la mot ca
+#:   **vua du**, va bang tren do tren BON ban phoi — ⛔ khong phai tren moi phim.
+#:
+#: ⭐ Ket qua cua 32 lan: T5 dat **32/32** (ke ca ca tiem dinh len +1,25 dBFS), T4
+#:    dat **28/32** — bon ca hong dung la bon ca `nho 12 LU`, tuc ca CO Y vuot
+#:    `GHIM_GAIN_TRAN_DB`, va ca bon thoat o `ket_do_to="kep_boi_tran_gain"` chu
+#:    ⛔ khong treo va ⛔ khong am tham.
+#:
+#: ⚠️ Cai gia mot vong: mot `han_dinh` + mot `do_ban_giao` tren ca ban phoi. Do
+#:    tren ban phoi 60 giay: **2,1 .. 6,7 giay/vong** (~0,035 .. 0,11 giay moi
+#:    giay ban phoi; chenh la do lan quet chay canh cac lan khac tren may dung
+#:    chung). Mot phim 90 phut ⇒ ~3 .. 10 phut mot vong THEM.
+#:
+#: ⛔ Va cai gia do **chi ca DO LECH phai tra**: duong lanh dung o 1 vong y nhu
+#:    truoc ban nay (4/4 ban phoi), tuc ban nay ⛔ KHONG them mot luot ma hoa nao
+#:    cho mot lan chay khong co gi sai.
+SO_VONG_GHIM = 4
+
+#: Do to cua ban giao duoc coi la DAT khi cach dich khong qua bay nhieu LU.
+#:
+#: 🔑 **Vung chet nay la thu lam vong DUNG, va no duoc DO.** `qc.LUFS_DUNG_SAI`
+#:    cho phep ±1,0; neu vung chet la 0 thi moi lan chay deu ton mot vong sua cho
+#:    mot phan muoi LU va chang bao gio "dat" (`loudnorm` + AAC ⛔ khong tat dinh
+#:    toi muc do).
+#:
+#: ⭐ 0,3 la con so NHO NHAT tron con phu het dai do duoc cua duong LANH: bay lan
+#:    chay that o 28/09 (LRA 1,6 -> 13,3; toc do 1,0 va 1,25) cho ban giao
+#:    -14,02 .. -14,28 LUFS, tuc lech toi **0,28 LU** khi ⛔ khong co gi sai. Dat
+#:    0,1 hay 0,2 la buoc CA BAY lan chay ay tra them mot luot ma hoa cho mot loi
+#:    khong ton tai; dat 0,5 la bo mat mot nua bien an toan ma ⛔ khong mua gi.
+#:
+#: ⛔ Va no PHAI nho han `qc.LUFS_DUNG_SAI` mot khoang thay duoc: 0,3 de lai 0,7 LU
+#:    cho phan `atempo` + AAC cua chinh lan render THAT (do duoc 0,18 .. 0,23 LU).
+#:    `test_4896` chot bat dang thuc nay bang may.
+GHIM_LUFS_VUNG_CHET_DB = 0.3
+
+#: Tran BIEN DO cua phan bu do to, hai chieu.
+#:
+#: 🔑 Do duoc (bang o cuoi khoi `BIEN_CHO_CODEC_DB`): he so truyen cua can gat do
+#:    to la ~0,95 toi +2 dB, 0,83..0,89 o +4 dB, roi tut con 0,64..0,69 o +8 dB —
+#:    tuc tu khoang +6 dB tro len ta ⛔ khong con "sua do to" ma dang **ep bo han**,
+#:    va cai gia la am thanh bi bom (pumping) chu ⛔ khong phai mot con so.
+#:
+#: ⛔ Nen mot ban phoi lech hon 6 dB la mot ban phoi HONG o thuong nguon (`loudnorm`
+#:    lui ve mot luot, ho so nhac nen sai, ban nen im lang) — vong nay ghi lai
+#:    `ket_do_to="kep_boi_tran_gain"` de nguoi doc bao cao di tim cho hong that,
+#:    chu ⛔ khong che no bang 16 dB gain.
+GHIM_GAIN_TRAN_DB = 6.0
+
+#: Buoc sua do to nho hon bay nhieu thi ⛔ khong dang mot vong nua.
+#:
+#: 🔑 Khong trung `GHIM_LUFS_VUNG_CHET_DB`: vung chet noi ve **ket qua** (da dat
+#:    dich chua), con so nay noi ve **buoc** (con cho de tien khong). Chung khac
+#:    nhau o dung mot cho — khi `GHIM_GAIN_TRAN_DB` kep buoc lai: luc do ket qua
+#:    con lech 3 LU ma buoc chi con 0,02 dB, va vong phai THOAT chu ⛔ khong quay
+#:    them hai vong de tien 0,04 LU.
+GHIM_LUFS_BUOC_TOI_THIEU_DB = 0.05
 
 #: Lui THEM bao nhieu dB moi vong, ngoai phan vuot da do.
 #:
@@ -297,25 +429,44 @@ GHIM_LUI_THEM_DB = 0.3
 GHIM_BOI_LAY_MAU = 4
 
 
-def loc_han_dinh(tran_db: float) -> str:
-    """Bo loc han DINH THAT o `tran_db`. Tach rieng de kiem ma khong chay ffmpeg.
+def loc_han_dinh(tran_db: float, gain_db: float = 0.0) -> str:
+    """Bo loc: bu do to `gain_db` roi han DINH THAT o `tran_db`.
+
+    Tach rieng de kiem ma khong chay ffmpeg.
 
     ⛔ `level=0` bat buoc: mac dinh `alimiter` TU NANG muc ra len cham tran, tuc
        mot ban phoi yen tinh se bi keo to len — no se pha ca T4 lan y nghia cua
-       `loudnorm` vua chay xong.
+       `loudnorm` vua chay xong. Phan bu do to o day la mot con so DA DO, ⛔ khong
+       phai mot phep tu nang.
+
+    ⭐ **Thu tu la ca ly le cua thiet ke** (T4, 28/09): `volume` nam TRUOC bo han,
+       nen bo han van la nguoi giu tran cuoi cung. Do la vi sao can gat do to chi
+       lam dinh nhich ≤ 0,05 dB moi dB gain, va vi sao hai vong sua khong tranh
+       nhau — bang do o cuoi khoi `BIEN_CHO_CODEC_DB`.
+
+    ⛔ `aformat=sample_fmts=fltp` BAT BUOC va phai dung TRUOC `volume`: dau vao la
+       WAV `pcm_s16le`, va `aresample` giu nguyen dinh dang mau. `volume` voi gain
+       DUONG tren mau s16 **cat ngon ngay tai do**, truoc khi bo han kip lam gi —
+       tuc phan bu do to se sinh meo thay vi sinh do to.
+
+    ⚠️ `volume` duoc phat **ca khi gain = 0** (mot khau vo hai). MOT hinh dang
+       chuoi cho moi duong chay: hai hinh dang la hai thu phai kiem, va la cho
+       mot phep kiem xanh tren duong nay ⛔ khong noi gi ve duong kia.
     """
     lin = 10.0 ** (float(tran_db) / 20.0)
     return (f"aresample={TAN_SO * GHIM_BOI_LAY_MAU},"
+            f"aformat=sample_fmts=fltp,"
+            f"volume={float(gain_db):.6f}dB,"
             f"alimiter=limit={lin:.6f}:level=0:attack=5:release=50,"
             f"aresample={TAN_SO}")
 
 
-def han_dinh(vao: str, ra: str, *, tran_db: float, hoi_huy=None,
-             timeout: int = 1800) -> str:
-    """Ghi mot ban sao cua `vao` da han dinh that o `tran_db`."""
+def han_dinh(vao: str, ra: str, *, tran_db: float, gain_db: float = 0.0,
+             hoi_huy=None, timeout: int = 1800) -> str:
+    """Ghi mot ban sao cua `vao` da bu `gain_db` roi han dinh that o `tran_db`."""
     Path(ra).parent.mkdir(parents=True, exist_ok=True)
     cmd = [media.ffmpeg_bin(), "-y", "-hide_banner", "-loglevel", "error",
-           "-i", str(vao), "-af", loc_han_dinh(tran_db),
+           "-i", str(vao), "-af", loc_han_dinh(tran_db, gain_db),
            "-ac", str(SO_KENH), "-ar", str(TAN_SO), "-c:a", "pcm_s16le", str(ra)]
     try:
         r = _chay(cmd, timeout=timeout, hoi_huy=hoi_huy)
@@ -397,47 +548,134 @@ def do_ban_giao(duong: str, *, bien_tap=None, hoi_huy=None,
         return tach_tieng.do_am_luong(thu)
 
 
+def _buoc_do_to(thieu: float, gain: float) -> tuple[float, str]:
+    """Buoc sua do to cua MOT vong, va ten cua thu da kep no.
+
+    `thieu` = `lufs_dich - lufs_giao` (duong = ban giao con NHO). Tach thanh ham
+    thuan de con so nay kiem duoc ma ⛔ khong chay mot lan ffmpeg nao.
+
+    ⭐ **Buoc Newton he so 1**, ⛔ khong phai mot buoc ham: ham truyen do duoc la
+       0,92..1,00 trong khoang ±1 LU (bang o cuoi khoi `BIEN_CHO_CODEC_DB`), nen
+       buoc day du la buoc dung. Ham hoac chia doi chi lam ton vong.
+
+    ⚠️ He so tut con 0,83..0,89 o 4 LU va 0,64..0,69 o 8 LU, tuc mot buoc lon se
+       **thieu** — do la ly do phai co vong thu hai chu ⛔ khong phai ly do de
+       nhan buoc len: nhan len la doan, con vong thu hai thi DO.
+    """
+    if abs(thieu) <= GHIM_LUFS_VUNG_CHET_DB:
+        return 0.0, "dat"
+    moi = max(-GHIM_GAIN_TRAN_DB, min(GHIM_GAIN_TRAN_DB, gain + thieu))
+    buoc = moi - gain
+    if abs(buoc) < GHIM_LUFS_BUOC_TOI_THIEU_DB:
+        return 0.0, "kep_boi_tran_gain"
+    return buoc, "dang_sua"
+
+
 def ghim_tran_phoi(goc: str, dich: str, *, tran_giao: float | None = None,
                    tran_bat_dau: float | None = None,
+                   lufs_muc_tieu: float | None = None,
                    so_vong: int = SO_VONG_GHIM, bien_tap=None, hoi_huy=None,
                    timeout: int = 1800) -> dict:
-    """Ha tran ban phoi cho toi khi BAN GIAO dat `tran_giao`. Ghi ra `dich`.
+    """Sua BAN GIAO ve dung DINH va dung DO TO. Ghi ban phoi ra `dich`.
 
-    Moi vong: han dinh that tren `goc` (khong phai tren ban da han cua vong
-    truoc — de ket qua khong phu thuoc so vong da chay), ma hoa thu, do lai.
+    Moi vong: bu do to + han dinh that tren `goc` (khong phai tren ban da han
+    cua vong truoc — de ket qua khong phu thuoc so vong da chay), ma hoa thu, do
+    lai CA HAI dai luong, roi sua CA HAI can gat.
+
+    ⭐ **Vi sao MOT vong sua duoc hai thu ma van hoi tu** (T4, 28/09). He nay cheo
+       troi: `tran` keo dinh ~1:1 va hau nhu khong keo do to; `gain` keo do to
+       ~0,95 va chi lam dinh nhich ≤ 0,05 dB moi dB. Tuc moi can gat gan nhu chi
+       dieu khien mot dai luong, va mot buoc Newton dong thoi khong dao qua lai.
+       Bang do: cuoi khoi `BIEN_CHO_CODEC_DB`.
+
+    ⭐ **Bat doi xung CO Y, vi hai rang buoc khong cung loai.** DINH la rang buoc
+       CUNG (T5 chan phat hanh) nen `tran` chi GIAM va **vong cuoi chi duoc sua
+       dinh**; DO TO la mot KHOANG nen no co vung chet va khi het cho thi BAO CAO.
+
+    ⛔ **Vong cuoi ⛔ khong duoc doi `gain`** — day la thu bao dam tep con lai
+       tren dia khong te hon mot tep da tot. Doi `gain` o vong cuoi thi phan tang
+       ay ⛔ khong bao gio duoc DO, va ta se giao mot tep chua ai kiem.
 
     ⛔ Khong nem khi het vong ma van vuot: QC T5 la trong tai, va mot ban phoi
        tot nhat co the kem mot dong log co ich hon la mot lan chay chet sau khi
-       da ton ca gio tao tieng. Bao cao tra ve mang `dat` de nguoi goi ghi lai.
+       da ton ca gio tao tieng. Bao cao tra ve `dat` / `dat_do_to` de nguoi goi
+       ghi lai.
     """
     tran_giao = dinh_that_db() if tran_giao is None else float(tran_giao)
     tran = dinh_that_phoi_db() if tran_bat_dau is None else float(tran_bat_dau)
+    muc_tieu = lufs_dich() if lufs_muc_tieu is None else float(lufs_muc_tieu)
+    tong_vong = max(1, int(so_vong))
     vet: list[dict] = []
+    gain = 0.0
     giao = 0.0
-    for _ in range(max(1, int(so_vong))):
-        han_dinh(goc, dich, tran_db=tran, hoi_huy=hoi_huy, timeout=timeout)
+    lufs_giao: float | None = None
+    ket_do_to = "chua_do"
+    for vong in range(tong_vong):
+        han_dinh(goc, dich, tran_db=tran, gain_db=gain, hoi_huy=hoi_huy,
+                 timeout=timeout)
         # ⭐ `do_ban_giao` do CA `dinh_that` LAN `lufs` cua ban ma hoa thu. Truoc
         #    27/09 chi `dinh_that` duoc doc; `lufs` bi VUT — mot con so da tra
         #    tien de do ma ⛔ khong ai dung, trong khi no la dung dai luong T4 do.
         do_giao = do_ban_giao(dich, bien_tap=bien_tap, hoi_huy=hoi_huy,
                               timeout=timeout)
         giao = float(do_giao["dinh_that"])
-        lufs_giao = do_giao.get("lufs")
-        vet.append({"tran_phoi": round(tran, 2), "dinh_giao": round(giao, 2),
-                    "lufs_giao": (round(float(lufs_giao), 2)
-                                  if lufs_giao is not None else None)})
-        if giao <= tran_giao:
+        tho = do_giao.get("lufs")
+        lufs_giao = None if tho is None else float(tho)
+        vet.append({"tran_phoi": round(tran, 2), "gain": round(gain, 2),
+                    "dinh_giao": round(giao, 2),
+                    "lufs_giao": (None if lufs_giao is None
+                                  else round(lufs_giao, 2))})
+
+        # ── Can gat DINH (rang buoc cung) ────────────────────────────────────
+        dinh_dat = giao <= tran_giao
+
+        # ── Can gat DO TO (mot khoang) ───────────────────────────────────────
+        # ⛔ `lufs_giao is None` khong phai "dat": `do_am_luong` khong tra `None`
+        #    o duong binh thuong, nen do la mot phep do VANG MAT — goi no la dat
+        #    se bien mot lo hong do luong thanh mot dau xanh.
+        if lufs_giao is None:
+            buoc, ket_do_to = 0.0, "khong_do_duoc"
+        else:
+            buoc, ket_do_to = _buoc_do_to(muc_tieu - lufs_giao, gain)
+
+        # ⛔ Dieu kien dung la `buoc == 0`, ⛔ KHONG `ket_do_to == "dat"`: ca
+        #    `"kep_boi_tran_gain"` cung cho buoc 0, va do CUNG la mot ly do dung
+        #    hop le (het cho de sua). Doc `ket_do_to` o day de quyet dinh dung hay
+        #    khong se lam vong quay het tran de tien 0 dB moi vong.
+        if dinh_dat and buoc == 0.0:
             break
-        tran -= (giao - tran_giao) + GHIM_LUI_THEM_DB
-    else:
+        # ⛔ Vong cuoi: chi sua dinh. Xem docstring.
+        duoc_sua_do_to = vong < tong_vong - 1
+        if not dinh_dat:
+            tran -= (giao - tran_giao) + GHIM_LUI_THEM_DB
+        if buoc and duoc_sua_do_to:
+            gain += buoc
+        elif buoc:
+            ket_do_to = "het_vong"
+    if not (giao <= tran_giao):
         log.warning("ghim tran phoi: het %d vong ma ban giao van %.2f dBTP "
-                    "(tran %.2f) — QC T5 se chan", so_vong, giao, tran_giao)
+                    "(tran %.2f) — QC T5 se chan", tong_vong, giao, tran_giao)
+    if ket_do_to != "dat":
+        # ⚠️ Mot canh bao, ⛔ khong mot ngoai le: QC T4 la trong tai, va bao cao
+        #    nay di vao tom tat giai doan nen con so ⛔ khong bien mat.
+        log.warning("ghim do to: ban giao %s LUFS (dich %.2f, vung chet %.2f, "
+                    "gain %.2f dB) — ket %s", lufs_giao, muc_tieu,
+                    GHIM_LUFS_VUNG_CHET_DB, gain, ket_do_to)
     # 🔑 `lufs_giao` la do to ma KHACH thuc su nhan — do tren ban ma hoa thu da
     #    qua CUNG phep doi toc do voi render. T4 do dung dai luong nay, nen ghi
     #    no ra de cong ay ⛔ khong con la mot cau hoi mo cho tan luc render.
-    return {"tran_phoi": round(tran, 2), "dinh_giao": round(giao, 2),
+    #
+    # ⛔ `tran_phoi`/`gain_do_to` lay tu `vet[-1]`, ⛔ KHONG tu bien vong: khi het
+    #    vong, hai bien ay da duoc sua cho vong ke tiep **chua bao gio chay**, nen
+    #    bao cao chung se ta mot tep ⛔ khong ton tai tren dia. Bao cao phai noi ve
+    #    tep DA DO.
+    cuoi = vet[-1] if vet else {"tran_phoi": round(tran, 2), "gain": 0.0}
+    return {"tran_phoi": cuoi["tran_phoi"], "dinh_giao": round(giao, 2),
             "tran_giao": round(tran_giao, 2), "so_vong": len(vet),
-            "lufs_giao": (vet[-1].get("lufs_giao") if vet else None),
+            "lufs_giao": (None if lufs_giao is None else round(lufs_giao, 2)),
+            "lufs_muc_tieu": round(muc_tieu, 2),
+            "gain_do_to": cuoi["gain"],
+            "dat_do_to": ket_do_to == "dat", "ket_do_to": ket_do_to,
             "dat": giao <= tran_giao, "vet": vet}
 
 
@@ -1006,4 +1244,12 @@ def kiem_ban_ra(duong: str, *, mong_doi_giay: float, dung_sai_giay: float,
             "dinh_that_giao": round(float(dinh_giao), 2),
             "tran_phoi_da_ghim": (ghim or {}).get("tran_phoi"),
             "so_vong_ghim": (ghim or {}).get("so_vong"),
+            # ⭐ T4 (28/09): do to cua BAN GIAO va phan bu da ap. `lufs` ngay tren
+            #    la do to cua ban phoi PCM — no KHAC do to khach nhan (atempo +
+            #    AAC an 0,18..0,23 LU), va T4 hoi dai luong duoi day. Ghi CA HAI
+            #    de khong ai phai doan chung la mot.
+            "lufs_giao": (ghim or {}).get("lufs_giao"),
+            "gain_do_to": (ghim or {}).get("gain_do_to"),
+            "dat_do_to": (ghim or {}).get("dat_do_to"),
+            "ket_do_to": (ghim or {}).get("ket_do_to"),
             "vot_lo_codec": round(float(dinh_giao) - float(am["dinh_that"]), 2)}

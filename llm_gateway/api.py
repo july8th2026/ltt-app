@@ -534,7 +534,11 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                     for m in sorted(catalog)},
                 "output_tokens": cfg.max_output_tokens,
                 "dem_uoc": cfg.dem_uoc,
-                "images": cfg.max_images,
+                # ⛔ ĐÃ GỠ `"images": cfg.max_images` (28/09, C4). Trần số ảnh
+                #    không còn tồn tại: chi phí ảnh nay là Σ f(rộng, cao) và bị
+                #    kẹp bởi NGỮ CẢNH, không bởi một con số đếm. Hai trần token
+                #    ảnh của engine hiện ở `vat_ly.theo_model` dưới.
+                "image_bytes": cfg.max_image_bytes,
             },
             # Rao vat ly doc tu llama-swap.yaml: nguoi truc thay cong TIN tep nao
             # va so nao. Lech `/running` cua llama-swap = tep tren dia chua ap.
@@ -542,7 +546,12 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 "nguon": cfg.nguon_vat_ly,
                 "theo_model": {
                     m: {"ctx": v.ctx, "np": v.np, "kvu": v.kvu,
-                        "reasoning_budget": v.reasoning_budget}
+                        "reasoning_budget": v.reasoning_budget,
+                        # `None` = yaml chưa khai ⇒ hồ sơ này TỪ CHỐI ảnh. Người
+                        # trực phải thấy được điều đó ở đây, không phải suy từ
+                        # một lượt 400 của khách.
+                        "image_min_tokens": v.token_anh_toi_thieu,
+                        "image_max_tokens": v.token_anh_toi_da}
                     for m, v in sorted(cfg.vat_ly.items())},
             },
             "models_thieu_vat_ly": list(thieu_vat_ly),
@@ -959,14 +968,31 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 # O-02: trần vào THEO MODEL, cùng công thức với máy A.
                 max_input_tokens=VL.tran_vao(vl, cfg.max_output_tokens, cfg.dem_uoc),
                 max_output_tokens=cfg.max_output_tokens,
-                max_images=cfg.max_images,
                 max_image_bytes=cfg.max_image_bytes,
                 max_context=vl.ctx,
                 co_vision=spec.co_vision,
+                # ⭐ Trần token ảnh của ĐÚNG hồ sơ lượt này đi vào, đọc từ
+                #    `llama-swap.yaml` — cùng nguồn với `-c`/`-np`. Ngân sách ảnh
+                #    thay hằng phẳng `số ảnh × 2.048` (28/09, quyết định C4).
+                token_anh_toi_thieu=vl.token_anh_toi_thieu,
+                token_anh_toi_da=vl.token_anh_toi_da,
                 # ⭐ Chỉ được gọi khi phép ƯỚC đã vượt trần — xem `NS.kiem_tra`.
                 #    Đường nhanh không thêm round-trip nào.
                 dem_that=lambda van: _dem_token_that(ten, van),
             )
+        except NS.ThieuTranAnhEngine as e:
+            # Hồ sơ engine chưa khai `--image-min-tokens`/`--image-max-tokens`
+            # (bản deploy cũ) ⇒ không tính được chi phí ngữ cảnh của ảnh.
+            #
+            # ⭐ KHÁCH nhận đúng thứ họ cần làm (`unsupported_modality`: bỏ ảnh
+            #    ra rồi gửi lại) — cùng mã, cùng cách xử lý như hồ sơ không có
+            #    vision, nên client không cần biết thêm mã mới để làm đúng.
+            # ⭐ NGƯỜI TRỰC nhận đúng thứ họ cần sửa: bộ đếm riêng + lý do nói
+            #    thẳng là cấu hình, không phải yêu cầu của khách.
+            dem.cong("thieu_tran_anh_engine")
+            raise _typed_http_error(
+                "unsupported_modality", 400, request_id=request_id,
+                extra={"model": ten, "ly_do_van_hanh": str(e)}) from e
         except NS.VuotNganSach as e:
             dem.cong("qua_tran")
             # 413 chứ không phải 400: đây là "to quá", không phải "sai cú pháp".

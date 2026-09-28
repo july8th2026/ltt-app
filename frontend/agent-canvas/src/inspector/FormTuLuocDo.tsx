@@ -21,6 +21,31 @@ type Props = {
 
 const laBieuThuc = (v: unknown) => typeof v === 'string' && v.includes('{{')
 
+// ── Dung chung voi ChonDuLieu (lan UI-6, tab "Dữ liệu vào") ────────────────
+//
+// ⛔ HAI cho tinh "truong nao dang HIEN" la dung hinh dang da bi cha 3 lan
+//    trong ho so du an ("cho noi hai module vut truong im lang"). Mot ham,
+//    hai noi goi.
+function anDuocTruong(luat: TruongLuocDo, giaTri: Record<string, unknown>): boolean {
+  const cha = luat['x-ltt-dong']?.prop
+  return Boolean(cha) && chuaChon(giaTri[cha as string])
+}
+
+/** Cac truong dang HIEN (bo truong phu thuoc dang an — §6 luat 1). Dung o ca
+ *  form nay lan `ChonDuLieu` (chon O DICH de chen bieu thuc). */
+export function truongHienThi(luocDo: LuocDo,
+                              giaTri: Record<string, unknown>): [string, TruongLuocDo][] {
+  return Object.entries(luocDo.properties ?? {})
+    .filter(([, luat]) => !anDuocTruong(luat, giaTri))
+}
+
+/** `true` khi truong nhan duoc mot chuoi `{{ ... }}` qua giao dien. Enum dung
+ *  `<select>` (khong go chu duoc) va boolean dung o tick — ca hai KHONG co
+ *  duong nao nhan bieu thuc, dung nhu `MotO` o duoi da phan biet. */
+export function nhanBieuThuc(luat: TruongLuocDo): boolean {
+  return !Array.isArray(luat.enum) && luat.type !== 'boolean'
+}
+
 function ChuThich({ luat }: { luat: TruongLuocDo }) {
   const dong = luat['x-ltt-dong']
   return <>
@@ -124,7 +149,7 @@ function MotO({ ten, luat, bat_buoc, gia, readOnly, goiY, onChange }: {
         onChange={v => onChange(v)} />
       {so && <button type="button" className="o-cong-tac-bieu-thuc"
         aria-label={`Dùng biểu thức cho ${ten}`} disabled={khoa}
-        aria-pressed={true}
+        aria-pressed={bieuThuc}
         onClick={() => setMoBieuThuc(m => !m)}>{'{{ }}'}</button>}
     </>)
   }
@@ -147,12 +172,44 @@ function MotO({ ten, luat, bat_buoc, gia, readOnly, goiY, onChange }: {
   </>)
 }
 
+/** `true` khi `gia` chua la mot lua chon that.
+ *
+ *  ⛔ KHONG dung `!gia`: `0` va `false` la gia tri HOP LE cua mot tham so, va
+ *     coi chung la "chua chon" se an cac o phu thuoc dung luc cha da co gia
+ *     tri — dung hinh dang "hai trang thai gop thanh mot gia tri". */
+const chuaChon = (gia: unknown) =>
+  gia === undefined || gia === null || gia === ''
+
 export function FormTuLuocDo({ luocDo, giaTri, readOnly, goiY, onChange }: Props) {
   const muc = Object.entries(luocDo.properties ?? {})
   if (!muc.length) return <p className="form-trong">Node này không có tham số.</p>
+
+  // 🔴 §6 LUAT 1 — TRUONG PHU THUOC PHAI AN, ⛔ KHONG HIEN XAM.
+  //
+  //    Do duoc 27/09 tren trinh duyet that: mot buoc vua tha xuong hien BA
+  //    dropdown "— chưa có lựa chọn nào —" cung luc, vi ca ba `depends_on`
+  //    `model` ma `model` chua chon. Ba o chet trong y het ba o hong, va nguoi
+  //    dung khong co cach nao biet phai chon `model` TRUOC.
+  //
+  // ⭐ Thay vao do: MOT dong noi ro dieu kien, cho moi tham so cha con trong.
+  //    ⛔ Khong im lang hoan toan — mot o bien mat khong dau vet thi khach
+  //    tuong node thieu tham so, va ta doi mot loi HIEN THI thanh mot loi
+  //    KHONG CO GI DE THAY.
+  const an = new Map<string, string[]>()
+  const hien = muc.filter(([ten, luat]) => {
+    if (!anDuocTruong(luat, giaTri)) return true
+    an.set(luat['x-ltt-dong']!.prop, [...(an.get(luat['x-ltt-dong']!.prop) ?? []), ten])
+    return false
+  })
+
   return <div className="form-luoc-do">
-    {muc.map(([ten, luat]) => <MotO key={ten} ten={ten} luat={luat} goiY={goiY}
+    {hien.map(([ten, luat]) => <MotO key={ten} ten={ten} luat={luat} goiY={goiY}
       bat_buoc={(luocDo.required ?? []).includes(ten)} gia={giaTri[ten]}
       readOnly={readOnly} onChange={v => onChange(ten, v)} />)}
+    {[...an.entries()].map(([cha, con]) =>
+      <p key={cha} className="o-cho-phu-thuoc">
+        <small className="o-dong">Tuỳ theo: {cha}</small>
+        <small className="o-mo-ta">Chọn {cha} để hiện thêm {con.length} ô.</small>
+      </p>)}
   </div>
 }
