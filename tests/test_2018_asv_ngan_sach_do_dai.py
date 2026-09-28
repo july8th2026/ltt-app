@@ -346,26 +346,79 @@ def test_vong_nan_toi_da_la_MOT():
     assert nan_cho_vua.VONG_TOI_DA == 1
 
 
+def _bat_bien_KHONG_kep_ve_tran_chinh_sach(
+        ham_ap, *, tran_ky_thuat: float, tran_chinh_sach: float) -> None:
+    """Bất biến THẬT (chủ dự án chốt 26/09): trần thiết kế chỉ là CẢNH BÁO —
+    `ham_ap(h, tran_ky_thuat=...)` phải trả NGUYÊN mọi `h` nằm trong nửa
+    khoảng `(tran_chinh_sach, tran_ky_thuat]`, và CHỈ bị kẹp đúng tại
+    `tran_ky_thuat` (trần KỸ THUẬT của atempo — qua đó là tiếng rác).
+
+    Dùng chung cho cả bài kiểm THẬT (`he_so_ap` sản phẩm) lẫn bài TIÊM LỖI
+    (một bản `he_so_ap` GIẢ tái lập phép kẹp đã biến mất 26/09) — cùng một
+    hàm, hai đối tượng khác nhau, đúng khuôn "phép tiêm chứng minh bộ dò".
+    """
+    h_giua = (tran_chinh_sach + tran_ky_thuat) / 2
+    assert tran_chinh_sach < h_giua <= tran_ky_thuat
+    ra = ham_ap(h_giua, tran_ky_thuat=tran_ky_thuat)
+    assert ra == pytest.approx(h_giua), (
+        f"he so {h_giua} nam trong (tran chinh sach {tran_chinh_sach}, tran "
+        f"ky thuat {tran_ky_thuat}] nhung bi doi thanh {ra} — dang KEP VE "
+        "TRAN THIET KE, trong khi tran do gio chi la CANH BAO")
+
+    h_vuot_ky_thuat = tran_ky_thuat + 1.0
+    ra2 = ham_ap(h_vuot_ky_thuat, tran_ky_thuat=tran_ky_thuat)
+    assert ra2 == pytest.approx(tran_ky_thuat), (
+        f"he so {h_vuot_ky_thuat} vuot tran KY THUAT {tran_ky_thuat} nhung "
+        f"khong bi chan dung gia tri do (tra {ra2}) — day moi la cong DUY "
+        "NHAT con dung, va no dang ho")
+
+
 def test_he_so_toc_KHONG_bi_kep_ve_tran():
     """Chủ dự án chốt: vượt trần thoải mái. Trần còn là CẢNH BÁO, ⛔ không phải cổng.
 
-    ⚠️ Task 16 (R4): đây là lưới PHỤ — kiểm cách VIẾT mã (không gọi cả `min`
-    lẫn `max` trong CÙNG module), ⛔ không gọi hàm nên không bắt được ai viết
-    lại phép kẹp bằng `sorted()`, `.clip()`, hay `if/else` mà vẫn né được cả
-    hai tên gọi. Lưới CHÍNH là hành vi thật của hàm THUẦN `he_so_ap`, xem
-    `test_he_so_ap_*` bên dưới.
-    """
-    import ast
-    import inspect
-    from apps.auto_scan_video import giai_doan_thoi_gian
+    🔴 **Sửa 28/09 (B13 C6) — bài trước đọc CÁCH GÕ, ⛔ không phải TÍNH CHẤT.**
+    Bản cũ dùng `ast`/`inspect.getsource` để kiểm "module này có gọi cả `min`
+    lẫn `max` không" — và nó đã **bắt oan** một bản vá thật của làn L1 chỉ vì
+    `giai_doan_thoi_gian` gọi `min`/`max` ở một chỗ KHÔNG liên quan đến phép
+    kẹp này (`max` không kẹp gì cả). Một báo động giả là thứ làm người ta TẮT
+    cổng — tệ hơn hẳn việc không có cổng.
 
-    ma = inspect.getsource(giai_doan_thoi_gian)
-    assert "he_so_toc_da_ap" in ma, "chua ghi lai he so da ap"
-    cay = ast.parse(ma)
-    ten_goi = {n.func.id for n in ast.walk(cay)
-               if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
-    assert "min" not in ten_goi or "max" not in ten_goi, (
-        "van con phep kep he_so_co_gian ve [1/tran, tran]")
+    ⇒ Nay hỏi bằng HÀNH VI qua chính hàm THẬT `he_so_ap` — hàm được gọi tại
+    ĐIỂM ÁP DỤNG thật trong `_dung_ban_phoi`
+    (`giai_doan_thoi_gian.py:369`, `h_ap = he_so_ap(h, tran_ky_thuat=
+    TRAN_KY_THUAT_ATEMPO)`), ⛔ không phải đọc lại mã nguồn của nó.
+    Xem `test_TIEM_mot_phep_kep_CHINH_SACH_thi_bat_bien_PHAI_do` ngay dưới
+    cho phép tiêm chứng minh bất biến này còn bắt được.
+    """
+    from apps.auto_scan_video import thoi_gian
+    from apps.auto_scan_video.giai_doan_thoi_gian import (
+        TRAN_KY_THUAT_ATEMPO, he_so_ap)
+
+    _bat_bien_KHONG_kep_ve_tran_chinh_sach(
+        he_so_ap, tran_ky_thuat=TRAN_KY_THUAT_ATEMPO,
+        tran_chinh_sach=thoi_gian.TRAN_TANG_TOC)
+
+
+def test_TIEM_mot_phep_kep_CHINH_SACH_thi_bat_bien_PHAI_do():
+    """🔑 Phép TIÊM bắt buộc — chứng minh bài trên còn bắt được, ⛔ không phải
+    một bảo đảm giả.
+
+    Dựng lại MỘT bản `he_so_ap` giả, đúng hình dạng lỗi đã biến mất 26/09:
+    kẹp thêm về trần CHÍNH SÁCH (`min(h, tran_ky_thuat, TRAN_TANG_TOC)`) —
+    cùng chữ ký, khác đúng MỘT dòng số học. Bất biến ở trên PHẢI đỏ
+    (`AssertionError`) trên bản giả này, chứ ⛔ không được lặng lẽ qua.
+    """
+    tran_chinh_sach_gia = 1.15
+
+    def he_so_ap_HONG(h: float, *, tran_ky_thuat: float) -> float:
+        # Dung hinh dang loi THAT da co truoc 26/09: kep CA VE tran chinh
+        # sach, khong chi tran ky thuat.
+        return min(float(tran_ky_thuat), float(h), tran_chinh_sach_gia)
+
+    with pytest.raises(AssertionError):
+        _bat_bien_KHONG_kep_ve_tran_chinh_sach(
+            he_so_ap_HONG, tran_ky_thuat=2.0,
+            tran_chinh_sach=tran_chinh_sach_gia)
 
 
 def test_he_so_ap_duoi_tran_ky_thuat_KHONG_bi_kep_ve_tran_chinh_sach():
