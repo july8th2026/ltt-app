@@ -73,13 +73,40 @@ vad_onset = 0,500   vad_offset = 0,363   no_speech_threshold = 0,6
 | khả năng | ai bỏ đoạn | phân biệt bằng |
 |---|---|---|
 | (A) pyannote VAD coi 65–98 s là **không tiếng** | tầng VAD | dump khoảng VAD, ⛔ không giải mã whisper |
-| (B) VAD cho qua, `no_speech_threshold=0,6` loại khối | tầng whisper | cùng lượt dump đó |
+| (B) VAD cho qua, whisper loại khối | tầng whisper | cùng lượt dump đó |
 
-⛔ **Chưa đo được cái nào — và tôi ⛔ không đoán.** Một lượt chạy pyannote VAD
-**một mình** (⛔ không decode) trên tệp này là ~10 s GPU và tách hẳn hai khả năng.
-Đó là việc **đầu tiên** của hạng mục này, và nó ⛔ không được bỏ qua: hai khả
-năng dẫn tới hai cần gạt **khác nhau** (`vad_onset` so với `no_speech_threshold`),
-và vặn sai cần gạt thì kết quả ⛔ không đổi một ký tự.
+### ✅ ĐÃ ĐO 28/09 — câu trả lời là **(B)**, ⛔ không phải (A)
+
+Chạy `whisperx.vads.Pyannote` **một mình** (⛔ không decode) với **đúng mặc định
+của gói** (`chunk_size 30 · vad_onset 0,500 · vad_offset 0,363`) trên chính bản
+tiếng 16 kHz của lượt đã đo:
+
+```
+VAD: 11 khoi · tong 247,27 s coi la CO TIENG   = 89,9 % cua 275,0 s
+     khoi  34,25.. 62,15  = 27,89 s
+     khoi  64,27.. 94,26  = 29,99 s   <- DUNG chunk_size 30, TRUM ca lo hong
+     khoi  94,26..117,26  = 23,00 s
+ban chep ASR:                211,56 s          = 76,9 %
+⇒ 35,7 giay VAD goi la TIENG ma whisper ⛔ KHONG ra mot chu
+```
+
+🔑 Và `seg_0024` — đoạn nhả lại `initial_prompt` — nằm ở **`64,27..65,17`**, tức
+**0,9 giây ĐẦU của khối 30 giây ấy**. Cả khối 30 giây chỉ sinh ra lời nhắc của
+chính ta rồi **tắt hẳn**; khối kế cũng mất 3,4 giây đầu (chữ đầu ở `97,66`).
+
+⇒ Đây là **hỏng giải mã CẢ MỘT KHỐI**, ⛔ không phải VAD bỏ vùng. ⛔ **Đừng chạm
+`vad_options`** — cần gạt nằm ở `asr_options` (`no_speech_threshold = 0,6` ·
+`log_prob_threshold = -1,0` · `compression_ratio_threshold = 2,4` ·
+`hallucination_silence_threshold = None`), và ở **chính `initial_prompt`**.
+
+⭐ **Giá trị của việc tách này**: nếu tôi đi thẳng vào vá theo giả thuyết (A) —
+hạ `vad_onset` — thì bản chép ra **y hệt**, và tôi sẽ kết luận *"đã vá, ⛔ không
+ăn"* thay vì *"vặn sai cần gạt"*. Đúng bẫy `whisperx_runner.py:78` ghi (đo 24/09).
+
+⚠️ **Đánh đổi sản phẩm còn treo:** nếu cách sửa duy nhất là **bỏ
+`initial_prompt`** thì ta mất dấu câu (đo 24/09: **0 dấu câu / 646 ký tự** trên
+văn Hán), và ⛔ không dấu câu thì **mọi** phép chia đoạn hạ nguồn mất chỗ bám
+(11 → 78 đoạn). ⇒ Đó là **quyết định của chủ dự án**, ⛔ không phải của làn.
 
 ### 1.4 🔑 Và ta ĐÃ ĐO đại lượng đúng rồi — ⛔ không ai đọc nó
 
@@ -668,10 +695,26 @@ tới cuối plan.
 ## 10. Trạng thái — `main` = `bb62ca93`, production = `1e34780f`
 
 ```
-TOAN PLAN        12 / 31 hang muc  =  39 %
- ├ phan MA       12 / 16           =  75 %   (khong can chay gi de lam)
- └ phan PHAI CHAY 0 / 15           =   0 %   (do · OCR · gate · deploy · nghiem thu)
+TOAN PLAN        16 / 29 hang muc  =  55 %     (A5 va C7 DA TAN — xem duoi)
+ ├ phan MA       13 / 13           = 100 %
+ ├ phan DO        3 /  6           =  50 %     A3 ✅ · C1 ✅ · C2 ✅ · B5/D/E2 dang chay
+ └ nghiem thu     0 /  8           =   0 %     A1 · §9.4 · G1-G6
 ```
+
+⭐ **Hai hạng mục TAN ra thay vì được làm, và đó là kết quả tốt nhất của vòng này:**
+- **A5** (đổi tên hai khoá `tom_tat`) — A4 cho `he_so_toc` **PHẢN CHIẾU** hệ số
+  thật sự được áp, nên hai trường đi từ **SAI thành ĐÚNG**, ⛔ không phải từ SAI
+  thành CHẾT. Câu hỏi *"đổi tên hay xoá"* ⛔ không còn.
+- **C7** (sửa sổ khai `asv_doi_soat.py`) — hệ quả của A5, nên tan theo. Bản nháp
+  còn ở `wip/c7-doi-ten` (`81f3bfb9`) làm dấu vết.
+
+⇒ 🔑 *Một hạng mục biến mất vì tiền đề của nó sai thì tốt hơn một hạng mục được
+làm xong đúng theo một tiền đề sai.*
+
+⚠️ **Hai mẫu số, ⛔ đừng gộp.** `55 %` đếm **hạng mục**, mà hạng mục ⛔ không đồng
+hạng: `G5` (một lượt `T1a-ter` trên worker thật) một mình quyết sản phẩm có đạt
+hay không, còn `C5` là sửa một câu chú thích. Nói *"plan xong 55 %"* mà ⛔ không
+nói *"0 % phần nghiệm thu"* là báo tiến độ kiểu dễ nghe.
 
 ⚠️ **Hai mẫu số, ⛔ đừng gộp.** `39 %` đếm **hạng mục**, mà hạng mục ⛔ không đồng
 hạng: `G5` (một lượt `T1a-ter` trên worker thật) một mình quyết sản phẩm có đạt
