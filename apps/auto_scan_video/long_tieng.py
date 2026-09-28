@@ -55,6 +55,19 @@ from platform_core.i18n import _ as _t
 #: BAN DA DICH tich luy tu cac lo truoc, va `loi_nhac` nhan them `ho_so` (bang
 #: dai tu + ten rieng chot MOT lan cho ca video, Task 11). Ca hai doi NOI DUNG
 #: loi nhac gui model, nen ban long tieng da sinh voi ban cu khong con dung.
+#:
+#: ⭐ **P0-a2 (28/09) noi `toc_doc_giong` vao `do_dai_toi_da` ma CO Y KHONG tang
+#:    hang nay** — va day la mot quyet dinh do duoc, khong phai mot cho bo sot:
+#:    `cai_dat.TOC_DOC_GIONG_DA_DO` **rong** hom nay, nen `ngan_sach_do_dai` roi
+#:    ve dung hang so `ngon_ngu.NHIP[dich]` cho MOI giong ⇒ loi nhac sinh ra
+#:    giong het tung byte ban truoc. Tang hang nay se dat lai `CONTENT_PROCESS`
+#:    cua moi lan chay da co — **tien that, doi lay mot loi nhac y nguyen**.
+#:
+#: 🔴 **⇒ NGHIA VU cho lan THEM MOT DONG vao `cai_dat.TOC_DOC_GIONG_DA_DO`:
+#:    lan ay PHAI tang hang nay.** Tu luc do loi nhac cua giong ay doi NOI DUNG,
+#:    va `van_tay_long_tieng` (`ma_giong`) ⛔ **khong** bat duoc: ma giong KHONG
+#:    doi, chi so do CUA no doi ⇒ cache tra ban long tieng cua tran CU. Day dung
+#:    ve thu hai cua N-23 (mot hang chi phoi noi dung ma khong ai bam).
 PHIEN_BAN_LONG_TIENG = 3
 
 SCHEMA_LONG_TIENG = "asv.long_tieng.v1"
@@ -246,10 +259,29 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
     `ho_so`: `tom_tat["ho_so_dich"]` do `ho_so_dich.dung()` (Task 11) sinh MOT
     lan cho ca video — `bang_dai_tu`/`bang_ten_rieng` chot quan he nhan vat,
     tranh moi lo tu quyet lai (co che loi `ong/chau/con/toi/ban`).
+
+    🔑 **B17 §4.1, lan P0-a2 — `ho_so["toc_doc_giong"]` NEO `do_dai_toi_da`.**
+       `ho_so_dich.dung()` tra khoa ay (tinh boi `cai_dat.toc_doc_giong`, ham
+       THUAN cua `giong_id` + `ngon_ngu_dich`), va `giai_doan_noi_dung` da
+       truyen `ho_so=ho_so` xuong day o CA HAI cho goi (duong thuong `:357` va
+       vong dich lai chu Han `:514`) ⇒ ⛔ **khong can them mot tham so moi**,
+       cung ⛔ khong can sua `giai_doan_noi_dung.py`. Mot kenh, mot chu.
+
+    ⚠️ Nhanh *"model tra rac"* cua `ho_so_dich.dung()` tra ho so RONG ⛔ **khong**
+       mang khoa nay (hop dong `KHOA`, chot boi `test_408`) ⇒ o day `None` ⇒
+       `ngan_sach_do_dai` roi ve hang so ca-ngon-ngu, **dung hanh vi truoc
+       P0-a2**. Mot ho so rong lam ban dich NGHEO hon, no ⛔ khong duoc lam ban
+       dich HONG.
     """
     from . import ngon_ngu
 
     y_canh = y_canh or {}
+    # 🔑 Doc SOM (truoc vong dung `muc`) vi moi doan phai neo theo cung mot so.
+    #    ⛔ Khong `float(...)` o day: `ngan_sach_do_dai` la mot cho chuan hoa
+    #    duy nhat cho gia tri nay (so hong / so am / `None` deu xu o do) — hai
+    #    cho chuan hoa la hai cho de lech nhau.
+    ho_so = ho_so or {}
+    toc_doc_giong = ho_so.get("toc_doc_giong")
     muc = []
     chi_so = {d.get("ma"): i for i, d in enumerate(tat_ca)}
     for d in lo:
@@ -264,7 +296,11 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
              #    Xem `ngon_ngu.ngan_sach_do_dai`. Truoc 23/09 cho nay chi co
              #    `thoi_luong_giay`, va pha 15 phai don hau qua bang 11 luot
              #    viet lai / 751 giay tren mot phim 107 giay.
-             "do_dai_toi_da": ngon_ngu.ngan_sach_do_dai(dai, ngon_ngu_dich),
+             # ⭐ `toc_doc_giong` (B17 §4.1, P0-a2): tran nay neo theo nhip cua
+             #    GIONG SE DOC NO, ⛔ khong chi theo hang so ca-ngon-ngu. Siet
+             #    MOT CHIEU — xem `ngon_ngu.ngan_sach_do_dai`.
+             "do_dai_toi_da": ngon_ngu.ngan_sach_do_dai(
+                 dai, ngon_ngu_dich, toc_doc_giong=toc_doc_giong),
              "ke_ben": ngu_canh_ke(tat_ca, chi_so.get(ma, 0), da_dich=da_dich)}
         y = y_canh.get(ma)
         if y:
@@ -285,7 +321,7 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
     #    day duoi dang DU LIEU kem mot cau "dung DUNG bang nay".
     # ⛔ KHONG them vi du moi: mot vi du trong loi nhac la mot menh lenh ngam, va
     #    bon vi du khong dau tung lam tut mot ten von dung (bai hoc 24/09).
-    ho_so = ho_so or {}
+    #    (`ho_so` da duoc mo o dau ham — xem cho doc `toc_doc_giong`.)
     bang_luat = ""
     if ho_so.get("bang_dai_tu") or ho_so.get("bang_ten_rieng"):
         bang_luat = (
