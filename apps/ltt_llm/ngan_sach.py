@@ -111,25 +111,49 @@ TOKEN_GIU_MOI_ANH = 2_048
 #:    `tests/test_4205_ngan_sach_anh_thay_tran_dem.py` đọc NGƯỢC tệp yaml và đỏ
 #:    khi lệch — không phải tin vào lời hứa của chú thích này.
 #:
-#: ⭐ SÀN 1024 — NỢ CHẤT LƯỢNG ĐÃ TRẢ (Đ-5, 28/09/2026), không phải một con số
+#: ⭐ SÀN 512 — NỢ CHẤT LƯỢNG ĐÃ TRẢ (Đ-5, 28/09/2026), không phải một con số
 #:    "cho tốt hơn". Đo thật trên production, **cùng một bộ ảnh** cho cả ba lần:
 #:
 #:        sàn    8  →   9/20 đọc đúng   CER 0,817
-#:        sàn  512  →  19/20            CER 0,050
+#:        sàn  512  →  19/20            CER 0,050   ← CHỌN
 #:        sàn 1024  →  19/20            CER 0,050
 #:
 #:    Ở sàn 8, **hơn một nửa** ảnh nhỏ bị đọc SAI. Cảnh báo của thượng nguồn
 #:    (`clip.cpp:1662-1667`, issue #16842) đúng. `tools/do_chat_luong_doc_anh.py`.
 #:
-#: ⛔ VÌ SAO 1024 CHỨ KHÔNG 512, khi hai bên đo BẰNG NHAU: 20 mẫu mỗi cấu hình
-#:    không phân giải được hai mức ấy, và bài đo của ta đo **đọc chữ** còn con số
-#:    1024 của thượng nguồn được nêu cho tác vụ **định vị** — thứ ta KHÔNG đo, và
-#:    thứ nằm trên đường đi chính (một agent hỏi *"bấm vào nút ở đâu"* là định vị).
+#: 🔴 VÌ SAO 512 CHỨ KHÔNG 1024 — VÀ ĐÂY LÀ CHỖ TÔI ĐÃ TỰ SUY MỘT LẦN RỒI SỬA.
+#:
+#:    Bản đầu của chú thích này chọn **1024** với lý do *"thượng nguồn khuyên thế
+#:    cho tác vụ định vị, mà ta không đo định vị"*. Chủ dự án bảo tra nguồn thay
+#:    vì suy. Tra xong (28/09) thì lý do ấy **không đứng được**:
+#:
+#:    * Con số 1024 trong `clip.cpp` **không phải một phép đo**. Nó đến từ MỘT CÂU
+#:      của một người Qwen trong comment issue #16842 (*"in grounding tasks we
+#:      recommend around 1024–2048 image tokens"*), không kèm số nào. PR #16921
+#:      thêm cảnh báo ấy có body gồm **đúng một link Ref** và **0 review comment**.
+#:    * Chính ggerganov, trong cùng issue, kết luận nguyên nhân thật là **prompt**:
+#:      *"I think I found the issue — it's all about the prompt and the output
+#:      formatting."*
+#:    * ⚠️ Và mọi bằng chứng dẫn tới 1024 thu thập **10–11/2025**, trên một bản
+#:      llama.cpp **đang có lỗi toạ độ grounding** (#16880), vá bởi PR #25781
+#:      (07/2026). Build của ta **đã có bản vá**. ⛔ Chưa ai đo lại sau đó.
+#:
+#:    TÀI LIỆU CHÍNH THỨC của Qwen nói khác, và gần tác vụ của ta hơn:
+#:    * model card Qwen2.5-VL và README Qwen3-VL khuyến nghị dải **256–1280**
+#:      token/ảnh, mục đích ghi rõ là *"to balance performance and cost"*;
+#:    * `cookbooks/ocr.ipynb` **chính thức** đặt `min_pixels = 512*32*32` ⇒ **sàn
+#:      512 token** — đây là nguồn gần bài của ta nhất (đọc chữ, không xuất toạ độ);
+#:    * mặc định chính thức trong `preprocessor_config` là **4** (2.5-VL) / **64**
+#:      (3-VL), ⛔ không phải 1024.
+#:
+#:    ⇒ 512 có **nguồn chính thức**, có **số đo của chính ta** (19/20, bằng 1024),
+#:      và rẻ bằng **một nửa**. ⛔ Không có phép đo nào — của ai — so 512 với 1024
+#:      trên tác vụ đọc chữ.
 #:
 #: ⚠️ CÁI GIÁ, nói cho đúng: ⛔ KHÔNG phải "ảnh nhỏ đắt lên 12,5×". Ảnh dưới 1.024
 #:    token **hiện đang không dùng được**. Ta làm thứ đang HỎNG chạy được, không
 #:    làm thứ đang chạy đắt lên. Ảnh từ ~1 Mpx trở lên (1080p và lớn hơn) GIỮ NGUYÊN.
-TOKEN_ANH_TOI_THIEU = 1024
+TOKEN_ANH_TOI_THIEU = 512
 TOKEN_ANH_TOI_DA = 4096
 
 #: Biên bể KV (token) A không cho đặt chỗ — `token_budget = -c − BIEN_POOL_TOKEN`.

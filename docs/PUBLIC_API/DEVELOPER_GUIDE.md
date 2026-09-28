@@ -500,7 +500,7 @@ tham số để bạn tự tính:
 | Trường | Giá trị hiện tại | Nghĩa |
 |---|---|---|
 | `image_pixels_per_token` | `1024` | một token ảnh = 32×32 điểm ảnh |
-| `min_image_tokens` | `1024` | **sàn**: ảnh rẻ hơn sàn vẫn tính bằng sàn |
+| `min_image_tokens` | `512` | **sàn**: ảnh rẻ hơn sàn vẫn tính bằng sàn |
 | `max_image_tokens` | `4096` | trần **mỗi ảnh**; vượt thì ảnh bị **thu nhỏ giữ tỉ lệ** |
 | `image_token_markers` | `2` | dấu mở/đóng khối ảnh, tính như token chữ |
 | `max_image_bytes` | `12582912` | 12 MiB **sau khi giải base64**, cho một ảnh |
@@ -524,17 +524,17 @@ làm tròn **về số chẵn** (`round()` của Python, `Math.round` cho số �
 
 | Ảnh | Token | Ghi chú |
 |---|---|---|
-| 320×240 | **1 026** | dưới sàn ⇒ tính bằng sàn |
-| 512×512 | **1 026** | dưới sàn |
-| 1024×768 | **1 026** | dưới sàn |
-| 1280×720 | **1 026** | dưới sàn |
-| 1920×1080 | 2 042 | trên sàn, tính theo kích thước |
+| 320×240 | **514** | dưới sàn ⇒ tính bằng sàn |
+| 512×512 | **514** | dưới sàn |
+| 1024×768 | 770 | trên sàn, tính theo kích thước |
+| 1280×720 | 922 | trên sàn |
+| 1920×1080 | 2 042 | trên sàn |
 | 2048×2048 | 4 098 | đúng bằng `max_image_tokens` |
 | 3840×2160 | 4 082 | vượt trần ⇒ **thu nhỏ giữ tỉ lệ** |
 
 🔴 **Điều gây ngạc nhiên nhất, nên nói trước:** một ảnh 320×240 tốn **bằng** một
-ảnh 1024×768 — cả hai đều 1 026 token. Sàn `min_image_tokens = 1024` làm mọi ảnh
-dưới ~1 Mpx có cùng giá.
+ảnh 512×512 — cả hai đều 514 token. Sàn `min_image_tokens = 512` làm mọi ảnh
+dưới ~0,5 Mpx có cùng giá.
 
 ⭐ **Vì sao có sàn đó, và vì sao nó đáng.** Không có nó, ảnh nhỏ **không đọc được**.
 Đo trên chính hệ này, cùng một bộ ảnh, mã 6 ký tự render ở bốn cỡ nhỏ:
@@ -542,15 +542,19 @@ dưới ~1 Mpx có cùng giá.
 | sàn | đọc đúng | tỉ lệ ký tự sai |
 |---|---|---|
 | `8` (mặc định của engine) | **9/20** | 0,82 |
-| `1024` | **19/20** | 0,05 |
+| **`512`** | **19/20** | **0,05** |
+| `1024` | 19/20 | 0,05 |
 
 ⇒ Ở sàn 8, hơn **một nửa** ảnh nhỏ bị đọc sai. Nên cái giá không phải *"ảnh nhỏ
-đắt lên"* — nó là *"ảnh nhỏ dùng được"*.
+đắt lên"* — nó là *"ảnh nhỏ dùng được"*. Và 512 đạt **cùng** kết quả với 1024, nên
+ta lấy 512: đó cũng là sàn mà cookbook OCR chính thức của Qwen đặt
+(`min_pixels = 512×32×32`), và tài liệu Qwen khuyến nghị dải **256–1280** token
+mỗi ảnh *"để cân bằng hiệu năng và chi phí"*.
 
 ⚠️ **Hệ quả thực dụng cho bạn:** ⛔ đừng cắt ảnh nhỏ hơn mức cần. Cắt một ô 200×80
-không rẻ hơn cắt 900×400 — cùng 1 026 token. Nếu bạn cần gửi nhiều chi tiết, hãy
-gộp chúng vào **một** ảnh lớn hơn thay vì nhiều ảnh nhỏ: một ảnh 1920×1080 tốn
-2 042 token, còn bốn ô cắt nhỏ tốn 4 104.
+không rẻ hơn cắt 600×300 — cùng 514 token. Nếu cần gửi nhiều chi tiết, gộp vào
+**một** ảnh lớn hơn thay vì nhiều ảnh nhỏ: một ảnh 1920×1080 tốn 2 042 token, còn
+bốn ô cắt nhỏ tốn 2 056.
 
 ⚠️ `3840×2160` cho **4 082**, không phải 4 098: vượt `max_image_tokens` thì ảnh
 được **thu nhỏ giữ tỉ lệ** rồi làm tròn xuống, chứ không bị kẹp về trần.
