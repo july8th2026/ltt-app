@@ -31,7 +31,8 @@ import urllib.request
 
 import pytest
 
-from apps.ltt_llm.ngan_sach import ANH_BYTE_TOI_DA, SO_ANH_TOI_DA
+from apps.ltt_llm.ngan_sach import (ANH_BYTE_TOI_DA, SO_ANH_TOI_DA,
+                                    TOKEN_ANH_TOI_DA, TOKEN_ANH_TOI_THIEU)
 
 
 def test_hai_hang_co_gia_tri_hop_ly():
@@ -53,9 +54,17 @@ def test_hai_hang_DUOC_CONG_BO_ra_catalog():
     assert mo_hinh, "khong thay model nao ten ltt-*"
 
     for m in mo_hinh:
-        assert m.constraints.get("max_images") == SO_ANH_TOI_DA, (
-            f"`{m.name}` khong cong bo `max_images` — khach gui anh thu 5 va "
-            f"an 400 ma khong co cho nao noi truoc tran la bao nhieu")
+        # ⛔ `max_images` DA GO 28/09 (C4). Thay bang ba so cho khach TU TINH
+        #    duoc chi phi ngu canh cua tung anh - thu that su quyet dinh mot anh
+        #    co lot hay khong. Mot con so DEM khong noi len dieu gi.
+        assert "max_images" not in m.constraints, (
+            f"`{m.name}` con cong bo `max_images` — tran dem da go, cong bo lai "
+            f"la hua mot dieu khong ai cuong che")
+        for k, mong in (("min_image_tokens", TOKEN_ANH_TOI_THIEU),
+                        ("max_image_tokens", TOKEN_ANH_TOI_DA)):
+            assert m.constraints.get(k) == mong, (
+                f"`{m.name}` khong cong bo `{k}` — khach khong tinh truoc duoc "
+                f"chi phi ngu canh cua anh, tuc lai phai dam vao tuong moi biet")
         assert m.constraints.get("max_image_bytes") == ANH_BYTE_TOI_DA, (
             f"`{m.name}` khong cong bo `max_image_bytes`")
 
@@ -75,8 +84,10 @@ def _hoi_may_b() -> dict | None:
         return None
 
     ra: dict = {}
-    # Hop dong /health dang chay cong bo so anh duoi `tran.images`. Chap nhan
-    # ten cu nay khi doi chieu; `max_images` la ten o catalog cong khai.
+    # 🔴 Hop dong /health CU cong bo so anh duoi `tran.images`. Ban 28/09 go no
+    #    va thay bang `vat_ly.theo_model[m].image_{min,max}_tokens`. Doc CA HAI:
+    #    su co mat cua ten CU la bang chung may B chua deploy, va do la mot ca
+    #    phai DO — khong phai mot ca bo qua.
     tran = d.get("tran") if isinstance(d, dict) else None
     if isinstance(tran, dict) and "images" in tran:
         ra["max_images"] = tran["images"]
@@ -84,7 +95,8 @@ def _hoi_may_b() -> dict | None:
     def di(o):
         if isinstance(o, dict):
             for k, v in o.items():
-                if k in ("max_images", "max_image_bytes"):
+                if k in ("max_images", "max_image_bytes",
+                         "image_min_tokens", "image_max_tokens"):
                     ra[k] = v
                 else:
                     di(v)
@@ -150,10 +162,21 @@ def test_BAN_SAO_khop_may_B():
         "khong doi chieu duoc cong may B: can LTT_LLM_BASE_URL, "
         "LTT_LLM_TOKEN va ket noi toi /health")
 
-    if "max_images" in that:
-        assert int(that["max_images"]) == SO_ANH_TOI_DA, (
-            f"may B cuong che {that['max_images']} anh nhung ta CONG BO "
-            f"{SO_ANH_TOI_DA} — khach doc so cua ta va dam vao so cua may B")
+    # 🔴 MAY B CON CUONG CHE TRAN DEM ⇒ A VA B LECH NHAU, PHAI DO.
+    #    A da go `max_images` (C4, 28/09). Neu B van chan o anh thu 5 thi khach
+    #    doc catalog cua A, gui 10 anh, va an 400 ma KHONG co cho nao bao truoc —
+    #    dung cai benh tep nay sinh ra de chan, chi doi chieu.
+    assert "max_images" not in that, (
+        f"may B van cuong che tran DEM ({that.get('max_images')} anh) trong khi "
+        f"may A da go no. HAI MAY PHAI DEPLOY CUNG NHAU: chay "
+        f"`llm_gateway/deploy/deploy.ps1` cho may B truoc khi gop nhanh nay vao "
+        f"`main`. Do o day la DUNG, khong phai mot phep kiem hong.")
+    for k, mong in (("image_min_tokens", TOKEN_ANH_TOI_THIEU),
+                    ("image_max_tokens", TOKEN_ANH_TOI_DA)):
+        if k in that:
+            assert int(that[k]) == mong, (
+                f"may B khai {k}={that[k]} nhung may A dat cho theo {mong} — "
+                f"hai ben dat cho bang hai so khac nhau")
     if "max_image_bytes" in that:
         assert int(that["max_image_bytes"]) == ANH_BYTE_TOI_DA, (
             f"may B cuong che {that['max_image_bytes']} byte nhung ta cong bo "

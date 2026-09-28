@@ -109,7 +109,8 @@ def uoc_token_vao(messages, tools=None) -> int:
       thêm 16 token khuôn, nên A ≥ B cho cùng body (A ⊆ B);
     * phần tử bọc khối tool là `uoc_token.KhoiTool` mang `so_tool` (số schema) —
       kiểu riêng, khách không giả được bằng khoá JSON;
-    * ảnh KHÔNG đếm ở đây: đặt chỗ riêng theo `AdmissionModel.token_giu_moi_anh`.
+    * ảnh KHÔNG đếm ở đây: đo riêng bằng `luong.do_anh` (Σ f(rộng, cao)) rồi
+      cộng vào đặt chỗ — xem `platform_core/llm/anh_token.py`.
     """
     from platform_core.llm import uoc_token
 

@@ -94,7 +94,92 @@ phía trước, tách trần đuổi-nợ — cả ba **giảm** áp lực tăng
 | **N4** | Trần phát hiện **dịch PHÌNH/bịa** (>10× đơn vị nguồn **VÀ** >90/60 ký tự) | `ai_dich.py:1062-1077` | 4 / 2 |
 | **N5** | Trần độ dài **theo MẬT ĐỘ NGUỒN** (trước TTS, khác pha `nan_cho_vua`) | `dich_gemini_web.py:155-184` | 4 +đo / 2 |
 | **N6** | Phát hiện **GỘP CÂU** qua độ dài bất thường trong lô (27.139 cue / 90 video) | `dich_gemini_web.py:1366-1416` | 4 +đo / 2 |
-| **N7** | Chuẩn hoá tiếng Việt **trước TTS**: số La Mã, số điện thoại | `tts_chuan_hoa.py:86-100,151-152` | 3 / 1 |
+| **N7** | Chuẩn hoá tiếng Việt **trước TTS** | `tts_chuan_hoa.py:86-100,151-152` | ✅ xong — nhưng **thu hẹp**, xem §3.1 |
+
+### 3.1 ⚠️ N7 TỰ THU HẸP — ta đã có phần lớn, ở một app KHÁC
+
+Làn V4 ghi *"ta ⛔ không có gì tương đương"*. **Đúng trong `auto_scan_video`, SAI
+trên toàn nền tảng**: `apps/ltt_voice/text_pipeline.py` **đã có** đọc số
+(`_doc_so`, `_doc_so_lon`), ngày (`_thay_ngay`), giờ (`_thay_gio`), tiền, phần
+trăm, thập phân — và nó có cả lý lẽ tinh vi (*"đòi thêm một BẰNG CHỨNG NGỮ CẢNH:
+dãy số phải đứng ngay trước một TỪ CHỈ TIỀN"*).
+
+⇒ Thêm một lớp thứ hai sẽ **đọc số HAI LẦN với thứ tự ⛔ không xác định**. ⭐ Nên
+N7 **lấy đúng hai phép** ta thật sự thiếu (số La Mã ≥2 ký tự · số điện thoại) và
+**cố ý bỏ** phần còn lại, có ghi lý do.
+
+🔑 **Bài học về chính bảng B14 này:** một làn đối soát **một app** sẽ báo *"ta
+thiếu"* cho thứ **một app khác của ta đã có**. ⇒ Trước khi nhận một hàng `THIẾU`,
+hỏi *"nền tảng có nó ở đâu khác ⛔ không?"* — ⛔ không chỉ *"app này có ⛔ không?"*
+
+### 3.2 ⭐ Khoảng trống THẬT mà N7 tìm được: lưới Hán ở tầng TTS
+
+Viral chặn chữ Hán lọt ở **CẢ HAI** tầng:
+```
+tang VAN BAN  `_han_la_loi` / `_go_han_le`   (khi dich / phu de)
+tang TTS      `_chuan_hoa_tts()`  localize.py:293-301
+              HAN_NET_NGUONG = 0.35  -> tra RONG de TTS IM LANG
+```
+Ta chỉ có **tầng văn bản** (`LY_DO_HAN_LOT` / `ngon_ngu.ty_le_chu_han` ở
+`giai_doan_noi_dung.py`) ⇒ **thiếu lưới thứ hai**.
+
+⭐ N7 lấy **nguyên** ngưỡng `0,35` và cách tính (theo chốt 28/09: Viral đã đo thì
+dùng), nhưng **ĐỔI HÀNH ĐỘNG**: chỉ **phát hiện**, ⛔ không trả rỗng. Lý do:
+*"trả rỗng"* làm **MẤT nội dung** của khách, và chuẩn hoá là **đổi cách viết**, ⛔
+không phải lọc.
+
+---
+
+## 3b. 🔴 HẠNG MỤC "BỎ CẮT CÂU" — số đo ĐẢO NGƯỢC tiền đề, cần chủ dự án quyết lại
+
+Chủ dự án chốt 28/09: *"bỏ tính năng cắt câu như cách Viral."* Làn L1 **đo trước
+khi vá** và dừng lại, vì ba tiền đề của lời giao đều sai.
+
+### (1) ⛔ KHÔNG có nguy cơ tràn — T2 do một cỗ máy KHÁC giữ
+
+Đo bằng chính `lap_ke_hoach` trên dữ liệu thật (`asvr_4732…`, 78 mục, `tong_ms =
+275.029`), tắt nhánh cắt-vì-nợ bằng cách nâng trần (⛔ không sửa mã):
+
+| k (×độ dài TTS) | CÓ cắt: cắt / `ket_cuoi` / trôi | BỎ cắt nợ: cắt / `ket_cuoi` / trôi |
+|---|---|---|
+| 1,0 | 0 / 274.878 (−151) / 0 | 0 / 274.878 / 0 |
+| 1,10 | 0 / 274.982 (−47) / 0 | 0 / 274.982 / 0 |
+| 1,15 | **1** / 265.708 / 0 | **1** / 265.708 / 0 |
+| 3,0 | **6** / 270.278 / 6.553 | **1** / 270.278 / **14.585** |
+
+🔑 `ket_cuoi_ms` **chưa bao giờ** vượt `tong_ms` ở bất kỳ `k` nào — vì
+`thoi_gian.py:487` có một **vòng `while` ở đuôi** `pop()` đoạn tràn. ⇒ T2 /
+`D-ASV-03` do **cái popper ấy** giữ, ⛔ **không** do `TRAN_TROI_SO_DOAN`.
+
+### (2) 🔴 Có HAI cỗ máy cắt, và `so_doan_bi_cat` GỘP cả hai vào một số
+
+```
+[1] cat vi NO        troi > tran   (TRAN_TROI_SO_DOAN)   <- cai chu du an muon bo
+[2] POPPER DUOI      giu T2        (thoi_gian.py:487)    <- cho `cat 1` o k >= 1,15
+                                                            NGAY CA khi [1] da tat
+```
+⇒ Lời giao của tôi nói *"`so_doan_bi_cat` giữ trường, luôn `0`"* là **bất khả**:
+⛔ không thể luôn 0 trong khi T2 còn được cưỡng chế bằng `pop`.
+
+### (3) ⚠️ Cái giá thật của việc bỏ [1] là **TRÔI**, ⛔ không phải tràn
+
+`k = 3,0`: trôi đỉnh **6.553 → 14.585 ms**. Đúng thứ docstring của
+`TRAN_TROI_SO_DOAN` cảnh báo (*"tiếng lệch hình cả chục giây"*).
+
+⇒ Đổi *"mất 5 câu"* thành *"tiếng lệch hình 14,6 giây"* là một **đánh đổi sản
+phẩm**, ⛔ không phải một bản vá. ⭐ Và trên **chính phim thật** (`k = 1,0`) hai
+đường **giống hệt nhau**: 0 cắt, 0 trôi — nên hạng mục này ⛔ **không** sửa gì mà
+khách đang thấy; nó chỉ đổi hành vi trên phim **nói dồn**.
+
+### ✅ Hai vế ⛔ không cần làm gì
+- **Phụ đề CÓ trôi theo tiếng** — `phu_de.py:1070` đọc `dat_tai_ms`/`dai_ms` của
+  bản kế hoạch, tức đã mang trôi. Nấc ③ của Viral **ta đã có**.
+- **Mượn phía trước** (19,0 s lặng chưa mượn) ⛔ **không cứu** ca `k ≥ 1,15`: trôi
+  bằng 0 ở đó nên nhánh mượn ⛔ không bao giờ chạy. ⇒ Nó ⛔ không phải thứ bù cho
+  việc bỏ cắt; nó chỉ giúp ca nói dồn.
+
+⚠️ Và `tests/test_410:160,198,222` **ghim chính chính sách đang bị bỏ**
+(`so_doan_bi_cat > 0`) — cần giao lại một làn.
 
 ⭐ **N1 là hàng giá trị nhất của cả bảng** — và nó **đã tự chứng minh ở lượt chạy
 thật ĐẦU TIÊN**, bằng cách bác một kết luận của **người điều phối**.

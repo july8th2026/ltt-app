@@ -8,7 +8,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from apps.ltt_llm.manifest import MANIFEST
-from apps.ltt_llm.ngan_sach import ANH_BYTE_TOI_DA, SO_ANH_TOI_DA
+from apps.ltt_llm.ngan_sach import (ANH_BYTE_TOI_DA, SO_ANH_TOI_DA,
+                                    TOKEN_ANH_TOI_DA, TOKEN_ANH_TOI_THIEU)
+from platform_core.llm.anh_token import (DIEM_ANH_MOI_TOKEN_CANH,
+                                        TOKEN_DAU_VISION)
 from platform_core.public_api.config import load_public_api_config
 from server.api import tools as api_tools
 
@@ -37,7 +40,13 @@ def test_hai_shape_models_cong_bo_cung_mot_bo_gioi_han_tu_manifest(monkeypatch):
         "max_input_tokens",
         "max_output_tokens",
         "context_window",
-        "max_images",
+        # 28/09: `max_images` DA GO (C4). Bon so duoi day cho client TU TINH
+        # duoc chi phi ngu canh cua tung anh - thu that su quyet dinh mot
+        # anh co lot hay khong.
+        "image_pixels_per_token",
+        "min_image_tokens",
+        "max_image_tokens",
+        "image_token_markers",
         "max_image_bytes",
         "input_modalities",
         "accepted_image_schemes",
@@ -53,7 +62,9 @@ def test_hai_shape_models_cong_bo_cung_mot_bo_gioi_han_tu_manifest(monkeypatch):
         assert published["context_window"] == manifest["context_window"]
         assert published["max_input_tokens"] == manifest["context_window"]
         assert published["max_output_tokens"] == manifest["max_output_tokens"]
-        assert published["max_images"] == manifest["max_images"]
+        for k in ("image_pixels_per_token", "min_image_tokens",
+                  "max_image_tokens", "image_token_markers"):
+            assert published[k] == manifest[k], k
         assert published["max_image_bytes"] == manifest["max_image_bytes"]
         assert published["input_modalities"] == ["text", "image"]
         assert published["accepted_image_schemes"] == ["data"]
@@ -72,15 +83,27 @@ def test_model_text_cong_bo_khong_nhan_anh():
     published = api_tools._dang_codex(model)
     assert published["max_input_tokens"] == 8_192
     assert published["input_modalities"] == ["text"]
-    assert published["max_images"] == 0
+    for k in ("image_pixels_per_token", "min_image_tokens",
+              "max_image_tokens", "image_token_markers"):
+        assert published[k] == 0, k
     assert published["max_image_bytes"] == 0
     assert published["accepted_image_schemes"] == []
 
 
 def test_phep_chieu_khong_go_tay_tran_anh():
+    """Phep chieu phai DOC manifest, khong go lai con so nao.
+
+    28/09: bo so kiem da doi theo `constraints`. `SO_ANH_TOI_DA` da go khoi
+    manifest (C4) nhung GIU o day: neu ai go tay lai `"max_images": 4` vao phep
+    chieu thi phep nay phai do, chu khong phai im lang cho qua.
+    """
     source = Path(api_tools.__file__).read_text(encoding="utf-8")
     assert f'"max_images": {SO_ANH_TOI_DA}' not in source
     assert f'"max_image_bytes": {ANH_BYTE_TOI_DA}' not in source
+    for so in (DIEM_ANH_MOI_TOKEN_CANH ** 2, TOKEN_ANH_TOI_THIEU,
+               TOKEN_ANH_TOI_DA, TOKEN_DAU_VISION):
+        assert f": {so}" not in source, (
+            f"phep chieu go tay so {so} thay vi doc tu manifest")
 
 
 def test_khong_gan_tran_token_gia_vao_model_khong_phai_llm():

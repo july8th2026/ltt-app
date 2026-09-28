@@ -52,8 +52,14 @@ import pytest
 from llm_gateway.ngan_sach import VuotNganSach, do_yeu_cau, kiem_tra
 
 TRAN = {"max_input_tokens": 96_256, "max_output_tokens": 32_768,
-        "max_images": 4, "max_image_bytes": 20 * 1024 * 1024,
-        "max_context": 131_072, "co_vision": True}
+        "max_image_bytes": 20 * 1024 * 1024,
+        "max_context": 131_072, "co_vision": True,
+        # 28/09: mot ho so engine DA CAU HINH DUNG. Thieu hai so nay thi
+        # `kiem_tra` nem `ThieuTranAnhEngine` cho MOI anh, ke ca anh `data:` hop
+        # le - va luc do `TestVanNHAN_anh_data` se do vi mot ly do khong lien
+        # quan gi toi SSRF. Chu de cua tep nay la SSRF, nen no phai mo phong mot
+        # he DANG CHAY BINH THUONG, khong phai mot he cau hinh thieu.
+        "token_anh_toi_thieu": 8, "token_anh_toi_da": 4096}
 
 _ANH_THAT = "data:image/png;base64," + base64.b64encode(b"\x89PNG" * 40).decode()
 

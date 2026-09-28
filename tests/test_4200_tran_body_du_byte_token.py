@@ -132,7 +132,12 @@ class TestTranThanDuChoMoiModelCongBo:
         thieu = []
         for model_id in ngan_sach.CUA_SO_THEO_MODEL:
             cong_bo = ngan_sach.cong_bo_cua(model_id)
-            can_toi_thieu = cong_bo * ngan_sach.BYTE_MOI_TOKEN_JSON
+            # 28/09: CONG so hang ANH. Truoc hom nay phep nay chi tinh CHU, va
+            # do la ly do `ANH_BYTE_TOI_DA = 12 MiB` cong bo duoc trong 6 tuan
+            # ma khong request nao dat toi: hai phep canh nhau doc cung mot san
+            # bang HAI cong thuc khac nhau thi cai thieu hon khong ai bat.
+            can_toi_thieu = (cong_bo * ngan_sach.BYTE_MOI_TOKEN_JSON
+                             + ngan_sach.BODY_BYTES_ANH_TOI_THIEU)
             if cfg.max_body_bytes < can_toi_thieu:
                 thieu.append(
                     f"{model_id}: can >= {can_toi_thieu:.0f} B nhung tran chi "
@@ -150,16 +155,44 @@ class TestTranThanDuChoMoiModelCongBo:
            cho gọi test khác như hàm thường mà giữ nguyên ngữ nghĩa fixture),
            nó viết lại đúng phép so sánh với một cửa sổ công bố giả lập tại
            chỗ — để không phụ thuộc cách `ngan_sach` tổ chức bảng thật.
+
+        🔴 28/09/2026 — PHÉP TIÊM NGHỊCH NÀY ĐÃ TỪNG RỖNG, VÀ ĐÓ LÀ LÝ DO NÓ
+           KHÔNG CÒN GÕ MỘT HỆ SỐ NÀO NỮA.
+
+           Bản trước lấy `cửa sổ giả lập = rộng nhất × 2`, một hệ số **gõ tay
+           không buộc vào gì**. Khi trần thân nâng 4 MiB → 32 MiB, sàn của một
+           model gấp đôi (4,85 MB) **vừa** trần mới ⇒ phép này đỏ, và thông điệp
+           của chính nó phải bảo người đọc "tăng hệ số giả lập lên".
+
+           Một phép tiêm nghịch cần người bảo trì đi nâng hằng số bằng tay mỗi
+           lần trần đổi thì **sẽ có một lần không ai nâng** — và lần đó nó im
+           lặng mất sức phân biệt, chứ không đỏ. Nên nay cửa sổ giả lập được
+           **suy từ chính trần**: nhỏ nhất vừa đủ để KHÔNG vừa.
+
+        ⭐ Và hai phép khẳng định dưới đây kiểm HAI điều khác nhau:
+           1. cửa sổ giả lập thật sự RỘNG HƠN mọi model đang bán (nếu không, nó
+              không mô phỏng "model thứ ba rộng hơn" mà mô phỏng một model hẹp
+              hơn — phép thử vô nghĩa, và ca đó xảy ra nếu trần bị nâng vô lối);
+           2. sàn của nó VƯỢT trần — tức phép ở trên sẽ đỏ.
         """
         cfg = load_public_api_config()
         cong_bo_rong_nhat_that = max(
             ngan_sach.cong_bo_cua(m) for m in ngan_sach.CUA_SO_THEO_MODEL)
-        cong_bo_gia_lap = cong_bo_rong_nhat_that * 2
-        can_toi_thieu_gia_lap = cong_bo_gia_lap * ngan_sach.BYTE_MOI_TOKEN_JSON
+        # Cửa sổ nhỏ NHẤT mà sàn của nó không còn vừa trần hiện tại. `+ 1` đẩy
+        # nó qua đúng một token, nên đây là ca biên — không phải một ca thừa.
+        cong_bo_gia_lap = int(
+            (cfg.max_body_bytes - ngan_sach.BODY_BYTES_ANH_TOI_THIEU)
+            / ngan_sach.BYTE_MOI_TOKEN_JSON) + 1
+        assert cong_bo_gia_lap > cong_bo_rong_nhat_that, (
+            f"cua so gia lap {cong_bo_gia_lap} KHONG rong hon model rong nhat "
+            f"dang ban {cong_bo_rong_nhat_that} — phep tiem nghich nay dang mo "
+            f"phong mot model HEP hon, tuc no khong con thu dieu no noi la thu. "
+            f"Tran than {cfg.max_body_bytes} da duoc nang qua muc can thiet.")
+        can_toi_thieu_gia_lap = (
+            cong_bo_gia_lap * ngan_sach.BYTE_MOI_TOKEN_JSON
+            + ngan_sach.BODY_BYTES_ANH_TOI_THIEU)
         assert cfg.max_body_bytes < can_toi_thieu_gia_lap, (
-            "phep thu nay tu no phai la mot ca ĐỎ khi ap dung — neu tran hien "
-            "tai TINH CO du cho ca model gap doi thi phep gia lap chua du "
-            "'rong hon', tang he so gia lap len")
+            "phep thu nay tu no phai la mot ca ĐỎ khi ap dung")
 
 
 def test_body_bytes_toi_thieu_van_nam_duoi_tran_mac_dinh():

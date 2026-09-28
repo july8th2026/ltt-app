@@ -366,8 +366,14 @@ class TestSoDoKhacCuaG4:
         MỌI slot khi `-kvu` (llama.cpp b10689). Nên hồ sơ được phép chừa cao
         hơn số đo, không được chừa thấp hơn.
 
-        Phương án C (O-11): số đặt chỗ là `HO_SO[m].token_giu_moi_anh`, đi qua
-        `AdmissionModel`; env `LTT_LLM_TOKEN_MOI_ANH` đã gỡ.
+        28/09/2026: số đặt chỗ KHÔNG còn là một hằng mỗi ảnh — nó là
+        `Σ anh_token.token_anh(rộng, cao)`. Nên bất biến "không ước THIẾU" nay
+        phải hỏi về **trần** của hàm ấy: `token_anh_toi_da` là cận trên engine tự
+        kẹp, nên nó phải ≥ mọi số đo ta có.
+
+        ⭐ Và phép này mạnh hơn bản cũ: bản cũ chỉ đòi `2.048 >= 770`, trong khi
+           chi phí thật của một ảnh 2048×2048 là **4.098** — tức bản cũ XANH trên
+           một hằng THIẾU 2×. Nay nó đối chiếu với cả bảng đo.
         """
         from apps.ltt_llm.manifest import MANIFEST
         from platform_core.llm import tham_so_da_luot
@@ -376,9 +382,22 @@ class TestSoDoKhacCuaG4:
         assert not hasattr(tham_so_da_luot.doc(), "token_moi_anh")
         tool = MANIFEST.tools[0]
         for alias, model_id in ALIAS_SANG_ID.items():
-            giu = tool.admission_cho(alias).token_giu_moi_anh
-            assert giu == ngan_sach.HO_SO[model_id].token_giu_moi_anh, alias
-            assert giu >= ngan_sach.TOKEN_MOI_ANH, alias
+            from platform_core.llm import anh_token as AT
+
+            suc = tool.admission_cho(alias)
+            h = ngan_sach.HO_SO[model_id]
+            assert (suc.token_anh_toi_thieu, suc.token_anh_toi_da) == (
+                h.token_anh_toi_thieu, h.token_anh_toi_da), alias
+            # Trần phải phủ MỌI số đo thật, ke ca o dinh (2048x2048 = 4.098).
+            for rong, cao, mong in ((320, 240, 82), (1024, 768, 770),
+                                    (1920, 1080, 2042), (2048, 2048, 4098)):
+                that = AT.token_anh(rong, cao, toi_thieu=h.token_anh_toi_thieu,
+                                    toi_da=h.token_anh_toi_da) + AT.TOKEN_DAU_VISION
+                assert that == mong, (alias, rong, cao, that, mong)
+                assert h.token_anh_toi_da + AT.TOKEN_DAU_VISION >= mong, (
+                    f"{alias}: tran {h.token_anh_toi_da} THAP hon chi phi that "
+                    f"{mong} cua anh {rong}x{cao} — dat cho THIEU la chieu tran "
+                    f"`-kvu`, va mot lan tran giet MOI slot")
 
     def test_nap_kho_am_theo_model(self):
         """§G4: 16,3 s (3.8) và 12,1 s (3.5) — **kho ấm**. Task 5.2 còn giả định

@@ -99,6 +99,26 @@ DEM_UOC = 2_048
 #: ══════════════════════════════════════════════════════════════════════════
 TOKEN_GIU_MOI_ANH = 2_048
 
+#: ⭐ TRẦN TOKEN ẢNH CỦA ENGINE — `--image-min-tokens` / `--image-max-tokens`.
+#:
+#: Đây là **tham số** của `platform_core/llm/anh_token.token_anh(rộng, cao, …)`,
+#: không phải "chi phí một ảnh". Chi phí một ảnh là hàm của kích thước; hai số
+#: này chỉ nói hàm ấy bị kẹp ở đâu.
+#:
+#: ⛔ HAI SỐ NÀY LÀ **BẢN SAO** CỦA `llm_gateway/deploy/llama-swap.yaml`, đúng
+#:    cùng một hình dạng với `engine_ctx`/`np` ở `HO_SO`. Chép sang mà không ai
+#:    đối chiếu chính là cơ chế đã làm bảng ở kho này nói sai **năm lần**, nên
+#:    `tests/test_4205_ngan_sach_anh_thay_tran_dem.py` đọc NGƯỢC tệp yaml và đỏ
+#:    khi lệch — không phải tin vào lời hứa của chú thích này.
+#:
+#: 🔴 SÀN 8 LÀ MỘT NỢ CHẤT LƯỢNG ĐÃ BIẾT, chưa trả. `clip.cpp:1662-1667` ở đúng
+#:    build đang chạy in cảnh báo rằng Qwen-VL cần **≥ 1.024** token ảnh để làm
+#:    đúng tác vụ định vị (dẫn issue #16842). Nâng sàn là đánh đổi **sản phẩm**
+#:    (độ chính xác đổi lấy KV + credit khách trả) ⇒ chủ dự án chốt 28/09 là
+#:    **hoãn tới khi có phép đo Đ-5**. ⛔ Đừng nâng ở đây cho "tốt hơn".
+TOKEN_ANH_TOI_THIEU = 8
+TOKEN_ANH_TOI_DA = 4096
+
 #: Biên bể KV (token) A không cho đặt chỗ — `token_budget = -c − BIEN_POOL_TOKEN`.
 #:
 #: 🔴 17/09/2026 `KET_QUA_DO_17_09.md` (`da153d40`): trên b10883 tràn `-kvu` giết
@@ -307,8 +327,16 @@ class HoSoModel:
     bien_pool_token: int
     #: Đệm ước mỗi lượt — xem `DEM_UOC`.
     dem_uoc: int
-    #: Token đặt chỗ mỗi ảnh — xem `TOKEN_GIU_MOI_ANH`.
-    token_giu_moi_anh: int
+    #: `--image-min-tokens` / `--image-max-tokens` của hồ sơ engine.
+    #:
+    #: ⭐ THAY `token_giu_moi_anh` (hằng phẳng 2.048) — 28/09/2026. Chi phí ngữ
+    #:    cảnh của một ảnh là `f(rộng, cao)` (`platform_core/llm/anh_token.py`,
+    #:    khớp 14/14 ô đo), không phải một hằng; hai số này là **tham số** của
+    #:    hàm đó, và chúng là số của **engine** nên phải khớp `llama-swap.yaml`.
+    #:    `tests/test_4205_*` đối chiếu cặp này với yaml — cùng khuôn `engine_ctx`
+    #:    đã làm cho `-c`.
+    token_anh_toi_thieu: int
+    token_anh_toi_da: int
     #: Token prefill MỚI từ mức này lượt là whale — `NGUONG_WHALE[model_id]`
     #: (số chủ dự án chọn 17/09, L-23).
     nguong_whale: int
@@ -320,7 +348,8 @@ class HoSoModel:
 
     def __post_init__(self) -> None:
         if min(self.engine_ctx, self.np, self.seq_cap, self.dem_uoc,
-               self.token_giu_moi_anh, self.nguong_whale) <= 0:
+               self.token_anh_toi_thieu, self.token_anh_toi_da,
+               self.nguong_whale) <= 0:
             raise ValueError(f"ho so {self.model_id}: moi so phai > 0: {self}")
         if self.seq_cap > self.np:
             raise ValueError(f"ho so {self.model_id}: seq_cap {self.seq_cap} > "
@@ -377,13 +406,15 @@ HO_SO = {
     "qwen38-api": HoSoModel(
         "qwen38-api", engine_ctx=221_184, np=3, seq_cap=3,
         bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
-        token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
+        token_anh_toi_thieu=TOKEN_ANH_TOI_THIEU,
+        token_anh_toi_da=TOKEN_ANH_TOI_DA,
         nguong_whale=NGUONG_WHALE["qwen38-api"],
         toc_prefill_uoc_tok_s=toc_prefill_uoc("qwen38-api")),
     "qwen35-api": HoSoModel(
         "qwen35-api", engine_ctx=262_144, np=4, seq_cap=4,
         bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
-        token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
+        token_anh_toi_thieu=TOKEN_ANH_TOI_THIEU,
+        token_anh_toi_da=TOKEN_ANH_TOI_DA,
         nguong_whale=NGUONG_WHALE["qwen35-api"],
         toc_prefill_uoc_tok_s=toc_prefill_uoc("qwen35-api")),
 }
@@ -574,8 +605,40 @@ BYTE_MOI_TOKEN_JSON = 16.0
 #:    con số của cả cửa `/api/v1`, và một request `ltt-3.5` hợp lệ ở trần công
 #:    bố của NÓ phải lọt qua. Lấy theo model mặc định (hẹp hơn) là dựng lại
 #:    đúng lỗi "hai trần không biết nhau" cho model kia.
+#: Phần thân dành cho **ẢNH**, byte trên dây (đã nở base64).
+#:
+#: 🔴 VÌ SAO HẰNG TRÊN MỘT MÌNH LÀ MỘT LỜI HỨA HỎNG (đo 28/09/2026).
+#:    Chú thích của `BYTE_MOI_TOKEN_JSON` tự thừa nhận *"⛔ VẪN CHƯA TÍNH ẢNH"*
+#:    và đẩy việc đó sang `platform_core/public_api/config.py`. Nhưng ở đó
+#:    **không có** số hạng nào cho ảnh — trần 4 MiB chỉ là 4 MiB. Hệ quả tính
+#:    được:
+#:
+#:        sàn chữ                         2.424.832 B  (2,31 MiB)
+#:        trần thân đang chạy             4.194.304 B  (4,00 MiB)
+#:        ⇒ chỗ còn cho ảnh               1.769.472 B  (1,69 MiB base64)
+#:        ⇒ tức 1,27 MiB byte ảnh THÔ    = VỪA ĐÚNG MỘT ảnh cỡ tối đa của client
+#:
+#:    Và `ANH_BYTE_TOI_DA` = 12 MiB/ảnh ta **đang công bố** ra `/api/v1/models`
+#:    nở thành 16 MiB base64 — gấp **4×** cả trần thân. Một con số công bố mà
+#:    không request nào có thể đạt tới là một lời hứa hỏng, không phải một trần.
+#:
+#: ⭐ SỐ HẠNG NÀY LÀ HỆ QUẢ CỦA `ANH_BYTE_TOI_DA` — không phải một số thứ hai.
+#:    Đó là toàn bộ điểm: con số ta **công bố** cho mỗi ảnh nay **buộc** vào trần
+#:    thân, nên nó không thể lại thành một lời hứa không thực hiện được.
+#:
+#:    base64 nở đúng **4/3** — phép nhân chính xác, không phải ước, nên số hạng
+#:    này không cần biên. Biên an toàn nằm hết ở `BYTE_MOI_TOKEN_JSON` (đã có
+#:    1,23× trên sàn đo 12,97 B/token).
+#:
+#: ⚠️ Sàn này chỉ bảo đảm **MỘT** ảnh cỡ tối đa cùng một hội thoại kín cửa sổ.
+#:    Chỗ cho **nhiều** ảnh đến từ khoảng cách giữa sàn này và trần thật
+#:    (`DEFAULT_MAX_BODY_BYTES`), không đến từ sàn. Nói thẳng ra để không ai đọc
+#:    sàn thành lời hứa về số lượng.
+BODY_BYTES_ANH_TOI_THIEU = (ANH_BYTE_TOI_DA * 4 + 2) // 3
+
 BODY_BYTES_TOI_THIEU = int(
-    max(cong_bo_cua(m) for m in CUA_SO_THEO_MODEL) * BYTE_MOI_TOKEN_JSON)
+    max(cong_bo_cua(m) for m in CUA_SO_THEO_MODEL) * BYTE_MOI_TOKEN_JSON
+) + BODY_BYTES_ANH_TOI_THIEU
 
 
 #: Ngưỡng client **phải nén** hội thoại, tính từ cửa sổ công bố.

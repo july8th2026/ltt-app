@@ -55,7 +55,8 @@ def _a_dat_cho(than: dict, alias: str) -> tuple[dict, int]:
     gui["model"] = EXECUTOR.model_id(alias)
     suc = MANIFEST.tools[0].admission_cho(alias)
     dat = luong._dat_cho(suc, lop=luat_nhan.TUONG_TAC, token_vao_uoc=vao,
-                         xin_ra=xin_ra, so_anh=luong.dem_anh(than))["token_dat_truoc"]
+                         xin_ra=xin_ra,
+                         token_anh=luong.do_anh(than, suc)[1])["token_dat_truoc"]
     return gui, int(dat)
 
 
@@ -272,7 +273,18 @@ def _b_giu(gui: dict, *, token_khai: int) -> int:
     xin = gui.get("max_tokens", gui.get("max_output_tokens"))
     xin_ra = min(int(xin), max_out) if isinstance(xin, int) and xin > 0 else max_out
     v = VL.doc_tep(YAML_KHO)[gui["model"]]
-    return VL.token_giu(token_vao=do_yeu_cau(gui).token_vao, xin_ra=xin_ra, v=v,
+    # 🔴 PHAI TRUYEN HAI TRAN TOKEN ANH — day la thu `api._kiem_va_chay` lam
+    #    (`vl.token_anh_toi_thieu/_toi_da` doc tu yaml). Thieu chung thi
+    #    `do_yeu_cau` roi ve HANG PHANG 2.048/anh, va phep kiem nay do that:
+    #    do 28/09, "B giu 39.209, A giu 43.309" — B giu IT HON A dung mot anh
+    #    (4.098 that vs 2.048 phang). Tuc bat bien A ⊆ B gay, va gay ve dung
+    #    chieu nguy hiem (B dat cho thieu ⇒ tran `-kvu`).
+    #
+    # ⭐ Bai hoc: mot ban giA cua duong chay ma THIEU mot tham so se do ra mot
+    #    con so KHAC, va neu phep kiem khong doi chieu hai ben thi khong ai thay.
+    do = do_yeu_cau(gui, token_anh_toi_thieu=v.token_anh_toi_thieu,
+                    token_anh_toi_da=v.token_anh_toi_da)
+    return VL.token_giu(token_vao=do.token_vao, xin_ra=xin_ra, v=v,
                         dem_uoc=_a_dem_uoc(), token_khai=token_khai)
 
 
