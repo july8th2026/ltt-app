@@ -438,6 +438,16 @@ def danh_dau_nghi_ao_giac(ban: dict) -> int:
 #:    (76,9 %) mot bien do vua du (~3 diem) de khong sat nut ma cung khong qua
 #:    rong — day la canh bao, khong phai cong chan, nen thien ve BAT som hon
 #:    la bo sot.
+#:
+#: 🔴 **Day la LUA CHON co ly le, ⛔ CHUA phai mot phep do** — khac
+#:    `NGUONG_KY_TU_MOI_GIAY` (hieu chinh tren 188 doan that). Con so nay
+#:    hieu chinh tren **n = 1** (dung mot luot da do). Cung logic tu khai
+#:    voi `thoi_gian.TRAN_TROI_SO_DOAN = 3` ("TA TU DAT, chua du an nao co").
+#:
+#:    ⭐ **Cai gi BAC BO no**: mot phim HOP LE that su it loi (phong su, nhieu
+#:    nhac nen) co `ty_le_phu_song < 0,80` MA ⛔ khong co lo hong don le nao
+#:    vuot `NGUONG_LO_HONG_S` — tuc CUA A keu oan trong khi CUA B im lang.
+#:    Gap do la du lieu de HA con so nay; chua co du lieu do thi ⛔ dung doi.
 NGUONG_TY_LE_PHU_SONG = 0.80
 
 #: CUA B: MOT lo hong DON LE (khong tieng, giua hai doan hoac o hai dau ban
@@ -452,11 +462,28 @@ NGUONG_TY_LE_PHU_SONG = 0.80
 NGUONG_LO_HONG_S = 15.0
 
 
-def do_phu_song(ban: dict, *, thoi_luong: float) -> dict:
-    """Hai CUA doc lap tren `phu_song` — con so DA CO SAN trong `tom_tat()`
-    nhung chua ai doc (B13 B2).
+def tong_giay_doan(doan: list) -> float:
+    """TONG do dai cac doan (giay) = `sum(ket - bat)`.
 
-    CUA A (tong): ty le `phu_song / thoi_luong` duoi `NGUONG_TY_LE_PHU_SONG`.
+    🔑 **NGUON CHAN LY DUY NHAT cho cong thuc nay.** `tom_tat()` va
+       `do_phu_song()` cung goi ham nay thay vi tu viet lai `sum(ket - bat)`
+       o tung noi — kho nay da tra gia cho hai ban sao cua MOT chinh sach
+       troi nhau theo thoi gian (xem `thoi_gian.ngan_sach_nan_s`, cung ly do
+       no ton tai).
+
+    ⛔ **Day la TONG, ⛔ khong phai thoi gian THAT co tieng**: hai doan CHONG
+       LAN nhau se bi dem **hai lan** o day. Muon dai luong khong dem trung
+       (HOP cac khoang), xem bien `hop_giay_co_tieng` trong `do_phu_song()`.
+    """
+    return sum(float(d["ket"]) - float(d["bat"]) for d in (doan or []))
+
+
+def do_phu_song(ban: dict, *, thoi_luong: float) -> dict:
+    """Hai CUA doc lap tren dai luong "co tieng" — con so DA CO SAN mot phan
+    trong `tom_tat()` nhung chua ai doc (B13 B2).
+
+    CUA A (tong): ty le `hop_giay_co_tieng / thoi_luong` duoi
+    `NGUONG_TY_LE_PHU_SONG`.
     CUA B (cuc bo): MOT lo hong (khong tieng — giua hai doan lien tiep, truoc
     doan dau, hoac sau doan cuoi) dai hon `NGUONG_LO_HONG_S`.
 
@@ -466,25 +493,50 @@ def do_phu_song(ban: dict, *, thoi_luong: float) -> dict:
        CUA A mot minh se keu oan cho ca hai truong hop nhu nhau. Ham nay tra
        ve con so cho CA HAI cua, ⛔ khong rut gon thanh mot co bool.
 
+    🔴 **CUA A dung HOP, ⛔ khong dung TONG — hai dai luong KHAC nghia:**
+
+            tong_giay_doan()       TONG do dai doan, dem HAI LAN neu CHONG LAN
+            hop_giay_co_tieng      HOP cac khoang — "co bao nhieu giay THAT
+                                    su co tieng", khong dem trung
+
+       Vong quet lo hong ben duoi von da xu ly chong lan DUNG (`neu ket moi
+       > diem da toi, cong PHAN VUOT THEM`) de tim lo hong — CUA A gio dung
+       CHINH cach tinh do, nen ca ham nhat quan mot ngu nghia. Dung TONG cho
+       ty le se PHONG DAI do phu dung luc co chong lan, va CUA A se mu di
+       dung luc no can tinh nhat.
+
+       ⚠️ **Chua do tren du lieu that**: 78 doan cua luot
+       `asvr_47327a869a8f4597960048f09064740` **khong co cap nao chong lan**
+       (TONG = HOP = 211,56) — day la mot khiem khuyet TIEM AN cua thiet ke
+       cu, ⛔ khong phai mot con so sai da tung xay ra.
+
+       `tong_giay_doan()` van duoc tra ve trong ket qua (khong dung cho CUA
+       A) de doi chieu voi `tom_tat()["phu_song"]` — hai gia tri nay PHAI
+       khop nhau tren cung mot `ban` vi ca hai goi CHUNG mot ham.
+
     ⚠️ Day la **canh bao van hanh** (`log.warning` + con so vao `outputs`),
        ⛔ KHONG chan luot chay: mot phim it loi la hop le.
     """
     doan = sorted(ban.get("doan") or [],
                   key=lambda d: (float(d.get("bat", 0)), float(d.get("ket", 0))))
     thoi_luong = float(thoi_luong or 0.0)
-    phu_song = sum(float(d["ket"]) - float(d["bat"]) for d in doan)
+    tong = tong_giay_doan(doan)
 
     lo_hong: list[float] = []
+    hop = 0.0
     truoc = 0.0
     for d in doan:
-        bat = float(d["bat"])
+        bat, ket = float(d["bat"]), float(d["ket"])
         if bat > truoc:
             lo_hong.append(bat - truoc)
-        truoc = max(truoc, float(d["ket"]))
+            truoc = bat
+        if ket > truoc:
+            hop += ket - truoc
+            truoc = ket
     if thoi_luong > truoc:
         lo_hong.append(thoi_luong - truoc)
 
-    ty_le = (phu_song / thoi_luong) if thoi_luong > 0 else 1.0
+    ty_le = (hop / thoi_luong) if thoi_luong > 0 else 1.0
     lo_lon_nhat = max(lo_hong) if lo_hong else 0.0
 
     return {
@@ -495,6 +547,10 @@ def do_phu_song(ban: dict, *, thoi_luong: float) -> dict:
         "so_lo_hong_qua_nguong": sum(1 for g in lo_hong if g > NGUONG_LO_HONG_S),
         "nguong_lo_hong_s": NGUONG_LO_HONG_S,
         "canh_bao_lo_hong": bool(lo_lon_nhat > NGUONG_LO_HONG_S),
+        # Doi chieu — xem docstring. ⛔ `ty_le_phu_song` KHONG dung hai so nay.
+        "tong_giay_doan": round(tong, 2),
+        "hop_giay_co_tieng": round(hop, 2),
+        "giay_chong_lan": round(max(tong - hop, 0.0), 2),
     }
 
 
@@ -550,6 +606,8 @@ def tom_tat(ban: dict) -> dict:
         # ⭐ Lên `outputs` để một lượt đo bất kỳ tái lập được đường chép lời đã
         #    sinh ra số của nó. ⛔ Không rút gọn thành "đã ghim".
         "tham_so_engine": dict(ban.get("tham_so_engine") or {}),
-        "phu_song": round(
-            sum(float(d["ket"]) - float(d["bat"]) for d in doan), 2),
+        # 🔑 B13 B2: goi `tong_giay_doan()` — NGUON CHAN LY DUY NHAT cua cong
+        #    thuc nay, cung ham `do_phu_song()` goi. ⛔ Dung tu viet lai
+        #    `sum(ket - bat)` o day.
+        "phu_song": round(tong_giay_doan(doan), 2),
     }

@@ -113,3 +113,43 @@ def test_4926_KHONG_chan_luot_chi_la_canh_bao():
     phu = ban_ghi.do_phu_song(ban, thoi_luong=100.0)   # ty le thap + lo hong lon
     assert phu["canh_bao_ty_le"] and phu["canh_bao_lo_hong"]
     # khong ngoai le nao duoc nem — chi doc duoc con so
+
+
+# ── Diem sua tiep theo dieu phoi (28/09): TONG vs HOP, mot nguon chan ly ────
+
+
+def test_4926_CHONG_LAN_ca_dung_ra_TONG_khac_HOP():
+    """🔴 Ca dung ra theo yeu cau dieu phoi: [0,3) va [1,4) chong lan 2 giay.
+
+    TONG (`tong_giay_doan`) dem hai lan phan chong lan = 3 + 3 = 6.
+    HOP (`hop_giay_co_tieng`, dung cho CUA A) chi tinh khoang thoi gian THAT
+    co tieng = 4. Hai dai luong PHAI khac nhau o day — neu ban va lam chung
+    mot so thi mot trong hai da bi go nham cong thuc cua ben kia.
+    """
+    ban = {"doan": [_doan(0.0, 3.0, "a"), _doan(1.0, 4.0, "b")]}
+
+    assert ban_ghi.tong_giay_doan(ban["doan"]) == 6.0
+
+    phu = ban_ghi.do_phu_song(ban, thoi_luong=4.0)
+    assert phu["tong_giay_doan"] == 6.0
+    assert phu["hop_giay_co_tieng"] == 4.0
+    assert phu["giay_chong_lan"] == 2.0
+
+    # CUA A phai dung HOP (4/4 = 100%), ⛔ khong dung TONG (6/4 = 150%,
+    # vo ly — mot ty le khong the vuot 100%).
+    assert phu["ty_le_phu_song"] == 1.0
+    assert phu["canh_bao_ty_le"] is False
+
+
+def test_4926_MOT_NGUON_CHAN_LY_tom_tat_va_do_phu_song_khop_nhau():
+    """🔴 Doi chung bat buoc cho phat hien 'hai ban sao cua mot cong thuc':
+    tren CUNG mot `ban`, `tom_tat()["phu_song"]` va
+    `do_phu_song()["tong_giay_doan"]` phai la CUNG mot con so — vi ca hai
+    goi CHUNG `tong_giay_doan()`, khong tu viet lai `sum(ket - bat)`."""
+    ban = {"doan": [_doan(0.0, 3.0, "a"), _doan(1.0, 4.0, "b"),
+                    _doan(10.0, 12.5, "c")]}
+
+    tu_tom_tat = ban_ghi.tom_tat(ban)["phu_song"]
+    tu_do_phu_song = ban_ghi.do_phu_song(ban, thoi_luong=12.5)["tong_giay_doan"]
+
+    assert tu_tom_tat == tu_do_phu_song == 8.5   # (3-0)+(4-1)+(12.5-10) = 8.5
