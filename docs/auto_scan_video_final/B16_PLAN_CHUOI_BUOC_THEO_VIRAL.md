@@ -82,22 +82,50 @@ chạy; làm **công cụ gọi tay** là đúng hơn cả cho nó.
 
 | # | giai đoạn ASV mới | gộp bước Viral | song song |
 |---|---|---|---|
-| 1 | `media_prepare` | 0 (cắt đầu/cuối *) · 1 · 2 · 3 · 8 · 32 | — |
+| 1 | `media_prepare` | 0 (**cắt ĐẦU** *) · 1 · 2 · 3 · 8 · 32 | — |
 | 2 | `audio_prepare` | 4 · 5 (demucs · tách nhạc) | 🔀 **song song với 3** |
 | 3 | `transcribe` | 9 · 10 · 11 · 12 | 🔀 **song song với 2** |
 | 4 | `vung_che` **(MỚI)** | 6 · 7 · 20 (dò dải che, bốn nấc) | 🔀 **song song với 3, 5** |
 | 5 | `content_process` | 13 · 14 · 15 · 16 · 17 · 21 (banner) | — |
 | 6 | `voice_synthesis` | 19 · 22 · 23 | — |
 | 7 | `timing_align` | 24 · 25 · 26 · **27 (căn sub theo onset THẬT)** | — |
-| 8 | `render` | 28 · **29 (MỘT encode)** · 30 · **31 (tự kiểm)** | — |
+| 8 | `render` | 28 · **29 (MỘT encode: + cắt CUỐI *)** · 30 · **31 (tự kiểm)** | — |
 
 ⇒ **13 → 8 giai đoạn**, thêm **một** giai đoạn mới (`vung_che` — bước 20 của họ mà
 ta ⛔ không có ai chịu trách nhiệm), và **ba** nhánh song song.
 
-\* ⚠️ Cắt đầu/cuối: Viral làm **trước ASR**, ta làm **sau cùng**. ⭐ **Giữ cách của
-ta** — V6 đo được họ **đã tự lùi một nửa** (`_cat_cuoi_gop`), vì lý lẽ *"whisper
-phải nghe khung đã cắt"* chỉ đúng cho cắt **ĐẦU** (nó dịch mốc thời gian), ⛔ không
-đúng cho cắt cuối. Đây là chỗ hệ ta **hẹp hơn ở chỗ đáng hẹp**.
+\* 🔴 **CẮT ĐẦU/CUỐI — tôi đọc SAI, chủ dự án sửa 28/09.**
+
+Bản đầu của mục này viết *"giữ cách của ta (cắt sau cùng cả hai đầu); họ đã tự lùi
+một nửa"*. **Sai**, và lý lẽ sụp ngay khi có quyết định (2):
+
+> ⭐ *"Cắt đầu đuôi họ làm đầu là ĐÚNG nếu chỉ **MỘT lần render** mp4."*
+
+⇒ **Với một lần encode thì ⛔ không tồn tại "lượt sau" để cắt ở cuối.** Cách của ta
+(cắt cả hai đầu ở GĐ2 + `ban_do_thoi_gian` đổi mốc) **phụ thuộc vào việc có lượt
+thứ hai**. Bỏ lượt thứ hai ⇒ phép đổi mốc **⛔ không còn chỗ nào để sống**.
+
+### 🔑 Và nguyên tắc thật ⛔ không phải "sớm hay muộn" — mà là **có DỊCH TRỤC hay không**
+
+| phép | dịch trục? | ⇒ làm ở đâu |
+|---|---|---|
+| **cắt ĐẦU** | ✅ **CÓ** — dịch **mọi** mốc hạ nguồn đi `−cat_dau` | **`media_prepare`, TRƯỚC ASR** — để ⛔ không một bước hạ nguồn nào cần biết |
+| **cắt CUỐI** | ⛔ **KHÔNG** — chỉ **cắt ngọn** | **trong lần encode DUY NHẤT** (`render`) |
+
+⇒ ⭐ Đó **chính xác** là hình dạng cuối của Viral (`_cat_cuoi_gop`), và nó ⛔ **không
+phải** *"lùi một nửa vì nghi ngờ"* — nó là một **phép chia có nguyên tắc theo việc
+phép biến đổi có dịch trục hay không**. Cách đọc của chủ dự án đúng; cách đọc của
+tôi sai.
+
+### Cái giá, ghi đủ
+1. `cat` phải biết **trước ASR**. ✅ Nó nằm trong `run.settings` từ lúc tạo lần
+   chạy ⇒ ⛔ không có gì chặn.
+2. ⚠️ Khách đổi `cat` **sau** ⇒ phải **chạy lại ASR**. Hôm nay việc ấy rẻ (chỉ
+   GĐ2). ⇒ **Mất tính linh hoạt đó**, và mất vì quyết định **một lần encode**, ⛔
+   không vì vị trí cắt.
+3. ⭐ **Được lại một thứ đáng hơn:** `ban_do_thoi_gian` cho vế **đầu** biến mất —
+   mọi mốc hạ nguồn **đã nằm trên trục bản giao**. Bớt **một** phép đổi mốc, và
+   phép đổi mốc **chính là chỗ mọi con bọ của B6/B8/B9 đã sống**.
 
 ### 2.1 Bốn bước của họ ta PHẢI thêm
 | bước | việc | giá trị |
