@@ -96,10 +96,33 @@ phía trước, tách trần đuổi-nợ — cả ba **giảm** áp lực tăng
 | **N6** | Phát hiện **GỘP CÂU** qua độ dài bất thường trong lô (27.139 cue / 90 video) | `dich_gemini_web.py:1366-1416` | 4 +đo / 2 |
 | **N7** | Chuẩn hoá tiếng Việt **trước TTS**: số La Mã, số điện thoại | `tts_chuan_hoa.py:86-100,151-152` | 3 / 1 |
 
-⭐ **N1 là hàng giá trị nhất của cả bảng.** Hôm nay tôi phải truy **bằng tay** qua
-CSDL + artifact để biết `78 → 69` đoạn rơi ở đâu. Dữ liệu ta **đã có** trong
-`asv_stage.outputs`; thiếu đúng **một hàm đọc ngang**. ⇒ Nó biến mọi lần chẩn đoán
-sau này từ một buổi thành một dòng.
+⭐ **N1 là hàng giá trị nhất của cả bảng** — và nó **đã tự chứng minh ở lượt chạy
+thật ĐẦU TIÊN**, bằng cách bác một kết luận của **người điều phối**.
+
+Hôm nay tôi truy **bằng tay** qua CSDL + artifact, thấy `content_process 78 →
+voice_synthesis 69` và viết vào sổ là ***"rơi 9 đoạn ở đây"***. 🔴 **SAI.**
+
+`tools/asv_so_ke_toan_cau.py` chạy trên `asvr_47327a869a8f4597960048f09064740`:
+```
+content_process -> voice_synthesis
+  GOP (khong roi that): 78 -> 69 khe, giam 9 ma do gop vao khe khac
+  — LUON dung theo `nan_thoi_luong.nhom_chi_so` (phan hoach day du,
+    nan_thoi_luong.py:407: moi ma luon thuoc dung MOT nhom)
+  so_khe_da_gop = 5  (dem SO NHOM > 1 thanh vien; KHONG bang hieu so 9
+    neu co nhom > 2 thanh vien — so lieu VAN DUNG, chi la `so_khe_da_gop`
+    khong phai mot phep tru truc tiep)
+✅ khong chang nao roi that
+```
+
+🔑 **Vì sao tôi sai và công cụ đúng:** tôi **trừ hai con số**; nó **kiểm một BẤT
+BIẾN** (`nhom_chi_so` là một **phân hoạch đầy đủ** ⇒ mọi `ma` thuộc đúng một
+nhóm ⇒ hiệu số **chỉ có thể** là gộp). ⭐ Một phép trừ trả lời *"hai số khác nhau
+bao nhiêu"*; một bất biến trả lời *"khác nhau ấy CÓ THỂ là mất mát ⛔ không"* —
+và chỉ câu thứ hai là câu ta cần.
+
+⇒ Mất mát **thật** duy nhất của lượt ấy nằm **hết** ở ASR (hố 32,5 s), ⛔ không có
+gì ở `voice_synthesis`. Nếu tôi đi vá theo con số `78 → 69` thì tôi đã đi sửa một
+giai đoạn **⛔ không hề hỏng**.
 
 ---
 

@@ -270,6 +270,10 @@ def phan_hoi_ngoai_dich(thao_tac, messages):
             "bang_dai_tu": {"我": "tôi", "你": "bạn"},
             "bang_ten_rieng": {"小明": "Tiểu Minh"},
             "giong_van": "trung tinh, cau ngan",
+            # N3 (B14/V3) — them 28/09, xem chu thich o `ho_so_dich.KHOA`.
+            # Gia tri KHAC RONG cung ly do voi cac khoa tren: mot ban gia rong
+            # se khong chung minh duong doc `bang_sua_dong_am` cua `_doc` chay.
+            "bang_sua_dong_am": {"武林根": "五灵根"},
         }, ensure_ascii=False), "su_dung": None}
     if ma == ai.QC_NGU_NGHIA.ma:
         # ⭐ N-51 (25/09): TRUOC day, thieu nhanh nay lam moi loi goi
