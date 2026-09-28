@@ -28,6 +28,7 @@ import subprocess
 import pytest
 
 from apps.auto_scan_video import do_vung as dv
+from tests.rao_chan_nang import ocr_gia_lap  # noqa: F401 -- B13 C3, xem rao_chan_nang.gia_lap_ocr
 
 # ⭐ ⛔ KHONG `skipif` ffmpeg. `rao_chan_nang` da phan quyet: *"no la cong cu,
 #    chay vai tram mili giay"* — ffmpeg ⛔ khong phai phep kiem nang, va no co
