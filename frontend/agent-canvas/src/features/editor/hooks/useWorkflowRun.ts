@@ -4,7 +4,8 @@ import { cancelRunV3, chayLaiTuNodeV3, createRunV3, fromV3, publishWorkflowV3,
   RUN_V3_KET_THUC, saveWorkflowV3, soanWorkflowV3, soSanhRunV3,
   WorkflowCompileError, WorkflowConflictError,
   type RunV3, type SoSanhRunV3 } from '../../../workflowApi'
-import { nhapRun, taoKhoaChay } from '../graph'
+import { tinhDiffThietKe, type KetQuaDiffThietKe } from '../DesignerDiff/diff'
+import { nhapRun, taoKhoaChay, type BangDinhNghia } from '../graph'
 import { useRunStream } from './useRunStream'
 import type { NganDesktop, PhaLuu } from '../kieu'
 
@@ -18,7 +19,16 @@ type ThamSo = {
   moNgan: (ngan: NganDesktop) => void
   autosaveTimer: { current: number | undefined }
   napTaiLieu: (document: CanvasDocument) => void
+  //: UI-8b — cần bảng định nghĩa để tính TÊN BƯỚC của lớp xem trước
+  //  (`nhanNode`, xem `DesignerDiff/diff.ts`). Cùng bảng `EditorShell` đã có
+  //  sẵn cho `dinhNghiaCua`, ⛔ không dựng lại.
+  dinhNghia: BangDinhNghia
 }
+
+/** Kết quả `/soan` ĐANG CHỜ người dùng quyết định — vế "xem trước" của B7
+ *  (`02_SCORECARD.md`). `taiLieuMoi`/`revision` là đúng thứ `soanBangAI` cũ
+ *  từng nạp/ghi THẲNG; giờ chúng nằm ở đây cho tới khi `apDungSoan` được gọi. */
+export type SoanXemTruoc = { taiLieuMoi: CanvasDocument; revision: number; diff: KetQuaDiffThietKe }
 
 /** publish · tạo run · SSE lùi dần · huỷ · chạy lại · so sánh · Soạn bằng AI.
  *
@@ -46,6 +56,9 @@ export function useWorkflowRun(ts: ThamSo) {
   //  ghi draft + trả báo giá; publish vẫn là hành động riêng của người dùng.
   const [dangSoan, setDangSoan] = useState(false)
   const [soanLoi, setSoanLoi] = useState('')
+  //: UI-8b — kết quả `/soan` đang chờ Áp dụng/Huỷ. `null` = không có gì để
+  //  xem trước (chưa soạn, hoặc lượt trước đã được quyết định).
+  const [soanXemTruoc, setSoanXemTruoc] = useState<SoanXemTruoc | null>(null)
   //: node_id -> ma loi bien dich (422 `{ma,node_id,thong_diep}` cua publish).
   const [loiNode, setLoiNode] = useState<Record<string, string>>({})
   /** Khoá `Idempotency-Key` của lần bấm "Chạy ngay" đang dở. Rỗng = chưa bấm,
@@ -148,23 +161,44 @@ export function useWorkflowRun(ts: ThamSo) {
   }, [run, runGoc])
 
   /** Task A3 — Agent Designer (`/soan`). Ghi draft từ `goal` hiện có trên
-   *  Canvas rồi NẠP THẲNG tài liệu trả về vào trình soạn — cửa này KHÔNG
-   *  publish, người dùng vẫn phải tự bấm "Chạy" để publish + chạy. */
+   *  Canvas rồi tính DIFF với đồ thị đang dựng — cửa này KHÔNG publish, và từ
+   *  UI-8b nó cũng KHÔNG ghi đè canvas ngay: tài liệu mới chỉ vào
+   *  `soanXemTruoc`, chờ người dùng bấm "Áp dụng" (`apDungSoan`) hoặc "Huỷ"
+   *  (`huySoan`) ở lớp xem trước (`DesignerDiff`).
+   *
+   *  ⭐ `soanLoi` vẫn được đặt Ở ĐÂY, ngay khi máy chủ trả `hop_le=false` —
+   *     y hệt hành vi trước UI-8b — vì lỗi biên dịch của bản NHÁP là một sự
+   *     kiện của lượt SOẠN, không phụ thuộc người dùng có bấm Áp dụng hay
+   *     không (bản gốc cũng không chờ điều đó: nó nạp thẳng rồi báo lỗi). */
   const soanBangAI = useCallback(() => {
     if (!ts.workflow || ts.readOnly || dangSoan) return
     const goal = ts.document.goal.trim()
     if (!goal) { setSoanLoi('Thiếu mục tiêu.'); return }
-    setDangSoan(true); setSoanLoi('')
+    setDangSoan(true); setSoanLoi(''); setSoanXemTruoc(null)
     void soanWorkflowV3(ts.workflow.id, goal, undefined, ts.csrf)
       .then(kq => {
-        ts.napTaiLieu(fromV3(kq.document))
-        ts.setWorkflow(truoc => truoc ? { ...truoc, revision: kq.revision } : truoc)
+        const taiLieuMoi = fromV3(kq.document)
         if (!kq.hop_le && kq.loi.length)
           setSoanLoi(kq.loi.map(l => l.thong_diep).join(' · '))
+        setSoanXemTruoc({ taiLieuMoi, revision: kq.revision,
+          diff: tinhDiffThietKe(ts.document, taiLieuMoi, ts.dinhNghia) })
       })
       .catch(error => setSoanLoi(error instanceof Error ? error.message : 'Không soạn được.'))
       .finally(() => setDangSoan(false))
   }, [ts, dangSoan])
+
+  /** Người dùng bấm "Áp dụng" ở lớp xem trước — GIỜ mới ghi đè canvas, đúng
+   *  đường đi cũ của `soanBangAI` (nạp tài liệu + cập nhật `revision`). */
+  const apDungSoan = useCallback(() => {
+    if (!soanXemTruoc) return
+    ts.napTaiLieu(soanXemTruoc.taiLieuMoi)
+    ts.setWorkflow(truoc => truoc ? { ...truoc, revision: soanXemTruoc.revision } : truoc)
+    setSoanXemTruoc(null)
+  }, [soanXemTruoc, ts])
+
+  /** Người dùng bấm "Huỷ"/`Escape` ở lớp xem trước — ⛔ KHÔNG một dispatch nào
+   *  chạm `document`: chỉ xoá bản nháp đang chờ, đồ thị đang dựng y nguyên. */
+  const huySoan = useCallback(() => setSoanXemTruoc(null), [])
 
   const taoBanChayMoi = useCallback(() => {
     setRun(null); setRunError(''); datLaiSoHong()
@@ -172,6 +206,7 @@ export function useWorkflowRun(ts: ThamSo) {
   }, [])
 
   return { run, runError, runGoc, soSanh, soSanhLoi, dangSoan, soanLoi, loiNode,
-    dangGui, runDaXong: Boolean(run && RUN_V3_KET_THUC.has(run.status)),
-    chayWorkflow, huyRun, chayLaiTuNode, soSanhVoiGoc, soanBangAI, taoBanChayMoi }
+    soanXemTruoc, dangGui, runDaXong: Boolean(run && RUN_V3_KET_THUC.has(run.status)),
+    chayWorkflow, huyRun, chayLaiTuNode, soSanhVoiGoc, soanBangAI, apDungSoan, huySoan,
+    taoBanChayMoi }
 }

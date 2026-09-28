@@ -47,6 +47,10 @@ const LayersDrawer = lazy(() =>
 // cần khi có node đang chọn — nạp trễ ở ĐÂY, ⛔ không sửa tệp đó (chủ UI-5/6).
 const StepInspector = lazy(() =>
   import('../../inspector/StepInspector').then(m => ({ default: m.StepInspector })))
+// `DesignerDiff` (UI-8b, vá B7) chỉ cần khi có một lượt "Soạn bằng AI" đang
+// chờ quyết định — nạp trễ giống ba mảng trên, ⛔ không kéo vào lần ghé đầu.
+const DesignerDiff = lazy(() =>
+  import('./DesignerDiff/DesignerDiff').then(m => ({ default: m.DesignerDiff })))
 
 /** Bố cục trình soạn + phím tắt toàn cục. Mọi trạng thái sống trong `hooks/`.
  *
@@ -92,7 +96,7 @@ function Editor() {
   const kho = useStepLibrary()
   const run = useWorkflowRun({ workflow, setWorkflow: doc.setWorkflow,
     document: state.document, csrf, readOnly, setPhase: doc.setPhase, moNgan,
-    autosaveTimer: doc.autosaveTimer,
+    autosaveTimer: doc.autosaveTimer, dinhNghia,
     // ⭐ `giuLichSu` — "Soạn bằng AI" GHI ĐÈ đồ thị đang dựng, nên trạng thái cũ
     //    phải vào `past`. Không có nó thì Ctrl+Z không cứu được và họ mất việc.
     napTaiLieu: (document: CanvasDocument) =>
@@ -244,6 +248,11 @@ function Editor() {
       readOnly={readOnly} selected={sel.selected} selectedEdges={sel.selectedEdges}
       selectedEdge={selectedEdge} duplicate={edits.duplicate}
       toggleErrorBranch={edits.toggleErrorBranch} dispatch={dispatch}/></Suspense>}
+    {/* UI-8b — vá B7: "Soạn bằng AI" không còn ghi đè canvas ngay, nó chờ ở
+        `run.soanXemTruoc` cho tới khi người dùng quyết định ở đây. */}
+    {run.soanXemTruoc&&<Suspense fallback={null}>
+      <DesignerDiff diff={run.soanXemTruoc.diff} apDung={run.apDungSoan} huy={run.huySoan}/>
+    </Suspense>}
   </section>
 }
 
