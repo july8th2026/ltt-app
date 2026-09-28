@@ -21,9 +21,9 @@ Trạng thái hợp lệ (⛔ không tự chế thêm):
 | UI-4 Node UX V2 | `ui4` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui4` | `src/nodes/**` · `useDisplayGraph.ts` · `styles/node.css` | — | dải **6000-6099** · `canvas.css` diff **RỖNG** · `app.video.generate` cao **525 → 279 px** (16 hàng cổng → 7 hàng + 9 khay) · ba mức độ zoom **200/280/360 px** · `core.switch` `"1 nhánh"` → **`"5 nhánh"`** · hồi quy cổng UI-0 **y nguyên** · ⚠️ brief ghi 456px, họ đo **285px** — brief sai |
 | UI-7 Execution + Runs | `ui7` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui7` | `ExecutionPanel/**` · `RunV3Panel/Inspector` · `styles/run.css` | — | dải **6100-6199** · chủ **S4** · bảng run **176 → 366 px**, hàng cao nhất **139 → 57 px** · báo giá **12 credit** trên nút · `workflowApi.ts` diff **RỖNG** ⇒ UI-5 không phải chờ · 🔴 báo một `.sr-only` **SAI**, xem nhật ký |
 | UI-5 Inspector + Connections | `ui5` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui5` | `ket_noi_v3.py` (mới) · `src/inspector/**` | — | dải **6300-6399** · Q4 = **C** · node publish được **27 → 60** (+33 mở khoá) · publish **422 → 200** · 4 cửa `/api/v3/ket-noi` · wizard OAuth 6 chặng · 🔴 va UI-3 ở `StepInspector`, xem nhật ký |
-| UI-8a Human approval ⭐ | `ui8a` | **ĐANG LÀM** (agent) | `phien/agent-ui-v2-ui8a` | `routes/phe_duyet_v3.py` (mới) · `ExecutionPanel/**` · `cho_doi.py` (nếu buộc) | — | dải **6500-6599** · cổng **8206** · 🔴 `core.human` đã ĐỦ (`NHANH_HUMAN`, waitpoint, hết hạn ⇒ `reject`) nhưng ⛔ KHÔNG cửa nào BẤM duyệt được ⇒ mở cửa là TRONG phạm vi phase |
-| UI-6 Data picker | `ui6` | **ĐANG LÀM** (agent) | `phien/agent-ui-v2-ui6` | `src/inspector/FormTuLuocDo.tsx` · `inspector.css` · tệp mới trong `src/inspector/` | — | dải **6400-6499** · cổng **8205** · dùng lại `/bieu-thuc/goi-y` ⇒ ⛔ không cửa mới |
-| UI-9 Mẫu / Templates | `ui9` | **ĐANG LÀM** (agent) | `phien/agent-ui-v2-ui9` | `routes/trang.py` (⭐ giữ) · `templates/agent_templates.html` (mới) · `platform_core/workflow/mau.py` (mới) | — | dải **6600-6699** · cổng **8207** · dùng lại `POST /api/v3/workflows` với `document` ⇒ ⛔ không cửa mới · mỗi mẫu PHẢI publish được thật |
+| UI-8a Human approval ⭐ | `ui8a` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui8a` | `routes/phe_duyet_v3.py` (mới) · `ExecutionPanel/**` · `cho_doi.py` (nếu buộc) | — | dải **6500-6599** · cổng **8206** · 🔴 `core.human` đã ĐỦ (`NHANH_HUMAN`, waitpoint, hết hạn ⇒ `reject`) nhưng ⛔ KHÔNG cửa nào BẤM duyệt được ⇒ mở cửa là TRONG phạm vi phase |
+| UI-6 Data picker | `ui6` | ✅ **ĐÃ GỘP** 🔴 *(bị chặn bởi lỗi id gạch ngang)* | `phien/agent-ui-v2-ui6` | `src/inspector/FormTuLuocDo.tsx` · `inspector.css` · tệp mới trong `src/inspector/` | — | dải **6400-6499** · cổng **8205** · dùng lại `/bieu-thuc/goi-y` ⇒ ⛔ không cửa mới |
+| UI-9 Mẫu / Templates | `ui9` | ✅ **ĐÃ GỘP** | `phien/agent-ui-v2-ui9` | `routes/trang.py` (⭐ giữ) · `templates/agent_templates.html` (mới) · `platform_core/workflow/mau.py` (mới) | — | dải **6600-6699** · cổng **8207** · dùng lại `POST /api/v3/workflows` với `document` ⇒ ⛔ không cửa mới · mỗi mẫu PHẢI publish được thật |
 | UI-8b Agent Designer diff | — | CHƯA MỞ | — | — | — | chặn bởi UI-3 |
 | UI-9 Templates | — | CHƯA MỞ | — | — | — | chặn bởi UI-1 |
 | UI-10 i18n + trợ năng + mobile | — | CHƯA MỞ | — | — | — | ⛔ **không song song hoá được** — chạm mọi tệp |
@@ -111,6 +111,88 @@ canh rằng không ai lặng lẽ mở một cửa ghi ở tầng trang.
 ## Nhật ký
 
 _(mới nhất ở trên)_
+
+- `2026-09-28` `điều phối` — **UI-11 NGHIỆM THU TỔNG: 6/7 bước E2E đi được, và
+  bước thứ 7 lộ một LỖI CHẶN TÍNH NĂNG CỐT LÕI.**
+
+  ### 🔴 `{{ nodes.<id>.output.<cổng> }}` VỠ với mọi node do Canvas sinh
+
+  | Nơi | Điều nó làm |
+  |---|---|
+  | `editorState.ts:299` `nextNode()` | mọi node sinh id `` `n${Date.now().toString(36)}-${count}` `` — **LUÔN có gạch ngang** (vd `nmukpruo1-1`) |
+  | `bien_dich.trich_tham_chieu()` | duyệt `{{ }}` bằng `ast.parse(mode="eval")` |
+
+  Python đọc `-` là phép **TRỪ**, nên `nodes.nmukpruo1-1.output.prompt` tách thành
+  `nodes.nmukpruo1 - 1 .output.prompt` ⇒ `SyntaxError: invalid decimal literal`
+  ⇒ `publish` trả **422 `bieu_thuc_chua_ho_tro`** kèm thông điệp **sai lạc**
+  *"chỉ hỗ trợ đúng MỘT biểu thức"* — câu ấy ⛔ không liên quan gì tới nguyên nhân.
+
+  ⇒ **Bất kỳ người dùng thật nào** thêm ≥2 bước từ palette rồi dùng **Data Picker**
+  (chức năng chủ lực của UI-6) sẽ **KHÔNG BAO GIỜ** chạy được workflow.
+
+  ### ⭐ PHÁT HIỆN LÀM HẸP HẲN BẢN VÁ: dạng **subscript** ĐÃ chạy
+
+  Điều phối đo trực tiếp `trich_tham_chieu` (28/09):
+
+  ```
+  nodes.nabc.output.x            ->  OK
+  nodes.nmukpruo1-1.output.x     ->  LoiBienDich  invalid decimal literal
+  nodes['nmukpruo1-1'].output.x  ->  OK  ThamChieu(node='nmukpruo1-1', cong='x')
+  ```
+
+  ⇒ Ngữ pháp Sec6 **đã** nhận định danh có gạch ngang — qua `ast.Subscript`, và
+  `_chuoi_doan` đã xử đúng. Nên bản vá ⛔ **KHÔNG cần** một tokenizer riêng:
+  chỉ cần chuẩn hoá `nodes.<id>` → `nodes['<id>']` **trước** `ast.parse`, hoặc
+  đổi phía SINH ra để nó phát dạng subscript.
+
+  ⚠️ Nhưng phải chọn **một** chỗ và nói rõ, vì có **hai** phía sinh:
+  - `platform_core/workflow/goi_y.py:106` xây `duong` dạng **có dấu chấm** →
+    Data Picker (`ChonDuLieu.tsx:140`) chỉ bọc `{{ ... }}` quanh thứ máy chủ trả.
+  - người dùng **gõ tay** cũng sẽ gõ dấu chấm (tài liệu §6 viết
+    `nodes.<id>.output`).
+  ⇒ Sửa **phía đọc** (`bien_dich`) phủ được cả hai; sửa phía sinh chỉ phủ một.
+
+  ### ⚠️ Vì sao 12 làn trước ⛔ không ai bắt được
+
+  Mọi bài test và mọi lượt nghiệm thu đều **tự đặt id sạch** (`n1`, `n2`,
+  `n-img`, `imggen`) khi `PUT` thẳng tài liệu qua API. ⛔ Không lượt nào **vừa**
+  để Canvas sinh id **vừa** gọi `/publish` sau khi chèn biểu thức.
+
+  ⇒ Cùng họ với hai ca hôm nay: **fixture tự dựng một tiền đề mà sản phẩm ⛔
+  không có** (`phe_duyet_v3` import tường minh ⇒ 404 trên production;
+  `ai_dang_dung_may_chu` tự đặt `LTT_DATABASE_URL` ⇒ luôn `KHONG BIET` ngoài đời).
+  ⭐ Ở đây tiền đề tự dựng là **hình dạng của một ID** — thứ trông vô hại nhất
+  trong một fixture, và chính nó giấu một lỗi chặn toàn bộ tính năng.
+
+  ### 7 bước E2E
+
+  | # | Bước | Kết quả |
+  |---|---|---|
+  | 1-2 | Workflows → mới → Canvas mở **đúng** id vừa tạo (đo bằng 2 workflow khác nhau, ⛔ không phải `items[0]`) | ĐI ĐƯỢC |
+  | 3 | palette → nối dây thật (kéo chuột) → Inspector → Data Picker chèn biểu thức | thao tác ĐI ĐƯỢC, **kết quả ⛔ KHÔNG chạy được** |
+  | 4 | báo giá **trước** khi chạy | ĐI ĐƯỢC — *"62 credit cho 3 bước"* |
+  | 5 | chạy → timeline **tên bước** | ĐI ĐƯỢC khi ⛔ không dùng biểu thức (*"Chạy thủ công"*, *"Sinh ảnh từ mô tả"* — ⛔ không phải `node_id` thô) |
+  | 6 | Templates → *Dùng mẫu này* | ĐI ĐƯỢC — 6 node/6 cạnh, publish OK |
+  | 7 | lưu trữ → biến mất → kho → mở lại | ĐI ĐƯỢC — đo bằng đếm dòng trước/sau |
+
+  ### Hồi quy — tất cả còn sống
+
+  ```
+  cong noi 24px + elementFromPoint   27/27 trung
+  nut `+` chen buoc chet             0
+  trigger.manual publish duoc        OK
+  loi goi vao khong gian id v2       0
+  ba panel nap tre                   khong tai luc dau, tai dung luc bam
+  ```
+
+  ### ⚠️ UI-11 nói rõ thứ nó ⛔ KHÔNG đo được
+
+  *Run có **thật sự hoàn tất** không* — cần worker chạy dưới `LocalSystem`, ⛔
+  không có trong fixture dev. Cùng giới hạn UI-7 đã ghi. ⇒ Còn treo cho một lượt
+  đo trên production sau deploy.
+
+  ⭐ Và nó **⛔ không tự vá** lỗi tìm được, đúng luật: người nghiệm thu sửa sản
+  phẩm thì ⛔ không còn ai nghiệm thu. Bản vá chạy ở một phiên riêng.
 
 - `2026-09-28` `điều phối` — **ĐÃ DEPLOY `8907b4dd`. Nghiệm thu web thật: 3/4 ĐẠT,
   1 hỏng — và cái hỏng là lỗi của TÔI.** Mở wave 4: UI-10a + UI-10b.
