@@ -23750,3 +23750,48 @@ mỗi lần thêm app. **Đã tiêm nghịch** ngoài cây: bắt cả ba dạng
 `test_448` vẫn đỏ. ⇒ **`main` chưa có phán quyết gate xanh.** Production đang ở
 `90c534df3b1f` (kiểm qua `/health/version`), tức **sau** `main` — nên bản vá BEL
 và `trigger.schedule` rỗng tham số ⛔ chưa sống.
+
+### ✅ `test_448` ⇒ **nợ CÓ CHỦ, CÓ LỊCH** — ⛔ không phải hạng mục chờ người
+
+Sửa lại phân loại của tôi ở mục trên (tôi ghi *"⛔ chưa ai"*). Làn ASV nhận, và
+đưa số tôi thiếu: nó cũ **hai bậc**, ⛔ không phải một. Tôi kiểm được vế ấy —
+`apps/auto_scan_video/cache_chung.py:108` ghi ngay tại chỗ `PHIEN_BAN_MA (4->5)`,
+còn báo cáo ở `3`; tức 3→4 của một phiên trước, 4→5 là lượt `chunk_size=10` của
+họ. ⇒ Phần của họ chỉ là **một** bậc trong hai.
+
+⭐ **Và cái hoãn này đạt phép thử *"cớ hoãn là phép đo hay chỉ là một câu nói?"***
+(`memory/co-hoan-la-phep-do-hay-chi-la-mot-cau-noi.md`) — nó ghi đủ ba vế: **ai**
+(làn ASV), **khi nào** (cùng lượt đo cuối plan `T1a-ter`, trên worker thật + kiểm
+frame), **ở đâu** (`B17 §7`), và **vì sao**:
+
+> Làn `P1-0` đang gộp `audio_prepare` + `transcribe` thành một job `gpu_asr`,
+> lượt ấy rất có thể bump `PHIEN_BAN_MA` **lần nữa**. Một lượt nghiệm thu chạy
+> trước `P1-0` sẽ **cũ trong vòng một giờ** — tốn một lượt GPU thật để mua một
+> **con số chết**.
+
+⛔ **Và cả hai phiên đều ⛔ không sửa `3` thành `5`**, vì lý do họ ghi đúng hơn cả
+docstring: con số ấy là **vân tay của một lượt chạy thật**; gõ tay vào nó biến một
+**bằng chứng** thành một **lời khai**, và bài kiểm mất đúng khả năng nó sinh ra để
+có. ⭐ Đây là hình dạng tổng quát của mọi bánh cóc ghi dấu một lượt chạy: **sửa số
+cho hết đỏ là phá dụng cụ, ⛔ không phải sửa lỗi.**
+
+### 🔴 Và LUẬT ĐẾM tôi vừa ghi hôm nay CŨNG thiếu vế — sửa trong ngày
+
+Làn ASV phản biện, tôi **tự đo lại và họ đúng**: mẫu
+`grep -rnE "len\([^)]*\)\s*(>=|==|>)\s*19"` của tôi trả **0 kết quả** cho
+`test_1753:127`, vì nó đòi `len(` **cùng dòng** nên hình dạng *đếm-rồi-gán-biến*
+(`n = len(...)` rồi `assert n >= 19`) thoát hoàn toàn — và đó **đúng là** hình
+dạng tôi tìm ra bằng danh sách lỗi pytest, ⛔ không bằng phép grep ấy.
+
+⇒ Tôi đã mắc **đúng cái lỗi tôi đang chữa, dịch lên một bậc**: phép grep tìm 2/3
+ca rồi tôi trình bày nó như phương pháp đếm **đầy đủ**, và **ghi nó thành luật
+trong memory dùng chung** — nơi một luật thiếu vế có bán kính bằng **số agent
+đọc nó**.
+
+🔑 **Luật đúng: một phép grep là một GIẢ THUYẾT VỀ HÌNH DẠNG.** Viết xong phải
+hỏi thêm một câu — *"hình dạng nào của cùng đại lượng ấy sẽ thoát?"* Ba hình dạng
+thoát ở ca này: **đếm-gán-biến** · **`sum()` thay `len()`** · **hằng số ở tệp
+khác**. Và phải quét **vế bù** (`(>=|==|>)\s*19\b` **loại bỏ** dòng có `len(`) rồi
+mới được nói một họ đã đóng — hai phép quét rời nhau che hai hình dạng, một phép
+quét một mình chỉ đóng **miền mà mẫu của nó phủ**. Đã sửa tại
+`memory/dem-tu-thong-diep-loi-thay-vi-dem-khang-dinh.md`.
