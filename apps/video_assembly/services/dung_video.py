@@ -33,9 +33,20 @@ Phép đo parity phải là **dãy `(đoạn → clip)` đúng thứ tự**, kh�
 (1.520 dòng); ở đây việc ấy thuộc `ToolSpec.admission_resource` + `slots`.
 
 ⚠️ Món nợ đi kèm phải nhận: ngân sách `-n` **không đếm tiến trình cháu**. Ngày
-03/09 đo được **12 tiến trình `demucs`, mỗi cái 460–984% CPU**, vì
-`demucs_runner` không đặt `torch.set_num_threads`. Mọi phép kiểm nạp model thật
-phải nằm sau rào `LTT_TEST_NANG` (`tests/rao_chan_nang.py`).
+03/09 đo được **12 tiến trình `demucs`, mỗi cái 460–984% CPU**, vì lúc đó
+`demucs_runner` **chưa** đặt `torch.set_num_threads`.
+
+⭐ **Đã vá** — xem `demucs_runner.py:324` (`torch.set_num_threads(n)`, đặt
+TRƯỚC `apply_model`, xem hàm `_dat_tran_luong`). Nhưng bản vá đó **chỉ cho
+demucs**: đúng lớp lỗi lặp lại 25 ngày sau với `rapidocr-onnxruntime` (B10-4),
+làm máy treo hai lần trong một buổi chiều 28/09 — xem
+`docs/auto_scan_video_final/B12_TREO_MAY_VI_OCR_KHONG_KHAI_TRAN.md`. Không ai
+hỏi *"còn thư viện nào cũng mặc định lấy hết lõi?"* sau lần vá đầu; `tools/
+check_khai_tran_cpu.py` (B13 việc C4) là bánh cóc chặn cả LỚP lỗi này, không
+chỉ một cái tên thư viện.
+
+Mọi phép kiểm nạp model thật phải nằm sau rào `LTT_TEST_NANG`
+(`tests/rao_chan_nang.py`).
 """
 from __future__ import annotations
 

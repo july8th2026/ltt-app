@@ -27,6 +27,14 @@ async page => {
   const check = (dk, msg) => { if (!dk) loi.push(msg); };
   const soLieu = {};
 
+  // 🔴 DAT KHUNG NHIN TUONG MINH — ⛔ khong nhan trang thai sot lai.
+  //    Profile trinh duyet dung chung giua cac kich ban: `agent_ui_v2_ui3_mobile.js`
+  //    de lai 390x844, va o be rong do `readOnly=true` nen nut "Chay" bi
+  //    `disabled` => kich ban nay treo 30 giay roi chet voi mot thong diep
+  //    ⛔ khong he nhac toi khung nhin. Mot phep kiem phu thuoc thu tu chay la
+  //    mot phep kiem se do vi ly do sai.
+  await page.setViewportSize({width: 1536, height: 960});
+
   // ── Dang nhap (tai khoan fixture cua CHINH may chu thu nay) ───────────
   // ⚠️ Chay lai kich ban tren CUNG mot profile trinh duyet thi cookie phien
   //    truoc con song, va `/login` chuyen huong ngay => khong co `#login-username`.

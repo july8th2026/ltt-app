@@ -171,10 +171,13 @@ duoi mot giay. ⇒ Doc khung RIENG.
 """
 from __future__ import annotations
 
+import logging
 import os
 from typing import NamedTuple
 
 from platform_core.i18n import _ as _t
+
+_log = logging.getLogger(__name__)
 
 # ── V4a — logo/watermark TINH ────────────────────────────────────────────────
 
@@ -611,6 +614,51 @@ NGUON_LOGO = "logo_tinh"
 NGUON_DAI = "dai_chu"
 
 
+def _dai_chu_nhieu_tang(duong: str, *, tranh=()) -> KetQua:
+    """Dai chu goc: **OCR truoc, bien thien diem anh sau** (B10-4, 28/09).
+
+    🔴 **Vi sao doi thu tu.** `do_dai_chu` ⛔ khong doc chu — no suy tu bien
+       thien diem anh, va ba he qua deu do duoc tren phim nghiem thu:
+
+           chieu cao   15,5 % khung (ca video)   vs   5,5 % moi hop cua OCR
+           be ngang    100 % luon luon           vs   18,2 %
+           khung ⛔ khong chu   ⛔ khong biet      vs   3/24 nhan ra
+
+       ⇒ Che mo dang gap **~2,8 lan** chieu cao va **~5,5 lan** be ngang can
+       thiet. Chu du an nhin ra bang MAT truoc khi ta do duoc.
+
+    ⭐ Kho tham chieu xep cung thu tu, va ghi ly do: *"OpenCV (doan qua bien
+       thien pixel, ⛔ khong doc chu that → nham animation/do hoa dong thanh
+       'dai sub')"*. Chinh ta cung da do duoc gioi han ay 25/09 (HUD game).
+
+    🔑 **Ba trang thai, ⛔ DUNG gop** — xem `do_vung_ocr` dau tep:
+
+           nem `OcrLoiKyThuat`  -> CHUA quet duoc  -> **lui tang**
+           `KetQua` rong        -> da quet, ⛔ khong thay -> **TIN, dung o day**
+           co vung              -> che
+
+       ⛔ Gop hai ca dau la loi kho tham chieu ghi 31/07: nuot mot loi ky thuat
+       thanh *"video ⛔ khong co sub cung"* ⇒ ⛔ khong che ⇒ **lo chu Han**.
+
+    ⚠️ Va no la ca *"gop ve phia IM LANG"*: gop ve *"⛔ khong thay chu"* thi
+       hong **am tham** va khach nhan video lo chu; gop ve *"chua quet duoc"*
+       thi chi ton them mot tang do. Cung mot phep gop, hai cai gia lech hang
+       bac. ⇒ `except OcrLoiKyThuat` CHI bat dung lop do, ⛔ khong bat rong hon.
+    """
+    from . import do_vung_ocr
+
+    if not do_vung_ocr.co_san():
+        # ⛔ Chua cai = CHUA QUET, nen di thang xuong tang lui — ⛔ khong ket
+        #    luan *"⛔ khong co chu"*. Cung ly le voi `OcrLoiKyThuat`.
+        return do_dai_chu(duong, tranh=tranh)
+    try:
+        return do_vung_ocr.do_dai_chu_ocr(duong, tranh=tranh)
+    except do_vung_ocr.OcrLoiKyThuat as loi:
+        _log.warning("do vung: tang OCR ⛔ khong quet duoc (%s) — lui ve bo do "
+                     "bien thien diem anh", loi)
+        return do_dai_chu(duong, tranh=tranh)
+
+
 def de_xuat(duong: str, *, tranh=()) -> dict:
     """Mot **ĐE XUAT** cho khach xac nhan. ⛔ KHONG bao gio nem.
 
@@ -667,7 +715,7 @@ def de_xuat(duong: str, *, tranh=()) -> dict:
         #    che dieu do sau mot `if ten == ...`.
         logo = do_logo_tinh(duong)
         so_khung[NGUON_LOGO] = logo.so_khung
-        dai = do_dai_chu(duong, tranh=tranh)
+        dai = _dai_chu_nhieu_tang(duong, tranh=tranh)
         so_khung[NGUON_DAI] = dai.so_khung
     except DoVungLoi as loi:
         # ⛔ Mot chang hong = CA de xuat khong do duoc. ⛔ Khong tra ve nua ket

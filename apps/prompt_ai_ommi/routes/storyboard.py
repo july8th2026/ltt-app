@@ -307,3 +307,47 @@ def compare_scene_versions(request: Request, scene_id: str, left: int, right: in
                                      left=int(left), right=int(right))
     except Exception as exc:
         raise _storyboard_error(exc) from exc
+
+
+@router.post("/api/storyboards/{storyboard_id}/breakdown")
+async def breakdown_storyboard(request: Request, storyboard_id: str,
+                               _identity: str = Depends(require_login),
+                               db: Session = Depends(get_db)):
+    """Chia một câu chuyện tự do thành N cảnh theo khung storyboard (Task 10).
+
+    ⚠️ `storyboard_id` CHỈ dùng để xác nhận quyền sở hữu — `OmmiStoryboard`
+    (bảng "khung hình", spec Sec 4.3) KHÔNG có cột lưu "câu chuyện"; plan gốc
+    giả định `storyboard.story` nhưng cột đó không tồn tại (đã báo cáo lại,
+    xem báo cáo làm I). `story_vi` vì vậy phải do khách gõ trực tiếp trong
+    body của request này.
+    """
+    from apps.prompt_ai_ommi.services import breakdown as bsvc
+    from apps.prompt_ai_ommi.services import storyboard as ssvc
+    from apps.prompt_ai_ommi.tables import OmmiStoryboardFramework
+    body = await request.json(); _csrf(request, body); user = _user(request)
+
+    try:
+        ssvc.get_owned_board(db, storyboard_id, user.id)
+    except Exception as exc:
+        raise _storyboard_error(exc) from exc
+
+    framework = db.get(OmmiStoryboardFramework,
+                       str(body.get("framework_id") or ""))
+    if framework is None:
+        # Ban co dau that: "Không tìm thấy khung." (xem bao cao lam I).
+        raise HTTPException(status_code=404,
+                            detail=_t('Không tìm thấy khung.'))
+
+    story_vi = str(body.get("story_vi") or "").strip()
+    if not story_vi:
+        # Ban co dau that: "Thiếu nội dung câu chuyện." (xem bao cao lam I).
+        raise HTTPException(status_code=422,
+                            detail=_t('Thiếu nội dung câu chuyện.'))
+
+    n_scenes = body.get("n_scenes")
+    try:
+        scenes = bsvc.breakdown(db, framework=framework, story_vi=story_vi,
+                               n_scenes=int(n_scenes) if n_scenes else None)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {"scenes": scenes}

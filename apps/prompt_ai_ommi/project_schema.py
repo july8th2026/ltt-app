@@ -20,6 +20,20 @@ MAX_SCENES = 20
 #:    `MAX_SCENES` (canh kich ban) hay `storyboard.MAX_KHUNG_HINH` (khung
 #:    hinh) -- ba dai luong khac nhau tung cung dung con so 20/60.
 TOI_THIEU_KY_TU_BRIEF = 20
+
+#: Job type app nay dat khi sinh anh — MOT nguon chan ly.
+#:
+#: 🔴 Truoc 28/09 hang so nay duoc khai HAI lan: `routes/_shared.py` va
+#:    `services/composite.py`, kem mot ghi chu noi ro vi sao khong import cheo
+#:    (`services/` ⛔ khong nen phu thuoc nguoc vao `routes/`, no keo theo
+#:    FastAPI cho mot module thuan logic). Ghi chu dung, ket luan thi tam: cho
+#:    dung la mot lop THAP HON ma **ca hai** duoc phep import — tep nay, mot la
+#:    chi phu thuoc `i18n`.
+#:
+#: ⚠️ Doi gia tri o day la doi CA hai duong tinh tien (`credit_for`) va duong
+#:    doc lai (`job.job_type != ...`). Doi mot minh mot ben tung lam mot job
+#:    tinh tien dung roi bi cua doc tu choi.
+IMAGE_JOB_TYPE = "taoanh.generate"
 MAX_RESOURCES = 24
 MAX_VERSIONS = 8
 ASPECTS = ("16:9", "9:16", "1:1", "4:3", "3:4", "21:9")

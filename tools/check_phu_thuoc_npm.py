@@ -77,7 +77,14 @@ def _stdout_utf8() -> None:
 CHUA_CAI = frozenset({
     "frontend/autosub-studio",
     "frontend/chatltt",
-    "frontend/prompt-ai-ommi",
+    # ⭐ 28/09: `frontend/prompt-ai-ommi` DA RA khoi tap nay. Pha 3 cua PROMPT
+    #    AI dung frontend that o do (`StudioShell`/`BriefPane`), nen no da duoc
+    #    `npm ci` + `npm run build` chay that va bo kiem tu bao "co lai duoc".
+    #    Do la dung luat mot chieu cua tap nay, va no bo bot MOT buoc gate dang
+    #    bi `BOQUA` => do phu tang, khong giam.
+    # ⚠️ Cay nao chua cai thi bo kiem se DO va in san `cd frontend/prompt-ai-ommi
+    #    && npm ci`. Do la y muon: mot buoc bi bo qua im lang te hon mot buoc do
+    #    kem lenh sua.
 })
 
 

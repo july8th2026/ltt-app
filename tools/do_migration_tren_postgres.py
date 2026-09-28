@@ -177,7 +177,34 @@ def _xoa_csdl_nhap(live: str, ten_dang_chay: str) -> None:
         e.dispose()
 
 
+def _ep_utf8() -> None:
+    """Cho phep tieng Viet + emoji trong bao cao ngay ca khi stdout bi HUNG.
+
+    🔴 SU CO 28/09/2026. Buoc gate `migration tren postgres` do voi mot
+       `UnicodeEncodeError` o `cp1252` — **trong chinh dong `print` bao ket qua**:
+
+           print(f"    ⚠️ MIGRATION TAO ma MODEL KHONG KHAI: {thua}")
+           UnicodeEncodeError: 'charmap' codec can't encode characters in
+           position 4-5: character maps to <undefined>
+
+    ⭐ Va day moi la phan dat. `thua` chi la mot CANH BAO (`xau = bool(thieu)`),
+       nen lo ra dung phai bien thanh PASS kem mot dong canh bao. Cu chet trong
+       luc **bao cao** da bien mot canh bao thanh mot **buoc do**, va dong thoi
+       **giau mat noi dung** canh bao ay — nguoi doc thay mot traceback ve
+       encoding va ⛔ khong he biet co bang nao lech luoc do.
+
+       Mot cong cu do luong chet trong luc noi ket qua thi te hon mot cong cu
+       khong chay: no bao dong SAI va giu lai dung thong tin can de biet la sai.
+    """
+    for luong in (sys.stdout, sys.stderr):
+        try:
+            luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, ValueError):
+            pass
+
+
 def main() -> int:
+    _ep_utf8()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--giu", action="store_true",
                     help="giu lai CSDL nhap sau khi chay (mac dinh: xoa)")

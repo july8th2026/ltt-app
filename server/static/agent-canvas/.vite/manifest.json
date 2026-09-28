@@ -1,11 +1,59 @@
 {
+  "src/features/editor/CommandPalette.tsx": {
+    "file": "assets/CommandPalette-B8OJXHFq.js",
+    "name": "CommandPalette",
+    "src": "src/features/editor/CommandPalette.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "src/main.tsx"
+    ]
+  },
+  "src/features/editor/DesignerDiff/DesignerDiff.tsx": {
+    "file": "assets/DesignerDiff-dZux8M9s.js",
+    "name": "DesignerDiff",
+    "src": "src/features/editor/DesignerDiff/DesignerDiff.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "src/main.tsx"
+    ],
+    "css": [
+      "assets/DesignerDiff-C9Z3FYGn.css"
+    ]
+  },
+  "src/features/editor/LayersDrawer.tsx": {
+    "file": "assets/LayersDrawer-3DVAISEe.js",
+    "name": "LayersDrawer",
+    "src": "src/features/editor/LayersDrawer.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "src/main.tsx"
+    ]
+  },
+  "src/inspector/StepInspector.tsx": {
+    "file": "assets/StepInspector-B6eSUmZC.js",
+    "name": "StepInspector",
+    "src": "src/inspector/StepInspector.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "src/main.tsx"
+    ],
+    "css": [
+      "assets/StepInspector-BAYwirXn.css"
+    ]
+  },
   "src/main.tsx": {
-    "file": "assets/main-DNHOCxy6.js",
+    "file": "assets/main-BPj2J2Mk.js",
     "name": "main",
     "src": "src/main.tsx",
     "isEntry": true,
+    "dynamicImports": [
+      "src/features/editor/CommandPalette.tsx",
+      "src/features/editor/LayersDrawer.tsx",
+      "src/inspector/StepInspector.tsx",
+      "src/features/editor/DesignerDiff/DesignerDiff.tsx"
+    ],
     "css": [
-      "assets/main-t5V0FUxZ.css"
+      "assets/main-BvjQuzrR.css"
     ]
   }
 }

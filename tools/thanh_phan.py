@@ -235,6 +235,113 @@ def _module_duoc_import(tep: Path) -> set[str]:
     return ra
 
 
+def _route_prefix_da_khai(root: Path = ROOT) -> dict[str, str]:
+    """`{slug: route_prefix}` doc tu `apps/<slug>/manifest.py` bang AST.
+
+    ⭐ Day KHONG phai "doan tu ten" — thu bi cam o docstring dau tep. `route_prefix`
+    la mot BAN KHAI: chinh `platform_core/registry.py` dung no de gan router cua
+    app duoi `app.lttstudios.com`. Doc no la cung mot hanh vi voi doc `import`.
+    Va no CAN THIET vi nhieu app co prefix KHAC slug (`auto_scan_video` ->
+    `/auto-scan-video`), nen suy tu ten thu muc se sai.
+
+    ⚠️ Doc AST chu khong `import` — cung ly le voi `_module_duoc_import`.
+    """
+    ra: dict[str, str] = {}
+    thu_muc = root / "apps"
+    if not thu_muc.is_dir():
+        return ra
+    for muc in sorted(thu_muc.iterdir()):
+        if not muc.is_dir() or muc.name.startswith(("_", ".")):
+            continue
+        mf = muc / "manifest.py"
+        if not mf.is_file():
+            continue
+        cay = _ast_cua(mf)
+        if cay is None:
+            continue
+        for nut in ast.walk(cay):
+            if (isinstance(nut, ast.keyword) and nut.arg == "route_prefix"
+                    and isinstance(nut.value, ast.Constant)
+                    and isinstance(nut.value.value, str)
+                    and nut.value.value.startswith("/")):
+                ra[muc.name] = nut.value.value
+                break
+    return ra
+
+
+def _ast_cua(tep: Path):
+    """AST cua mot tep, hoac None. Cung khuon chan canh bao voi `_module_duoc_import`."""
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return ast.parse(tep.read_text(encoding="utf-8", errors="replace"),
+                             filename=str(tep))
+    except (SyntaxError, ValueError, OSError):
+        return None
+
+
+def _chuoi_hang_khong_docstring(cay) -> list[str]:
+    """Moi chuoi HANG trong AST, TRU docstring.
+
+    ⭐ Doc AST tra loi thang mot lo ngai co that: mot duong dan nam trong CHU THICH
+    khong duoc tinh. Chu thich ⛔ khong ton tai trong AST, nen chung vo hinh mien
+    phi. Docstring thi CO trong AST, nen phai bo tay — mot doan van ke ve
+    `/taovideo/prefill` khong phai mot lan GOI no.
+    """
+    bo_qua = set()
+    for nut in ast.walk(cay):
+        if isinstance(nut, (ast.Module, ast.ClassDef, ast.FunctionDef,
+                            ast.AsyncFunctionDef)):
+            than = getattr(nut, "body", None) or []
+            if (than and isinstance(than[0], ast.Expr)
+                    and isinstance(than[0].value, ast.Constant)
+                    and isinstance(than[0].value.value, str)):
+                bo_qua.add(id(than[0].value))
+    return [n.value for n in ast.walk(cay)
+            if isinstance(n, ast.Constant) and isinstance(n.value, str)
+            and id(n) not in bo_qua]
+
+
+def _app_go_qua_http(tep: Path, tien_to_sap: list[tuple[str, str]]) -> set[str]:
+    """App ma tep test nay go qua DUONG DAN HTTP, khong qua `import`.
+
+    🔴 VI SAO CO HAM NAY (do 27/09/2026). Do thi import khong thay
+    `client.post("/taovideo/prefill")` — do la mot CHUOI, khong mot canh import.
+    Do hai tang (dem, roi doi chieu voi chinh `--test app:<X>`): **50 tep test**
+    go mot app ma khong nam trong thanh phan cua app do. Ti le nang nhat:
+    `app:agent` liet ke 11 tep trong khi 21 tep khac go `/agent` — gan ba lan tap
+    da biet la vo hinh.
+
+    ⚠️ Vi trong phien chi chay **test nham** (hop dong §4, gate chi mot lan o cuoi
+    plan), lo nay nam trong **luoi an toan duy nhat** de gop `main`. Ca that:
+    `tests/test_5152_taovideo_prefill_route_and_queue.py` khang dinh tran anh cu
+    (`== 4`); khi tran len 9 no DO, nhung `--test app:taovideo` khong liet ke no.
+
+    ⭐ HAI QUY TAC KHOP, thieu mot la sai:
+      1. **Sap theo do dai GIAM** — `/agent` se an `/agent-dong-co/x` neu thu truoc.
+      2. **Ranh gioi doan** — sau tien to phai la het chuoi hoac `/`, `?`, `#`.
+         Khong co no thi `/agent` khop ca `/agentic-xyz`.
+
+    ⭐ CHIEU SAI AN TOAN: gan THUA (mot tep chi NHAC toi duong dan) lam luot test
+    nham TO hon — cung chieu voi `None` = fail-open o muc 3 docstring dau tep. Gan
+    THIEU moi la chieu nguy hiem, va do la chieu ham nay sua.
+    """
+    cay = _ast_cua(tep)
+    if cay is None:
+        return set()
+    ra: set[str] = set()
+    for s in _chuoi_hang_khong_docstring(cay):
+        if not s.startswith("/"):
+            continue
+        for app, tien_to in tien_to_sap:
+            if s.startswith(tien_to):
+                con = s[len(tien_to):]
+                if con == "" or con[0] in "/?#":
+                    ra.add(app)
+                    break
+    return ra
+
+
 def _module_sang_duong(mod: str, root: Path) -> str | None:
     """`apps.taoanh.features` -> `apps/taoanh/features.py` (hoac thu muc goi)."""
     phan = mod.split(".")
@@ -260,6 +367,10 @@ def test_cua_thanh_phan(root: Path = ROOT,
     thu_muc = root / "tests"
     if not thu_muc.is_dir():
         return ra
+    # Sap GIAM theo do dai mot lan cho ca vong lap: `/agent-dong-co` phai duoc
+    # thu truoc `/agent`, khong thi app dai hon bi app ngan hon an.
+    tien_to_sap = sorted(_route_prefix_da_khai(root).items(),
+                         key=lambda kv: -len(kv[1]))
     for tep in sorted(thu_muc.rglob("*.py")):
         # ⛔ CHI module test THAT. `tests/` con chua `__init__.py`, `conftest.py`,
         #    `pg_scratch.py`, `run_tests.py` va sau tep `tests/fixtures/*.py` —
@@ -282,6 +393,12 @@ def test_cua_thanh_phan(root: Path = ROOT,
             chu = thanh_phan_cua(duong, tp)
             if chu:
                 ra[chu].add(ten_tuong_doi)
+        # Canh THU HAI: test go app qua DUONG DAN HTTP chu khong qua import.
+        # Xem `_app_go_qua_http` — 50 tep test tung vo hinh voi do thi import.
+        for app in _app_go_qua_http(tep, tien_to_sap):
+            ten_tp = f"app:{app}"
+            if ten_tp in ra:
+                ra[ten_tp].add(ten_tuong_doi)
     return ra
 
 

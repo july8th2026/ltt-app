@@ -50,6 +50,32 @@ def bo_thi_hanh(loai: str):
     return _CHAY.get(str(loai))
 
 
+def _chay_trigger_thu_cong(db, run, node: dict, **_):
+    """`trigger.manual` — điểm BẮT ĐẦU vẽ được của mọi workflow.
+
+    Nó ⛔ không đọc tham số (lược đồ rỗng), ⛔ không gọi ra ngoài, ⛔ không tiêu
+    tiền. Việc duy nhất: **thành công ngay** và phát một `event` để node sau
+    tiêu thụ. Người dùng đã "kích hoạt" nó bằng chính cú bấm *Chạy*.
+
+    🔴 VÌ SAO HÀM NÀY PHẢI TỒN TẠI, KHÔNG CHỈ LÀ CỜ `publish_duoc`.
+
+       `dong_co._chay_mot_inline` xử ca thiếu bộ thi hành bằng:
+
+           sang="FAILED", error=f"loi_he_thong: {type!r} khong co bo thi hanh"
+
+       ⇒ Mở `publish_duoc` một mình sẽ cho ra một node **publish sạch rồi
+       FAILED lúc chạy** — tệ hơn hiện trạng, vì hiện trạng ít ra chặn TRƯỚC
+       khi khách bấm Chạy và giữ tiền. Đo 28/09 xác nhận cả hai vế.
+
+    ⚠️ `output` chỉ mang cổng RA THẬT (`KetQua` docstring). `trigger.manual`
+       khai đúng một cổng `event`, nên khoá ở đây là `event` — ⛔ không thêm
+       `_meta`, `ts` hay thứ gì palette không công bố.
+    """
+    from platform_core.workflow.nut_loi.chay import KetQua
+
+    return KetQua(output={"event": {"nguon": "thu_cong"}})
+
+
 dang_ky(NodeDefinition(
     type="trigger.manual", type_version=1, kind="trigger", category="TRIGGERS",
     title=N_("Chạy thủ công"),
@@ -59,8 +85,12 @@ dang_ky(NodeDefinition(
     cong_ra=(("event", he_kieu.Cong(type="event", required=True, nhan="event")),),
     tham_so={"type": "object", "properties": {}, "required": [],
              "additionalProperties": False},
+    # ⭐ MO 28/09 (Q11). Truoc do `False` voi ly do *"cho toi khi `bien_dich._node`
+    #    biet bien dich `core.*`"* — UI-0 Task 1 da lam dung viec do, va phep do
+    #    28/09 xac nhan no bien dich sach. Do la 0/7 trigger dung duoc truoc ban
+    #    va nay; moi workflow tren Canvas deu thieu diem bat dau.
     thi_hanh="inline", gia=Gia.mien_phi(), quyen=frozenset(),
-    cho=(), ma_loi=(), publish_duoc=False))
+    cho=(), ma_loi=(), publish_duoc=True), _chay_trigger_thu_cong)
 
 # ── Node điều khiển (plan wf-v2 P3) ──────────────────────────────────────────
 # Import ĐẶT CUỐI, sau `dang_ky`/`_SO`: các tệp node gọi ngược vào gói này.
@@ -127,6 +157,16 @@ from platform_core.workflow.nut_loi import connector as _connector  # noqa: E402
 #    `code_sandbox.py` tồn tại nhưng KHÔNG node nào trỏ tới nó (docstring
 #    module đó: *"CHƯA đăng ký"*) — dòng import dưới đây là chỗ nối duy nhất.
 from platform_core.workflow.nut_loi import code as _code  # noqa: E402,F401
+
+# ⭐ `trigger.schedule` + `trigger.webhook` (28/09/2026). CA HAI duong thuc thi DA
+#    SONG tu truoc (`ban_trigger` + `POST /hooks/wf/{id}`, deu co test); thieu duy
+#    nhat NODE de nguoi soan thay va keo len Canvas. Dong import nay la cho noi.
+#
+# ⚠️ Cung hinh dang `code_sandbox.py` o tren, va la lan thu TU trong mot ngay:
+#    ha tang xong, co test, KHONG ai noi. Mot module khong duoc import thi moi
+#    phep kiem cua no van xanh va tinh nang van khong ton tai.
+from platform_core.workflow.nut_loi import (  # noqa: E402,F401
+    trigger_lich_hook as _trigger_lich_hook)
 
 
 __all__ = ["THI_HANH_TRONG_DONG_CO", "bo_thi_hanh", "dang_ky", "tat_ca"]

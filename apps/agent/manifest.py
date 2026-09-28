@@ -62,8 +62,29 @@ MANIFEST = AppManifest(
     summary=N_('Biến mục tiêu thành kế hoạch nhiều bước, báo giá trước và chạy có kiểm soát.'),
     icon="✦",
     accent="#8B5CF6",
+    # ⭐ IA dich (`docs/architecture/agent_ui_v2/09_TARGET_DESIGN.md` §1, Q1=B):
+    #    SAU muc cap cao nhat. `built=False` la co san cua nen tang — `base.html`
+    #    tu dan huy hieu "Dang xay" canh nhan, nen mot muc chua lam KHONG phai
+    #    mot trang gia vo hoat dong.
+    #
+    # ⛔ KHONG con muc "Canvas" o day: trinh soan la mot muc CON cua mot
+    #    workflow (`/agent/workflows/{id}`), khong phai mot muc cap cao nhat —
+    #    do la chinh cho IA cu sai (`01_CURRENT_UI_AUDIT.md` §1.1: giao dien
+    #    khong co cua nao toi workflow thu hai). `/agent/canvas` van song nhu
+    #    mot loi vao khong-id (`test_1726`), no chi khong con nam tren nav.
     nav=(NavEntry("LTT Agent AI", "/agent", "✦", "agent"),
-         NavEntry("Canvas", "/agent/canvas", "◇", "agent_canvas")),
+         NavEntry(N_("Workflows"), "/agent/workflows", "◇", "agent_workflows"),
+         NavEntry(N_("Lượt chạy"), "/agent/runs", "🕘", "agent_runs",
+                  built=False),
+         # UI-9 (28/09): trang thật (danh mục mẫu), không còn "đang xây" —
+         # xem `apps/agent/routes/trang.py::trang_templates`.
+         NavEntry(N_("Mẫu"), "/agent/templates", "📚", "agent_templates"),
+         NavEntry(N_("Các kết nối"), "/agent/connections", "🔌",
+                  "agent_connections", built=False),
+         NavEntry(N_("Agent"), "/agent/agents", "✦", "agent_agents",
+                  built=False),
+         NavEntry(N_("Cài đặt Agent"), "/agent/settings", "⚙",
+                  "agent_settings", built=False)),
     job_types=(),
     requires=("api",),
     credit_cost=_orchestration_cost,

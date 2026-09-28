@@ -287,13 +287,18 @@ def test_gate_pham_vi_nhieu_HOP_test_va_buoc_chung_MOT_lan(monkeypatch, do_thi_n
     ten = [s.name for s in ra]
     assert len(ten) == len(set(ten)), f"buoc lap lai: {ten}"
     [buoc] = [s for s in ra if s.name == "bo test (pham vi)"]
-    tep = {x for x in buoc.argv if x.startswith("tests/")}
+    # ⭐ Doc `buoc.tep_test`, ⛔ KHONG loc `buoc.argv` bang `startswith("tests/")`.
+    #    Ban cu do CACH GO: tu 28/09 danh sach tep di qua `--tep-danh-sach` (tran
+    #    32 767 ky tu cua Windows, su co L2 1067 tep), nen mot phep loc `argv` se
+    #    lang le do MOT TAP RONG — va `set() == set()` o duoi van xanh.
+    tep = set(buoc.tep_test)
     mong = tp.test_can_chay(tp.mo_rong_pham_vi({a, b}, GOC), GOC)
     assert tep == mong
+    assert tep, "pham vi rong thi phep doi soat duoi day khong do gi"
     ra_a, _ = _thu_hep_voi(monkeypatch, [a])
     ra_b, _ = _thu_hep_voi(monkeypatch, [b])
-    tep_a = {x for s in ra_a if s.name == "bo test (pham vi)" for x in s.argv if x.startswith("tests/")}
-    tep_b = {x for s in ra_b if s.name == "bo test (pham vi)" for x in s.argv if x.startswith("tests/")}
+    tep_a = {x for s in ra_a if s.name == "bo test (pham vi)" for x in s.tep_test}
+    tep_b = {x for s in ra_b if s.name == "bo test (pham vi)" for x in s.tep_test}
     assert tep == tep_a | tep_b
     assert a in ghi_chu and b in ghi_chu
 

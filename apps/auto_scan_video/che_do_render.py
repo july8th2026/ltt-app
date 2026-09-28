@@ -595,7 +595,19 @@ def _loc_chu(lop_phu, duong_chu, nhan_vao: str, nhan_ra: str, *,
             #    dong chu chi biet duoc khi ffmpeg do font, nen "co tran ra
             #    ngoai khung khong" khong tra loi duoc o cong vao — va kep ve
             #    bien la dung sai lam `localize.py:675` da ghi.
-            f"x=W*{float(l['x']):.6f}",
+            #
+            # 🔴 **`x` la TAM chu, ⛔ khong phai mep trai (B9-2, 28/09).**
+            #
+            #    `drawtext` neo `x` o **mep trai** hop chu. Khach keo con truot
+            #    toi `0,5` nghi *"giua"* va nhan duoc mep trai o giua, tuc duoi
+            #    chu tran ra ngoai. Do tren T1a: *"LTT STUDIOS"* dat `x = 0,5`
+            #    hien ra **"LTT STUD"** tren MOI frame.
+            #
+            # ⭐ `text_w` la bien cua chinh `drawtext` — ffmpeg do font roi moi
+            #    thay vao, nen day la cho DUY NHAT be rong chu duoc biet. Dung
+            #    no ⛔ KHONG pha luat L3: ta van ⛔ khong `max`/`min` gi ca, nen
+            #    `x = 0` van cho chu tran sang TRAI dung nhu truoc.
+            f"x=(W*{float(l['x']):.6f})-text_w/2",
             f"y=H*{float(l['y']):.6f}",
         ]
         if l.get("vien"):

@@ -21014,6 +21014,18 @@ msgstr "Could not merge status: an execution path inside a deeply nested loop wa
 msgid "Không tìm thấy lượt chạy."
 msgstr "Run not found."
 
+#: apps/agent/routes/phe_duyet_v3.py
+msgid "Bước này không có điểm chờ người duyệt."
+msgstr "This step has no pending human-approval waitpoint."
+
+#: apps/agent/routes/phe_duyet_v3.py
+msgid "Quyết định phải là \"approve\" hoặc \"reject\"."
+msgstr "The decision must be \"approve\" or \"reject\"."
+
+#: apps/agent/routes/phe_duyet_v3.py
+msgid "Đã quá hạn chờ — hệ thống sẽ tự kết luận bước này trong giây lát."
+msgstr "The wait has expired — the system will conclude this step automatically in a moment."
+
 #: apps/agent/routes/runs_v3.py
 msgid "Lượt chạy đã kết thúc."
 msgstr "This run has already finished."
@@ -22142,6 +22154,32 @@ msgstr "merging feedback into the brief"
 msgid "Chưa chọn prompt meta."
 msgstr "No meta prompt selected."
 
+msgid "Mẫu dùng placeholder không hợp lệ hoặc chưa được khai báo: "
+msgstr "Template uses an invalid or undeclared placeholder: "
+
+msgid "Mẫu này cần ít nhất một ảnh tham chiếu."
+msgstr "This template needs at least one reference image."
+
+msgid "Không tìm thấy lượt sinh ảnh."
+msgstr "Image run not found."
+
+msgid "Không tìm thấy mẫu."
+msgstr "Template not found."
+
+msgid "Không tìm thấy khung."
+msgstr "Frame not found."
+
+msgid "Thiếu nội dung câu chuyện."
+msgstr "The story text is missing."
+
+msgid "Cảnh {n}"
+msgstr "Scene {n}"
+
+msgid "[TỰ ĐỘNG BÙ — AI chưa sinh đủ cảnh; cần chỉnh sửa hoặc chia lại trước khi dùng]"
+msgstr "[AUTO-FILLED - the AI did not produce enough scenes; edit or re-split before use]"
+
+msgid "[GỘP {n} CẢNH VƯỢT {target} — AI đã sinh nhưng bị cắt do vượt số lượng yêu cầu]:\n{text}"
+msgstr "[MERGED {n} SCENES OVER {target} - produced by the AI but cut for exceeding the requested count]:\n{text}"
 msgid "Bản dựng giai đoạn 1 không nhận hồ sơ biên tập: mọi phép biên tập (kể cả đổi tốc độ) thực thi ở giai đoạn 2."
 msgstr "The stage-1 render manifest does not accept an edit profile: every edit (including speed changes) runs in stage 2."
 
@@ -22181,8 +22219,8 @@ msgstr "Turn text into speech"
 msgid "Dựng storyboard câu chuyện"
 msgstr "Build a story storyboard"
 
-msgid "Sinh văn bản bằng LLM"
-msgstr "Generate text with an LLM"
+msgid "Sinh văn bản từ hội thoại"
+msgstr "Generate text from a chat"
 
 msgid "Soạn gói prompt nhiều cảnh"
 msgstr "Compose a multi-scene prompt pack"
@@ -22348,3 +22386,281 @@ msgstr "Issue a URL for an outside system to POST to, with a secret token in the
 #: apps/agent/templates/agent_triggers.html
 msgid "Cấp URL webhook mới"
 msgstr "Issue a new webhook URL"
+
+msgid "Vé tạm để gửi một cảnh sang app khác (ví dụ Tạo video): giữ bản sao prompt và danh sách ảnh tham chiếu trong 30 phút. Hết hạn là xoá, kể cả khi chưa ai đọc."
+msgstr "A short-lived ticket used to send one scene to another app (for example Video): it holds a copy of the prompt and the list of reference images for 30 minutes. Expiry means deletion, even if nobody read it."
+
+msgid "Mã chia sẻ khách sinh ra để gửi một mục của họ cho người khác: mã, loại mục, số lần đã dùng, hạn dùng, mốc thu hồi. Là bằng chứng ai đã mở cửa cho ai, nên nó sống theo tài khoản."
+msgstr "A share code the customer creates to send one of their items to someone else: the code, the kind of item, how many times it has been used, its expiry, and when it was revoked. It is the record of who opened a door for whom, so it lives with the account."
+
+msgid "Mẫu sinh ảnh: câu prompt có ô trống, tỉ lệ, số ảnh mỗi lượt. Khách tự viết hoặc clone từ mẫu gốc rồi sửa — bản thảo của họ."
+msgstr "An image template: a prompt with blanks, an aspect ratio, and how many images per run. Customers write their own or clone a starter template and edit it - their draft."
+
+msgid "Khung dựng storyboard: phần mở đầu, luật ghép, đoạn phủ định, và lời nhắc dùng khi chia cảnh tự động. Khách sửa được từng phần."
+msgstr "A storyboard framework: the opening section, the composition rules, the negative footer, and the prompt used when splitting scenes automatically. Customers can edit each part."
+
+msgid "Mẫu khách lưu lại từ một lượt đã chạy: prompt cuối, phong cách và model đã dùng, điểm khách tự đánh giá. Giữ để họ tra lại vì sao một lượt cho kết quả tốt."
+msgstr "A sample the customer saved from a run: the final prompt, the style and model used, and the rating they gave it. Kept so they can look up why a particular run came out well."
+
+msgid "Bộ thiết lập sẵn của khách: phong cách nào, meta-prompt nào, lọc theo nhãn nào. Một lối tắt họ tự đặt để khỏi chọn lại mỗi lần."
+msgstr "A customer's preset: which style, which meta-prompt, which tag filter. A shortcut they define so they do not have to pick again every time."
+
+msgid "Một lượt sinh ảnh: tham số đã gửi, mẫu đã dùng, phiên bản thứ mấy và bản nào là cha nó. Giữ để khách so hai bản và quay lui."
+msgstr "One image run: the parameters sent, the template used, which version it is and which version is its parent. Kept so the customer can compare two versions and roll back."
+
+msgid "Bản chụp một tài nguyên khách đã xoá, giữ 30 ngày để họ đổi ý. Khôi phục trả lại tài nguyên và biến thể của nó, ⛔ không trả lại nhãn hay liên kết bộ sưu tập. Quá 30 ngày là xoá vĩnh viễn, kể cả tệp trên kho."
+msgstr "A snapshot of a resource the customer deleted, kept 30 days in case they change their mind. Restoring returns the resource and its variants, but not its tags or collection links. After 30 days it is deleted for good, including the file in storage."
+
+msgid "services.bao_tri.bao_tri, mỗi giờ"
+msgstr "services.bao_tri.bao_tri, hourly"
+# ── UI-1 · LTT Automation Studio (IA dich `09_TARGET_DESIGN.md` §1, 28/09/2026) ──
+# Tu vung: step · workflow · run · connection. ⛔ khong 'block', 'node', 'tool'.
+
+msgid "Workflows"
+msgstr "Workflows"
+
+msgid "Lượt chạy"
+msgstr "Runs"
+
+msgid "Các kết nối"
+msgstr "Connections"
+
+msgid "Agent"
+msgstr "Agents"
+
+msgid "Cài đặt Agent"
+msgstr "Agent settings"
+
+msgid "AI Studio"
+msgstr "AI Studio"
+
+msgid "Mở Workflows"
+msgstr "Open Workflows"
+
+msgid "Tên workflow"
+msgstr "Workflow name"
+
+msgid "Tổng số workflow"
+msgstr "Total workflows"
+
+msgid "Khớp"
+msgstr "Matching"
+
+msgid "Xoá bộ lọc"
+msgstr "Clear filter"
+
+msgid "Sửa lần cuối"
+msgstr "Last edited"
+
+msgid "Bản nháp"
+msgstr "Draft"
+
+msgid "Đã xuất bản"
+msgstr "Published"
+
+msgid "(bản sao)"
+msgstr "(copy)"
+
+msgid "Mã theo dõi nội bộ"
+msgstr "Internal tracking code"
+
+msgid "Mục này chưa làm xong"
+msgstr "This section is not finished"
+
+msgid "Về danh sách workflow"
+msgstr "Back to the workflow list"
+
+msgid "Mỗi workflow là một chuỗi bước bạn dựng và chạy được. Mở một workflow để sửa, hoặc tạo một workflow mới."
+msgstr "Each workflow is a chain of steps you build and can run. Open a workflow to edit it, or create a new one."
+
+msgid "Bạn chưa có workflow nào. Tạo một workflow mới để bắt đầu dựng các bước trong Canvas."
+msgstr "You do not have any workflow yet. Create a new workflow to start building steps in the Canvas."
+
+msgid "Không có workflow nào khớp tên đang tìm."
+msgstr "No workflow matches the name you searched for."
+
+msgid "Không tạo được workflow. Thử lại, hoặc tải lại trang."
+msgstr "Could not create the workflow. Try again, or reload the page."
+
+msgid "Dựng một chuỗi bước chạy được: mỗi bước làm một việc, workflow nối chúng lại. Báo giá hiện ra trước khi chạy, chưa duyệt thì không giữ credit."
+msgstr "Build a chain of steps you can run: each step does one job, the workflow links them together. The quote appears before the run, and nothing holds credit until you approve it."
+
+msgid "Workflows là nơi bạn xem, tìm và mở các workflow của mình. Mở một workflow ra là vào Canvas — chỗ bạn thêm bước, nối chúng với nhau và chạy thử."
+msgstr "Workflows is where you browse, search and open your own workflows. Opening one takes you into the Canvas, where you add steps, link them together and test a run."
+
+msgid "Lượt chạy, Mẫu, Các kết nối và Agent đã có chỗ trong thanh mục phía trên; những mục đó còn đang xây và trang của chúng nói rõ điều đó."
+msgstr "Runs, Templates, Connections and Agents already have a place in the menu above; those sections are still being built and their pages say so."
+
+msgid "Phần này đã có chỗ trong điều hướng nhưng nội dung chưa được dựng. Trang này nói thẳng điều đó thay vì hiện một danh sách trống trông như đã hoạt động."
+msgstr "This section already has a place in the navigation, but its content has not been built. This page says so outright instead of showing an empty list that looks like it works."
+
+msgid "Lịch sử mọi lượt chạy của bạn: lọc theo trạng thái, mở lại một lượt để xem từng bước."
+msgstr "The history of all your runs: filter by status, reopen a run to inspect it step by step."
+
+msgid "Mẫu chạy được: mở một mẫu ra là một workflow thật của bạn, sửa được ngay."
+msgstr "Templates you can run: opening one gives you a real workflow of your own, editable straight away."
+
+msgid "Kết nối tới dịch vụ ngoài để một bước dùng lại mà không phải dán khoá mỗi lần."
+msgstr "Connections to outside services, so a step can reuse one instead of you pasting a key every time."
+
+msgid "Soạn workflow bằng cách mô tả mục tiêu, xem bản đề xuất rồi chọn nhận hay bỏ."
+msgstr "Compose a workflow by describing the goal, review the proposal, then choose to accept or discard it."
+
+msgid "Giao diện, ngôn ngữ và các giá trị mặc định cho workflow mới."
+msgstr "Theme, language and the defaults for a new workflow."
+
+# -- Luu tru workflow (dieu phoi UI, 28/09/2026) --
+# Tu vung: archive (kho) / restore (mo lai). ⛔ khong 'delete':
+# luu tru KHONG xoa gi ca, va mot nhan sai o day lam khach
+# tuong minh vua mat du lieu.
+
+msgid "Kho lưu trữ"
+msgstr "Archive"
+
+msgid "Mở lại"
+msgstr "Restore"
+
+msgid "Đã lưu trữ"
+msgstr "Archived"
+
+msgid "Về danh sách đang dùng"
+msgstr "Back to the active list"
+
+msgid "Kho lưu trữ đang trống. Không có workflow nào bị cất đi."
+msgstr "The archive is empty. No workflow has been put away."
+
+msgid "Các workflow bạn đã cất đi. Chúng không chạy được và không hiện ở danh sách chính, nhưng không bị xoá — mở lại là dùng được ngay."
+msgstr "The workflows you have put away. They cannot run and do not appear in the main list, but they are not deleted — restore one and it works straight away."
+# Cua ket noi cua khach (lan UI-5, apps/agent/routes/ket_noi_v3.py)
+msgid "Loại kết nối không được hỗ trợ."
+msgstr "That connection type is not supported."
+
+msgid "Thiếu thông tin bí mật."
+msgstr "The secret details are missing."
+
+msgid "Nhà cung cấp không hợp lệ."
+msgstr "That provider is not valid."
+
+msgid "Tầng xác thực không hợp lệ."
+msgstr "That authentication tier is not valid."
+
+msgid "LTT chưa cấu hình cho nhà cung cấp này. Hãy tự mang ứng dụng của bạn."
+msgstr "LTT has not configured this provider yet. Please bring your own app."
+
+msgid "Thông tin kèm theo không hợp lệ."
+msgstr "The accompanying details are not valid."
+
+msgid "Không tạo được kết nối."
+msgstr "The connection could not be created."
+
+msgid "Không tìm thấy kết nối."
+msgstr "Connection not found."
+
+msgid "Token"
+msgstr "Token"
+
+msgid "Client ID"
+msgstr "Client ID"
+
+msgid "Client Secret"
+msgstr "Client Secret"
+
+msgid "JSON khoá dịch vụ"
+msgstr "Service account JSON key"
+
+# -- Mau workflow (lan UI-9, 28/09/2026) --
+# Tu vung: template (mau) / Use this template (dung mau nay).
+# ⛔ khong 'blueprint', 'preset': ba tu do noi ve mot thu KHONG doi
+#    duoc, con mot mau o day mo ra thanh workflow SUA DUOC cua khach.
+
+msgid "Sinh ảnh nhanh"
+msgstr "Quick image"
+
+msgid "Ý tưởng thành video"
+msgstr "Idea to video"
+
+msgid "Viết rồi đọc thành giọng nói"
+msgstr "Write, then read aloud"
+
+msgid "Bấm Chạy là có ngay một tấm ảnh từ một câu mô tả. Mẫu đơn giản nhất để làm quen với Canvas."
+msgstr "Press Run and you get an image from a single description. The simplest template for getting to know the Canvas."
+
+msgid "Một câu mô tả ⇒ ảnh ⇒ video ngắn ⇒ lồng tiếng ⇒ ghép lại thành một video hoàn chỉnh. Bốn bước AI nối liền — luồng đầy đủ nhất trong danh mục này."
+msgstr "One description becomes an image, a short video, a voice-over, and then a finished video. Four AI steps in a row — the most complete flow in this catalogue."
+
+msgid "AI viết một đoạn văn bản theo yêu cầu, rồi chuyển thẳng thành một bản ghi âm giọng đọc. Hai bước, rẻ, dùng lại được cho mọi chủ đề chỉ bằng cách sửa câu mô tả."
+msgstr "AI writes a passage to your brief, then turns it straight into a voice-over recording. Two steps, cheap, and reusable for any topic just by editing the description."
+
+msgid "Một tấm ảnh minh hoạ đẹp cho ý tưởng của bạn — sửa mô tả này rồi bấm Chạy thử."
+msgstr "A nice illustration for your idea — edit this description, then press Test run."
+
+msgid "Ảnh mở đầu cho video của bạn — sửa mô tả cảnh ở đây."
+msgstr "The opening image for your video — edit the scene description here."
+
+msgid "Đây là lời dẫn cho video của bạn — sửa nội dung này rồi chọn giọng đọc ở tab Cấu hình."
+msgstr "This is the script for your video — edit the wording, then pick a voice on the Settings tab."
+
+msgid "Biến ảnh trên thành một đoạn video ngắn, chuyển động mượt, camera tĩnh."
+msgstr "Turn the image above into a short video with smooth motion and a static camera."
+
+msgid "Dùng mẫu này"
+msgstr "Use this template"
+
+msgid "Chưa có mẫu nào."
+msgstr "There are no templates yet."
+
+msgid "Mở một mẫu ra là một workflow thật của bạn — sửa được ngay, không cần dựng từ đầu."
+msgstr "Opening a template gives you a real workflow of your own — editable straight away, with nothing to build from scratch."
+
+msgid "Không tạo được workflow từ mẫu này. Thử lại, hoặc tải lại trang."
+msgstr "Could not create a workflow from this template. Try again, or reload the page."
+
+msgid "Ước"
+msgstr "Est."
+
+# -- ASV: bo doc chu (OCR) — dieu phoi UI dich ho de go chan cong
+#    `pre-commit --all-files` tren `main` (28/09). ⚠️ Tu vung thuoc
+#    mien ASV: toi chon "text reader (OCR)" cho "bo doc chu" va
+#    "region" cho "vung". Phien ASV sua lai neu mien ho dung tu khac.
+
+msgid "Chưa cài bộ đọc chữ trên máy chủ."
+msgstr "The text reader (OCR) is not installed on this server."
+
+msgid "Không khởi động được bộ đọc chữ."
+msgstr "Could not start the text reader (OCR)."
+
+msgid "Không đọc được khung hình nào để dò vùng."
+msgstr "Could not read any frame to detect the region."
+
+msgid "Bộ đọc chữ lỗi trên mọi khung hình đã thử."
+msgstr "The text reader (OCR) failed on every frame that was tried."
+
+msgid "AI viết mô tả rồi sinh ảnh"
+msgstr "AI writes the description, then generates the image"
+
+msgid "Bạn cho một ý tưởng ngắn; AI viết thành câu mô tả chi tiết, rồi câu đó đi thẳng sang bước sinh ảnh. Mẫu để thấy hai bước AI nối vào nhau."
+msgstr "You give a short idea; AI turns it into a detailed description, and that description feeds straight into the image step. A template for seeing two AI steps wired together."
+
+msgid "Viết một câu mô tả ảnh thật chi tiết cho ý tưởng sau, chỉ trả về câu mô tả: một quán cà phê Hà Nội buổi sáng sớm."
+msgstr "Write one very detailed image description for the following idea, and return only that description: a Hanoi coffee shop in the early morning."
+
+msgid "Chạy theo lịch"
+msgstr "Run on a schedule"
+
+msgid "Tự chạy theo lịch bạn đặt, kể cả khi bạn không mở máy. Mỗi lượt tiêu credit như một lần chạy tay."
+msgstr "Runs itself on the schedule you set, even while your machine is off. Each run costs credits just like a manual run."
+
+msgid "Biểu thức lịch, ví dụ `0 8 * * *` là 8 giờ sáng mỗi ngày."
+msgstr "A schedule expression; `0 8 * * *` means 8 AM every day."
+
+msgid "Múi giờ tính lịch."
+msgstr "The time zone the schedule is computed in."
+
+msgid "Nếu máy chủ ngừng và lịch bị lỡ: chạy một lần bù, hay bỏ qua."
+msgstr "If the server was down and a scheduled time was missed: run once to catch up, or skip it."
+
+msgid "Nhận webhook"
+msgstr "Receive a webhook"
+
+msgid "Một hệ thống khác gọi vào địa chỉ riêng của workflow này để chạy nó. Địa chỉ và khoá lấy ở phần cấu hình trigger."
+msgstr "Another system calls this workflow's own address to run it. The address and key live in the trigger settings."

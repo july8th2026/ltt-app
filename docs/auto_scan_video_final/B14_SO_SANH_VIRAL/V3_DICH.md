@@ -1,0 +1,117 @@
+# V3 — Dịch · ngữ cảnh · thuật ngữ · phát hiện ngôn ngữ · Giản/Phồn thể
+
+Thang chấm dùng chung: `00_THANG_CHAM.md`. ⛔ Không sửa mã sản phẩm, ⛔ không chạy gì, `D:\Viral` chỉ đọc.
+
+## Đã đọc / chưa đọc
+
+**Đã đọc kỹ (đọc hết dòng):** `ai_dich.py` (1.413 dòng, cả file) · `dich_gemini_web.py` các khối
+`doc_srt`..`_bo_think` (dòng 1-260, 754-1006), `doc_tm` (272-286), khối trần độ dài/nhịp đọc
+(144-238), khối chống-gộp-câu + chống-lẫn-mã (1335-1664) · `zhconv/zhconv.py` (478, cả file) ·
+`_langdet_worker.py` (23, cả file) · `_lang_overrides.py` + `_gen_lang_en.py` (cả hai, cả file).
+Phía ta: `dich_thuat.py`, `ngon_ngu.py`, `ho_so_dich.py`, `ho_so_noi_dung.py` (cả bốn, cả file) ·
+`nan_cho_vua.py` (đọc `loi_nhac_nan_lo`/`doc_nan_lo`, dòng 295-430) · `ai.py` (đọc `doc_json`/`goi`,
+dòng 550-830) · `platform_core/llm/the_suy_nghi.py` (đọc để đối chiếu `_bo_think`).
+
+**⛔ Chưa đọc / chưa kiểm:** `dich_gemini_web.py` dòng 300-754 (điều khiển Chromium — LỚP NỐI, đã
+xác nhận qua tên hàm là ⛔ không áp dụng, không đọc chi tiết) và 1665-3288 (`_ghep`, `dich_srt`,
+`_prompt_phan_tu`, `main` — lô ghép cuối + CLI, thời gian không đủ đọc hết 1.600 dòng còn lại; các
+hàng dưới đã lấy đủ bằng chứng từ phần đã đọc). `ocr_text.py`/`_whisper_worker.py` của TA ngoài
+phạm vi tệp của làn này — một phát hiện liên quan được ghi ở hàng 11 để báo điều phối.
+
+## ⚠️ KIỂM BIÊN "module Render" — tự kiểm theo yêu cầu điều phối (⛔ không tin lời điều phối)
+
+Biên = mọi thứ với tới được từ `xu_ly_chon.main()`; `render_worker.py`/`xu_ly_chon.py`/`localize.py`/
+`xu_ly_video.py`/`phu_de.py` là xương sống đã CHỐT sẵn. Tự chạy đúng lệnh điều phối đưa
+(`grep -n "ai_dich" render_worker.py xu_ly_chon.py localize.py xu_ly_video.py phu_de.py`) rồi đọc
+NGỮ CẢNH quanh mỗi khớp (không dừng ở việc đếm dòng khớp) — kết luận **NGƯỢC** với phỏng đoán ban đầu
+của điều phối cho `ai_dich.py`:
+
+| tệp | có bị gọi từ xương sống không | neo |
+|---|---|---|
+| `ai_dich.py` | **CÓ — TRONG biên.** `localize.py:16990 import ai_dich as _adk` (đường dịch chính bằng API key, mặc định BẬT — `AI_KEY_DICH` mặc định `"1"`, chủ dự án Viral chốt 01/09 *"ai thêm api key thì đường này mặc định"*) và `localize.py:17631 import ai_dich as _ad` (lớp bù câu Gemini web bỏ sót, mặc định BẬT — `GEM_KEY_BU` mặc định `"1"`, khôi phục 07/08 sau khi gỡ nhầm 31/07). Cả hai là **import muộn trong thân hàm, ⛔ không phải mã chết**: nhánh cũ duy nhất bị gỡ thật (31/07, `elif dung_ai:` — dịch NGUYÊN video bằng `ai_dich` kiểu VideoLingo) khác với hai điểm gọi này, sinh SAU (07/08 và 01/09) — comment "đã gỡ hẳn" ở dòng 16414/16895/16948/16956/16958/18012 nói về nhánh CŨ đó, ⛔ không nói về hai điểm gọi đang sống. ⇒ **Mọi hàng 1, 2, 3, 5, 6, 9 dưới đây (dựa trên `ai_dich.py`) GIỮ NGUYÊN trong bảng, không dời.** |
+| `dich_gemini_web.py` | **CÓ — TRONG biên.** 3 điểm gọi điều phối đã nêu (`localize.py:3488, 3532, 3899`) — tự xác nhận đúng, đây là đường dịch DUY NHẤT khi không có API key (mặc định của MỌI khách Viral, "chỉ dùng bản web miễn phí" — `localize.py:17641`) |
+| `zhconv` | **CÓ — TRONG biên.** `localize.py:324 from zhconv import convert as _zhconvert` — dùng cho DEDUP (xem hàng 10, đã nâng từ "chưa kiểm" lên bằng chứng cụ thể) |
+| `_langdet_worker.py` | **CÓ — TRONG biên.** `localize.py:1000 worker = os.path.join(THU_MUC_GOC, "_langdet_worker.py")` — spawn subprocess dò ngôn ngữ, gọi từ `localize.py:964-1000` |
+| `_lang_overrides.py` | **KHÔNG — NGOÀI biên.** 0 khớp trong cả 5 tệp xương sống | dời xuống mục "⛔ Ngoài module Render" |
+| `_gen_lang_en.py` | **KHÔNG — NGOÀI biên.** 0 khớp trong cả 5 tệp xương sống | dời xuống mục "⛔ Ngoài module Render" |
+
+⭐ **Bài học đúng bẫy "đọc thứ đại diện thay vì đọc thứ thật":** phỏng đoán của điều phối dựa trên
+việc KHÔNG thấy `ai_dich` trong 5 tệp xương sống — đúng ở việc ĐẾM (0 khớp ở `render_worker.py`,
+`xu_ly_chon.py`, `xu_ly_video.py`, `phu_de.py`), nhưng SAI ở kết luận vì `localize.py` (một trong
+chính 5 tệp xương sống) CÓ 2 khớp sống. Đây là đúng lý do lệnh gốc yêu cầu tự kiểm thay vì tin lời kể.
+
+### ⚠️ Điều phối phản biện lần 2 (dựa trên 4 chú thích 🗑) — đã tự kiểm lại, GIỮ NGUYÊN kết luận "TRONG biên"
+
+Điều phối nêu 4 chú thích `🗑 31/07/2026 ... ĐÃ GỠ HẲN` (`localize.py:15986, 16414, 16895, 16948`) và
+suy ra `import ai_dich` chỉ còn trong CHÚ THÍCH. Đã tự kiểm lại bằng `cat -A` (bắt lỗi ẩn: comment giả
+dạng code hoặc thụt lề sai) trên đúng hai dòng bị nghi — **cả hai LÀ MÃ THẬT, ⛔ không phải chú thích**
+(không có tiền tố `#`, nằm trong `try:`/`if:` thật, xem raw bytes đã kiểm):
+
+```
+localize.py:16988   if os.environ.get("AI_KEY_DICH", "1") != "0" and not vis:
+localize.py:16990        import ai_dich as _adk
+localize.py:17624   if _con and os.environ.get("GEM_KEY_BU", "1") != "0":
+localize.py:17631        import ai_dich as _ad
+```
+
+**Mốc thời gian giải thích vì sao cả hai đúng — không mâu thuẫn nhau:**
+- `31/07/2026` (`6aeac96`): gỡ NHÁNH CŨ — engine `'ai'` chọn được trong UI, dịch NGUYÊN video kiểu
+  VideoLingo đa provider (`elif dung_ai:`). 4 chú thích 🗑 điều phối trích đều nói về nhánh CŨ này.
+- `07/08/2026`: dòng `localize.py:17613 ♻ KHÔI PHỤC lớp "bù câu sót bằng API KEY" (gỡ 31/07 ở
+  `6aeac96`, nay chèn lại NGUYÊN VĂN)` — tự nhận là khôi phục sau gỡ, tạo ra `:17631`.
+- `01/09/2026`: dòng `localize.py:16977 ═══ DỊCH BẰNG API KEY (01/09/2026 — chủ dự án: "ai thêm api
+  key thì đường này mặc định") ═══` — thêm MỚI, tạo ra `:16990`.
+- ⚠️ Chú thích ở `localize.py:18012` ("...`ai_dich`/GEM_KEY_BU đã GỠ HẲN 31/07/2026...") là **CHÚ
+  THÍCH CŨ CÒN SÓT** — viết trước `07/08`, ⛔ chưa được cập nhật sau khi `GEM_KEY_BU` được khôi phục;
+  tự nó là một minh chứng khác cho luật kho *"đọc thứ đại diện (chú thích) thay vì đọc thứ thật (mã
+  chạy)"* — lần này rơi đúng vào phía điều phối, không phải phía làn này.
+- `AI_KEY_DICH`/`GEM_KEY_BU` mỗi biến chỉ xuất hiện đúng 2 lần trong TOÀN BỘ `localize.py` (khai báo +
+  1 dòng chú thích "Tắt:") — ⛔ không có lần gỡ/khoá nào sau `01/09`.
+
+⇒ **Giữ nguyên**: `ai_dich.py` TRONG biên, hàng 1/2/3/5/6/9 KHÔNG dời. Ghi nhận cảnh giác của điều
+phối là đúng LUẬT (chú thích 🗑 có thể lừa), chỉ SAI ở ca cụ thể này vì chưa đọc mốc thời gian sau nó.
+
+---
+
+## Bảng
+
+| HẠNG MỤC | BƯỚC ASV | VIRAL CÓ GÌ | TA CÓ GÌ | TRẠNG THÁI | GIÁ TRỊ | GIÁ | ĐỀ NGHỊ |
+|---|---|---|---|---|---|---|---|
+| 1. Glossary sửa lỗi ĐỒNG ÂM của ASR trước khi dịch | content_process | `ai_dich.py:1290-1336 _tom_tat_glossary` — TRONG biên, xem mục kiểm biên (đường dịch API key mặc định BẬT từ 01/09, `localize.py:16990`). Bước 0 đọc cả transcript, xin `THEME` + bảng `TERMS`, dặn riêng: nếu thấy thuật ngữ bị NGHE NHẦM đồng âm (ASR đúng ngữ pháp, sai nghĩa) thì ghi `chữ_sai => nghĩa ĐÚNG`. Đo thật 01/09 (gemini-3.1-flash-lite, 300 cue đầu, TRÊN chính đường dịch đang sống): model tự bắt **8/8** lỗi đồng âm đã liệt kê (vd `武林根→五灵根`, `根国清政→根骨清正`) — không có câu dặn này thì `五灵根` dịch sai **0/3** | `ho_so_dich.py:85-143 dung()` — MỘT lời gọi/video hỏi `the_loai/so_nguoi_noi/bang_dai_tu/bang_ten_rieng/giong_van`, KHÔNG hỏi model soát lỗi nghe nhầm của ASR nguồn | THIẾU | 4 +đo | 2 | LẤY NGAY — ghép thêm 1 khoá + 1 đoạn dặn vào ĐÚNG lời gọi `ho_so_dich.dung` đã trả tiền sẵn (không thêm lời gọi model mới, không thêm chi phí) |
+| 2. Trần phát hiện dịch PHÌNH/bịa (bloat guard) | content_process | `ai_dich.py:1062-1077 _parse_lo` — câu dịch dài **>10× đơn vị nguồn VÀ** tuyệt đối **>90 ký tự (đích alphabet) / >60 (đích CJK)** → coi là AI "kể/bịa", xoá để dịch bù | `dich_thuat.py:189-220 _doc_ban_dich` chỉ kiểm ĐỦ mã + không rỗng — KHÔNG so độ dài câu dịch với câu gốc | THIẾU | 3 | 1 | LẤY NGAY (lệch công thức §7 có lý do: GIÁ=1 — một hàm thuần so ký tự, không phụ thuộc mới — nên rẻ đến mức không cần đợi) |
+| 3. Trần độ dài THEO MẬT ĐỘ NGUỒN, cộng thêm trần vật lý | content_process (trước TTS, khác pha `nan_cho_vua` là SAU TTS) | `dich_gemini_web.py:155-184 tran_tu_dich` — trần = `min(giây × wps_max, số_âm_tiết_nguồn × 0,75)`; `0,75` đo thật (Gemini tự nén còn 0,70-0,79× số âm gốc trên 2 loại video khác mật độ) | `ngon_ngu.py:150-164 ngan_sach_do_dai` chỉ có trần VẬT LÝ (`giây×NHIP×0,92`), không có trần theo mật độ nguồn — và chính `ngon_ngu.py:74-77` ghi nhận cái giá của việc THIẾU cỡ này: NHIP sai từng làm **751/943 giây** của giai đoạn GIỌNG là vòng `rút_ngắn_cho_vừa` sửa lại | THIẾU | 4 +đo | 2 | LẤY NGAY — một hàm thuần dùng lại `NHIP` đã có, ghép vào `loi_nhac_nan_lo`/lời nhắc dịch; giảm số vòng nắn-cho-vừa tốn kém đã đo được |
+| 4. ⭐ Trần độ dài TRONG LỜI NHẮC có ghìm được model ⛔ không — phát hiện giá trị nhất của làn | content_process / VIẾT DẦU | `dich_gemini_web.py:1522-1546` — A/B THẬT 36 lô · 3 video mật độ khác nhau · so CẶP cùng video/cùng vòng: nêu mục tiêu nhịp lệch **+0,019** từ/giây (6/12 cặp có lợi = tung đồng xu), thêm neo "≤N từ" còn **-0,069** (tệ hơn); biến động GIỮA CÁC VÒNG của CÙNG nhánh (0,13-0,67) **lớn hơn** mọi chênh lệch giữa nhánh (0,02-0,09) ⇒ kết luận: mật độ dịch do NỘI DUNG NGUỒN quyết, ⛔ không nằm ở lời nhắc | `nan_cho_vua.py:295-369 loi_nhac_nan_lo` đặt thẳng `do_dai_toi_da` (một SỐ ĐẾM ĐƯỢC, xem `ngon_ngu.ngan_sach_do_dai`) vào lời nhắc, với giả định ngầm là con số này ghìm được độ dài | KHÁC THIẾT KẾ (nhưng là dòng CẢNH BÁO, không phải tính năng để mượn) | 4 | 1 | LẤY NGAY **việc ĐO LẠI** `do_dai_toi_da` trên chính `ltt_llm` bằng đúng phương pháp so-cặp của Viral, trước khi tin thêm vào cơ chế — ⛔ model/TTS khác hẳn nên KHÔNG thể suy thẳng kết luận của Viral cho ta, nhưng phép đo thì rẻ (vài chục lô) so với việc tiếp tục xây trên một giả định chưa kiểm |
+| 5. Phát hiện GỘP CÂU qua độ dài bất thường TRONG CÙNG lô | content_process | `dich_gemini_web.py:1366-1416 _bo_key_gop/_nguong_gop` — đo thật **27.139 cue / 90 video**: p50=29 ktự · p90=48 · p99=63 · p99,9=91 · max=921; đặt trần tuyệt đối 200 ktự (không cue LÀNH nào trong mẫu vượt) cộng ngưỡng tương đối `median×4` để bắt 1 giá trị dài bất thường so với các giá trị còn lại CÙNG LÔ (dấu hiệu model gộp nhiều đoạn vào 1) | `dich_thuat.py _doc_ban_dich` chỉ kiểm ĐỦ khoá + không rỗng, KHÔNG kiểm phân bố độ dài trong CÙNG lô — nếu model nhét nội dung 2-3 đoạn vào 1 khoá JSON mà vẫn trả đủ khoá (khoá kia rỗng/lặp) thì lọt | THIẾU | 3 | 1 | LẤY NGAY — cơ chế đáng lấy (hàm thuần, không phụ thuộc mới); số `200`/`median×4` của Viral KHÔNG tự áp được (mẫu đo trên SRT khác miền) — phải tự đo ngưỡng trên dữ liệu ASV thật trước khi khoá cứng |
+| 6. Song song hoá dịch nhiều lô | content_process | `ai_dich.py:1239-1265` — `ThreadPoolExecutor` (mặc định 4 luồng) dịch NHIỀU lô độc lập cùng lúc; đo: video 1.800 câu ≈36 lô tuần tự có thể mất hàng chục phút, network I/O nhả GIL nên song song thật | `dich_thuat.py:246-265 dich_ban_ghi` — vòng `for` TUẦN TỰ, lô sau đợi lô trước | THIẾU (nhưng ⚠️ khác NỀN TẢNG quan trọng) | 2 | 4 | ⛔ KHÔNG LẤY — `ai.goi`/`dieu_phoi.goi` đi qua MỘT khoá dùng chung của `ltt_llm`/máy B (CLAUDE.md: trần `≤2 request ltt-3.8 + ≤2 ltt-3.5` qua `acquireModelSlot`, toàn nền tảng); song song hoá vô tội vạ ở ASV đụng trần dùng chung của các app khác — phải hỏi chủ dự án trước |
+| 7. Free-text ID-line parsing cần BA lớp chống lẫn id — **trả lời câu hỏi trung tâm: Viral có MẤY lớp?** | content_process | **BA lớp, cùng số với `VideoLingo`** (`dich_gemini_web.py`): (1) `:1465-1489 _so_cao_nhat` — số đánh dòng lớn nhất kể cả vượt dải, bắt ca model THÊM dòng rồi đánh số lại (ca thật `290136`: 2 dòng chèn ở cue 185, 5 cổng kiểm khác đều XANH, 39% video lệch câu); (2) `:1492-1505 _ma_cao_nhat` — bản song sinh cho chế độ mã `[ID_nnn]`, cùng lý do; (3) `:1559-1582 _RE_MA_ID_CHUAN` — chặn mã MÉO "cướp" khoá của một dòng mã ĐÚNG CHUẨN đã chiếm (ca thật `20260826-131731`: mã méo `[ID_03` cướp khoá cue 3, đè nội dung cue 104 lên cue 3, cháy vào video 55 phút đã giao khách). Cả ba lớp vá đúng MỘT gốc: Gemini web là chat tự do, ⛔ không có JSON schema, số dòng/id có thể bị thêm/bớt/méo mà không ép được định dạng | `nan_cho_vua.py:371-400 doc_nan_lo` — **MỘT lớp**: lọc theo `can` (tập mã đã xin), bỏ mọi khoá lạ. Đủ vì gốc rễ khác hẳn: `dich_thuat.py _loi_nhac/_doc_ban_dich` bắt model trả **JSON khoá theo mã đoạn**; `json.loads` tự từ chối cấu trúc hỏng, và một khoá JSON không thể "cướp" khoá khác qua parse lệch vị trí — cả 3 loại lỗi Viral phải vá (thêm dòng, đánh số lệch, mã méo cướp khoá) đều là hệ quả của việc PARSE VĂN BẢN TỰ DO, thứ thiết kế JSON-key của ta không đi qua | KHÁC THIẾT KẾ — của ta an toàn hơn THEO THIẾT KẾ (1 lớp đủ vì gốc rễ không tồn tại), ⛔ không phải vì ta thiếu 2 lớp kia | 1 | 1 | ⛔ KHÔNG LẤY — ba lớp vá đúng lỗ hổng của giao diện chat tự do; ép JSON đã đóng lỗ hổng gốc từ đầu (đối chiếu để xác nhận thiết kế, ⛔ không phải tính năng thiếu) |
+| 8. Bảng nhịp đọc theo NGÔN NGỮ ĐÍCH, kỷ luật "chỉ ghi số đã đo" | (VIẾT DẦU / nắn cho vừa) | `dich_gemini_web.py:82-101 _TU_MOI_GIAY` — vi=5,00 (âm tiết=từ), es=1,94, pt=1,96 từ/giây, đo trên giọng edge-tts mặc định của chính Viral; ngôn ngữ chưa đo dùng mặc định 2,0, ghi rõ "CHỈ GHI SỐ ĐÃ ĐO" (74 đích, không bịa 71 con số còn lại) | `ngon_ngu.py:89 NHIP = {vi: 3,35, en: 3,63}` — đo trên chính giọng LTT Voice thật (23/09), cùng kỷ luật | KHÁC THIẾT KẾ | 1 | 1 | ⛔ KHÔNG LẤY con số (TTS khác hẳn: edge-tts cloud vs LTT Voice VieNeu-TTS v3, không chuyển được) — ghi nhận: phương pháp đã trùng, phát triển độc lập |
+| 9. Thuật ngữ/tên riêng BỀN qua nhiều video (translation memory) | content_process | `dich_gemini_web.py:272-286 doc_tm` — nạp `translation_memory/*.md` do NGƯỜI DÙNG tự biên tập (quy tắc + tên riêng), ghép vào MỌI lời nhắc dịch, bền qua các lần chạy/video khác nhau | `ho_so_dich.py:19-37` — `bang_ten_rieng`/`bang_dai_tu` sinh MỚI mỗi video, khoá dispatch là HẰNG SỐ cho MỖI lần chạy (docstring nói rõ ⛔ không có trục nào chia theo "loạt phim"/khách hàng) — không có thuật ngữ bền giữa các video CÙNG một khách | THIẾU | 3 | 3 | LẤY SAU — cần quyết định sản phẩm "có khái niệm SERIES nhiều tập cho một khách" trước (chỗ lưu theo khách, UI biên tập, ghép vào prompt — chạm ≥2-3 module); ⛔ chưa ai đòi tính năng này ở ASV |
+| 10. Chuyển đổi Giản thể ↔ Phồn thể chữ Hán | (OCR/ASR nguồn, ngoài giai đoạn dịch) | `zhconv/zhconv.py` — bộ chuyển đổi thuần thuật toán (maximal forward matching + từ điển tĩnh từ MediaWiki), không gọi model, không mạng | ⛔ Không có tương đương — `ngon_ngu._KHOANG_CJK` gộp mọi biến thể Hán/Nhật/Hàn vào MỘT khoang Unicode để đếm tỉ lệ "chưa dịch", mục đích khác hẳn (không chuẩn hoá Giản/Phồn cho khớp thuật ngữ) | ⛔ CHƯA KIỂM ĐƯỢC | 3 | 2 | Phụ thuộc câu trả lời của làn OCR: nếu hardsub cùng video có lẫn cả Giản lẫn Phồn thể thì LẤY SAU (thư viện thuần, cần soát giấy phép — bản gốc PyPI `zhconv` là MIT); nếu ASR/OCR ta đã thuần nhất một biến thể thì KHÔNG ÁP DỤNG |
+| 11. torch (Whisper) tranh CPU với onnxruntime (OCR) CÙNG tiến trình | (ngoài phạm vi tệp làn này) | `_langdet_worker.py` — chạy faster-whisper 'tiny' dò ngôn ngữ trong SUBPROCESS RIÊNG; đo thật: torch cùng tiến trình với ONNX Runtime (RapidOCR) làm OCR chậm **4-6×** (RTX3050: 25,9s→107,6s) | ⛔ Ngoài phạm vi tệp của làn V3 (`_whisper_worker.py`/`ocr_text.py` do làn khác phụ trách) | ⛔ CHƯA KIỂM ĐƯỢC | — | — | Không tự chấm ở đây — báo điều phối chuyển phát hiện ĐO ĐƯỢC này cho làn phụ trách ASR/OCR: nếu ASV chạy Whisper + OCR trong CÙNG worker/tiến trình, cùng lớp chậm có thể đang âm thầm xảy ra |
+
+---
+
+## ⛔ NGOÀI module Render (giữ lại tham khảo, ⛔ không tính điểm)
+
+Kiểm bằng đúng phép ở mục "KIỂM BIÊN" trên: `grep -rn "_lang_overrides\|_gen_lang_en"
+render_worker.py xu_ly_chon.py localize.py xu_ly_video.py phu_de.py` → **0 khớp** ở cả hai tên, kể cả
+dạng import muộn. Hai tệp KHÔNG với tới được từ `xu_ly_chon.main()` — không dời vì phát hiện sai, mà
+vì đúng thứ chủ dự án vừa thu hẹp phạm vi để loại.
+
+| HẠNG MỤC | VIRAL CÓ GÌ | TA CÓ GÌ | Vì sao ngoài biên |
+|---|---|---|---|
+| Dịch UI của chính ứng dụng (i18n công cụ) | `_lang_overrides.py`/`_gen_lang_en.py` — dịch UI desktop CỦA VIRAL sang tiếng Anh qua Google Translate scrape (endpoint không chính thức) + bảng override tay | `platform_core.i18n` (`_t`/`N_`) — catalog gettext chuẩn | 0 khớp trong 5 tệp xương sống; đây là công cụ BUILD-TIME cho UI desktop của Viral (dịch `web/index.html` → `web/lang_en.json`), ⛔ không nằm trên đường xử lý video nào. Dù còn trong biên thì vẫn sẽ là KHÔNG ÁP DỤNG — ta đã có `platform_core.i18n`, không cần dịch máy UI qua endpoint không chính thức |
+
+---
+
+## ⛔ Chưa kiểm được
+
+- `dich_gemini_web.py` dòng 1665-3288 (`_ghep` ghép lô cuối, `dich_srt`, `_prompt_phan_tu`, `main`) —
+  hết thời gian, chưa đọc hết; có thể còn thêm lớp TÍNH đáng chấm (chưa loại trừ).
+- Hàng 10 (zhconv): cần làn OCR xác nhận hardsub có lẫn biến thể chữ Hán hay không.
+- Hàng 11: ngoài phạm vi tệp, chỉ chuyển tiếp phát hiện, không tự chấm `TRẠNG THÁI` đầy đủ.
+- ⛔ Chưa xác nhận job_runner có retry Ở MỨC ĐOẠN (giữ lại đoạn đã dịch, chỉ xin lại đoạn model bỏ
+  trống) hay chỉ retry NGUYÊN LÔ qua khoá dispatch idempotent (`ho_so_dich.py` gợi ý mô hình MỖI LÔ
+  một khoá dispatch riêng) — nếu đã có khoá theo lô thì tính năng "chỉ dịch lại câu bị bỏ trống"
+  (`ai_dich.py:1267-1280 DICH_RETRY_TRONG`) của Viral có thể đã là KHÁC THIẾT KẾ (ta retry cấp LÔ,
+  họ retry cấp CÂU) chứ không phải THIẾU — không đủ bằng chứng để ghi thành hàng chính thức.

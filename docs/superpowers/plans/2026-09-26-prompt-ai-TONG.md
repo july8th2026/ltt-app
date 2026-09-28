@@ -4,8 +4,29 @@
 > bên dưới giữ **các bước TDD chi tiết** — chúng là phần chi tiết của plan này,
 > ⛔ không phải nguồn chân lý song song. Lệch nhau ⇒ tệp này thắng, và phải sửa tệp pha.
 
-**Trạng thái:** chờ chủ dự án chốt. ⛔ **Chưa viết một dòng mã nào** —
-`git status` chỉ có tài liệu.
+**Trạng thái — đo ngày 28/09/2026, ⛔ không phải tự khai.** Năm pha đã viết xong mã;
+ba pha đang sống trên production. Đối chứng dùng **migration**, không dùng ô tick:
+mỗi pha có đúng một migration, và `git log main -- <tệp migration>` trả lời dứt khoát
+*"pha này có trên `main` chưa"* — một ô tick chỉ nói ai đó đã tick.
+
+| Pha | Mã | Trên `main` | Production | Còn nợ |
+|---|---|---|---|---|
+| 1 · Chỗ nối | ✅ | ✅ `a82786f7` | ✅ `fd565a47` | — |
+| 2 · Giao bài | ✅ | ✅ `b4f24329` | ✅ | — |
+| 3 · Lõi Studio | ✅ | ✅ `b4f24329` | ✅ (kiểm trên trình duyệt thật) | — |
+| 4 · Kho chung | ✅ | ⛔ | ⛔ | gộp `main` · nghiệm thu GUI |
+| 5 · Kho tài nguyên | ✅ | ⛔ | ⛔ | gộp `main` · nghiệm thu GUI |
+| 6 · Chia lô (Q-16, Q-18) | ⛔ | — | — | **plan đã viết 28/09** ⇒ thi hành rồi mở E5 |
+
+⚠️ **Và đây là một lỗi sổ sách, ghi lại để người sau không tin ô tick.** 397 ô
+`- [ ]` trong năm tệp pha ⛔ **chưa bao giờ được tick**, nên một phép đếm máy móc
+trả **0/397 = 0%** trong khi 5/6 pha đã xong và 3/6 đã ra khách. Trạng thái được
+theo dõi trong hội thoại thay vì trong tệp — đúng thứ luật toàn cục cấm
+(*"trạng thái công việc ghi vào tệp plan/sổ lỗi, không chỉ trong hội thoại"*).
+
+⇒ ⛔ **Đừng "sửa" bằng cách tick 397 ô.** Tick một ô mình không kiểm được từng
+cái là chế ra bằng chứng. Bảng trên đo **cái đo được** (migration nào trên `main`),
+và đó là thứ dùng để phán quyết.
 
 | Tài liệu | Đường |
 |---|---|
@@ -28,7 +49,8 @@ thành máy dựng prompt có ba thứ bản gốc chứng minh là dùng thật
 | 3 · Lõi Studio | [pha3-loi-studio](2026-09-26-prompt-ai-pha3-loi-studio.md) | 3 593 | 21 | 111 |
 | 4 · Kho chung | [pha4-kho-chung](2026-09-26-prompt-ai-pha4-kho-chung.md) | 2 833 | 15 | 81 |
 | 5 · Kho tài nguyên sâu | [pha5-kho-tai-nguyen](2026-09-26-prompt-ai-pha5-kho-tai-nguyen.md) | 3 035 | 12 | 83 |
-| | **Tổng** | **14 286** | **65** | **397** |
+| 6 · Chia lô | [pha6-chia-lo](2026-09-28-prompt-ai-pha6-chia-lo.md) | 985 | 6 | 28 |
+| | **Tổng** | **15271** | **71** | **425** |
 
 ---
 

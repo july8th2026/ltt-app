@@ -144,6 +144,30 @@ class NodeDefinition:
     mock: Optional[Callable[[dict], dict]] = None
     cho: tuple = ()
     ma_loi: tuple = ()
+    #: Dịch `result` của job sang **từ vựng cổng ra của node**. `(ket_qua,
+    #: params) -> dict`. `None` = output của node LÀ `result` thô của job.
+    #:
+    #: 🔴 **Vì sao trường này phải tồn tại, đo được 28/09/2026.** Node `app.*`
+    #:    suy cổng ra TỪ `ToolSpec.returns` (`nut.tu_toolspec`), nên hai từ vựng
+    #:    trùng nhau và ⛔ không ai cần một phép dịch. Node `ai.*` thì có từ vựng
+    #:    RIÊNG, có chủ đích:
+    #:
+    #:        ToolSpec `text.chat`  returns  content · tool_calls · usage
+    #:        `ai.llm`              cong_ra  text · json
+    #:        `ai.extract`          cong_ra  json
+    #:        `ai.router`           cong_ra  nhanh
+    #:
+    #: ⚠️ Và `cau_noi.ap_ket_qua` ghi `output_ref = result` **nguyên văn**. Nên
+    #:    một `{{ nodes.n2.output.text }}` đọc ra **rỗng** — ⛔ không lỗi, ⛔ không
+    #:    cảnh báo, chỉ rỗng. Đó là hình dạng tệ nhất: người soạn thấy node xanh,
+    #:    thấy credit bị trừ, và thấy ô sau trống.
+    #:
+    #: ⭐ Đây là lý do THẬT khiến `ai.*` có `publish_duoc=False`. Docstring cũ
+    #:    của `ai_llm.py` ghi một lý do KHÁC — *"cầu nối suy tên ToolSpec bằng
+    #:    `node["type"][4:]`"* — và lý do ấy **đã hết đúng**: `cau_noi.py:103`
+    #:    đọc `nd.ten_toolspec` từ lâu. Một tham chiếu chết trong lời giải thích
+    #:    một cái cờ làm người đọc bật cờ ấy vì tưởng điều kiện đã xong.
+    doi_dau_ra: Optional[Callable[[dict, dict], dict]] = None
     #: Compiler hôm nay có biên dịch được `type` này không (`bien_dich._node`).
     #: Plan 02 chỉ có `app.*`; node lõi bật cờ này ở plan 04.
     publish_duoc: bool = False

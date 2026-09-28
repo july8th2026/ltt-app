@@ -131,15 +131,39 @@ def main() -> int:
                 if thuan_moi == thuan_kia:
                     continue
         if thuan_cu != thuan_moi:
-            that = _git("diff", "--ignore-cr-at-eol", "--numstat", "--", ten)
+            # 🔴 `HEAD` la BAT BUOC o day, va thieu no la mot con bo da song mot
+            #    thoi gian (do 28/09/2026). `git diff` khong kem moc so **cay lam
+            #    viec voi INDEX**, con hook nay chay tu `pre-commit` — thoi diem
+            #    ma thay doi **da duoc stage**. Nen diff luon RONG, va moi tep
+            #    deu in "thay doi THAT: 0 dong".
+            #
+            # ⭐ Vi sao do la mot con bo dang sua du phan quyet van DUNG: dong
+            #    "0 dong that" la mot **khang dinh ve y dinh** — no noi voi nguoi
+            #    doc *"ban chi lat ket dong, khong doi noi dung"*. Ca do 28/09:
+            #    `project_schema.py` co **14** dong doi that ma hook in `0`. Ai
+            #    tin con so ay roi ghi lai tep theo kieu HEAD se **mat luon phan
+            #    noi dung vua sua** — chinh xac la hanh dong ma dong chi duong
+            #    ngay duoi day khuyen lam.
+            #
+            # ⚠️ `--ignore-cr-at-eol` chuan hoa CA HAI phia nen no dung ca voi tep
+            #    TRON (do lai: tep 17 CRLF + 3 LF, lat het ve LF, them 4 dong
+            #    -> bao dung 4).
+            that = _git("diff", "HEAD", "--ignore-cr-at-eol", "--numstat",
+                        "--", ten)
             # ⭐ `--numstat` RONG chinh la ca dang noi nhat: bo qua CR thi
             #    KHONG con thay doi nao — tuc ca diff la nhieu. In "0" chu dung
             #    in "?", vi "0 dong that" moi la cau lam nguoi doc hieu ngay.
             so_that = "0"
             if that.returncode == 0 and that.stdout.strip():
                 cot = that.stdout.decode("utf-8", "replace").split()
-                if len(cot) >= 2:
+                try:
                     so_that = str(int(cot[0]) + int(cot[1]))
+                except (IndexError, ValueError):
+                    # `--numstat` in `-	-	<ten>` cho tep git coi la nhi phan.
+                    # `NHI_PHAN` o tren chi chan theo DUOI tep nen no ⛔ khong
+                    # bat het (vd mot `.json` chua byte NUL). "?" la trung thuc:
+                    # ⛔ dung in "0", vi "0" o day se la mot loi khai SAI.
+                    so_that = "?"
             elif that.returncode != 0:
                 so_that = "?"
             lech.append((ten, thuan_cu, thuan_moi, so_that))

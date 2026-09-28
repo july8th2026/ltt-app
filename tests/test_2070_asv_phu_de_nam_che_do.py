@@ -115,13 +115,18 @@ def test_nam_che_do_cho_NAM_tep_ass_khac_nhau(ke_hoach, tai_lieu, tmp_path):
         ra[tho["che_do"]] = _ass(phu_de.chuan_hoa(tho), ke_hoach, tai_lieu,
                                  tmp_path, vung=[DAI])
     assert len(set(ra.values())) == 4
+    # ⚠️ Bỏ `\N` trước khi tìm chuỗi: từ B9 (28/09) GĐ2 **ngắt lại** câu theo
+    #    bề rộng khung RA, nên một câu vừa một dòng ở lề cũ có thể thành hai
+    #    dòng ở lề *title safe* 5 %. Chuỗi vẫn còn đủ, chỉ ⛔ không còn liền.
+    ra = {k: v.replace(chr(92) + "N", "") for k, v in ra.items()}
     assert all(z in ra["nguon"] for z in ZH[:1])
-    assert VI[0] in ra["dich"] and ZH[0] not in ra["dich"]
+    assert VI[0].replace(" ", "") in ra["dich"].replace(" ", "")
+    assert ZH[0] not in ra["dich"]
     # `tiktok_bold` nhan manh `word` -> mot `\kf` cho TUNG chu Han
     assert ZH[2] in re.sub(r"\{\\kf\d+\}", "", ra["tu_chon"])
     assert "{\\kf33}想{\\kf33}要" in ra["tu_chon"]
     # tu_dong vs dich: CUNG chu, KHAC vi tri (margin_v)
-    assert VI[0] in ra["tu_dong"]
+    assert VI[0].replace(" ", "") in ra["tu_dong"].replace(" ", "")
     assert _style(ra["tu_dong"])[21] != _style(ra["dich"])[21]
     # tat -> khong co .ass nao
     assert _ass(phu_de.chuan_hoa({"che_do": "tat", "xuat_srt": True}),
@@ -147,11 +152,31 @@ def test_ha_ve_srt_GIU_nguon_chu():
 
 # ══ 2. Vi tri TU DONG ═══════════════════════════════════════════════════════
 
-def test_dai_phu_de_goc_chi_doc_vung_DANH_DAU():
+def test_dai_phu_de_goc_doc_CA_vung_che_ROI_va_DU_RONG():
+    """🔴 **Bất biến này bị ĐẢO có chủ đích — chủ dự án chốt 28/09.**
+
+    Trước đó bài này chốt *"chỉ đọc `danh_dau_phu_de`"*. Đo trên lần chạy thật
+    T1a: khách khoanh dải phụ đề Hoa bằng loại `lam_mo` — vùng **được làm mờ
+    đúng**, nhưng `dai_phu_de_goc` trả `None` nên phụ đề mới rơi về `margin_v`
+    mặc định. Một tính năng có mã mà khách ⛔ không biết cửa nào đi qua.
+
+    ⚠️ Vế *"đủ rộng"* chặn đúng rủi ro đã nêu khi chốt: một ô che **logo góc
+       dưới** cũng nằm ở 1/3 dưới, và tính nó là dải phụ đề thì phụ đề bị kéo
+       xuống nằm đè lên góc màn hình.
+    """
     lam_mo = dict(DAI, loai="lam_mo")
-    assert phu_de.dai_phu_de_goc([lam_mo]) is None
+    assert phu_de.dai_phu_de_goc([lam_mo]) == {"y0": 0.904, "y1": 0.976,
+                                               "da_che": True}
     assert phu_de.dai_phu_de_goc([lam_mo, DAI]) == {"y0": 0.904, "y1": 0.976,
                                                    "da_che": True}
+    # ⛔ Ô che logo: cùng nằm ở 1/3 dưới nhưng HẸP ⇒ ⛔ không phải dải phụ đề.
+    logo = {"loai": "lam_mo", "x0": 0.78, "x1": 0.98, "y0": 0.86, "y1": 0.98}
+    assert phu_de.dai_phu_de_goc([logo]) is None
+    # ⛔ Dải rộng nhưng nằm TRÊN 1/3 dưới ⇒ ⛔ không phải dải phụ đề.
+    tren = {"loai": "lam_mo", "x0": 0.05, "x1": 0.95, "y0": 0.10, "y1": 0.20}
+    assert phu_de.dai_phu_de_goc([tren]) is None
+    # ⭐ Nhưng loại DANH DẤU thì vẫn thắng hình học — khách nói thẳng.
+    assert phu_de.dai_phu_de_goc([dict(tren, loai="danh_dau_phu_de")]) is not None
 
 
 def test_tu_dong_day_chu_TRUNG_day_dai_da_che(ke_hoach, tai_lieu, tmp_path):

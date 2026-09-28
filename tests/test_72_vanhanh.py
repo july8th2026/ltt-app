@@ -201,7 +201,12 @@ def test_sidebar_bung_trang_con_khi_trong_app(client):
     _tao_va_dang_nhap(client, "u2@example.com")
     r = client.get("/agent", follow_redirects=False)
     assert r.status_code == 200
-    assert "Canvas" in r.text                        # trang con bung ra
+    # ⭐ 28/09 (UI-1, Q1 = B): đo THANH MỤC, không đo một từ trong prose. Bản cũ
+    #    khẳng định `"Canvas" in r.text` — và từ đó vẫn còn trong đoạn văn của
+    #    `/agent` sau khi mục nav "Canvas" đã bị bỏ (trình soạn nay là mục CON
+    #    của một workflow). Tức bài này sẽ xanh **kể cả khi thanh mục chết hẳn**.
+    assert 'class="apptabs"' in r.text               # thanh mục của app có render
+    assert "Workflows" in r.text                     # và trang con bung ra
 
 
 def test_link_quan_tri_chi_hien_cho_admin(client):

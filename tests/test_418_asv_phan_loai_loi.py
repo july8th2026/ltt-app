@@ -456,6 +456,16 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         #    ⚠️ Va `do_vung` thuoc GIAI ĐOAN 2 (chot 25/09), chua noi vao chuoi
         #    nao — nen hom nay no cung chua co duong len bien.
         "DoVungLoi",
+        # 🔑 `OcrLoiKyThuat` (B10-4, 28/09): cung ly le voi `DoVungLoi` o tren,
+        #    va **hep hon** — no ⛔ khong bao gio ra khoi `do_vung`.
+        #    `_dai_chu_nhieu_tang` bat DUNG lop nay roi lui ve tang do cu; be
+        #    mat ngoai (`de_xuat`) chi thay mot `KetQua` binh thuong.
+        #
+        # ⭐ Va no CO Y la mot lop RIENG chu ⛔ khong dung lai `DoVungLoi`: hai
+        #    lop mang hai y nghia khac nhau cho nguoi goi. `DoVungLoi` = *ca
+        #    chang do hong*; `OcrLoiKyThuat` = *tang NAY chua quet duoc, con
+        #    tang sau*. Gop chung thi ⛔ khong con cho nao de rẽ nhanh lui tang.
+        "OcrLoiKyThuat",
         # 🔑 Cong NOI BO + dich vu nop (22/09): nem TRUOC khi co job, o tang
         #    goi (route/port), khong bao gio len toi bien cua nen tang.
         "LoiCaiDat", "LoiCongNoiBo", "LoiDauVao", "LoiKhongTimThay",
@@ -464,6 +474,18 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         #    `thi_hanh.chay_giai_doan` bat no TRUOC nhanh `except Exception`,
         #    ghi con tro va tra ve binh thuong — khong bao gio len toi bien.
         "TiepNoi",
+        # 🔑 `DiemDongLoi` (B13 viec E2, 28/09): `diem_dong.doc_diem_dong` nem
+        #    khi `ffmpeg` giai ma diem dong that bai KY THUAT (hong/qua han).
+        #    `giai_doan_hinh_anh._ung_vien_duoi_xau` — NGUOI GOI DUY NHAT — bat
+        #    NGAY bang `except diem_dong.DiemDongLoi`, ghi `log.warning`, roi
+        #    tra ve `[]` (danh sach ung vien rong): tin hieu "duoi canh xau" la
+        #    BO SUNG cho `ke_cat`, ⛔ khong phai buoc bat buoc — mat no thi GD2
+        #    van chay tiep voi ung vien tu ban bien tap. Cung ly le voi
+        #    `OcrLoiKyThuat`/`DoVungLoi` o tren: bat tai cho de mot ho CPU/
+        #    ffmpeg hong KHONG lam hong ca lan cat, ⛔ khong bao gio len toi
+        #    `job_runner`/`retry` — roi xuong retry se lam ba lan chay deu ton
+        #    mot luot giai ma ffmpeg ma khong doi ket qua.
+        "DiemDongLoi",
     }
 
     # ⚠️ Gom lop cha theo CA HAI dang: `class X(MediaError)` (`ast.Name`) va

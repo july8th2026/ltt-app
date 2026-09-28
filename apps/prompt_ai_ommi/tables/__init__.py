@@ -8,9 +8,11 @@ from __future__ import annotations
 
 from apps.prompt_ai_ommi.tables.tai_nguyen import (
     RESOURCE_KINDS, OmmiResource, OmmiResourceVariant, OmmiTag,
-    OmmiResourceTag, OmmiCollection, OmmiCollectionItem, OmmiResourceUsage)
+    OmmiResourceTag, OmmiCollection, OmmiCollectionItem, OmmiResourceUsage,
+    OmmiTrash, OmmiImageJob)
 from apps.prompt_ai_ommi.tables.thu_vien import (
-    OmmiMetaPrompt, OmmiPromptSnippet, OmmiPromptVersion, OmmiStyle)
+    OmmiMetaPrompt, OmmiPromptSnippet, OmmiPromptVersion, OmmiStyle,
+    OmmiImageTemplate, OmmiStoryboardFramework, OmmiSample, OmmiProfile)
 from apps.prompt_ai_ommi.tables.kich_ban import (
     OmmiStoryboard, OmmiScene, OmmiSceneVersion)
 from apps.prompt_ai_ommi.tables.binding import OmmiBinding
@@ -20,14 +22,18 @@ from apps.prompt_ai_ommi.tables.canh import OmmiCanh
 from apps.prompt_ai_ommi.tables.iteration import OmmiIteration
 from apps.prompt_ai_ommi.tables.nhan_vat import (
     OmmiBackground, OmmiCharacter, OmmiFaceEmbedding, OmmiOutfit, OmmiPose)
+from apps.prompt_ai_ommi.tables.chia_se import OmmiShareCode
 
 __all__ = [
     "RESOURCE_KINDS", "OmmiResource", "OmmiResourceVariant", "OmmiTag",
     "OmmiResourceTag", "OmmiCollection", "OmmiCollectionItem",
     "OmmiResourceUsage", "OmmiMetaPrompt", "OmmiPromptSnippet",
-    "OmmiPromptVersion", "OmmiStyle", "OmmiStoryboard", "OmmiScene",
+    "OmmiPromptVersion", "OmmiStyle",
+    "OmmiImageTemplate", "OmmiStoryboardFramework", "OmmiSample",
+    "OmmiProfile",
+    "OmmiStoryboard", "OmmiScene",
     "OmmiSceneVersion", "OmmiBinding", "OmmiHandoff",
     "OmmiBrief", "OmmiCanh", "OmmiIteration",
     "OmmiBackground", "OmmiCharacter", "OmmiFaceEmbedding", "OmmiOutfit",
-    "OmmiPose",
+    "OmmiPose", "OmmiShareCode",
 ]

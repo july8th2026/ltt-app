@@ -180,3 +180,71 @@ describe('nextNode — buoc xep', () => {
     expect(d.position.y).toBeGreaterThan(a.position.y)
   })
 })
+
+// ── `replace` và lịch sử hoàn tác ───────────────────────────────────────────
+//
+// 🔴 LỖI ĐÃ SỬA: `case 'replace'` trả `{document, past: [], future: []}` — XOÁ
+//    SẠCH lịch sử. Hệ quả trên máy thật: "Soạn bằng AI" ghi đè cả đồ thị người
+//    dùng đang dựng, và Ctrl+Z KHÔNG cứu được. Mất việc, không lấy lại được.
+//
+// ⚠️ Nhưng `replace` phục vụ HAI lời gọi khác hẳn nhau, và đó chính là chỗ một
+//    bản sửa vội làm hỏng thứ khác:
+//
+//      1. NẠP workflow lúc mở trang — tài liệu trước đó là `emptyDocument()`.
+//         Đẩy nó vào `past` là mở cho người dùng Ctrl+Z **về canvas trắng**,
+//         một "hoàn tác" xoá hết đồ thị họ vừa mở lên. ⇒ KHÔNG giữ.
+//      2. GHI ĐÈ tài liệu người dùng đang dựng (Soạn bằng AI). ⇒ PHẢI giữ.
+//
+//    Nên bản sửa là một cờ tường minh ở lời gọi, không phải đoán theo hình
+//    dạng tài liệu: `giuLichSu`.
+describe('replace và lịch sử hoàn tác', () => {
+  /** Một tài liệu có đúng một node, để phân biệt được với tài liệu rỗng. */
+  const coNode = (id: string) => {
+    const d = emptyDocument()
+    activePage(d).nodes = [{ id, type: 'tool', position: { x: 0, y: 0 }, data: {} }]
+    return d
+  }
+
+  it('replace GHI ĐÈ (giuLichSu) đẩy tài liệu cũ vào past — Ctrl+Z cứu được', () => {
+    let state: EditorState = { document: coNode('viec-dang-lam'), past: [], future: [] }
+    state = editorReducer(state, { type: 'replace', document: coNode('do-ai-soan'),
+      giuLichSu: true })
+    expect(activePage(state.document).nodes[0].id).toBe('do-ai-soan')
+    // ⭐ Phép đo CHỐT: có một bước lùi, và nó trả đúng việc đang làm.
+    expect(state.past).toHaveLength(1)
+    state = editorReducer(state, { type: 'undo' })
+    expect(activePage(state.document).nodes[0].id).toBe('viec-dang-lam')
+  })
+
+  it('replace ghi đè rồi hoàn tác rồi LÀM LẠI: về đúng bản AI soạn', () => {
+    let state: EditorState = { document: coNode('viec-dang-lam'), past: [], future: [] }
+    state = editorReducer(state, { type: 'replace', document: coNode('do-ai-soan'),
+      giuLichSu: true })
+    state = editorReducer(state, { type: 'undo' })
+    state = editorReducer(state, { type: 'redo' })
+    expect(activePage(state.document).nodes[0].id).toBe('do-ai-soan')
+  })
+
+  it('replace lúc NẠP (mặc định) KHÔNG để Ctrl+Z về canvas trắng', () => {
+    // Đúng trạng thái lúc mở trang: tài liệu rỗng, chưa có lịch sử.
+    let state: EditorState = { document: emptyDocument(), past: [], future: [] }
+    state = editorReducer(state, { type: 'replace', document: coNode('node-da-luu') })
+    expect(state.past).toEqual([])
+    // Không có gì để lùi ⇒ `undo` là phép rỗng, đồ thị đã nạp còn nguyên.
+    state = editorReducer(state, { type: 'undo' })
+    expect(activePage(state.document).nodes[0].id).toBe('node-da-luu')
+  })
+
+  it('replace ghi đè KHÔNG dùng lại tham chiếu của tài liệu cũ', () => {
+    const truoc = coNode('viec-dang-lam')
+    let state: EditorState = { document: truoc, past: [], future: [] }
+    state = editorReducer(state, { type: 'replace', document: coNode('do-ai-soan'),
+      giuLichSu: true })
+    // Sửa tài liệu cũ TẠI CHỖ sau khi nó đã vào `past`: nếu reducer giữ tham
+    // chiếu thay vì bản sao thì lịch sử bị sửa dưới chân và `undo` trả về một
+    // trạng thái chưa từng tồn tại.
+    activePage(truoc).nodes[0].id = 'bi-sua-ngam'
+    state = editorReducer(state, { type: 'undo' })
+    expect(activePage(state.document).nodes[0].id).toBe('viec-dang-lam')
+  })
+})

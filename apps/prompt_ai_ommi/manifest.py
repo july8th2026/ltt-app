@@ -43,6 +43,19 @@ def _cost(params: dict) -> int:
     return _director_cost(params)
 
 
+def _bao_tri() -> None:
+    """Uy quyen cho `services.bao_tri.bao_tri`.
+
+    ⛔ Import BEN TRONG ham, khong o dau tep: `manifest.py` duoc nap boi
+       `registry.discover()` o MOI tien trinh — ke ca nhung tien trinh khong bao
+       gio chay viec nay — va keo ca chuoi services (kem SQLAlchemy, kho luu
+       tru) vao do la bat moi worker tra gia nap cho mot ham no khong goi.
+    """
+    from apps.prompt_ai_ommi.services.bao_tri import bao_tri
+
+    bao_tri()
+
+
 MANIFEST = AppManifest(
     slug="prompt_ai_ommi",
     display_name="Prompt AI",
@@ -52,7 +65,7 @@ MANIFEST = AppManifest(
     icon="✦",
     accent="#E53935",
     nav=(NavEntry("Prompt AI", "/prompt-ai-ommi", "✦", "prompt_ai_ommi"),),
-    job_types=("prompt_ai_ommi.generate",),
+    job_types=("prompt_ai_ommi.generate", "prompt_ai_ommi.import_zip"),
     requires=("api",),
     credit_cost=_cost,
     tools=(
@@ -243,6 +256,10 @@ MANIFEST = AppManifest(
     # Kho tài nguyên và thư viện prompt dùng chung giữa nhiều project nên không
     # vừa trong `AppProject` JSON — app sở hữu bảng riêng, xem `tables.py`.
     table_prefix="ommi",
+    # ⭐ NGUOI GOI cho hai chinh sach han luu da co ma truoc 28/09 khong ai
+    #    chay: `ommi_trash.purge_after` (30 ngay) va `ommi_handoff.expires_at`
+    #    (30 phut). Xem `services/bao_tri.py`.
+    bao_tri=_bao_tri,
     enabled=True,
     public=True,
     lifecycle="released",

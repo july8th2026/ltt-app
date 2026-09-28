@@ -267,7 +267,7 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="text.chat", job_type="ltt_llm.chat",
         description=N_('Sinh văn bản từ hội thoại: coding, chat, agent, tóm tắt.'),
-        ten_ngan=N_('Sinh văn bản bằng LLM'),
+        ten_ngan=N_('Sinh văn bản từ hội thoại'),
         # ── Sức chứa admission THEO MODEL (dual-model 2.3) ───────────────────
         #
         # 🔴 BỘ BA TĨNH (`admission_resource`/`admission_slots`/

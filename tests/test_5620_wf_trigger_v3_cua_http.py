@@ -20,24 +20,24 @@
 ## Tiem loi doi chung (yeu cau cua brief UI-12)
 
 `test_TIEM_LOI_thieu_import_o_routes_init_lam_do` va
-`test_TIEM_LOI_lo_hash_trong_GET_lam_do` khong tu chay — chung la TAI LIEU
-cach tai hien hai ca tiem loi bat buoc, vi ban than viec go mot dong import
-hay ghi de mot ham serialize KHONG THE lam tu ben trong mot phien pytest dang
-chay (module da nap). Ket qua tai hien THAT nam trong bao cao cua phien.
+`test_TIEM_LOI_lo_hash_trong_GET_lam_do` KHONG tu chay (`pytest.skip`) — chung
+la TAI LIEU cach tai hien hai ca tiem loi bat buoc, vi ban than viec go mot
+dong import hay ghi de mot ham serialize KHONG THE lam tu ben trong mot phien
+pytest dang chay (module da nap). Ket qua tai hien THAT (DO roi XANH, ca hai
+chieu) da lam TAY trong phien viet tep nay va nam trong bao cao gui dieu phoi.
 
-⚠️ `tests/test_5606_moi_module_route_phai_duoc_import.py` (banh coc AST canh
-   dung mot dieu nay cho MOI app) duoc brief nhac toi nhung KHONG TON TAI
-   trong cay nay — worktree nay re nhanh tu `main` truoc no 203 commit, va
-   luat phoi hop cua plan cam gop `main` cho toi khi duoc bao "archive xong".
-   `test_khong_thieu_module_route_nao_trong_agent` o duoi la ban THU NHO cua
-   cung banh coc, pham vi rieng `apps/agent/routes/`, de khoang trong nay
-   khong bo ngo trong luc cho.
+⚠️ LICH SU: worktree nay re nhanh tu `main` truoc `tests/test_5606_moi_module_
+   route_phai_duoc_import.py` 203 commit (luat phoi hop cam gop `main` giua
+   plan), nen ban dau tep nay co them mot ban AST THU NHO cua chinh banh coc
+   do. Sau khi gop `main` (archive xong), `test_5606` that da co mat va lam
+   dung — ke ca dieu ban thu nho lam — nen ban thu nho da bi XOA o day de
+   tranh MOT bat bien hai cho khai (chung se troi khoi nhau). Xem
+   `test_5606_moi_module_route_phai_duoc_import.py::
+   test_moi_module_route_deu_duoc_init_import` cho phep kiem do.
 """
 from __future__ import annotations
 
-import ast
 import json
-import pathlib
 import re
 import uuid
 
@@ -273,54 +273,34 @@ def test_trang_html_workflow_nguoi_khac_404(api):
     assert a.get(f"/agent/workflows/{wf_id}/triggers").status_code == 404
 
 
-# ── 6. Ban thu nho cua banh coc AST "moi module route phai duoc import" ─────
-
-def test_khong_thieu_module_route_nao_trong_agent():
-    """Ban SCOPE-HEP cua `test_5606` (khong ton tai trong cay nay — xem
-    docstring dau tep). Doc AST cua `apps/agent/routes/__init__.py`, gom moi
-    ten module no import tu `apps.agent.routes`, roi doi chieu voi tap tep
-    `.py` THAT dang nam trong thu muc do.
-
-    🔴 Day CHINH LA phep se do neu ai (ke ca chinh minh o mot sua doi sau)
-       quen dong `from apps.agent.routes import (..., trigger_v3)` — dung
-       hinh dang loi production 28/09 brief nhac: 9 phep kiem xanh rieng le,
-       404 that."""
-    goc = pathlib.Path(__file__).resolve().parent.parent
-    thu_muc = goc / "apps" / "agent" / "routes"
-    init_py = thu_muc / "__init__.py"
-    cay = ast.parse(init_py.read_text(encoding="utf-8"), filename=str(init_py))
-
-    da_import: set[str] = set()
-    for node in ast.walk(cay):
-        if isinstance(node, ast.ImportFrom) and node.module == "apps.agent.routes":
-            da_import.update(alias.name for alias in node.names)
-
-    tren_dia: set[str] = {
-        f.stem for f in thu_muc.glob("*.py")
-        if f.stem not in {"__init__", "_shared"}}
-
-    thieu = tren_dia - da_import
-    assert not thieu, f"module route chua duoc import trong __init__.py: {thieu}"
-    assert "trigger_v3" in da_import
-
+# ── 6. Tai lieu tai hien hai phep tiem loi (khong phai test luoi) ───────────
+#
+# `test_5606_moi_module_route_phai_duoc_import.py::
+# test_moi_module_route_deu_duoc_init_import` (tren `main`) da lam dung viec
+# cua phep tiem loi (a) — mot ban AST rieng o day se la MOT BAT BIEN HAI CHO
+# KHAI, va hai cho khai la cho chung se troi khoi nhau (xem docstring dau
+# tep). Ban thu nho tung nam o day DA BI XOA sau khi gop `main`.
 
 def test_TIEM_LOI_thieu_import_o_routes_init_lam_do():
-    """TAI LIEU cach tai hien tiem loi (a) cua brief UI-12 — khong tu chay
-    duoc trong CHINH phien dang chay `apps.agent.routes` (module da nap vao
-    `sys.modules`, va go dong import trong tep nguon khong lam no bay ra
-    khoi bo nho). Da xac minh THAT bang tay trong phien viet tep nay:
+    """TAI LIEU cach tai hien tiem loi (a) cua brief UI-12 — KHONG PHAI test
+    luoi: viec go mot dong import va cho no do KHONG THE lam tu ben trong
+    CHINH phien pytest dang chay (`apps.agent.routes` da nap vao
+    `sys.modules`, sua tep nguon khong lam module do bay khoi bo nho). Da xac
+    minh THAT bang tay trong phien viet tep nay:
 
         1. xoa `trigger_v3` khoi dong import trong
            `apps/agent/routes/__init__.py`
-        2. `python -m pytest tests/test_5620_wf_trigger_v3_cua_http.py
-           ::test_khong_thieu_module_route_nao_trong_agent -q`  -> DO
+        2. `python -m pytest tests/test_5606_moi_module_route_phai_duoc_import.py
+           ::test_moi_module_route_deu_duoc_init_import -q`  -> DO (bao thieu `trigger_v3`)
         3. hoan lai dong import, chay lai -> XANH
 
-    Ket qua that (DO/XANH cua hai lan chay do) nam trong bao cao cuoi phien,
-    khong trong bai kiem nay — mot bai `pytest.skip` khong the tu go source
-    cua chinh no giua luc dang chay va mong doi con lai dung.
+    Ket qua that (DO roi XANH) nam trong bao cao gui dieu phoi, khong trong
+    bai kiem nay.
     """
-    pytest.skip("tai lieu tai hien tay — xem docstring; ket qua trong bao cao")
+    pytest.skip(reason=(
+        "TAI LIEU tai hien tay, KHONG PHAI test luoi — da xac minh THAT "
+        "(DO khi thieu import, XANH khi hoan lai) trong phien viet tep nay; "
+        "phep do that su nay o test_5606_moi_module_route_phai_duoc_import.py"))
 
 
 def test_TIEM_LOI_lo_hash_trong_GET_lam_do():
@@ -329,5 +309,9 @@ def test_TIEM_LOI_lo_hash_trong_GET_lam_do():
     nua, roi chay lai `test_GET_danh_sach_KHONG_LO_token_LAN_hash` o tren —
     no phai DO vi `token_hash` se xuat hien trong than JSON. Da xac minh THAT
     bang tay: DO khi bo dong `pop`, XANH khi hoan lai. Ket qua that nam trong
-    bao cao cuoi phien."""
-    pytest.skip("tai lieu tai hien tay — xem docstring; ket qua trong bao cao")
+    bao cao gui dieu phoi."""
+    pytest.skip(reason=(
+        "TAI LIEU tai hien tay, KHONG PHAI test luoi — da xac minh THAT "
+        "(DO khi bo `cfg.pop(token_hash)`, XANH khi hoan lai) trong phien "
+        "viet tep nay; phep do that su la "
+        "test_GET_danh_sach_KHONG_LO_token_LAN_hash o tren"))
