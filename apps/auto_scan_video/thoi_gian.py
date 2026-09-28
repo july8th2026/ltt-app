@@ -78,6 +78,23 @@ TRAN_CHONG_LAN_MS = 200
 #:    nằm trên trục NGUỒN, và trường `ban_do` không còn trong tệp. Một kế hoạch
 #:    cũ và một kế hoạch mới cho cùng đầu vào là hai tệp khác nhau, nên một cache
 #:    cũ dùng lại được là một cache nói dối.
+#: ⛔ **28/09 (B13-A2): `he_so_co_gian` đổi mẫu số và con số này CỐ Ý ĐỨNG YÊN.**
+#:    Điều kiện của chính nó là *"đổi bất kỳ hằng số nào ở trên"* — ⛔ không hằng
+#:    nào đổi, và `lap_ke_hoach` ra **y hệt từng mili-giây** cho cùng đầu vào.
+#:
+#: ⭐ Và cache vẫn ⛔ không thể nói dối: `he_so_co_gian` nằm **trong** `ban_ke.json`
+#:    (`giai_doan_giong._ke_nan`), nên bản vá đổi `checksum` của bản kê ⇒ đổi
+#:    `van_tay_ke_hoach` (nó bấm `ban_ke_tieng`) ⇒ `timing_align` trộn lại.
+#:
+#: ⚠️ Cái ⛔ KHÔNG được nâng: vân tay từng đoạn tiếng (`giai_doan_giong._van_tay`
+#:    = `ma + chu + giọng + preset + từ điển`). Tệp `.wav` ⛔ không đổi một byte —
+#:    cùng chữ, cùng giọng — nên nâng nó là mua lại toàn bộ lượt TTS bằng tiền
+#:    thật cho một thay đổi ⛔ không chạm âm thanh sinh ra.
+#:
+#: ⚠️ Một lượt chạy có `voice_synthesis` ĐÃ `succeeded` TRƯỚC bản vá thì `ban_ke`
+#:    của nó vẫn ghi `he_so_co_gian` theo luật CŨ, và `timing_align` sẽ thi hành
+#:    đúng bản kê ấy. Đó là ĐÚNG (bản kê là bản ghi của lượt đọc đã trả tiền),
+#:    ⛔ không phải một lỗi cache — bản vá ăn từ lượt chạy mới.
 PHIEN_BAN_THOI_GIAN = 2
 
 #: ⬆️ 1 → 2: bỏ trường `ban_do` (b4 hai giai đoạn). `kiem()` đọc số này, nên một
@@ -140,6 +157,54 @@ def ngan_sach_nan_s(khe_s: float, ngan_sach_s: float) -> float:
     khe_s = max(0.0, float(khe_s))
     ngan_sach_s = max(khe_s, float(ngan_sach_s))
     return khe_s + (ngan_sach_s - khe_s) * TY_LE_MUON_KHOANG_LANG
+
+
+def doi_chieu_he_so_toc(he_so_ke_hoach: dict[str, float],
+                        he_so_da_ap: dict[str, float]) -> dict:
+    """HAI máy tăng tốc, đối chiếu trên cùng tập `ma` — hàm THUẦN (B13-B3/B4).
+
+    `he_so_ke_hoach`  `{ma: he_so_toc}` của `lap_ke_hoach` — thứ kế hoạch **ĐỊNH**
+                      nén để trả nợ, và thứ ⛔ KHÔNG ai thi hành (`ket_xuat.
+                      dung_lenh` chỉ map `master`).
+    `he_so_da_ap`     `{ma: h_ap}` mà `am_master.tron_lo` **THẬT SỰ** áp, lấy từ
+                      `ban_ke.he_so_co_gian` sau khi kẹp trần kỹ thuật.
+
+    🔴 **Vì sao hàm này tồn tại (đo 28/09).** Hai đại lượng ấy từng in cạnh nhau
+       trong cùng một `outputs` dưới hai cái tên nghe như MỘT:
+       `he_so_toc_lon_nhat = 1,15` cạnh `master.he_so_toc_da_ap max = 1,3333`.
+       Hai TẬP khác nhau, và vì `1,15 < 1,3333` nên người đọc kết luận **ngược**:
+       *"trần đã giữ"*.
+
+    ⚠️ **MẪU SỐ: chỉ các `ma` có trong `he_so_da_ap`.** Đó là các `ma` SỞ HỮU một
+       tệp tiếng (`nan_thoi_luong.tep_theo_ma`); `ma` đi theo một khe đã gộp ⛔
+       không có lớp riêng nên nó ⛔ không so được. ⇒ `so_doan_tang_toc_ke_hoach`
+       ở đây CỐ Ý **khác** `tom_tat()["so_doan_tang_toc"]` (đếm MỌI dòng kế
+       hoạch, kể cả dòng đi theo). Hai con số, hai mẫu số, hai cái tên.
+
+    ⭐ Trả thêm `lech` = `[(ma, h_ke, h_ap)]` để người gọi nói to từng chỗ. Hàm
+       này ⛔ KHÔNG log và ⛔ không ném: nó chỉ ĐO.
+    """
+    ke_hoach_cung_tap = {ma: float(he_so_ke_hoach.get(ma, 1.0))
+                         for ma in he_so_da_ap}
+    ap = {ma: float(h) for ma, h in he_so_da_ap.items()}
+    lech = [(ma, ke_hoach_cung_tap[ma], ap[ma]) for ma in sorted(ap)
+            if abs(ke_hoach_cung_tap[ma] - ap[ma]) > 1e-6]
+    return {
+        "he_so_toc_da_ap_lon_nhat": round(max(ap.values(), default=1.0), 4),
+        "so_doan_tang_toc_da_ap": sum(1 for h in ap.values() if h > 1.0),
+        "he_so_toc_ke_hoach_lon_nhat": round(
+            max(ke_hoach_cung_tap.values(), default=1.0), 4),
+        "so_doan_tang_toc_ke_hoach": sum(
+            1 for h in ke_hoach_cung_tap.values() if h > 1.0),
+        "so_doan_he_so_lech_ke_hoach": len(lech),
+        # ⭐ TÍCH của hai máy trên CÙNG một `ma` — đại lượng mà B13 §3.4 sợ
+        #    (`1,15 × 1,3333 = 1,53`). Hôm nay nó ⛔ KHÔNG được thi hành, nên ghi
+        #    nó ra là cách để ngày nào nó bị thi hành thì con số **tự tố giác**,
+        #    thay cho một nhánh `raise` nằm chết.
+        "he_so_gop_ke_hoach_x_da_ap_lon_nhat": round(
+            max((ke_hoach_cung_tap[ma] * ap[ma] for ma in ap), default=1.0), 4),
+        "lech": lech,
+    }
 
 
 def _tang_toc_can(dai_ms: int, ngan_sach_ms: int) -> float:
@@ -428,12 +493,36 @@ def van_tay_ke_hoach(*, checksum_van_ban: str, ban_ke_tieng: str,
 
 
 def tom_tat(ke_hoach: dict) -> dict:
-    """Con số cho tiến độ và QC. Không có lời thoại (I16)."""
+    """Con số cho tiến độ và QC. Không có lời thoại (I16).
+
+    🔴 **`so_doan_tang_toc` và `he_so_toc_lon_nhat` là con số của KẾ HOẠCH, và
+       kế hoạch ấy ⛔ KHÔNG phải thứ được thi hành (đo 28/09, B13-B4).**
+
+       Hàm này chỉ nhìn thấy `ke_hoach`, nên nó chỉ nói được về `he_so_toc` — và
+       `he_so_toc` ⛔ không bao giờ trở thành một `atempo`: `ket_xuat.dung_lenh`
+       chỉ nạp `master` (`-map 1:a:0`), còn `am_master.tron_lo` áp
+       `ban_ke.he_so_co_gian`. ⇒ Hai con số dưới đây trả lời *"kế hoạch ĐỊNH nén
+       bao nhiêu"*, ⛔ KHÔNG trả lời *"khách nghe bản bị nén bao nhiêu"*.
+
+    ⛔ **Đừng đọc chúng cạnh `master.he_so_toc_da_ap` mà tưởng là một dãy.** Lượt
+       `asvr_47327a869a8f4597960048f09064740`: ở đây `1,15` / `12 đoạn`, còn
+       `master` `max = 1,3333` / `4 đoạn` — HAI TẬP khác nhau, và vì `1,15 <
+       1,3333` nên người đọc kết luận ngược. Câu trả lời cho *"trần có giữ
+       không"* nằm **trọn trong `master`**: `he_so_toc_da_ap_lon_nhat`,
+       `so_doan_tang_toc_da_ap`, và cặp `..._ke_hoach` in ngay cạnh để so.
+
+    ⚠️ Tên hai khoá này giữ NGUYÊN vì một lý do cơ học, ⛔ không phải vì đẹp:
+       `asv_doi_soat.KHOA_BO_QUA_CO_Y["timing_align"]` khai đúng chúng và
+       `test_408` chốt hai chiều — đổi tên ở đây làm đỏ một cổng ở `tools/`, thứ
+       mà làn này ⛔ không sở hữu (B13 §7.0). Cái giá: một người chỉ đọc
+       `outputs` phẳng vẫn nhầm được, nên docstring này là hàng rào duy nhất.
+    """
     doan = ke_hoach.get("doan") or []
     nhanh = [d for d in doan if float(d["he_so_toc"]) > 1.0]
     return {
         "so_doan": len(doan),
         "so_doan_bi_cat": int(ke_hoach.get("so_doan_bi_cat") or 0),
+        # ⚠️ KE HOACH, ⛔ khong phai DA AP — xem docstring.
         "so_doan_tang_toc": len(nhanh),
         "he_so_toc_lon_nhat": round(
             max((float(d["he_so_toc"]) for d in doan), default=1.0), 3),

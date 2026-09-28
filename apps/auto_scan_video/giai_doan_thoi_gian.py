@@ -48,8 +48,9 @@ log = logging.getLogger(__name__)
 #:    `am_master.py` da co tran cung `[0,5; 100]` cho MOT lan goi khong chain,
 #:    nhung 100 chi la tran "khong crash"; 2.0 la tran "con nghe duoc" theo tai
 #:    lieu bo loc `atempo` cua ffmpeg. `he_so_co_gian` o day luon >= 1.0
-#:    (`nan_cho_vua.co_gian_du_khong`: he_so = giay/khe, chi tinh khi giay >
-#:    khe), nen chi can MOT tran tren — khong can `max()` cho bien duoi.
+#:    (`nan_cho_vua.co_gian_du_khong`: he_so = giay/NGAN_SACH tu 28/09 — B13-A2,
+#:    truoc do la giay/khe — va chi tinh khi giay > mau so), nen chi can MOT tran
+#:    tren, khong can `max()` cho bien duoi.
 TRAN_KY_THUAT_ATEMPO = 2.0
 
 
@@ -61,7 +62,8 @@ def he_so_ap(h: float, *, tran_ky_thuat: float) -> float:
     ⛔ KHONG kep ve `thoi_gian.TRAN_TANG_TOC` — do la CHINH SACH SAN PHAM (chu
     du an chot 26/09: vuot tran do thoai mai, tran chi con la CANH BAO, khong
     phai mot cong). Vi `h` luon >= 1.0 (`nan_cho_vua.co_gian_du_khong` chi tinh
-    khi giay > khe) nen chi can MOT tran TREN, khong can `max()` cho bien duoi.
+    khi `giay` > mau so — tu 28/09 mau so la NGAN SACH, ⛔ khong con `khe`) nen
+    chi can MOT tran TREN, khong can `max()` cho bien duoi.
     """
     return min(float(tran_ky_thuat), float(h))
 
@@ -76,9 +78,24 @@ def dem_lech_cuoi(doan: list[dict], he_so_theo_ma: dict[str, float]) -> tuple[in
 
     Chi dem doan THAT SU bi KEP boi tran ky thuat (tuc `h_ap != he_so_co_gian`
     cua chinh dong do) VA sau khi ap he so do, tep tieng van dai hon khe cua no
-    (`giay/h_ap > khe`). Doan khong bi kep thi ve mat toan hoc `giay/h_ap`
-    trung khop `khe` (vi `he_so_co_gian = giay/khe`) — dieu kien `h_ap != h`
-    tranh dem nham mot sai so lam tron dau phay dong o bien nhu mot cho LECH.
+    (`giay/h_ap > khe`) — dieu kien `h_ap != h` tranh dem nham mot sai so lam
+    tron dau phay dong o bien nhu mot cho LECH.
+
+    🔴 **Tu 28/09 (B13-A2) `he_so_co_gian = giay / NGAN_SACH`, ⛔ khong con
+       `giay / khe`.** Ban truoc cua chu thich nay khai mau so cu, va he qua la:
+       mot doan KHONG bi kep nay cho `giay / h = ngan_sach`, tuc **> `khe`** khi
+       doan ay co muon khoang lang. Dieu kien `h_ap == h -> continue` o duoi giu
+       cho cac doan ay ⛔ khong bi dem, nen con so tra ve van dung.
+
+    ⚠️ **Nhung voi doan BI KEP (`h > TRAN_KY_THUAT_ATEMPO`) thi phep so sanh o
+       day bay gio CHAT HON su that**: no do `giay_sau` voi `khe` trong khi ngan
+       sach thi hanh rong hon. ⇒ `so_doan_lech_cuoi` la mot cận TRÊN — no ⛔
+       khong bao gio bo sot, nhung no co the dem mot doan that su van vua ngan
+       sach. Giu vay CO Y: `ban_ke` ⛔ khong mang `ngan_sach` tren tung dong (chi
+       `khe` — `giai_doan_giong._ke_nan`), va sai ve phia BAO NHIEU HON o mot con
+       so "chap nhan lech nhung khong im" la sai ve phia an toan. Muon chinh xac
+       thi phai them `ngan_sach` vao `ban_ke`, va do la mot bat bien cua
+       `nan_thoi_luong` — ⛔ khong phai viec cua ham nay.
 
     Tra `(so_doan_lech_cuoi, giay_lech_cuoi)`.
     """
@@ -362,6 +379,52 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
                 ma, h_ap, nan_cho_vua.tran_co_gian())
         he_so_theo_ma[ma] = h_ap
 
+    # ══ B13-B3/B4 (28/09): HAI máy tăng tốc, và chỉ MỘT cái được thi hành ════
+    #
+    # 🔴 **`ke_hoach.he_so_toc` ⛔ KHÔNG BAO GIỜ trở thành một `atempo` thứ hai.**
+    #    Đọc 28/09, ba neo:
+    #      · `ket_xuat.dung_lenh` (`ket_xuat.py:214-216`) chỉ nạp HAI đầu vào —
+    #        `duong_video` và `duong_master` — và map `nhan_tieng = "1:a:0"`.
+    #        `duong_lop` **chỉ** bị đếm để đối chiếu độ dài (`:173`), ⛔ không
+    #        xuất hiện trong `cmd`;
+    #      · `am_master.tron_lo` nhận `he_so` lấy TỪ `he_so_theo_ma` ở trên, tức
+    #        từ `he_so_co_gian` của `ban_ke` — ⛔ không từ kế hoạch;
+    #      · `ban_dung.py:158` vẫn chép `he_so_toc` vào từng lớp với chú thích
+    #        *"Trinh render chi ap atempo khi > 1"*, và `docs/auto_scan_video/
+    #        reports/13_REPORT.md:190` khai đúng thiết kế CŨ ấy (*"belongs to
+    #        RENDER"*). Pha 16 dựng bản phối và trình render thôi trộn lớp ⇒ ô
+    #        `he_so_toc` **mồ côi** từ đó.
+    #
+    # ⇒ Nên `1,15 × 1,3333 = 1,53` ⛔ KHÔNG xảy ra được, và một cái `raise` cho
+    #   nó sẽ là một nhánh ⛔ không bao giờ chạy — đúng thứ `ma-phong-thu-cho-ca-
+    #   khong-the-xay-ra` cấm. Cái CÓ THẬT là chiều NGƯỢC LẠI: một đoạn kế hoạch
+    #   định nén 1,15 để trả nợ được trộn ở `he_so_co_gian` (thường 1,0), tức
+    #   **dài hơn chỗ kế hoạch chừa cho nó**, và `thoi_gian.kiem` ⛔ không bắt
+    #   được vì nó kiểm chồng lấn trên `dai_ms` ĐÃ chia cho `he_so_toc`.
+    #
+    # ⭐ Nên bất biến ở đây là bất biến RẺ và SỐNG: ĐẾM chỗ lệch và nói to
+    #   (`log.warning`), rồi đưa CẢ HAI đại lượng vào `master` dưới hai cái tên
+    #   ⛔ không đọc lẫn được. ⛔ Không `raise`: lượt đã đo có 12 đoạn lệch, nên
+    #   `raise` ở đây là làm đỏ mọi lượt chạy thật vì một sai lệch mốc ≤ dung sai
+    #   chồng lấn — cái giá đó thuộc chủ dự án, ⛔ không thuộc một bản vá mẫu số.
+    # ⭐ Phép ĐO là một hàm THUẦN ở `thoi_gian` — ⛔ không viết số học ở đây.
+    #    Hai lực: (i) `doi_chieu_he_so_toc` kiểm được mà ⛔ không cần một lượt trộn
+    #    nào; (ii) bánh cóc `test_2018::test_he_so_toc_KHONG_bi_kep_ve_tran` đọc
+    #    **cách gõ** — nó đỏ khi module này gọi cả `min` lẫn `max`, kể cả khi
+    #    phép `max` ấy ⛔ không kẹp gì cả. Giữ số học ra ngoài đây là cách giữ
+    #    bánh cóc ấy CÒN NGHĨA thay vì nới nó (`banh-coc-do-CACH-GO-...`).
+    doi_chieu = thoi_gian.doi_chieu_he_so_toc(
+        {str(d["ma"]): float(d.get("he_so_toc") or 1.0)
+         for d in (ke_hoach.get("doan") or [])},
+        he_so_theo_ma)
+    for ma, h_ke, h_ap in doi_chieu["lech"]:
+        log.warning(
+            "asv timing_align: doan %s — ke hoach dat cho no theo he_so_toc="
+            "%.4f nhung ban phoi ap he_so_co_gian=%.4f. Tieng se %s cho ke "
+            "hoach chua; `ke_hoach.he_so_toc` KHONG duoc ap lam atempo lan hai "
+            "(ket_xuat.dung_lenh chi map master)", ma, h_ke, h_ap,
+            "DAI hon" if h_ap < h_ke else "NGAN hon")
+
     # ⭐ Nấc cứu cuối (Task 8, chốt 26/09): chủ dự án chốt thứ tự cứu là
     #    (b) nới biên lần hai (`thoi_gian.lap_ke_hoach` đã mượn
     #    `TY_LE_MUON_KHOANG_LANG` — xong ở đó) → (c) CHẤP NHẬN phần còn lệch,
@@ -451,7 +514,35 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
         #    THẤY ĐƯỢC chứ không phải một sự vắng mặt.
         do_duoc["so_doan_lech_cuoi"] = int(so_doan_lech_cuoi)
         do_duoc["giay_lech_cuoi"] = round(float(giay_lech_cuoi), 3)
-
+        # ══ B13-B4 (28/09): HAI đại lượng ⛔ KHÔNG còn đứng cạnh nhau dưới hai
+        #    cái tên nghe như MỘT ══════════════════════════════════════════════
+        #
+        # 🔴 **Cái bẫy, đo trên `asvr_47327a869a8f4597960048f09064740`:**
+        #
+        #        timing_align.he_so_toc_lon_nhat   = 1,15    so_doan_tang_toc = 12
+        #        timing_align.master.he_so_toc_da_ap: n=69, max = 1,3333
+        #
+        #    Hai dòng trong CÙNG một `outputs`, **hai tập khác nhau**, và
+        #    `1,15 < 1,3333` ⇒ ai đọc báo cáo sẽ kết luận trần đã giữ.
+        #
+        # ⛔ **Vì sao ⛔ KHÔNG đổi tên `he_so_toc_lon_nhat`/`so_doan_tang_toc`**
+        #    (hai khoá PHẲNG, do `thoi_gian.tom_tat` sinh): chúng nằm trong
+        #    `asv_doi_soat.KHOA_BO_QUA_CO_Y["timing_align"]`, và `test_408` chốt
+        #    HAI chiều — một khoá mới ⛔ không khai là đỏ, một khoá đã khai mà
+        #    ⛔ không ai ghi cũng đỏ. Đổi tên ở đây buộc phải sửa
+        #    `tools/asv_doi_soat.py`, thứ ⛔ KHÔNG thuộc làn này (B13 §7.0 giao
+        #    `tools/` cho L3). ⇒ Bản vá đi đường LỒNG: `master` là MỘT khoá
+        #    trong `KHOA_CAN`, nên mọi khoá con của nó thêm được tự do.
+        #
+        # ⭐ Bốn con số, hai vế, tên nói thẳng vế nào: `_ke_hoach` là thứ
+        #    `lap_ke_hoach` ĐỊNH làm (và ⛔ không ai thi hành), `_da_ap` là thứ
+        #    `am_master.tron_lo` THẬT SỰ áp. Đọc một mình `master` là đủ để trả
+        #    lời *"trần có giữ không"* mà ⛔ không phải ghép hai tầng.
+        for _k, _v in doi_chieu.items():
+            # ⛔ `lech` là danh sách để LOG, ⛔ không phải một phép đo — nó mang
+            #    `ma`, và `outputs` của giai đoạn này đã có `he_so_toc_da_ap`.
+            if _k != "lech":
+                do_duoc[_k] = _v
         khoa = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
                                    stage=pipeline.TIMING_ALIGN, van_tay=vt,
                                    duoi="wav")

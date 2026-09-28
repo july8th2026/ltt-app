@@ -473,12 +473,24 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
             khe = nan_cho_vua.khe_cua(m)
             # 🔴 HAI con số, HAI câu hỏi — ⛔ đừng gộp lại:
-            #    `khe`       = khe của chính đoạn (`ket - bat`) → dùng để BÁO CÁO
-            #                  (`ket_luan`, `ban_ghi_luot_doc`, `tom_tat`).
-            #    `ngan_sach` = khe + phần khoảng lặng mượn được → dùng cho CỬA
-            #                  TIÊU TIỀN. Đây là con số mà `timing_align` thật sự
-            #                  thực thi, nên nó là con số đúng để quyết có trả
-            #                  tiền cho một lượt LLM hay không.
+            #    `khe`       = khe của chính đoạn (`ket - bat`) → PHÂN LOẠI và
+            #                  BÁO CÁO (`can_nan`, `lech`, `ban_ghi_luot_doc`,
+            #                  `tung_doan`). Nghĩa của nó ⛔ KHÔNG đổi.
+            #    `ngan_sach` = khe + phần khoảng lặng mượn được → CỬA TIÊU TIỀN
+            #                  (`nen_viet_lai`, 26/09) **VÀ** mẫu số của
+            #                  `he_so_co_gian` (B13-A2, 28/09).
+            #
+            # 🔴 **Vì sao `ngan_sach` phải đi vào `ket_luan` (B13-A2).** Bản vá
+            #    26/09 chỉ sửa cửa TIÊU TIỀN; cửa **THI HÀNH** vẫn hỏi `khe`, và
+            #    `giai_doan_thoi_gian._dung_ban_phoi` áp đúng `he_so_co_gian` ấy
+            #    làm `atempo` THẬT. ⇒ Một giá trị dán nhãn *"báo cáo"* đang được
+            #    thi hành. Đo trên `asvr_47327a869a8f4597960048f09064740`:
+            #    `seg_0024` bị ép **1,3333** cho vừa khe 0,90 s trong khi 32,49 s
+            #    ngay sau nó trống không. Xem `nan_cho_vua.mau_so_co_gian`.
+            #
+            # ⛔ CẢ BA chỗ gọi `ket_luan` trong hàm này phải truyền `ngan_sach=`
+            #    — một chỗ quên là một đường (lát cắt / dùng lại tệp cũ / mới
+            #    sinh) lặng lẽ giữ luật CŨ. `test_4920` chốt bằng AST.
             ngan_sach = ngan_sach_theo_ma.get(str(m["ma"]), khe)
             ho_so = da_tra_tien.get(i - 1) or {}
 
@@ -494,7 +506,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             if lat is not None:
                 kq = nan_cho_vua.ket_luan(
                     m["ma"], chu=str(lat["chu"]), giay=float(lat["giay"]),
-                    khe=khe, so_vong=int(lat["so_vong"]))
+                    khe=khe, so_vong=int(lat["so_vong"]),
+                    ngan_sach=ngan_sach)
                 cac_nan.append(kq)
                 # ⚠️ `lat["ban_ke"]` la mot DANH SACH tu 25/09 (mot khe gop tra
                 #    ve nhieu dong). Ban ghi cu la mot dict — nhan ca hai, vi mot
@@ -557,7 +570,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 #    so vong nan cua chinh no.
                 kq = nan_cho_vua.ket_luan(
                     m["ma"], chu=chu, giay=float(ho_so["cu"]), khe=khe,
-                    so_vong=int(so_vong_theo_ma.get(str(m["ma"]), 0)))
+                    so_vong=int(so_vong_theo_ma.get(str(m["ma"]), 0)),
+                    ngan_sach=ngan_sach)
                 # 🔴 **`im_lang` phai di theo tep DUNG LAI, va truoc ban sua nay
                 #    no ⛔ khong di.** Mot khe im lang cua luot dau tro thanh mot
                 #    `AsvAsset` (tep khoang lang that, co do dai that), nen luot
@@ -725,7 +739,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             _dem_nan_oan(giay, khe, ngan_sach)
 
             kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=giay, khe=khe,
-                                      so_vong=so_vong)
+                                      so_vong=so_vong, ngan_sach=ngan_sach)
             cac_nan.append(kq)
 
             khoa_ben = assets.dat_khoa(owner_id=run.owner_id, run_id=run.id,
