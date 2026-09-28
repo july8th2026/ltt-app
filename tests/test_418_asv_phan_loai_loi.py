@@ -456,6 +456,16 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         #    ⚠️ Va `do_vung` thuoc GIAI ĐOAN 2 (chot 25/09), chua noi vao chuoi
         #    nao — nen hom nay no cung chua co duong len bien.
         "DoVungLoi",
+        # 🔑 `OcrLoiKyThuat` (B10-4, 28/09): cung ly le voi `DoVungLoi` o tren,
+        #    va **hep hon** — no ⛔ khong bao gio ra khoi `do_vung`.
+        #    `_dai_chu_nhieu_tang` bat DUNG lop nay roi lui ve tang do cu; be
+        #    mat ngoai (`de_xuat`) chi thay mot `KetQua` binh thuong.
+        #
+        # ⭐ Va no CO Y la mot lop RIENG chu ⛔ khong dung lai `DoVungLoi`: hai
+        #    lop mang hai y nghia khac nhau cho nguoi goi. `DoVungLoi` = *ca
+        #    chang do hong*; `OcrLoiKyThuat` = *tang NAY chua quet duoc, con
+        #    tang sau*. Gop chung thi ⛔ khong con cho nao de rẽ nhanh lui tang.
+        "OcrLoiKyThuat",
         # 🔑 Cong NOI BO + dich vu nop (22/09): nem TRUOC khi co job, o tang
         #    goi (route/port), khong bao gio len toi bien cua nen tang.
         "LoiCaiDat", "LoiCongNoiBo", "LoiDauVao", "LoiKhongTimThay",

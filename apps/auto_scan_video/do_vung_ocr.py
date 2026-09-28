@@ -1,0 +1,291 @@
+"""Dò dải chữ gốc bằng **RapidOCR det-only** + gom cụm — tầng CHÍNH của `do_vung`.
+
+## 🔴 Vì sao tệp này tồn tại (B10-4, 28/09/2026)
+
+`do_vung.do_dai_chu` **⛔ không đọc chữ**. Nó tính một hồ sơ theo hàng —
+`mean(axis=0) × std(axis=0)`, *"mạnh VÀ đổi"* — tức suy từ **biến thiên điểm
+ảnh**. Ba hệ quả, cả ba chủ dự án nhìn ra trên bản giao thật:
+
+1. Hồ sơ là **hợp trên thời gian**: hàng nào có chữ ở *một số* khung đều góp
+   điểm ⇒ dải = bao của **mọi** khung ⇒ một cảnh 2 dòng kéo dải cao gấp đôi
+   cho **cả video**.
+2. Nó trả `x0=0, x1=1` ⇒ **che hết chiều ngang**.
+3. Nó trả **một** hộp, ⛔ không có trường thời gian ⇒ che **cả video**, kể cả
+   những đoạn ⛔ không có chữ nào.
+
+**Đo trên chính phim nghiệm thu** (`真人气枪游戏…`, 1024×576, 275 s):
+
+| | `do_dai_chu` | RapidOCR det |
+|---|---|---|
+| chiều cao | **15,5 %** khung, cả video | **5,5 %** trung bình mỗi hộp |
+| bề ngang | **100 %** | **18,2 %** |
+| khung ⛔ không chữ | ⛔ không biết | **3/24** nhận ra |
+| số hộp mỗi khung | ⛔ không biết | **1 → 8** |
+| thời gian | 1,1 s | 7,6 s (0,32 s/khung) |
+
+⇒ Che mờ đang gấp **~2,8 lần** chiều cao và **~5,5 lần** bề ngang cần thiết.
+
+## ⭐ Kiến trúc lấy từ `D:/Viral` (CHỈ ĐỌC), và lý do họ xếp như vậy
+
+> `manual → RapidOCR(clustering) → OpenCV(phat_hien_dai) → none`
+
+Họ **hạ** cách suy-theo-điểm-ảnh xuống hạng chót, ghi rõ: *"đoán qua biến thiên
+pixel, ⛔ không đọc chữ thật → nhầm animation/đồ hoạ động thành 'dải sub', user
+báo video Whisper ⛔ không hardsub vẫn bị che to"*.
+
+⚠️ **Chính ta đã đo được giới hạn ấy** (25/09, `do_vung.de_xuat`): *"V4b ⛔
+không phân biệt được dải phụ đề với bảng tên HUD của game… là GIỚI HẠN CỦA
+PHƯƠNG PHÁP, ⛔ không phải chuyện tinh chỉnh ngưỡng."* Ta biết nó yếu và chốt
+nó chỉ là *đề xuất* — nhưng ⛔ không thêm tầng mạnh hơn.
+
+## 🔑 Ba trạng thái, ⛔ ĐỪNG gộp
+
+| trả về | nghĩa | người gọi làm gì |
+|---|---|---|
+| ném `OcrLoiKyThuat` | chưa cài / crash / ⛔ không mở được tệp | **lùi** tầng sau |
+| `KetQua(vung=(), so_khung>0)` | quét thật, ⛔ không thấy chữ | **TIN**, ⛔ không che |
+| `KetQua(vung=(...))` | thấy | che |
+
+🔴 Gộp hai cái đầu là đúng lỗi kho tham chiếu ghi 31/07: nuốt một lỗi kỹ thuật
+thành *"video ⛔ không có sub cứng"* ⇒ **⛔ không che ⇒ lộ chữ Hán**.
+
+⭐ Và đây là ca *"gộp về phía IM LẶNG"*: gộp về *"⛔ không thấy chữ"* thì hỏng
+**âm thầm** và khách nhận video lộ chữ; gộp về *"chưa quét được"* thì chỉ tốn
+thêm một tầng dò. **Cùng một phép gộp, hai cái giá lệch hàng bậc.**
+
+## ⛔ `use_rec=False` — chỉ cần HỘP
+
+Chủ dự án chốt 28/09: ⛔ **không** dùng văn bản OCR để đối chiếu với bản chép
+lời. Ta chỉ hỏi *"chữ ở đâu"*, ⛔ không hỏi *"chữ là gì"*.
+
+⚠️ Đo được: RapidOCR **vẫn trả** văn bản kể cả khi đặt `use_rec=False`, nên
+đừng đọc cờ ấy như một lời hứa về nội dung trả về — ta **bỏ qua** trường văn
+bản, đó là lựa chọn của ta chứ ⛔ không phải bảo đảm của thư viện.
+"""
+from __future__ import annotations
+
+from typing import NamedTuple
+
+from platform_core.i18n import _ as _t
+
+#: Số khung lấy mẫu. Kho tham chiếu dùng ~2 fps cho che động; ở đây ta còn ở
+#: chặng ĐỀ XUẤT (một dải cho khách xác nhận) nên lấy thưa hơn nhiều.
+#:
+#: ⭐ `24` chứ ⛔ không `18` của `do_dai_chu`: bộ dò cũ cần khung **dày** để `std`
+#:    theo thời gian có nghĩa; bộ dò này đọc **từng khung độc lập**, nên số
+#:    khung chỉ quyết định độ phủ thời gian, ⛔ không quyết định chất lượng một
+#:    phép đo.
+SO_KHUNG_OCR = 24
+
+#: Chỉ xét hộp có tâm y từ đây trở xuống. Phụ đề gốc nằm ở nửa dưới.
+#:
+#: ⛔ ⛔ Không đặt `0.5`: một khung có chữ ở **đúng** giữa (bảng điểm, HUD) sẽ
+#:    lọt. `0.60` là chỗ kho tham chiếu dùng cho cùng câu hỏi.
+TAM_Y_TOI_THIEU = 0.60
+
+#: Hai hộp cách nhau (theo tâm y) không quá chừng này = **cùng một hàng chữ**.
+GOM_CUM_Y = 0.03
+
+#: Một cụm phải xuất hiện ở ít nhất phần này của số khung ĐÃ ĐỌC mới được coi
+#: là phụ đề. Watermark tĩnh cũng qua được cửa này, nên nó ⛔ không đủ một mình
+#: — xem `_chon_cum`.
+PHAN_KHUNG_TOI_THIEU = 0.25
+
+#: Hộp hẹp hơn chừng này (phần bề ngang khung) ⛔ không phải một dòng phụ đề.
+#: Tên tài khoản / logo góc rơi ở đây.
+RONG_TOI_THIEU = 0.12
+
+#: 🔴 **Cổng an toàn.** Dải cao hơn chừng này ⛔ **không** phải phụ đề — đó là
+#:    giao diện, đồ hoạ, hay một cảnh nhiều chữ. Che nó là **làm hỏng video của
+#:    khách**, và *"đo sai nguy hơn ⛔ không đo"* (docstring `de_xuat` của ta).
+#:
+#: ⭐ Lấy từ kho tham chiếu: *"Dải RapidOCR quá RỘNG (> 22 %) — video có thể ⛔
+#:    KHÔNG có phụ đề cứng → ⛔ KHÔNG blur"*.
+CAO_TOI_DA = 0.22
+
+#: Nới mỗi mép hộp chừng này (phần khung) để vệt mờ ⛔ không hở viền chữ.
+NOI_MEP = 0.006
+
+
+class OcrLoiKyThuat(RuntimeError):
+    """Lỗi KỸ THUẬT — chưa cài, crash, ⛔ không mở được tệp.
+
+    ⛔ **KHÁC** *"quét thật, ⛔ không thấy chữ"* (trả `KetQua` rỗng). Xem bảng
+    ba trạng thái ở đầu tệp: hai ca này dẫn tới **hai hành động khác nhau**.
+    """
+
+
+class Hop(NamedTuple):
+    """Một hộp chữ trên một khung, toạ độ PHÂN SỐ khung."""
+
+    giay: float
+    y0: float
+    y1: float
+    x0: float
+    x1: float
+
+
+def co_san() -> bool:
+    """RapidOCR có dùng được ⛔ không. ⛔ Không ném — người gọi rẽ nhánh."""
+    import importlib.util
+
+    return importlib.util.find_spec("rapidocr_onnxruntime") is not None
+
+
+def _may():
+    """Máy OCR, tạo MỘT lần cho cả tiến trình.
+
+    ⚠️ Khởi tạo nạp mô hình ONNX (~10 MB) và mất vài trăm mili giây; tạo lại
+       mỗi khung sẽ làm phép đo chậm gấp nhiều lần mà ⛔ không đổi kết quả.
+    """
+    global _MAY
+    try:
+        return _MAY
+    except NameError:
+        pass
+    try:
+        from rapidocr_onnxruntime import RapidOCR
+    except Exception as exc:  # noqa: BLE001
+        raise OcrLoiKyThuat(
+            _t('Chưa cài bộ đọc chữ trên máy chủ.')) from exc
+    try:
+        _MAY = RapidOCR()
+    except Exception as exc:  # noqa: BLE001
+        raise OcrLoiKyThuat(
+            _t('Không khởi động được bộ đọc chữ.')) from exc
+    return _MAY
+
+
+def _hop_cua_khung(may, anh, rong: int, cao: int, giay: float) -> list[Hop]:
+    """Các hộp chữ trên MỘT khung (mảng BGR của OpenCV). Lỗi ⇒ danh sách rỗng.
+
+    ⛔ **Một khung hỏng ⛔ không được giết cả lượt dò.** Một khung giải mã lỗi
+       giữa 24 khung là chuyện thường; ném ở đây sẽ biến nó thành *"chưa quét
+       được"* và đẩy cả lượt xuống tầng lùi — tức đổi một sự cố nhỏ thành một
+       quyết định kiến trúc.
+    """
+    try:
+        kq, _ = may(anh, use_det=True, use_cls=False, use_rec=False)
+    except Exception:  # noqa: BLE001
+        return []
+    ra: list[Hop] = []
+    for muc in (kq or ()):
+        # ⚠️ Đọc THẬT: `use_rec=False` VẪN trả `[hộp4điểm, văn_bản, điểm]`.
+        #    Bản đầu lặp thẳng trên `kq` và nó ném *"float() argument must be
+        #    ... not 'list'"*. ⭐ Cờ ấy ⛔ không phải một lời hứa về hình dạng.
+        box = muc[0] if isinstance(muc, (list, tuple)) and muc else muc
+        try:
+            xs = [float(q[0]) for q in box]
+            ys = [float(q[1]) for q in box]
+        except (TypeError, ValueError, IndexError):
+            continue
+        if not xs or not ys or rong <= 0 or cao <= 0:
+            continue
+        ra.append(Hop(giay, min(ys) / cao, max(ys) / cao,
+                      min(xs) / rong, max(xs) / rong))
+    return ra
+
+
+def _gom_cum(hop: list[Hop]) -> list[list[Hop]]:
+    """Gom hộp thành CỤM theo tâm y — mỗi cụm = một hàng chữ lặp qua các khung.
+
+    🔑 **Gom theo y chứ ⛔ không gộp tất cả làm một.** Gộp hết sẽ dính tên tài
+       khoản, watermark và tiêu đề vào cùng một dải — đó chính là cách bộ dò cũ
+       cho ra một dải cao 15,5 %.
+
+    ⛔ Gom theo **tâm** chứ ⛔ không theo mép: hai dòng phụ đề kề nhau có mép
+       chạm nhau nhưng tâm cách nhau đúng một chiều cao dòng.
+    """
+    if not hop:
+        return []
+    theo_tam = sorted(hop, key=lambda h: (h.y0 + h.y1) / 2)
+    cum: list[list[Hop]] = [[theo_tam[0]]]
+    for h in theo_tam[1:]:
+        truoc = cum[-1][-1]
+        if abs((h.y0 + h.y1) / 2 - (truoc.y0 + truoc.y1) / 2) <= GOM_CUM_Y:
+            cum[-1].append(h)
+        else:
+            cum.append([h])
+    return cum
+
+
+def _chon_cum(cum: list[list[Hop]], so_khung: int) -> list[list[Hop]]:
+    """Cụm nào là phụ đề. Ba điều kiện, và cả ba đều cần.
+
+    - **xuất hiện nhiều khung** — một dòng chữ xuất hiện đúng một lần là một
+      tấm biển trong cảnh, ⛔ không phải phụ đề;
+    - **đủ rộng** — tên tài khoản / logo góc thì hẹp;
+    - **nằm dưới** — đã lọc ở `TAM_Y_TOI_THIEU` trước khi gom.
+
+    ⚠️ Điều kiện *"nhiều khung"* một mình ⛔ **không** loại được watermark tĩnh
+       (nó có mặt ở **mọi** khung). Điều kiện *"đủ rộng"* mới loại. Hai điều
+       kiện bắt hai thứ khác nhau — bỏ một cái là mở lại một lớp lỗi.
+    """
+    can = max(2, int(round(so_khung * PHAN_KHUNG_TOI_THIEU)))
+    ra = []
+    for c in cum:
+        if len({round(h.giay, 3) for h in c}) < can:
+            continue
+        if sum(h.x1 - h.x0 for h in c) / len(c) < RONG_TOI_THIEU:
+            continue
+        ra.append(c)
+    return ra
+
+
+def _bao(cum: list[Hop]) -> dict:
+    """Hộp BAO của một cụm, đã nới mép và kẹp vào khung."""
+    return {"y0": round(max(0.0, min(h.y0 for h in cum) - NOI_MEP), 4),
+            "y1": round(min(1.0, max(h.y1 for h in cum) + NOI_MEP), 4),
+            "x0": round(max(0.0, min(h.x0 for h in cum) - NOI_MEP), 4),
+            "x1": round(min(1.0, max(h.x1 for h in cum) + NOI_MEP), 4)}
+
+
+def do_dai_chu_ocr(duong: str, *, so_khung: int = SO_KHUNG_OCR, tranh=()):
+    """Dải chữ gốc bằng OCR. Trả `do_vung.KetQua`.
+
+    ⛔ Ném `OcrLoiKyThuat` khi ⛔ không quét được — xem bảng ba trạng thái ở đầu
+    tệp. `KetQua` rỗng nghĩa là **đã quét thật và ⛔ không thấy chữ**.
+    """
+    from . import do_vung
+
+    may = _may()
+    # ⭐ Dùng LẠI `do_vung._mo`: cùng một cách mở video với tầng lùi, nên hai
+    #    tầng ⛔ không thể bất đồng về kích thước khung hay số khung đọc được.
+    cv2, _np = do_vung._cv2()
+    try:
+        cap, rong, cao, _tong, dai = do_vung._mo(cv2, duong)
+    except do_vung.DoVungLoi as exc:
+        raise OcrLoiKyThuat(str(exc)) from exc
+
+    hop: list[Hop] = []
+    doc_duoc = 0
+    for i in range(so_khung):
+        t = dai * (i + 0.5) / so_khung
+        cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000.0)
+        ok, khung = cap.read()
+        if not ok or khung is None:
+            continue
+        doc_duoc += 1
+        hop.extend(_hop_cua_khung(may, khung, rong, cao, t))
+
+    if doc_duoc == 0:
+        # ⛔ ⛔ Không đọc được khung nào = **chưa quét**, ⛔ không phải "không có
+        #    chữ". Ném để người gọi lùi tầng — xem bảng ba trạng thái đầu tệp.
+        raise OcrLoiKyThuat(_t('Không đọc được khung hình nào để dò vùng.'))
+
+    cap.release()
+    duoi = [h for h in hop if (h.y0 + h.y1) / 2 >= TAM_Y_TOI_THIEU]
+    chon = _chon_cum(_gom_cum(duoi), doc_duoc)
+    if not chon:
+        return do_vung.KetQua(vung=(), so_khung=doc_duoc)
+
+    # Nhiều cụm (phụ đề 2 dòng) ⇒ MỘT hộp bao cả chúng: chặng đề xuất trả về
+    # một vùng cho khách xác nhận, ⛔ không phải một chuỗi che động (B10-3).
+    v = _bao([h for c in chon for h in c])
+    if (v["y1"] - v["y0"]) > CAO_TOI_DA:
+        # ⭐ Cổng an toàn — xem `CAO_TOI_DA`. Trả RỖNG (đã quét, ⛔ không kết
+        #    luận được là phụ đề), ⛔ không ném: ta **đã** quét được.
+        return do_vung.KetQua(vung=(), so_khung=doc_duoc)
+    if do_vung._trung_vung_tay(v["y0"], v["y1"], tranh):
+        return do_vung.KetQua(vung=(), so_khung=doc_duoc)
+    return do_vung.KetQua(vung=(v,), so_khung=doc_duoc)

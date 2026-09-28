@@ -120,3 +120,27 @@ cronsim>=2.7,<3.0
 #    hanh la 3xx, va `<400` la thu gan nhat voi mot ranh gioi that.
 #    May chu dang chay 312 (cai 24/09 luc khoi phuc su co).
 pywin32>=306,<400
+
+# ── Do DAI CHU GOC bang OCR det-only (B10-4, 28/09) ─────────────────────────
+#
+# 🔴 Goi nay TUNG bi rut khoi kho (26/09, Task 21) cung luc bo duong `nguon_loi`
+#    = OCR. Chu du an chot 28/09 THU HEP lenh cam do: cam dung OCR de **lay loi
+#    thoai** (quyet dinh cu giu nguyen), cho phep dung de **do HOP chu**.
+#
+# ⭐ Ly do la mot phep do, ⛔ khong phai mot so thich. Tren phim nghiem thu,
+#    qua chinh `do_vung._dai_chu_nhieu_tang`:
+#
+#        tang lui (bien thien diem anh)   cao 15,5 %  ·  rong 100 %
+#        tang OCR (det-only)              cao 10,7 %  ·  rong  80,8 %
+#        => dien tich che NHO HON 1,78 lan
+#
+#    Va chu thich `do_vung.BU_MOI_DAU` da ghi san mot phep do cung chieu:
+#    OpenCV hut ~1,4 % moi dau ≈ 18 px nen dinh/chan chu Han LO ra ngoai vung.
+#
+# ⚠️ `onnxruntime` / `opencv-python` / `numpy` DA CO SAN tren ca hai venv, nen
+#    goi nay chi them ~12,3 MB. ⛔ Mo hinh PP-OCRv5 nam TRONG wheel — ⛔ khong
+#    tai them luc chay, tuc worker duoi `LocalSystem` ⛔ khong can ra mang.
+#
+# ⛔ Ghim CHINH XAC: mot ban khac co the doi hinh dang ket qua tra ve, va
+#    `do_vung_ocr._hop_cua_khung` doc `muc[0]` theo hinh dang do.
+rapidocr-onnxruntime==1.2.3
